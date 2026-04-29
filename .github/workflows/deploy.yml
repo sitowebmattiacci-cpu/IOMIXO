@@ -1,8 +1,7 @@
 name: Deploy
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:  # only manual trigger — deploy is handled by Cloudflare Pages
 
 concurrency:
   group: deploy-production

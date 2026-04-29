@@ -32,7 +32,7 @@ jobs:
           cache-dependency-path: mashfusion-ai/backend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: TypeScript check
         run: npx tsc --noEmit
@@ -62,7 +62,7 @@ jobs:
           cache-dependency-path: mashfusion-ai/frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: TypeScript check
         run: npx tsc --noEmit
@@ -70,6 +70,8 @@ jobs:
       - name: Next.js build
         env:
           NEXT_PUBLIC_API_URL: http://localhost:4000
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
           NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: price_placeholder
           NEXT_PUBLIC_STRIPE_STUDIO_PRICE_ID: price_placeholder
         run: npm run build
