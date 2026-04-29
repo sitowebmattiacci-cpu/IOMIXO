@@ -118,6 +118,11 @@ jobs:
           JWT_SECRET: ci_placeholder
           AWS_ACCESS_KEY_ID: ci_placeholder
           AWS_SECRET_ACCESS_KEY: ci_placeholder
+          DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+          SUPABASE_URL: https://placeholder.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          REDIS_URL: redis://localhost:6379
+          INTERNAL_API_KEY: ci_placeholder
           AWS_S3_BUCKET: ci_placeholder
           AI_ENGINE_API_KEY: ci_placeholder
           STRIPE_SECRET_KEY: ci_placeholder

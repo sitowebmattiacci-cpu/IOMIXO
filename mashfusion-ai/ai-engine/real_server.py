@@ -6,9 +6,7 @@ Requires: demucs, librosa, soundfile, scipy, pydub, ffmpeg in PATH.
 
 import os
 import sys
-import json
 import time
-import shutil
 import socket
 import traceback
 from pathlib import Path

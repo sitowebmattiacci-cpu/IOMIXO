@@ -325,8 +325,8 @@ Current rule-engine result: ${JSON.stringify(ruleParams)}`
 
     if (!response.ok) throw new Error(`OpenAI HTTP ${response.status}`)
 
-    const json = await response.json()
-    const raw  = json.choices?.[0]?.message?.content ?? ''
+    const json = await response.json() as Record<string, unknown>
+    const raw  = (json.choices as Array<{message:{content:string}}>)?.[0]?.message?.content ?? ''
     // Extract JSON from potential markdown code block
     const match = raw.match(/\{[\s\S]*\}/)
     if (!match) throw new Error('No JSON in LLM response')
