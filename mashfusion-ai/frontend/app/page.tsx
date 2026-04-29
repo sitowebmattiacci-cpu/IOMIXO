@@ -514,9 +514,9 @@ export default function LandingPage() {
             </div>
             <p className="text-xs text-white/25">© 2026 IOMIXO. All rights reserved.</p>
             <div className="flex gap-4 text-xs text-white/30">
-              <a href="#" className="hover:text-white/60 transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white/60 transition-colors">Terms</a>
-              <a href="#" className="hover:text-white/60 transition-colors">Contact</a>
+              <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy</Link>
+              <Link href="/terms" className="hover:text-white/60 transition-colors">Terms</Link>
+              <a href="mailto:hello@iomixo.com" className="hover:text-white/60 transition-colors">Contact</a>
             </div>
           </div>
           <p className="text-[11px] text-white/30 leading-relaxed max-w-3xl mx-auto text-center border-t border-white/[0.04] pt-6">
