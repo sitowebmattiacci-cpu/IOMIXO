@@ -53,7 +53,12 @@ async function bootstrap() {
     process.exit(1)
   })
   process.on('unhandledRejection', (reason) => {
-    // In dev, Redis/queue rejections are expected — log but don't crash
+    // Redis/queue rejections are non-fatal — log but don't crash
+    const msg = String(reason)
+    if (msg.includes('ECONNREFUSED') || msg.includes('AggregateError') || msg.includes('redis')) {
+      logger.warn('Redis unhandled rejection (non-fatal)', { reason: msg })
+      return
+    }
     if (process.env.NODE_ENV === 'production') {
       logger.error('Unhandled rejection', { reason }); process.exit(1)
     } else {
