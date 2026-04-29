@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import useSWR, { mutate } from 'swr'
 import { Plus, Zap, Music2, Clock, TrendingUp, ArrowRight, Sparkles } from 'lucide-react'
 import { auth, projects, user as userApi } from '@/lib/api'
+import { getSupabaseClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -36,7 +37,12 @@ function DashboardContent() {
   const { data: credits }            = useSWR('credits', () => userApi.getCredits())
 
   useEffect(() => {
-    if (meError) router.push('/login')
+    if (!meError) return
+    // Non redirigere se il backend è temporaneamente down ma la sessione Supabase è valida.
+    // L'interceptor axios gestisce già il redirect su 401 (token scaduto/non valido).
+    getSupabaseClient().auth.getSession().then(({ data }) => {
+      if (!data.session) router.push('/login')
+    })
   }, [meError, router])
 
   // Toast di benvenuto dopo upgrade Stripe
