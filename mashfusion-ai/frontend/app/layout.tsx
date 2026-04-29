@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   keywords: ['AI mashup', 'AI remix', 'song fusion', 'music AI', 'stem separation', 'DJ tool'],
   openGraph: {
     type: 'website',
-    locale: 'en_US',
+    locale: 'it_IT',
     url: 'https://iomixo.ai',
     siteName: 'IOMIXO',
     title: 'IOMIXO — AI-Powered Mashup & Remix Studio',
@@ -47,7 +47,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" translate="no" className={`${inter.variable} dark`} suppressHydrationWarning>
+    <html lang="it" className={`${inter.variable} dark`} suppressHydrationWarning>
       <body className="bg-surface-400 text-white antialiased" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false">
         {children}
         <Toaster
