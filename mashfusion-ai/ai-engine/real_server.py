@@ -27,15 +27,15 @@ _home_bin = str(Path.home() / "bin")
 if _home_bin not in os.environ.get("PATH", ""):
     os.environ["PATH"] = _home_bin + ":" + os.environ.get("PATH", "")
 
-from config import get_settings
-from utils.s3_utils import download_from_s3, upload_to_s3, get_signed_download_url
-from services.stem_separator import separate_stems
-from services.music_analyzer import analyze_track
-from services.harmonic_matcher import compute_transform_plan
-from services.mashup_composer import compose_mashup, run_full_composer_engine
-from services.mastering_engine import master_audio
-from services.remix_director_adapter import apply_director_params, build_default_pipeline_config
-from utils.audio_utils import export_preview_mp3, get_audio_info
+from config import get_settings  # noqa: E402
+from utils.s3_utils import download_from_s3, upload_to_s3, get_signed_download_url  # noqa: E402
+from services.stem_separator import separate_stems  # noqa: E402
+from services.music_analyzer import analyze_track  # noqa: E402
+from services.harmonic_matcher import compute_transform_plan  # noqa: E402
+from services.mashup_composer import compose_mashup, run_full_composer_engine  # noqa: E402
+from services.mastering_engine import master_audio  # noqa: E402
+from services.remix_director_adapter import apply_director_params, build_default_pipeline_config  # noqa: E402
+from utils.audio_utils import export_preview_mp3, get_audio_info  # noqa: E402
 
 try:
     from services.style_engine import apply_commercial_style
