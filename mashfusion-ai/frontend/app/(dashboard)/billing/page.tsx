@@ -143,7 +143,7 @@ export default function BillingPage() {
               <ul className="space-y-2 flex-1">
                 <li className="flex items-center gap-2 text-sm text-white/60">
                   <CheckCircle2 className="h-3.5 w-3.5 text-purple-400 flex-shrink-0" />
-                  {meta.monthlyCredits} mashup{meta.monthlyCredits !== 1 ? 's' : ''}/mo
+                  {meta.monthlyCredits} AI transformation{meta.monthlyCredits !== 1 ? 's' : ''}/mo
                 </li>
                 {meta.quality.map((q) => (
                   <li key={q} className="flex items-center gap-2 text-sm text-white/60">
