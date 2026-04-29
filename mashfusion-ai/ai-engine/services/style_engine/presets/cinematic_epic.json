@@ -1,0 +1,100 @@
+{
+  "id": "cinematic_epic",
+  "display_name": "Cinematic Epic",
+  "description": "Orchestral tension, huge reverb spaces, dramatic builds, cinematic impact hits",
+  "energy_profile": "cinematic",
+  "target_lufs": -12.0,
+  "limiter_ceiling_db": -0.5,
+
+  "eq": {
+    "sub_bass_shelf_hz": 60,
+    "sub_bass_gain_db": 2.5,
+    "bass_shelf_hz": 120,
+    "bass_gain_db": 2.0,
+    "low_mid_cut_hz": 400,
+    "low_mid_cut_db": -2.0,
+    "presence_boost_hz": 2800,
+    "presence_gain_db": 1.5,
+    "air_shelf_hz": 10000,
+    "air_gain_db": -1.5,
+    "high_cut_hz": 18000
+  },
+
+  "compression": {
+    "threshold_db": -22.0,
+    "ratio": 3.0,
+    "attack_ms": 15.0,
+    "release_ms": 200.0,
+    "knee_db": 5.0,
+    "makeup_gain_db": 2.5
+  },
+
+  "multiband": {
+    "low_band_hz": [20, 200],
+    "low_band_ratio": 2.5,
+    "low_band_threshold_db": -22.0,
+    "mid_band_hz": [200, 4000],
+    "mid_band_ratio": 2.0,
+    "mid_band_threshold_db": -26.0,
+    "high_band_hz": [4000, 20000],
+    "high_band_ratio": 1.5,
+    "high_band_threshold_db": -22.0
+  },
+
+  "stereo": {
+    "width": 1.70,
+    "bass_mono_below_hz": 100,
+    "mid_side_balance": -0.05
+  },
+
+  "saturation": {
+    "drive": 0.04,
+    "mode": "tape",
+    "harmonics": "even"
+  },
+
+  "reverb": {
+    "size": 0.90,
+    "wet_db": -5.0,
+    "decay_s": 7.0,
+    "pre_delay_ms": 40.0,
+    "high_cut_hz": 3000,
+    "low_cut_hz": 80
+  },
+
+  "sidechain": {
+    "enabled": false,
+    "kick_rate_bpm_sync": "1/4",
+    "depth": 0.15,
+    "attack_ms": 10.0,
+    "release_ms": 200.0,
+    "target_stems": []
+  },
+
+  "layers": {
+    "kick_boost": false,
+    "snare_roll_before_drops": false,
+    "riser_before_drops": true,
+    "impact_at_drops": true,
+    "white_noise_sweep": false,
+    "pad_layer": true,
+    "bass_layer": "cinematic_sub",
+    "uplifter": false,
+    "downlifter": true,
+    "reverse_cymbal": false
+  },
+
+  "arrangement_rules": {
+    "silence_before_drop_ms": 500,
+    "pre_drop_energy_cut_db": -4.0,
+    "drop_impact_boost_db": 3.0,
+    "breakdown_thin_db": -3.0,
+    "chorus_reinforcement_db": 1.5
+  },
+
+  "transient": {
+    "attack_shape": "soft",
+    "attack_ms": 8.0,
+    "sustain_db": 2.0
+  }
+}

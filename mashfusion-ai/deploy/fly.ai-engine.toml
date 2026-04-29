@@ -1,0 +1,67 @@
+# ════════════════════════════════════════════════════════════════
+#  MASHFUSION AI — Fly.io Configuration: AI Engine (FastAPI)
+#  CPU workers only — stem separation uses RunPod GPU pods.
+#  Deploy: fly deploy --config deploy/fly.ai-engine.toml
+# ════════════════════════════════════════════════════════════════
+
+app            = "mashfusion-ai-engine"
+primary_region = "iad"
+kill_signal    = "SIGTERM"
+kill_timeout   = "120s"    # allow in-flight tasks to complete gracefully
+
+[build]
+  dockerfile = "ai-engine/Dockerfile"
+
+[env]
+  WORKER_TYPE        = "cpu"
+  WORKER_CONCURRENCY = "4"
+  PYTHONUNBUFFERED   = "1"
+  TMP_DIR            = "/tmp/mashfusion"
+  MODELS_DIR         = "/models"
+
+# ── Mounts: persistent model cache ────────────────────────────
+# Demucs model (~300 MB) persisted across deploys
+[[mounts]]
+  source      = "ai_models"
+  destination = "/models"
+  initial_size = "5gb"
+
+# ── HTTP service (FastAPI health + job dispatch) ───────────────
+[[services]]
+  internal_port = 8001
+  protocol      = "tcp"
+  auto_stop_machines   = true     # scale to zero when idle (cost saving)
+  auto_start_machines  = true
+  min_machines_running = 0        # can go to 0 — backend queues jobs via Bull
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port     = 443
+
+  [[services.http_checks]]
+    interval      = "30s"
+    timeout       = "10s"
+    grace_period  = "60s"    # model loading takes time on cold start
+    method        = "GET"
+    path          = "/health"
+    protocol      = "http"
+
+# ── Machine specs ─────────────────────────────────────────────
+# CPU worker: 4 vCPU / 8 GB RAM — suitable for analysis + composition
+[[vm]]
+  memory   = "8gb"
+  cpu_kind = "performance"
+  cpus     = 4
+
+# ── Scaling ───────────────────────────────────────────────────
+[scaling]
+  min_count = 0     # scale to zero when queue empty
+  max_count = 4     # max 4 CPU worker machines
+
+# ── Secrets (set via: fly secrets set KEY=value) ──────────────
+# REDIS_URL
+# BACKEND_URL
+# INTERNAL_API_KEY (= AI_ENGINE_API_KEY)
+# AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_S3_BUCKET / AWS_S3_REGION
+# SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY
+# CELERY_BROKER_URL / CELERY_RESULT_URL

@@ -1,0 +1,51 @@
+# MASHFUSION AI — GPU Worker Dockerfile
+# Based on CUDA 12.1 + cuDNN 8 for Demucs htdemucs_6s.
+# Used ONLY for the celery-gpu-worker service.
+# CPU-only services use Dockerfile (no CUDA base).
+
+FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+
+# ── System dependencies ───────────────────────────────────────
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-dev \
+    python3-pip \
+    ffmpeg \
+    libsndfile1 \
+    libsndfile1-dev \
+    build-essential \
+    git \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
+ && update-alternatives --install /usr/bin/python  python  /usr/bin/python3.11 1
+
+WORKDIR /app
+
+# ── Python dependencies ───────────────────────────────────────
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 \
+ && pip install --no-cache-dir -r requirements.txt
+
+# ── Pre-download Demucs model into image (baked cache) ────────
+# This avoids a 300 MB download on every worker cold start.
+ENV DEMUCS_MODELS_DIR=/models
+RUN mkdir -p /models \
+ && python -c "import demucs.pretrained; demucs.pretrained.get_model('htdemucs_6s')" || true
+
+# ── App source ────────────────────────────────────────────────
+ENV MODELS_DIR=/models
+ENV TMP_DIR=/tmp/mashfusion
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV WORKER_TYPE=gpu
+
+COPY . .
+
+# Default command: GPU Celery worker on gpu_heavy queue
+CMD ["celery", "-A", "workers.celery_worker", "worker", \
+     "--loglevel=info", "--concurrency=1", "--prefetch-multiplier=1", \
+     "-Q", "gpu_heavy", "-n", "gpu-worker@%h", "--max-tasks-per-child=10"]

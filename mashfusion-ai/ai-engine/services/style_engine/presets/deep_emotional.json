@@ -1,0 +1,100 @@
+{
+  "id": "deep_emotional",
+  "display_name": "Emotional Deep Remix",
+  "description": "Wide ambient pads, emotional piano layers, soft cinematic risers, warm sub bass",
+  "energy_profile": "emotional",
+  "target_lufs": -13.0,
+  "limiter_ceiling_db": -0.8,
+
+  "eq": {
+    "sub_bass_shelf_hz": 60,
+    "sub_bass_gain_db": 1.5,
+    "bass_shelf_hz": 120,
+    "bass_gain_db": 2.0,
+    "low_mid_cut_hz": 500,
+    "low_mid_cut_db": -1.5,
+    "presence_boost_hz": 1800,
+    "presence_gain_db": 1.0,
+    "air_shelf_hz": 8000,
+    "air_gain_db": -1.0,
+    "high_cut_hz": 16000
+  },
+
+  "compression": {
+    "threshold_db": -24.0,
+    "ratio": 2.5,
+    "attack_ms": 20.0,
+    "release_ms": 250.0,
+    "knee_db": 6.0,
+    "makeup_gain_db": 2.0
+  },
+
+  "multiband": {
+    "low_band_hz": [20, 200],
+    "low_band_ratio": 2.0,
+    "low_band_threshold_db": -24.0,
+    "mid_band_hz": [200, 4000],
+    "mid_band_ratio": 1.8,
+    "mid_band_threshold_db": -28.0,
+    "high_band_hz": [4000, 20000],
+    "high_band_ratio": 1.5,
+    "high_band_threshold_db": -22.0
+  },
+
+  "stereo": {
+    "width": 1.55,
+    "bass_mono_below_hz": 100,
+    "mid_side_balance": 0.0
+  },
+
+  "saturation": {
+    "drive": 0.03,
+    "mode": "tape",
+    "harmonics": "even"
+  },
+
+  "reverb": {
+    "size": 0.65,
+    "wet_db": -8.0,
+    "decay_s": 4.5,
+    "pre_delay_ms": 25.0,
+    "high_cut_hz": 4000,
+    "low_cut_hz": 150
+  },
+
+  "sidechain": {
+    "enabled": false,
+    "kick_rate_bpm_sync": "1/4",
+    "depth": 0.20,
+    "attack_ms": 15.0,
+    "release_ms": 300.0,
+    "target_stems": ["bass"]
+  },
+
+  "layers": {
+    "kick_boost": false,
+    "snare_roll_before_drops": false,
+    "riser_before_drops": true,
+    "impact_at_drops": false,
+    "white_noise_sweep": false,
+    "pad_layer": true,
+    "bass_layer": "warm_sub",
+    "uplifter": false,
+    "downlifter": true,
+    "reverse_cymbal": false
+  },
+
+  "arrangement_rules": {
+    "silence_before_drop_ms": 0,
+    "pre_drop_energy_cut_db": 0.0,
+    "drop_impact_boost_db": 0.0,
+    "breakdown_thin_db": -2.0,
+    "chorus_reinforcement_db": 0.5
+  },
+
+  "transient": {
+    "attack_shape": "soft",
+    "attack_ms": 12.0,
+    "sustain_db": 1.0
+  }
+}

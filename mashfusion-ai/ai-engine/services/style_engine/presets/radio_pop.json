@@ -1,0 +1,100 @@
+{
+  "id": "radio_pop",
+  "display_name": "Radio Pop Clean",
+  "description": "Clean punchy drums, modern pop FX, smooth vocal clarity, radio-ready loudness",
+  "energy_profile": "clean",
+  "target_lufs": -10.0,
+  "limiter_ceiling_db": -0.5,
+
+  "eq": {
+    "sub_bass_shelf_hz": 60,
+    "sub_bass_gain_db": 1.0,
+    "bass_shelf_hz": 120,
+    "bass_gain_db": 1.5,
+    "low_mid_cut_hz": 250,
+    "low_mid_cut_db": -2.0,
+    "presence_boost_hz": 3000,
+    "presence_gain_db": 2.0,
+    "air_shelf_hz": 12000,
+    "air_gain_db": 2.5,
+    "high_cut_hz": 18000
+  },
+
+  "compression": {
+    "threshold_db": -18.0,
+    "ratio": 3.0,
+    "attack_ms": 6.0,
+    "release_ms": 100.0,
+    "knee_db": 4.0,
+    "makeup_gain_db": 3.0
+  },
+
+  "multiband": {
+    "low_band_hz": [20, 200],
+    "low_band_ratio": 2.5,
+    "low_band_threshold_db": -22.0,
+    "mid_band_hz": [200, 4000],
+    "mid_band_ratio": 2.0,
+    "mid_band_threshold_db": -20.0,
+    "high_band_hz": [4000, 20000],
+    "high_band_ratio": 1.8,
+    "high_band_threshold_db": -20.0
+  },
+
+  "stereo": {
+    "width": 1.20,
+    "bass_mono_below_hz": 120,
+    "mid_side_balance": 0.0
+  },
+
+  "saturation": {
+    "drive": 0.05,
+    "mode": "tube",
+    "harmonics": "even"
+  },
+
+  "reverb": {
+    "size": 0.20,
+    "wet_db": -18.0,
+    "decay_s": 1.0,
+    "pre_delay_ms": 10.0,
+    "high_cut_hz": 7000,
+    "low_cut_hz": 300
+  },
+
+  "sidechain": {
+    "enabled": true,
+    "kick_rate_bpm_sync": "1/4",
+    "depth": 0.30,
+    "attack_ms": 4.0,
+    "release_ms": 90.0,
+    "target_stems": ["bass"]
+  },
+
+  "layers": {
+    "kick_boost": true,
+    "snare_roll_before_drops": false,
+    "riser_before_drops": false,
+    "impact_at_drops": false,
+    "white_noise_sweep": false,
+    "pad_layer": false,
+    "bass_layer": "clean_pop",
+    "uplifter": false,
+    "downlifter": false,
+    "reverse_cymbal": false
+  },
+
+  "arrangement_rules": {
+    "silence_before_drop_ms": 0,
+    "pre_drop_energy_cut_db": 0.0,
+    "drop_impact_boost_db": 1.0,
+    "breakdown_thin_db": -3.0,
+    "chorus_reinforcement_db": 2.0
+  },
+
+  "transient": {
+    "attack_shape": "punchy",
+    "attack_ms": 2.0,
+    "sustain_db": -0.5
+  }
+}

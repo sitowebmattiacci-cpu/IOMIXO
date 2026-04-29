@@ -1,0 +1,355 @@
+version: '3.9'
+
+# ── Variabili condivise ─────────────────────────────────────────
+x-supabase-env: &supabase-env
+  SUPABASE_URL:               ${SUPABASE_URL}
+  SUPABASE_SERVICE_ROLE_KEY:  ${SUPABASE_SERVICE_ROLE_KEY}
+
+x-db-env: &db-env
+  DATABASE_URL: ${DATABASE_URL}
+
+x-redis-env: &redis-env
+  REDIS_URL: redis://redis:6379
+
+services:
+  # ─────────────────────────────────────────────
+  # Redis – job queue + SSE pub/sub
+  # (PostgreSQL removed — using Supabase managed Postgres)
+  # ─────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Backend – Node.js API
+  # ─────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    environment:
+      <<: [*db-env, *redis-env, *supabase-env]
+      NODE_ENV:              production
+      PORT:                  4000
+      AI_ENGINE_URL:         http://ai-engine:8001
+      AI_ENGINE_API_KEY:     ${AI_ENGINE_API_KEY}
+      STRIPE_SECRET_KEY:     ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      STRIPE_PRO_PRICE_ID:   ${STRIPE_PRO_PRICE_ID}
+      STRIPE_STUDIO_PRICE_ID:${STRIPE_STUDIO_PRICE_ID}
+      ALLOWED_ORIGINS:       ${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:80}
+      NEXT_PUBLIC_APP_URL:   ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      LOG_LEVEL:             ${LOG_LEVEL:-info}
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:4000/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # AI Engine – FastAPI (porta 8001)
+  # ─────────────────────────────────────────────
+  ai-engine:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '8001:8001'
+    environment:
+      <<: [*redis-env, *supabase-env]
+      BACKEND_URL:       http://backend:4000
+      INTERNAL_API_KEY:  ${AI_ENGINE_API_KEY}
+      MODELS_DIR:        /models
+      TMP_DIR:           /tmp/iomixo
+      DEMUCS_MODEL:      ${DEMUCS_MODEL:-htdemucs_6s}
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_URL: redis://redis:6379/1
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ai_models:/models
+      - ai_tmp:/tmp/iomixo
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:8001/health || exit 1']
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Celery Worker – async audio processing
+  # ─────────────────────────────────────────────
+  celery-worker:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: celery -A workers.celery_worker worker --loglevel=info --concurrency=2 -Q audio_processing
+    environment:
+      <<: [*redis-env, *supabase-env]
+      BACKEND_URL:       http://backend:4000
+      INTERNAL_API_KEY:  ${AI_ENGINE_API_KEY}
+      MODELS_DIR:        /models
+      TMP_DIR:           /tmp/iomixo
+      DEMUCS_MODEL:      ${DEMUCS_MODEL:-htdemucs_6s}
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_URL: redis://redis:6379/1
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ai_models:/models
+      - ai_tmp:/tmp/iomixo
+
+  # ─────────────────────────────────────────────
+  # Frontend – Next.js standalone
+  # ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV:                            production
+      PORT:                                3000
+      NEXT_PUBLIC_API_URL:                 ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+      NEXT_PUBLIC_SUPABASE_URL:            ${SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY:       ${SUPABASE_ANON_KEY}
+      NEXT_PUBLIC_STRIPE_PRO_PRICE_ID:     ${STRIPE_PRO_PRICE_ID}
+      NEXT_PUBLIC_STRIPE_STUDIO_PRICE_ID:  ${STRIPE_STUDIO_PRICE_ID}
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # ─────────────────────────────────────────────
+  # Nginx – reverse proxy
+  # ─────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  redis_data:
+  ai_models:
+  ai_tmp:
+
+services:
+  # ─────────────────────────────────────────────
+  # PostgreSQL (local dev – prod usa Supabase/RDS)
+  # ─────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: iomixo
+      POSTGRES_PASSWORD: iomixo_secret
+      POSTGRES_DB: iomixo
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U iomixo -d iomixo']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Redis – job queue + SSE pub/sub
+  # ─────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Backend – Node.js API
+  # ─────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    environment:
+      <<: [*db-env, *redis-env, *aws-env]
+      NODE_ENV:              production
+      PORT:                  4000
+      JWT_SECRET:            ${JWT_SECRET}
+      JWT_EXPIRES_IN:        ${JWT_EXPIRES_IN:-7d}
+      AI_ENGINE_URL:         http://ai-engine:8001
+      AI_ENGINE_API_KEY:     ${AI_ENGINE_API_KEY}
+      STRIPE_SECRET_KEY:     ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      STRIPE_PRO_PRICE_ID:   ${STRIPE_PRO_PRICE_ID}
+      STRIPE_STUDIO_PRICE_ID:${STRIPE_STUDIO_PRICE_ID}
+      ALLOWED_ORIGINS:       ${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:80}
+      NEXT_PUBLIC_APP_URL:   ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      SMTP_HOST:             ${SMTP_HOST}
+      SMTP_PORT:             ${SMTP_PORT:-587}
+      SMTP_USER:             ${SMTP_USER}
+      SMTP_PASS:             ${SMTP_PASS}
+      SMTP_FROM:             ${SMTP_FROM}
+      LOG_LEVEL:             ${LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:4000/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # AI Engine – FastAPI (porta 8001)
+  # ─────────────────────────────────────────────
+  ai-engine:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '8001:8001'
+    environment:
+      <<: [*db-env, *redis-env, *aws-env]
+      BACKEND_URL:       http://backend:4000
+      INTERNAL_API_KEY:  ${AI_ENGINE_API_KEY}
+      MODELS_DIR:        /models
+      TMP_DIR:           /tmp/iomixo
+      DEMUCS_MODEL:      ${DEMUCS_MODEL:-htdemucs_6s}
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_URL: redis://redis:6379/1
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ai_models:/models
+      - ai_tmp:/tmp/iomixo
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:8001/health || exit 1']
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Celery Worker – async audio processing
+  # ─────────────────────────────────────────────
+  celery-worker:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: celery -A workers.celery_worker worker --loglevel=info --concurrency=2 -Q audio_processing
+    environment:
+      <<: [*db-env, *redis-env, *aws-env]
+      BACKEND_URL:       http://backend:4000
+      INTERNAL_API_KEY:  ${AI_ENGINE_API_KEY}
+      MODELS_DIR:        /models
+      TMP_DIR:           /tmp/iomixo
+      DEMUCS_MODEL:      ${DEMUCS_MODEL:-htdemucs_6s}
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_URL: redis://redis:6379/1
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ai_models:/models
+      - ai_tmp:/tmp/iomixo
+
+  # ─────────────────────────────────────────────
+  # Frontend – Next.js standalone
+  # ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV:                         production
+      PORT:                             3000
+      NEXT_PUBLIC_API_URL:              ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+      NEXT_PUBLIC_STRIPE_PRO_PRICE_ID:  ${STRIPE_PRO_PRICE_ID}
+      NEXT_PUBLIC_STRIPE_STUDIO_PRICE_ID: ${STRIPE_STUDIO_PRICE_ID}
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # ─────────────────────────────────────────────
+  # Nginx – reverse proxy
+  # ─────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
+  ai_models:
+  ai_tmp:

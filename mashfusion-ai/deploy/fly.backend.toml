@@ -1,0 +1,72 @@
+# ════════════════════════════════════════════════════════════════
+#  MASHFUSION AI — Fly.io Configuration: Backend API
+#  Deploy: fly deploy --config deploy/fly.backend.toml
+# ════════════════════════════════════════════════════════════════
+
+app            = "mashfusion-backend"
+primary_region = "iad"           # us-east — closest to Supabase default region
+kill_signal    = "SIGINT"
+kill_timeout   = "30s"
+
+[build]
+  dockerfile = "backend/Dockerfile"
+
+[env]
+  NODE_ENV  = "production"
+  PORT      = "4000"
+  LOG_LEVEL = "info"
+
+# ── HTTP service ─────────────────────────────────────────────
+[[services]]
+  internal_port = 4000
+  protocol      = "tcp"
+  auto_stop_machines  = false    # API must always be on
+  auto_start_machines = true
+  min_machines_running = 2      # HA: always 2 instances
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port     = 443
+    tls_options = { alpn = ["h2", "http/1.1"] }
+
+  [[services.ports]]
+    handlers = ["http"]
+    port     = 80
+    # Redirect HTTP → HTTPS
+    [services.ports.force_https]
+      enabled = true
+
+  [[services.http_checks]]
+    interval       = "15s"
+    timeout        = "5s"
+    grace_period   = "10s"
+    method         = "GET"
+    path           = "/health"
+    protocol       = "http"
+    restart_limit  = 3
+
+# ── Machine specs ─────────────────────────────────────────────
+[[vm]]
+  memory   = "512mb"
+  cpu_kind = "shared"
+  cpus     = 1
+
+# ── Scaling ───────────────────────────────────────────────────
+[scaling]
+  min_count = 2
+  max_count = 6     # scale up under load
+
+# ── Secrets (set via: fly secrets set KEY=value) ──────────────
+# DATABASE_URL
+# REDIS_URL
+# JWT_SECRET
+# AI_ENGINE_API_KEY
+# STRIPE_SECRET_KEY
+# STRIPE_WEBHOOK_SECRET
+# STRIPE_PRO_PRICE_ID
+# STRIPE_STUDIO_PRICE_ID
+# SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS
+# AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_S3_BUCKET
+# SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / SUPABASE_ANON_KEY
+# ALLOWED_ORIGINS
+# NEXT_PUBLIC_APP_URL
