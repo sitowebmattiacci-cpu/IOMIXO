@@ -81,9 +81,11 @@ CREATE TABLE IF NOT EXISTS projects (
 );
 
 -- Backfill foreign key from uploaded_tracks → projects
-ALTER TABLE uploaded_tracks
-  ADD CONSTRAINT fk_track_project
-  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL;
+DO $$ BEGIN
+  ALTER TABLE uploaded_tracks
+    ADD CONSTRAINT fk_track_project
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Analysis Results
@@ -244,10 +246,11 @@ BEGIN
   FOREACH tbl IN ARRAY ARRAY['users','subscriptions','uploaded_tracks','projects','render_jobs']
   LOOP
     EXECUTE format(
-      'CREATE TRIGGER trg_%I_updated_at
+      'DROP TRIGGER IF EXISTS trg_%I_updated_at ON %I;
+       CREATE TRIGGER trg_%I_updated_at
        BEFORE UPDATE ON %I
        FOR EACH ROW EXECUTE FUNCTION set_updated_at()',
-      tbl, tbl
+      tbl, tbl, tbl, tbl
     );
   END LOOP;
 END;
