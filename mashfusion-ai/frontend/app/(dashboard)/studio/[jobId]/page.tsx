@@ -3,7 +3,7 @@ export const runtime = 'edge'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Download, CheckCircle2, AlertCircle, RefreshCcw, ArrowLeft, Music2 } from 'lucide-react'
+import { Download, CheckCircle2, AlertCircle, RefreshCcw, ArrowLeft, Music2, Lock, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import useSWR from 'swr'
 import { jobs, projects } from '@/lib/api'
@@ -23,11 +23,12 @@ export default function JobStatusPage({ params }: { params: { jobId: string } })
 
   const [output,  setOutput]  = useState<FinalOutput | null>(null)
   const [downloading, setDownloading] = useState(false)
+  const [upgrading,   setUpgrading]   = useState(false)
 
   const { job, isLoading, isTerminal } = useJobStatus({
     jobId,
     onComplete: async (j) => {
-      toast.success('Your mashup is ready!')
+      toast.success(j.mode === 'preview' ? 'Your previews are ready!' : 'Your mashup is ready!')
       try {
         const out = await jobs.getPreview(j.id)
         setOutput(out)
@@ -43,6 +44,8 @@ export default function JobStatusPage({ params }: { params: { jobId: string } })
     () => projects.get(job!.project_id)
   )
 
+  const isPreview = !!output?.is_preview || job?.mode === 'preview'
+
   const handleDownload = async (format: 'mp3' | 'wav') => {
     setDownloading(true)
     try {
@@ -54,6 +57,28 @@ export default function JobStatusPage({ params }: { params: { jobId: string } })
       toast.error(err instanceof Error ? err.message : 'Download failed')
     } finally {
       setDownloading(false)
+    }
+  }
+
+  const handleUpgrade = async () => {
+    setUpgrading(true)
+    try {
+      const result = await jobs.upgradeToFull(jobId, {
+        success_url: `${window.location.origin}/studio/${jobId}?upgraded=1`,
+        cancel_url:  `${window.location.origin}/studio/${jobId}`,
+      })
+      if (result.checkout_url) {
+        window.location.href = result.checkout_url
+        return
+      }
+      if (result.full_job) {
+        toast.success('Full render queued — redirecting…')
+        router.push(`/studio/${result.full_job.id}`)
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Upgrade failed')
+    } finally {
+      setUpgrading(false)
     }
   }
 
@@ -90,6 +115,12 @@ export default function JobStatusPage({ params }: { params: { jobId: string } })
     )
   }
 
+  const previewVariants: Array<{ key: 'A' | 'B' | 'C'; url: string | null; label: string; color: string }> = [
+    { key: 'A', url: output?.preview_a_url ?? null, label: 'Version A — Chorus Hook',       color: '#a855f7' },
+    { key: 'B', url: output?.preview_b_url ?? null, label: 'Version B — Vocal Peak',         color: '#ec4899' },
+    { key: 'C', url: output?.preview_c_url ?? null, label: 'Version C — Drop Collision',     color: '#f59e0b' },
+  ]
+
   return (
     <div className="flex-1 overflow-y-auto px-6 py-8 max-w-4xl mx-auto w-full">
       {/* Header */}
@@ -101,7 +132,7 @@ export default function JobStatusPage({ params }: { params: { jobId: string } })
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-black text-white">{project?.title ?? 'Mashup Processing'}</h1>
-            <p className="text-sm text-white/40 mt-1 font-mono"># {jobId.slice(0, 8)}</p>
+            <p className="text-sm text-white/40 mt-1 font-mono"># {jobId.slice(0, 8)} · {isPreview ? 'Preview Mode' : 'Full HQ'}</p>
           </div>
           <Badge variant={statusBadgeVariant} pulse={statusBadgeVariant === 'processing'}>
             {job.status.replace(/_/g, ' ')}
@@ -110,14 +141,13 @@ export default function JobStatusPage({ params }: { params: { jobId: string } })
       </div>
 
       <div className="grid md:grid-cols-5 gap-6">
-        {/* Processing timeline — left/wide column */}
+        {/* Processing timeline */}
         <div className="md:col-span-3 space-y-6">
           <div className="glass rounded-2xl p-6">
             <h2 className="font-semibold text-white mb-5">Processing Pipeline</h2>
             <ProcessingTimeline job={job} />
           </div>
 
-          {/* Analysis cards — shown when analysis is done */}
           {project?.analysis_a && project?.analysis_b && (
             <AnimatePresence>
               <motion.div
@@ -133,9 +163,8 @@ export default function JobStatusPage({ params }: { params: { jobId: string } })
           )}
         </div>
 
-        {/* Right column — preview + download */}
+        {/* Right column — preview / upgrade / download */}
         <div className="md:col-span-2 space-y-5">
-          {/* AI visualization */}
           {!isTerminal && (
             <div className="glass rounded-2xl p-6 text-center">
               <div className="flex items-end justify-center gap-0.5 h-16 mb-4">
@@ -155,8 +184,55 @@ export default function JobStatusPage({ params }: { params: { jobId: string } })
             </div>
           )}
 
-          {/* Preview player */}
-          {output?.preview_mp3_url && (
+          {/* PREVIEW MODE — 3 teaser players + upgrade CTA */}
+          {isPreview && output && (
+            <AnimatePresence>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="space-y-4"
+              >
+                <div className="glass rounded-2xl p-5 border border-purple-500/30 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-purple-400" />
+                    <h3 className="font-semibold text-white">3 AI Teasers Ready</h3>
+                  </div>
+                  {previewVariants.map(v => v.url ? (
+                    <div key={v.key} className="space-y-2">
+                      <p className="text-xs font-semibold text-white/70">{v.label}</p>
+                      <WaveformPlayer audioUrl={v.url} label={v.label} color={v.color} />
+                    </div>
+                  ) : null)}
+                </div>
+
+                <div className="glass rounded-2xl p-5 border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-purple-500/5">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15">
+                      <Lock className="h-5 w-5 text-amber-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white">Unlock Full AI Transformations</h3>
+                      <p className="text-xs text-white/40 mt-1">
+                        Get the complete HQ mashup, mastered and downloadable in MP3 + WAV.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    loading={upgrading}
+                    onClick={handleUpgrade}
+                    icon={<Sparkles className="h-4 w-4" />}
+                  >
+                    Unlock Full Mashup
+                  </Button>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          )}
+
+          {/* FULL MODE — single preview player + download buttons */}
+          {!isPreview && output?.preview_mp3_url && (
             <AnimatePresence>
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -166,7 +242,7 @@ export default function JobStatusPage({ params }: { params: { jobId: string } })
                 <div className="glass rounded-2xl p-5 border border-green-500/20">
                   <div className="flex items-center gap-2 mb-4">
                     <CheckCircle2 className="h-5 w-5 text-green-400" />
-                    <h3 className="font-semibold text-white">Preview Ready</h3>
+                    <h3 className="font-semibold text-white">Full Mashup Ready</h3>
                   </div>
                   <WaveformPlayer
                     audioUrl={output.preview_mp3_url}
@@ -176,12 +252,11 @@ export default function JobStatusPage({ params }: { params: { jobId: string } })
                   {output.duration_seconds && (
                     <div className="mt-3 flex items-center gap-4 text-xs text-white/30">
                       <span>Duration: {formatDuration(output.duration_seconds)}</span>
-                      <span>LUFS: {output.loudness_lufs?.toFixed(1)}</span>
+                      {output.loudness_lufs && <span>LUFS: {output.loudness_lufs.toFixed(1)}</span>}
                     </div>
                   )}
                 </div>
 
-                {/* Download buttons */}
                 <div className="glass rounded-2xl p-5 space-y-3">
                   <h3 className="font-semibold text-white flex items-center gap-2">
                     <Download className="h-4 w-4 text-purple-400" />
@@ -210,7 +285,6 @@ export default function JobStatusPage({ params }: { params: { jobId: string } })
             </AnimatePresence>
           )}
 
-          {/* Failed state */}
           {job.status === 'failed' && (
             <div className="glass rounded-2xl p-6 border border-red-500/20 text-center">
               <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />

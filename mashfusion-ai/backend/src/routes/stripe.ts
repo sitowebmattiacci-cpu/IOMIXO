@@ -1,9 +1,11 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import Stripe from 'stripe'
+import { v4 as uuid } from 'uuid'
 import { supabaseAdmin } from '../config/supabase'
 import { requireAuth } from '../middleware/auth'
 import { AppError } from '../middleware/errorHandler'
 import { logger } from '../config/logger'
+import { queueMashupJob } from '../services/queue'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-04-10' })
 
@@ -103,7 +105,11 @@ stripeRouter.post('/webhook', async (req: Request, res: Response) => {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
-        await handleCheckoutComplete(session)
+        if (session.metadata?.kind === 'upgrade_full') {
+          await handleUpgradeFull(session)
+        } else {
+          await handleCheckoutComplete(session)
+        }
         break
       }
 
@@ -224,4 +230,107 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     .from('users').select('id').eq('stripe_customer_id', customerId).single()
   if (!userRow) return
   logger.warn(`Payment failed for user ${userRow.id}`)
+}
+
+// ── Upgrade-to-full handler (one-shot Stripe Checkout) ─────────
+//
+// Triggered by checkout.session.completed when metadata.kind === 'upgrade_full'.
+// Creates a NEW render_jobs row with mode='full' and parent_job_id pointing at
+// the preview job. The full-mode child reuses cached_analysis_json so the heavy
+// upstream stages (stems / analysis / harmonic match) are skipped.
+async function handleUpgradeFull(session: Stripe.Checkout.Session) {
+  const userId        = session.metadata?.user_id
+  const previewJobId  = session.metadata?.preview_job_id
+  if (!userId || !previewJobId) {
+    logger.warn('upgrade_full session missing metadata', { session_id: session.id })
+    return
+  }
+
+  // Idempotency: if a child full-mode job for this preview already exists, no-op.
+  const { data: existingChild } = await supabaseAdmin
+    .from('render_jobs')
+    .select('id')
+    .eq('parent_job_id', previewJobId)
+    .eq('mode', 'full')
+    .maybeSingle()
+  if (existingChild) {
+    logger.info(`upgrade_full: child job already exists for preview ${previewJobId}`)
+    return
+  }
+
+  const { data: previewJob } = await supabaseAdmin
+    .from('render_jobs')
+    .select('id, project_id, user_id, remix_style, output_quality, cached_analysis_json')
+    .eq('id', previewJobId)
+    .maybeSingle()
+  if (!previewJob) {
+    logger.warn(`upgrade_full: preview job ${previewJobId} not found`)
+    return
+  }
+
+  const { data: project } = await supabaseAdmin
+    .from('projects')
+    .select('*, track_a:uploaded_tracks!track_a_id(s3_key), track_b:uploaded_tracks!track_b_id(s3_key)')
+    .eq('id', previewJob.project_id).single()
+  const taKey = (project?.track_a as any)?.s3_key
+  const tbKey = (project?.track_b as any)?.s3_key
+  if (!taKey || !tbKey) {
+    logger.warn(`upgrade_full: tracks missing for project ${previewJob.project_id}`)
+    return
+  }
+
+  const { data: userRow } = await supabaseAdmin
+    .from('users').select('plan').eq('id', userId).single()
+
+  const fullJobId = uuid()
+  const initialStageProgress = {
+    stem_separation:     { status: 'pending', progress: 0, started_at: null, completed_at: null, message: null },
+    music_analysis:      { status: 'pending', progress: 0, started_at: null, completed_at: null, message: null },
+    harmonic_matching:   { status: 'pending', progress: 0, started_at: null, completed_at: null, message: null },
+    mashup_composition:  { status: 'pending', progress: 0, started_at: null, completed_at: null, message: null },
+    sound_modernization: { status: previewJob.remix_style === 'none' ? 'skipped' : 'pending', progress: 0, started_at: null, completed_at: null, message: null },
+    mastering:           { status: 'pending', progress: 0, started_at: null, completed_at: null, message: null },
+    rendering:           { status: 'pending', progress: 0, started_at: null, completed_at: null, message: null },
+  }
+
+  await supabaseAdmin.from('render_jobs').insert({
+    id:                   fullJobId,
+    project_id:           previewJob.project_id,
+    user_id:              userId,
+    status:               'queued',
+    progress:             0,
+    current_stage:        'Queued for full render',
+    stage_progress:       initialStageProgress,
+    remix_style:          previewJob.remix_style,
+    output_quality:       previewJob.output_quality,
+    mode:                 'full',
+    parent_job_id:        previewJobId,
+    cached_analysis_json: previewJob.cached_analysis_json,
+    idempotency_key:      `full-upgrade:${session.id}`,
+  })
+
+  await supabaseAdmin.from('payments').upsert({
+    user_id:                  userId,
+    stripe_payment_intent_id: session.payment_intent as string,
+    amount_cents:             session.amount_total ?? 0,
+    currency:                 session.currency ?? 'usd',
+    status:                   'succeeded',
+    description:              `Full mashup upgrade (preview ${previewJobId.slice(0, 8)})`,
+  }, { ignoreDuplicates: true, onConflict: 'stripe_payment_intent_id' })
+
+  await queueMashupJob({
+    job_id:               fullJobId,
+    project_id:           previewJob.project_id,
+    user_id:              userId,
+    user_plan:            userRow?.plan ?? 'free',
+    track_a_s3_key:       taKey,
+    track_b_s3_key:       tbKey,
+    remix_style:          previewJob.remix_style,
+    output_quality:       previewJob.output_quality,
+    mode:                 'full',
+    cached_analysis:      previewJob.cached_analysis_json ?? null,
+    parent_job_id:        previewJobId,
+  })
+
+  logger.info(`upgrade_full: queued full job ${fullJobId} for preview ${previewJobId}`)
 }

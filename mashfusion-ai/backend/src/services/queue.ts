@@ -3,7 +3,7 @@ import Redis from 'ioredis'
 import { logger } from '../config/logger'
 import axios from 'axios'
 
-interface MashupJobPayload {
+export interface MashupJobPayload {
   job_id:                string
   project_id:            string
   user_id:               string
@@ -14,6 +14,11 @@ interface MashupJobPayload {
   output_quality:        string
   remix_prompt?:         string
   remix_director_params?: Record<string, unknown>
+  // Preview/Full split
+  mode:                  'preview' | 'full'
+  preview_duration_sec?: number
+  cached_analysis?:      Record<string, unknown> | null
+  parent_job_id?:        string
 }
 
 // ── Plan priority (lower = dispatched first) ──────────────────
@@ -98,15 +103,24 @@ export async function queueMashupJob(payload: MashupJobPayload): Promise<void> {
   }
 
   try {
-    // Preferred path: call AI engine HTTP API directly
-    await axios.post(
-      `${process.env.AI_ENGINE_URL}/api/v1/jobs/process`,
-      payload,
-      {
-        headers: { 'X-Internal-API-Key': process.env.AI_ENGINE_API_KEY },
-        timeout: 10_000,
-      }
-    )
+    // Preferred path: call AI engine HTTP API directly.
+    // The AI engine runs the pipeline synchronously and only responds when the
+    // job is complete (Cloud Run scales the instance to zero otherwise). We
+    // fire-and-forget the call so the backend can return 202 to the client
+    // immediately — pipeline progress is reported back via /internal/job-update
+    // webhooks during execution.
+    axios
+      .post(
+        `${process.env.AI_ENGINE_URL}/api/v1/jobs/process`,
+        payload,
+        {
+          headers: { 'X-Internal-API-Key': process.env.AI_ENGINE_API_KEY },
+          timeout: 3_600_000,  // 60 min — Cloud Run hard limit
+        }
+      )
+      .then(() => logger.info(`AI engine completed job ${payload.job_id}`))
+      .catch((err) => logger.warn(`AI engine call ended with error for job ${payload.job_id}`, { err: err?.message }))
+
     logger.info(`Job ${payload.job_id} dispatched to AI engine (plan=${payload.user_plan}, priority=${priority})`)
   } catch (engineErr) {
     // Fallback: push to Bull queue (AI engine Celery workers pull from Redis)

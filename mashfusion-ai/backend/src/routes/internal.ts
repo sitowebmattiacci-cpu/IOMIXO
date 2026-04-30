@@ -31,13 +31,14 @@ internalRouter.post('/job-update', async (req: Request, res: Response, next: Nex
       stage_progress,
       error_message,
       output,
+      cached_analysis,
     } = req.body
 
     if (!job_id) throw new AppError('job_id required', 400)
 
     logger.info(`Job update: ${job_id} → ${status} (${progress}%)`)
 
-    await supabaseAdmin.from('render_jobs').update({
+    const updatePayload: Record<string, unknown> = {
       status:         status        ?? undefined,
       progress:       progress      ?? undefined,
       current_stage:  current_stage ?? undefined,
@@ -45,17 +46,31 @@ internalRouter.post('/job-update', async (req: Request, res: Response, next: Nex
       error_message:  error_message  ?? undefined,
       ...(status && status !== 'queued' ? { started_at: new Date().toISOString() } : {}),
       ...((status === 'complete' || status === 'failed') ? { completed_at: new Date().toISOString() } : {}),
-    }).eq('id', job_id)
+    }
+    // AI engine emits cached_analysis after harmonic_matching to enable a
+    // future full-mode rerender to skip the heavy upstream stages.
+    if (cached_analysis !== undefined && cached_analysis !== null) {
+      updatePayload.cached_analysis_json = cached_analysis
+    }
 
-    // Insert final output record if job is complete
+    await supabaseAdmin.from('render_jobs').update(updatePayload).eq('id', job_id)
+
     if (status === 'complete' && output) {
       const { data: jobRow } = await supabaseAdmin
-        .from('render_jobs').select('project_id').eq('id', job_id).single()
+        .from('render_jobs').select('project_id, mode').eq('id', job_id).single()
+
+      const isPreview = jobRow?.mode === 'preview' || output.is_preview === true
+      // Preview outputs expire fast (24h); full outputs keep the existing 7d TTL.
+      const ttlMs = isPreview ? 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000
 
       await supabaseAdmin.from('final_outputs').upsert({
         job_id,
         project_id:       jobRow?.project_id ?? null,
-        preview_mp3_url:  output.preview_mp3_url,
+        is_preview:       isPreview,
+        preview_a_url:    output.preview_a_url ?? null,
+        preview_b_url:    output.preview_b_url ?? null,
+        preview_c_url:    output.preview_c_url ?? null,
+        preview_mp3_url:  output.preview_mp3_url ?? null,
         full_wav_url:     output.full_wav_url    ?? null,
         full_mp3_url:     output.full_mp3_url    ?? null,
         duration_seconds: output.duration_seconds ?? null,
@@ -63,7 +78,7 @@ internalRouter.post('/job-update', async (req: Request, res: Response, next: Nex
         sample_rate:      output.sample_rate     ?? 44100,
         bit_depth:        output.bit_depth       ?? 16,
         file_size_bytes:  output.file_size_bytes ?? null,
-        expires_at:       new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        expires_at:       new Date(Date.now() + ttlMs).toISOString(),
       }, { onConflict: 'job_id' })
     }
 

@@ -150,6 +150,8 @@ export interface RenderJob {
   remix_prompt?: string
   remix_director_params?: RemixDirectorParams
   output?: FinalOutput
+  mode?: 'preview' | 'full'
+  parent_job_id?: string | null
 }
 
 export type ProcessingStage =
@@ -174,11 +176,16 @@ export interface FinalOutput {
   id: string
   job_id: string
   project_id: string
-  preview_mp3_url: string
+  preview_mp3_url: string | null
   full_wav_url: string | null
   full_mp3_url: string | null
+  // Preview-mode teaser variants (only populated when is_preview=true)
+  is_preview: boolean
+  preview_a_url: string | null
+  preview_b_url: string | null
+  preview_c_url: string | null
   duration_seconds: number
-  loudness_lufs: number
+  loudness_lufs: number | null
   sample_rate: number
   bit_depth: number
   file_size_bytes: number

@@ -56,15 +56,11 @@ export default function NewStudioPage() {
       toast.error('Please upload both tracks first')
       return
     }
-    if (me?.credits_remaining === 0) {
-      toast.error('No credits remaining. Please upgrade your plan.')
-      return
-    }
 
     setLaunching(true)
     try {
       const job = await jobs.startRemix(projectId, remixStyle, outputQuality, remixPrompt || undefined)
-      toast.success('Mashup job launched! Tracking progress…')
+      toast.success('Generating your free previews…')
       router.push(`/studio/${job.id}`)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to start job')
@@ -225,14 +221,14 @@ export default function NewStudioPage() {
                 <Sparkles className="h-6 w-6 text-purple-400" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-white">Ready to launch</h3>
+                <h3 className="font-semibold text-white">Generate 3 free preview teasers</h3>
                 <p className="text-sm text-white/40 mt-1">
-                  Both tracks uploaded. The AI will now analyze, separate stems, compose, and
-                  master your mashup.
+                  The AI will analyze, separate stems, and render 3 ~30-second teaser
+                  variants (A / B / C). Unlock the full HQ mashup after you hear them.
                 </p>
-                <div className="mt-3 flex items-center gap-2 text-xs text-amber-400">
+                <div className="mt-3 flex items-center gap-2 text-xs text-emerald-400">
                   <Zap className="h-3.5 w-3.5" />
-                  <span>This will use 1 credit ({me?.credits_remaining ?? '?'} remaining)</span>
+                  <span>Free preview — no credits used. Pay only to unlock the full track.</span>
                 </div>
               </div>
             </div>
@@ -244,12 +240,12 @@ export default function NewStudioPage() {
               onClick={handleLaunch}
               icon={<Sparkles className="h-4 w-4" />}
             >
-              Launch AI Mashup
+              Generate Free Previews
             </Button>
 
             <p className="mt-3 flex items-center justify-center gap-1 text-xs text-white/20">
               <HelpCircle className="h-3 w-3" />
-              Processing typically takes 3–8 minutes depending on song length.
+              Preview generation typically takes 1–3 minutes.
             </p>
           </motion.div>
         )}

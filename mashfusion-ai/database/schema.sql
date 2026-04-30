@@ -106,24 +106,48 @@ CREATE TABLE IF NOT EXISTS analysis_results (
 -- Render Jobs
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS render_jobs (
-  id              UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id      UUID          NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  user_id         UUID          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  status          TEXT          NOT NULL DEFAULT 'queued'
-                                CHECK (status IN (
-                                  'queued', 'processing', 'complete', 'failed', 'canceled'
-                                )),
-  progress        INTEGER       NOT NULL DEFAULT 0 CHECK (progress BETWEEN 0 AND 100),
-  current_stage   TEXT,
-  stage_progress  JSONB         DEFAULT '{}',
-  remix_style     TEXT          NOT NULL DEFAULT 'none',
-  output_quality  TEXT          NOT NULL DEFAULT 'standard',
-  error_message   TEXT,
-  started_at      TIMESTAMPTZ,
-  completed_at    TIMESTAMPTZ,
-  created_at      TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+  id                    UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id            UUID          NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  user_id               UUID          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status                TEXT          NOT NULL DEFAULT 'queued'
+                                      CHECK (status IN (
+                                        'queued', 'processing', 'complete', 'failed', 'canceled'
+                                      )),
+  progress              INTEGER       NOT NULL DEFAULT 0 CHECK (progress BETWEEN 0 AND 100),
+  current_stage         TEXT,
+  stage_progress        JSONB         DEFAULT '{}',
+  remix_style           TEXT          NOT NULL DEFAULT 'none',
+  output_quality        TEXT          NOT NULL DEFAULT 'standard',
+  -- Preview/Full split
+  mode                  TEXT          NOT NULL DEFAULT 'preview'
+                                      CHECK (mode IN ('preview', 'full')),
+  preview_duration_sec  INTEGER       DEFAULT 30,
+  cached_analysis_json  JSONB,
+  parent_job_id         UUID          REFERENCES render_jobs(id) ON DELETE SET NULL,
+  idempotency_key       TEXT          UNIQUE,
+  error_message         TEXT,
+  started_at            TIMESTAMPTZ,
+  completed_at          TIMESTAMPTZ,
+  created_at            TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+  updated_at            TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE render_jobs
+  ADD COLUMN IF NOT EXISTS mode TEXT NOT NULL DEFAULT 'preview'
+    CHECK (mode IN ('preview','full'));
+ALTER TABLE render_jobs
+  ADD COLUMN IF NOT EXISTS preview_duration_sec INTEGER DEFAULT 30;
+ALTER TABLE render_jobs
+  ADD COLUMN IF NOT EXISTS cached_analysis_json JSONB;
+ALTER TABLE render_jobs
+  ADD COLUMN IF NOT EXISTS parent_job_id UUID REFERENCES render_jobs(id) ON DELETE SET NULL;
+ALTER TABLE render_jobs
+  ADD COLUMN IF NOT EXISTS idempotency_key TEXT;
+DO $$ BEGIN
+  CREATE UNIQUE INDEX uq_render_jobs_idempotency_key ON render_jobs(idempotency_key)
+    WHERE idempotency_key IS NOT NULL;
+EXCEPTION WHEN duplicate_table THEN NULL; WHEN others THEN NULL;
+END $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Final Outputs
@@ -132,9 +156,14 @@ CREATE TABLE IF NOT EXISTS final_outputs (
   id                UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
   job_id            UUID          UNIQUE NOT NULL REFERENCES render_jobs(id) ON DELETE CASCADE,
   project_id        UUID          REFERENCES projects(id) ON DELETE SET NULL,
-  preview_mp3_url   TEXT,         -- S3 key
+  preview_mp3_url   TEXT,         -- S3 key (full mode primary preview)
   full_wav_url      TEXT,         -- S3 key
   full_mp3_url      TEXT,         -- S3 key (HD MP3)
+  -- Preview-mode (3 variant teaser clips)
+  is_preview        BOOLEAN       NOT NULL DEFAULT FALSE,
+  preview_a_url     TEXT,
+  preview_b_url     TEXT,
+  preview_c_url     TEXT,
   duration_seconds  FLOAT,
   loudness_lufs     FLOAT,
   sample_rate       INTEGER       DEFAULT 44100,
@@ -143,6 +172,15 @@ CREATE TABLE IF NOT EXISTS final_outputs (
   expires_at        TIMESTAMPTZ,
   created_at        TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE final_outputs
+  ADD COLUMN IF NOT EXISTS is_preview BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE final_outputs
+  ADD COLUMN IF NOT EXISTS preview_a_url TEXT;
+ALTER TABLE final_outputs
+  ADD COLUMN IF NOT EXISTS preview_b_url TEXT;
+ALTER TABLE final_outputs
+  ADD COLUMN IF NOT EXISTS preview_c_url TEXT;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Payments

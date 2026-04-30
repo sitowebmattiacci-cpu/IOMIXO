@@ -210,6 +210,19 @@ export const jobs = {
       return data.data!
     } catch (e) { apiError(e) }
   },
+
+  async upgradeToFull(jobId: string, opts?: { success_url?: string; cancel_url?: string }): Promise<{
+    requires_payment: boolean
+    checkout_url?: string | null
+    full_job?: RenderJob
+  }> {
+    try {
+      const { data } = await getClient().post<ApiResponse<{
+        requires_payment: boolean; checkout_url?: string | null; full_job?: RenderJob
+      }>>(`/jobs/${jobId}/upgrade-to-full`, opts ?? {})
+      return data.data!
+    } catch (e) { apiError(e) }
+  },
 }
 
 // ══════════════════════════════════════════════════════════════
