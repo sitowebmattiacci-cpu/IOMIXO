@@ -301,6 +301,8 @@ class DeepAnalyzer:
         tempo, beat_frames = librosa.beat.beat_track(
             onset_envelope=onset_env, sr=self.sr, hop_length=self.hop_length
         )
+        # librosa 0.10+ returns tempo as ndarray
+        tempo = float(np.asarray(tempo).flatten()[0]) if np.asarray(tempo).size else 0.0
         beat_times = librosa.frames_to_time(
             beat_frames, sr=self.sr, hop_length=self.hop_length
         )
@@ -315,10 +317,10 @@ class DeepAnalyzer:
         beat_events: list[BeatEvent] = []
         for i, (t, s) in enumerate(zip(beat_times, norm_strengths)):
             if i == 0:
-                local_bpm = float(tempo)
+                local_bpm = tempo
             else:
                 ibi = float(beat_times[i] - beat_times[i - 1])
-                local_bpm = 60.0 / ibi if ibi > 0 else float(tempo)
+                local_bpm = 60.0 / ibi if ibi > 0 else tempo
             beat_events.append(BeatEvent(
                 time=round(float(t), 4),
                 beat_index=i,
@@ -326,7 +328,7 @@ class DeepAnalyzer:
                 strength=round(float(s), 4),
             ))
 
-        return round(float(tempo), 2), round(bpm_confidence, 4), beat_events
+        return round(tempo, 2), round(bpm_confidence, 4), beat_events
 
     # ─────────────────────────────────────────────────────────────────────
     # KEY ANALYSIS
