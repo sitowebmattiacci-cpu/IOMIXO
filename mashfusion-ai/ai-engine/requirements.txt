@@ -10,7 +10,6 @@ loguru>=0.7.2
 
 # Audio processing
 demucs>=4.0.1
-spleeter>=2.4.0
 librosa>=0.10.2
 aubio>=0.4.9
 pydub>=0.25.1
