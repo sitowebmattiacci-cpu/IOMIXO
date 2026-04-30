@@ -134,15 +134,6 @@ jobs:
           SMTP_PASS: ci_placeholder
           SMTP_FROM: placeholder@placeholder.com
           AWS_S3_BUCKET: ci_placeholder
-          AI_ENGINE_API_KEY: ci_placeholder
-          STRIPE_SECRET_KEY: ci_placeholder
-          STRIPE_WEBHOOK_SECRET: ci_placeholder
-          STRIPE_PRO_PRICE_ID: ci_placeholder
-          STRIPE_STUDIO_PRICE_ID: ci_placeholder
-          SMTP_HOST: ci_placeholder
-          SMTP_USER: ci_placeholder
-          SMTP_PASS: ci_placeholder
-          SMTP_FROM: ci@example.com
 
   # ──────────────────────────────────────────────────────────────
   # Backend — Jest unit tests
