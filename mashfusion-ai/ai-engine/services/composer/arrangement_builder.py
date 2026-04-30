@@ -29,6 +29,24 @@ from .deep_analyzer import SongMap, SectionBlock
 from .artistic_decision_engine import NarrativePlan, ActAssignment, NARRATIVE_ACTS
 
 
+def _snap_to_beat(t: float, beat_events: list) -> float:
+    """Snap a time value to the nearest beat timestamp."""
+    if not beat_events:
+        return t
+    times = [b.time for b in beat_events]
+    idx = min(range(len(times)), key=lambda i: abs(times[i] - t))
+    return times[idx]
+
+
+def _quantize_to_bar(duration: float, bpm: float, beats_per_bar: int = 4) -> float:
+    """Round a target duration to the nearest integer number of bars at given BPM."""
+    if bpm <= 0:
+        return duration
+    bar_seconds = (60.0 / bpm) * beats_per_bar
+    n_bars = max(1, round(duration / bar_seconds))
+    return n_bars * bar_seconds
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # DATA STRUCTURES
 # ─────────────────────────────────────────────────────────────────────────────
@@ -244,8 +262,12 @@ class ArrangementBuilder:
 
         for act_assignment in plan.narrative_acts:
             act = act_assignment.act
-            act_dur = _ACT_DURATION.get(act, 24.0)
+            raw_act_dur = _ACT_DURATION.get(act, 24.0)
+            # Quantize duration to integer bars at target BPM → eliminates drift
+            act_dur = _quantize_to_bar(raw_act_dur, target_bpm, beats_per_bar=4)
             crossfade = _ACT_CROSSFADE.get(act, 2.0)
+            # Crossfade should also be bar-aligned (or at least beat-aligned)
+            crossfade = min(crossfade, act_dur * 0.4)
 
             primary_sec = act_assignment.primary_section
             support_sec = act_assignment.support_section
@@ -255,6 +277,10 @@ class ArrangementBuilder:
                 support_sec.start if support_sec else 0.0
             )
             src_b_start = support_sec.start if dominant == "A" else primary_sec.start
+
+            # Snap source positions to nearest beat in each track → no mid-beat starts
+            src_a_start = _snap_to_beat(src_a_start, map_a.beat_events)
+            src_b_start = _snap_to_beat(src_b_start, map_b.beat_events)
 
             # ── Stem selection ────────────────────────────────────
             a_stems, a_gain, b_stems, b_gain = _ACT_STEM_STRATEGY.get(

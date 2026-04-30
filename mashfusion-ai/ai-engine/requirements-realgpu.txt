@@ -1,0 +1,20 @@
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+pydantic-settings>=2.2.0
+requests>=2.32.0
+httpx>=0.27.0
+python-multipart>=0.0.9
+loguru>=0.7.2
+
+# Audio processing
+demucs>=4.0.1
+librosa>=0.10.2
+pydub>=0.25.1
+scipy>=1.13.0
+numpy>=1.26.4
+soundfile>=0.12.1
+resampy>=0.4.3
+noisereduce>=3.0.2
+
+# Export
+ffmpeg-python>=0.2.0

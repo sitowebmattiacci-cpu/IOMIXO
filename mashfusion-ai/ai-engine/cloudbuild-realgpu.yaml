@@ -1,0 +1,15 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-f'
+      - 'Dockerfile.realgpu'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/iomixo-494817/cloud-run-source-deploy/iomixo-ai-engine-real:v1'
+      - '.'
+images:
+  - 'europe-west1-docker.pkg.dev/iomixo-494817/cloud-run-source-deploy/iomixo-ai-engine-real:v1'
+options:
+  machineType: 'E2_HIGHCPU_8'
+  diskSizeGb: 100
+timeout: '3600s'

@@ -21,6 +21,7 @@ import librosa
 import soundfile as sf
 from loguru import logger
 from typing import Callable, Optional
+from scipy.signal import butter, sosfilt
 
 # ── Autonomous Composer Engine ──────────────────────────────────────────────
 from services.composer.deep_analyzer import DeepAnalyzer
@@ -61,6 +62,10 @@ def _load_and_transform(
     return y  # shape: (2, samples)
 
 
+# Alias used by _render_segment
+_load_and_transform_stem = _load_and_transform
+
+
 def _load_stereo(stem_path: str, target_sr: int = 44100) -> np.ndarray:
     """Load a stem preserving stereo. Returns (2, samples)."""
     y, _ = librosa.load(stem_path, sr=target_sr, mono=False)
@@ -77,6 +82,88 @@ def _pad_or_loop(y: np.ndarray, target_len: int) -> np.ndarray:
         return y[:, :target_len]
     reps = int(np.ceil(target_len / n_samples))
     return np.tile(y, (1, reps))[:, :target_len]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DSP HELPERS — EQ carving + sidechain ducking
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Per-stem EQ profile to prevent low-end mud and frequency masking.
+# (highpass_hz, lowpass_hz) — None means no filter on that side.
+_STEM_EQ: dict[str, tuple[float | None, float | None]] = {
+    # Track A is reference — don't filter A stems
+    # B stems get carved to leave room for A
+    "B/drums":  (45.0,  None),    # keep kick/snare body, kill rumble
+    "B/bass":   (35.0,  120.0),   # narrow lows; A bass takes precedence anyway
+    "B/guitar": (180.0, 8000.0),  # carve out vocal range overlap
+    "B/piano":  (150.0, 8000.0),  # carve out vocal range overlap
+    "B/other":  (220.0, 9000.0),  # "other" often has residual vocals — push it back
+    "B/vocals": (180.0, 8000.0),  # if B vocals are used, sit them above A's body
+}
+
+
+def _butter_filter(y: np.ndarray, sr: int, cutoff: float, btype: str, order: int = 4) -> np.ndarray:
+    """Apply a Butterworth filter to a stereo signal (2, samples)."""
+    sos = butter(order, cutoff, btype=btype, fs=sr, output="sos")
+    return np.stack([sosfilt(sos, y[0]), sosfilt(sos, y[1])]).astype(np.float32)
+
+
+def _apply_stem_eq(y: np.ndarray, stem_key: str, sr: int) -> np.ndarray:
+    """Apply HP/LP carving for a given stem key (e.g. 'B/drums')."""
+    profile = _STEM_EQ.get(stem_key)
+    if profile is None:
+        return y
+    hp, lp = profile
+    if hp is not None:
+        y = _butter_filter(y, sr, hp, "highpass")
+    if lp is not None:
+        y = _butter_filter(y, sr, lp, "lowpass")
+    return y
+
+
+def _envelope_follower(
+    y: np.ndarray,
+    sr: int,
+    attack_ms: float = 5.0,
+    release_ms: float = 120.0,
+) -> np.ndarray:
+    """
+    Compute a stereo-summed envelope (mono) from a signal y of shape (2, samples).
+    Returns a 1D envelope array. Used as a sidechain source.
+    """
+    mono = np.mean(np.abs(y), axis=0).astype(np.float32)
+    a_atk = np.exp(-1.0 / (sr * attack_ms / 1000.0))
+    a_rel = np.exp(-1.0 / (sr * release_ms / 1000.0))
+    env = np.zeros_like(mono)
+    prev = 0.0
+    for i, v in enumerate(mono):
+        coef = a_atk if v > prev else a_rel
+        prev = coef * prev + (1.0 - coef) * v
+        env[i] = prev
+    return env
+
+
+def _apply_sidechain_duck(
+    target: np.ndarray,
+    sidechain_env: np.ndarray,
+    depth: float = 0.55,
+    threshold: float = 0.05,
+) -> np.ndarray:
+    """
+    Duck `target` (2, samples) using `sidechain_env` (1D).
+    `depth` = max gain reduction (0.55 ≈ -5 dB at peak).
+    Smooth gain curve; below threshold no ducking.
+    """
+    n = min(target.shape[1], sidechain_env.shape[0])
+    env = sidechain_env[:n]
+    norm = env / (np.max(env) + 1e-9)
+    # Map normalized env [0..1] → gain [1.0 .. 1-depth], soft-knee
+    knee = np.clip((norm - threshold) / (1.0 - threshold + 1e-9), 0.0, 1.0)
+    gain = 1.0 - depth * knee
+    out = target[:, :n] * gain[np.newaxis, :]
+    if target.shape[1] > n:
+        out = np.concatenate([out, target[:, n:]], axis=1)
+    return out.astype(np.float32)
 
 
 def compose_mashup(
@@ -101,12 +188,15 @@ def compose_mashup(
     if progress_cb: progress_cb(5)
 
     # ── Load Track A stems (no transform — A is reference) ─────
-    layers: list[np.ndarray] = []
+    layers: list[tuple[str, np.ndarray]] = []  # (stem_key, audio)
+    a_vocals_audio: np.ndarray | None = None
 
     for stem_name in ("vocals", "bass"):
         if stem_name in stems_a:
             y = _load_stereo(stems_a[stem_name], target_sr)
-            layers.append(y)
+            layers.append((f"A/{stem_name}", y))
+            if stem_name == "vocals":
+                a_vocals_audio = y
             logger.debug(f"Loaded A/{stem_name}: {y.shape}")
 
     if progress_cb: progress_cb(25)
@@ -115,7 +205,7 @@ def compose_mashup(
     for stem_name in ("drums", "guitar", "piano", "other"):
         if stem_name in stems_b:
             y = _load_and_transform(stems_b[stem_name], tempo_ratio, pitch_shift, target_sr)
-            layers.append(y)
+            layers.append((f"B/{stem_name}", y))
             logger.debug(f"Loaded+transformed B/{stem_name}: {y.shape}")
 
     if progress_cb: progress_cb(65)
@@ -124,12 +214,30 @@ def compose_mashup(
         raise ValueError("No audio stems available to compose")
 
     # ── Determine target length: use longest layer, loop shorter ones ──
-    max_len = max(l.shape[1] for l in layers)
-    layers  = [_pad_or_loop(l, max_len) for l in layers]
+    max_len = max(l[1].shape[1] for l in layers)
+    layers  = [(k, _pad_or_loop(y, max_len)) for k, y in layers]
+
+    # ── Apply per-stem EQ carving (B stems get HP/LP to make space for A) ─
+    layers = [(k, _apply_stem_eq(y, k, target_sr)) for k, y in layers]
+
+    # ── Sidechain duck: B layers ducked by A vocal envelope ──
+    if a_vocals_audio is not None:
+        a_vocals_padded = _pad_or_loop(a_vocals_audio, max_len)
+        sidechain_env = _envelope_follower(a_vocals_padded, target_sr,
+                                           attack_ms=4.0, release_ms=140.0)
+        ducked: list[tuple[str, np.ndarray]] = []
+        for k, y in layers:
+            if k.startswith("B/"):
+                # Drums duck less (groove); other/piano/guitar duck more
+                depth = 0.30 if k == "B/drums" else 0.50
+                y = _apply_sidechain_duck(y, sidechain_env, depth=depth, threshold=0.08)
+            ducked.append((k, y))
+        layers = ducked
+        logger.debug("Applied sidechain ducking (A vocals → B layers)")
 
     # ── Sum stereo layers and normalize ────────────────────────
     mixed = np.zeros((2, max_len), dtype=np.float32)
-    for layer in layers:
+    for _, layer in layers:
         mixed += layer.astype(np.float32)
 
     # Peak normalize to -1 dBFS per channel
@@ -238,7 +346,8 @@ def _render_segment(
     if seg_samples <= 0:
         return
 
-    layers: list[np.ndarray] = []
+    layers: list[tuple[str, np.ndarray]] = []  # (stem_key, audio)
+    a_vocals_layer: np.ndarray | None = None
 
     for layer_def, stem_dict in [(seg.layer_a, stems_a), (seg.layer_b, stems_b)]:
         if layer_def is None:
@@ -266,17 +375,37 @@ def _render_segment(
             # Loop / pad to segment length
             y = _pad_or_loop(y, seg_samples)
 
+            stem_key = f"{layer_def.track}/{stem_name}"
+
+            # Apply EQ carving (no-op for A stems)
+            y = _apply_stem_eq(y, stem_key, target_sr)
+
             # Apply gain
             y = y * layer_def.gain
 
-            layers.append(y)
+            if stem_key == "A/vocals":
+                a_vocals_layer = y
+
+            layers.append((stem_key, y))
 
     if not layers:
         return
 
+    # ── Sidechain duck B layers under A vocals ──
+    if a_vocals_layer is not None:
+        env = _envelope_follower(a_vocals_layer, target_sr,
+                                 attack_ms=4.0, release_ms=140.0)
+        ducked: list[tuple[str, np.ndarray]] = []
+        for k, y in layers:
+            if k.startswith("B/"):
+                depth = 0.30 if k == "B/drums" else 0.50
+                y = _apply_sidechain_duck(y, env, depth=depth, threshold=0.08)
+            ducked.append((k, y))
+        layers = ducked
+
     # Sum layers
     mixed = np.zeros((2, seg_samples), dtype=np.float32)
-    for layer in layers:
+    for _, layer in layers:
         mixed += layer.astype(np.float32)
 
     # Apply fade envelopes
@@ -339,6 +468,7 @@ def run_full_composer_engine(
     output_path: str,
     progress_cb: Optional[Callable[[int], None]] = None,
     target_sr: int = 44100,
+    **director_overrides,  # vocal_mix_ratio, energy_curve, transition_density, etc.
 ) -> dict:
     """
     End-to-end intelligent mashup composition:
