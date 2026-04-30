@@ -73,7 +73,7 @@ def get_signed_download_url(storage_path: str, expires_in: int = 3600, bucket: s
         raise ValueError(f"Supabase did not return a signed URL: {data}")
     # Supabase returns a relative path — make it absolute
     if signed_url.startswith("/"):
-        signed_url = f"{_settings.supabase_url}{signed_url}"
+        signed_url = f"{_settings.supabase_url}/storage/v1{signed_url}"
     return signed_url
 
 
