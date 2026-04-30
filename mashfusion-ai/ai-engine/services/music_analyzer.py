@@ -88,7 +88,8 @@ def analyze_track(audio_path: str) -> dict:
 
     # BPM + beats
     tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
-    bpm = float(np.round(tempo, 2))
+    tempo_scalar = float(np.asarray(tempo).flatten()[0]) if np.asarray(tempo).size else 0.0
+    bpm = round(tempo_scalar, 2)
 
     # Confidence from beat strength consistency
     onset_env = librosa.onset.onset_strength(y=y, sr=sr)
