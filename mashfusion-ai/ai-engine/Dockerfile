@@ -27,4 +27,4 @@ ENV PYTHONDONTWRITEBYTECODE=1
 COPY . .
 
 # Default: run FastAPI app
-CMD exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8001} --workers 1
+CMD exec uvicorn real_server:app --host 0.0.0.0 --port ${PORT:-8001} --workers 1
