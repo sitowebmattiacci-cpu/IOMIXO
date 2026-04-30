@@ -25,6 +25,7 @@ _PRESETS_DIR = os.path.join(os.path.dirname(__file__), "presets")
 _VALID_PRESET_IDS = {
     "festival_edm",
     "house_club",
+    "afro_house",
     "deep_emotional",
     "radio_pop",
     "chill_electronic",

@@ -1,0 +1,100 @@
+{
+  "id": "afro_house",
+  "display_name": "Afro House",
+  "description": "Deep rolling bassline, organic percussion, wide spacious mix, emotional pads — Black Coffee / Keinemusik feel",
+  "energy_profile": "groovy",
+  "target_lufs": -10.5,
+  "limiter_ceiling_db": -0.7,
+
+  "eq": {
+    "sub_bass_shelf_hz": 50,
+    "sub_bass_gain_db": 2.5,
+    "bass_shelf_hz": 90,
+    "bass_gain_db": 3.5,
+    "low_mid_cut_hz": 320,
+    "low_mid_cut_db": -1.5,
+    "presence_boost_hz": 2800,
+    "presence_gain_db": 1.2,
+    "air_shelf_hz": 12000,
+    "air_gain_db": 2.0,
+    "high_cut_hz": 18500
+  },
+
+  "compression": {
+    "threshold_db": -19.0,
+    "ratio": 2.8,
+    "attack_ms": 12.0,
+    "release_ms": 140.0,
+    "knee_db": 6.0,
+    "makeup_gain_db": 3.0
+  },
+
+  "multiband": {
+    "low_band_hz": [20, 180],
+    "low_band_ratio": 3.0,
+    "low_band_threshold_db": -18.0,
+    "mid_band_hz": [180, 4500],
+    "mid_band_ratio": 1.8,
+    "mid_band_threshold_db": -22.0,
+    "high_band_hz": [4500, 20000],
+    "high_band_ratio": 1.4,
+    "high_band_threshold_db": -20.0
+  },
+
+  "stereo": {
+    "width": 1.35,
+    "bass_mono_below_hz": 110,
+    "mid_side_balance": 0.0
+  },
+
+  "saturation": {
+    "drive": 0.09,
+    "mode": "tape",
+    "harmonics": "even"
+  },
+
+  "reverb": {
+    "size": 0.45,
+    "wet_db": -14.0,
+    "decay_s": 2.0,
+    "pre_delay_ms": 18.0,
+    "high_cut_hz": 6000,
+    "low_cut_hz": 220
+  },
+
+  "sidechain": {
+    "enabled": true,
+    "kick_rate_bpm_sync": "1/4",
+    "depth": 0.42,
+    "attack_ms": 5.0,
+    "release_ms": 130.0,
+    "target_stems": ["bass", "other"]
+  },
+
+  "layers": {
+    "kick_boost": true,
+    "snare_roll_before_drops": false,
+    "riser_before_drops": false,
+    "impact_at_drops": false,
+    "white_noise_sweep": false,
+    "pad_layer": true,
+    "bass_layer": "groove_pump",
+    "uplifter": false,
+    "downlifter": false,
+    "reverse_cymbal": false
+  },
+
+  "arrangement_rules": {
+    "silence_before_drop_ms": 0,
+    "pre_drop_energy_cut_db": -1.0,
+    "drop_impact_boost_db": 0.5,
+    "breakdown_thin_db": -3.0,
+    "chorus_reinforcement_db": 0.8
+  },
+
+  "transient": {
+    "attack_shape": "groove",
+    "attack_ms": 4.0,
+    "sustain_db": 0.5
+  }
+}

@@ -20,6 +20,7 @@ export type RemixStyle =
   | 'none'
   | 'edm_festival'
   | 'house_club'
+  | 'afro_house'
   | 'deep_emotional'
   | 'pop_radio'
   | 'cinematic'
@@ -278,6 +279,7 @@ export const REMIX_STYLE_LABELS: Record<RemixStyle, { label: string; description
   none:          { label: 'Original Style', description: 'Preserve both songs original sonic character', icon: '🎵' },
   edm_festival:  { label: 'EDM Festival',   description: 'Big room drops, festival energy, supersaw leads', icon: '⚡' },
   house_club:    { label: 'House Club',      description: 'Deep 4/4 groove, punchy kick, club-ready mix', icon: '🏠' },
+  afro_house:    { label: 'Afro House',      description: 'Rolling bassline, organic percussion, wide spacious mix — Black Coffee feel', icon: '🥁' },
   deep_emotional:{ label: 'Deep Emotional',  description: 'Atmospheric pads, cinematic tension, emotional build', icon: '🌊' },
   pop_radio:     { label: 'Pop Radio',       description: 'Radio-ready compression, polished production', icon: '📻' },
   cinematic:     { label: 'Cinematic',       description: 'Orchestral elements, epic transitions, film score feel', icon: '🎬' },
