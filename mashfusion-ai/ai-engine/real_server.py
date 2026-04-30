@@ -333,7 +333,11 @@ def run_pipeline(payload: dict):
         # WAV for pro/studio only
         _render_wav = user_plan in ("pro", "studio") or output_quality == "professional"
         if _render_wav:
-            upload_to_s3(str(mastered_path), wav_s3_key, content_type="audio/wav")
+            try:
+                upload_to_s3(str(mastered_path), wav_s3_key, content_type="audio/wav")
+            except Exception as e:
+                logger.warning(f"WAV upload failed (likely size-cap), continuing with MP3 only: {e}")
+                wav_s3_key = None
         else:
             wav_s3_key = None
 
