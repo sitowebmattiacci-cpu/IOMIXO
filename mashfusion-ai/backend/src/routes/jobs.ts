@@ -15,7 +15,7 @@ jobsRouter.use(requireAuth)
 
 const startRemixSchema = z.object({
   project_id:     z.string().uuid(),
-  remix_style:    z.enum(['none','edm_festival','house_club','deep_emotional','pop_radio','cinematic','chill_sunset']),
+  remix_style:    z.enum(['none','edm_festival','house_club','afro_house','deep_emotional','pop_radio','cinematic','chill_sunset']),
   output_quality: z.enum(['standard','hd','professional']),
   remix_prompt:   z.string().max(500).optional(),
 })
