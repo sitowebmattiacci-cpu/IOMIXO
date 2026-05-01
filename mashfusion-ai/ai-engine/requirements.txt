@@ -10,6 +10,7 @@ loguru>=0.7.2
 
 # Audio processing
 demucs>=4.0.1
+torchcodec>=0.1.0
 librosa>=0.10.2
 pydub>=0.25.1
 scipy>=1.13.0
