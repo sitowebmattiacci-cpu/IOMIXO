@@ -2,7 +2,7 @@ import { Router, Request } from 'express'
 import { supabaseAdmin } from '../config/supabase'
 import { requireAuth } from '../middleware/auth'
 import { AppError } from '../middleware/errorHandler'
-import { getUserPlan } from '../services/plan'
+import { getUserPlan, hasWeddingAccess } from '../services/plan'
 import { PLAN_LIMITS } from '../config/plans'
 
 export const liveGamesRouter = Router()
