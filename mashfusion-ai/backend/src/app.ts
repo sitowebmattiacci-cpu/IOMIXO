@@ -10,6 +10,19 @@ import { userRouter }     from './routes/user'
 import { stripeRouter }   from './routes/stripe'
 import { internalRouter } from './routes/internal'
 import { projectsRouter } from './routes/projects'
+import { soundbankRouter, samplesRouter } from './routes/soundbank'
+import { adminRouter } from './routes/admin'
+import { aiRouter } from './routes/ai'
+import { liveSessionsRouter } from './routes/liveSessions'
+import { livePublicRouter }   from './routes/livePublic'
+import { liveDedicationsRouter } from './routes/liveDedications'
+import { liveGamesRouter }       from './routes/liveGames'
+import { livePollsRouter }       from './routes/livePolls'
+import { livePhotosRouter }      from './routes/livePhotos'
+import { liveScreenRouter }      from './routes/liveScreen'
+import { weddingGamesRouter }    from './routes/weddingGames'
+import { djProfileRouter }    from './routes/djProfile'
+import { djEventsRouter }     from './routes/djEvents'
 
 import { errorHandler, notFound } from './middleware/errorHandler'
 import { apiRateLimit }           from './middleware/rateLimit'
@@ -59,6 +72,25 @@ app.use('/user',     userRouter)
 app.use('/stripe',   stripeRouter)
 app.use('/internal', internalRouter)     // AI engine webhooks (internal only)
 app.use('/projects', projectsRouter)
+app.use('/soundbank', soundbankRouter)
+app.use('/samples',   samplesRouter)
+app.use('/admin',     adminRouter)
+app.use('/api/ai',    aiRouter)
+app.use('/ai',        aiRouter)  // backward-compatible alias
+
+// ── IOMIXO Live Hub ────────────────────────────────────────────
+app.use('/api/live',        liveSessionsRouter)   // /sessions/*, /requests/*
+app.use('/api/live/public', livePublicRouter)
+// Wedding Edition routers — each owns a distinct path prefix to avoid Express
+// route-precedence collisions with the legacy live routers above.
+app.use('/api/live',        liveDedicationsRouter) // /public/:slug/dedications, /sessions/:id/dedications, /dedications/:id
+app.use('/api/live',        liveGamesRouter)       // /sessions/:id/games/*, /public/:slug/games
+app.use('/api/live',        livePollsRouter)       // /sessions/:id/polls, /polls/:id, /public/:slug/polls/*
+app.use('/api/live',        livePhotosRouter)      // /sessions/:id/photos, /photos/:id, /public/:slug/photos*
+app.use('/api/live',        liveScreenRouter)      // /public/:slug/screen
+app.use('/api/live',        weddingGamesRouter)    // Future Messages + Best Photo Contest
+app.use('/api/dj/profile',  djProfileRouter)
+app.use('/api/dj/events',   djEventsRouter)
 
 // ── Error handling ─────────────────────────────────────────────
 app.use(notFound)

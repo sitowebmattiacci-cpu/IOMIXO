@@ -2,11 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap');
 
 :root {
-  --font-inter: 'Inter', sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-inter: 'Space Grotesk', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', monospace;
+
+  --daw-bg-0: #1f2227;
+  --daw-bg-1: #252830;
+  --daw-bg-2: #2b2e35;
+  --daw-panel-top: #2f333b;
+  --daw-panel-mid: #262a31;
+  --daw-panel-bot: #1d2026;
+  --daw-border: rgba(255, 255, 255, 0.08);
+  --daw-border-strong: rgba(255, 255, 255, 0.16);
+  --daw-shadow: rgba(0, 0, 0, 0.65);
+  --daw-glow: rgba(120, 255, 170, 0.35);
+  --daw-text-dim: rgba(255, 255, 255, 0.45);
+  --daw-text-soft: rgba(255, 255, 255, 0.7);
 }
 
 * {
@@ -18,7 +31,10 @@ html {
 }
 
 body {
-  background: #05050a;
+  background:
+    radial-gradient(1000px 600px at 20% -10%, rgba(120, 130, 160, 0.18), transparent 60%),
+    radial-gradient(900px 700px at 120% -20%, rgba(80, 120, 130, 0.2), transparent 55%),
+    linear-gradient(180deg, #1a1d22 0%, #12141a 100%);
   color: #f0f0f5;
   font-family: var(--font-inter);
   -webkit-font-smoothing: antialiased;
@@ -28,12 +44,194 @@ body {
 
 /* ── Scrollbar ───────────────────────────────── */
 ::-webkit-scrollbar       { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
-::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.5); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(124,58,237,0.8); }
+::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); }
+::-webkit-scrollbar-thumb { background: rgba(140,150,170,0.45); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(170,190,210,0.65); }
 
 /* ── Selection ───────────────────────────────── */
-::selection { background: rgba(124,58,237,0.4); color: #fff; }
+::selection { background: rgba(80, 180, 180, 0.35); color: #fff; }
+
+/* ── DAW shell + panels ─────────────────────── */
+.daw-shell {
+  background: linear-gradient(180deg, #20242a 0%, #15181e 100%);
+}
+
+.daw-panel {
+  background: linear-gradient(180deg, var(--daw-panel-top) 0%, var(--daw-panel-mid) 48%, var(--daw-panel-bot) 100%);
+  border: 1px solid var(--daw-border);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.6);
+}
+
+.daw-panel-header {
+  background: linear-gradient(180deg, #3a3f47 0%, #2b2f36 100%);
+  border-bottom: 1px solid rgba(0,0,0,0.5);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.daw-panel-inset {
+  background: linear-gradient(180deg, #1c1f25 0%, #14171c 100%);
+  border: 1px solid rgba(0,0,0,0.55);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.daw-divider {
+  border-color: rgba(255,255,255,0.08);
+}
+
+/* ── Hardware buttons ───────────────────────── */
+.btn-primary {
+  @apply relative inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md font-semibold text-sm text-white overflow-hidden;
+  background: linear-gradient(180deg, #3b3f46 0%, #2a2e35 100%);
+  border: 1px solid rgba(0,0,0,0.6);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.22);
+  transition: all 0.2s ease;
+}
+.btn-primary:hover {
+  box-shadow: 0 8px 18px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.btn-primary:active {
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.7);
+  transform: translateY(1px);
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md font-semibold text-sm;
+  background: linear-gradient(180deg, #2b2f36 0%, #1f232a 100%);
+  border: 1px solid rgba(0,0,0,0.6);
+  color: rgba(255,255,255,0.8);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+  transition: all 0.2s ease;
+}
+.btn-secondary:hover {
+  color: #fff;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.7);
+  transition: all 0.2s ease;
+}
+.btn-ghost:hover {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.9);
+}
+
+.btn-led {
+  background: linear-gradient(180deg, #2c3138 0%, #20242a 100%);
+  border: 1px solid rgba(0,0,0,0.6);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+}
+.btn-led.on {
+  background: linear-gradient(180deg, #2d4634 0%, #1b2a20 100%);
+  border-color: rgba(16,185,129,0.55);
+  box-shadow: 0 0 10px rgba(16,185,129,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+  color: #c7f9d8;
+}
+
+/* ── Knob primitives ────────────────────────── */
+.knob {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 64px;
+}
+.knob.sm { width: 52px; }
+.knob-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--daw-text-dim);
+  font-family: var(--font-mono);
+}
+.knob-body {
+  position: relative;
+  width: 52px;
+  height: 52px;
+}
+.knob.sm .knob-body { width: 42px; height: 42px; }
+.knob-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: conic-gradient(var(--knob-color) var(--knob-angle), rgba(255,255,255,0.12) 0deg);
+  border: 1px solid rgba(0,0,0,0.6);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -2px 6px rgba(0,0,0,0.6);
+}
+.knob-core {
+  position: absolute;
+  inset: 6px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12), rgba(0,0,0,0.35));
+  border: 1px solid rgba(0,0,0,0.6);
+}
+.knob.sm .knob-core { inset: 5px; }
+.knob-indicator {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--knob-color);
+  transform-origin: 50% 90%;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--knob-color) 80%, transparent);
+}
+.knob-value {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--daw-text-soft);
+}
+
+/* ── Range sliders (metallic) ────────────────── */
+.daw-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(0,0,0,0.4));
+  border: 1px solid rgba(0,0,0,0.6);
+}
+.daw-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #cfd3da, #8c939f);
+  border: 1px solid rgba(0,0,0,0.6);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 3px 6px rgba(0,0,0,0.4);
+}
+.daw-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #cfd3da, #8c939f);
+  border: 1px solid rgba(0,0,0,0.6);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 3px 6px rgba(0,0,0,0.4);
+}
+
+/* ── Clip styling ────────────────────────────── */
+.clip-block {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--clip-color) 40%, #1d2026), #13161b 85%);
+  border: 1px solid color-mix(in srgb, var(--clip-color) 70%, rgba(255,255,255,0.2));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 6px rgba(0,0,0,0.6), 0 6px 14px rgba(0,0,0,0.5);
+}
+.clip-block.clip-selected {
+  box-shadow: inset 0 0 0 1px rgba(34,211,238,0.8), 0 0 16px rgba(34,211,238,0.4);
+  border-color: rgba(34,211,238,0.8);
+}
+
+/* ── Analyzer sweep ─────────────────────────── */
+@keyframes analyzerSweep {
+  0% { transform: translateX(-60%); opacity: 0; }
+  40% { opacity: 0.35; }
+  100% { transform: translateX(60%); opacity: 0; }
+}
+.analyzer-sweep {
+  animation: analyzerSweep 4.5s linear infinite;
+}
 
 /* ── Glass card base ─────────────────────────── */
 .glass {
@@ -175,4 +373,87 @@ body {
 /* ── Wavesurfer overrides ────────────────────── */
 .wavesurfer-container wave {
   overflow: hidden !important;
+}
+
+/* ── Workstation drag-mode ─────────────────────
+   When a clip is being dragged or resized we set
+   .iomixo-dragging on <body> so the whole timeline
+   can suppress expensive incidental work for the
+   duration of the gesture: hover transitions on
+   neighbouring clips, cursor recomputes, and
+   waveform redraws on the resizing clip itself
+   (the canvas is hidden via [data-resizing] until
+   the gesture commits to the store on pointerup).
+   This keeps drag/resize at a flat 60fps even with
+   many clips on screen. */
+body.iomixo-dragging[data-drag-mode="move"],
+body.iomixo-dragging[data-drag-mode="move"] * {
+  cursor: grabbing !important;
+}
+body.iomixo-dragging[data-drag-mode="copy"],
+body.iomixo-dragging[data-drag-mode="copy"] * {
+  cursor: copy !important;
+}
+body.iomixo-dragging[data-drag-mode="resize"],
+body.iomixo-dragging[data-drag-mode="resize"] * {
+  cursor: ew-resize !important;
+}
+body.iomixo-dragging .clip-block {
+  transition: none !important;
+}
+/* Waveform is intentionally kept visible during resize so the user can
+   make precise cuts. Canvas does NOT redraw during resize (style.left/width
+   are mutated directly — no React prop changes fire). */
+.clip-block[data-resizing="true"] .clip-waveform {
+  opacity: 0.7;
+}
+
+/* ── FxKnob vertical sliders (Sound Designer) ──────────────── */
+.fx-knob-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 6px;
+  height: 48px;
+  background: transparent;
+  outline: none;
+  cursor: ns-resize;
+}
+.fx-knob-slider::-webkit-slider-runnable-track {
+  width: 6px;
+  height: 48px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+  border-radius: 4px;
+}
+.fx-knob-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 8px;
+  margin-left: -5px;
+  border-radius: 5px;
+  background: var(--knob-colour, #a855f7);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 0 8px var(--knob-colour, #a855f7);
+  cursor: ns-resize;
+  transition: box-shadow 0.1s;
+}
+.fx-knob-slider:hover::-webkit-slider-thumb,
+.fx-knob-slider:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 10px var(--knob-colour, #a855f7), 0 0 2px rgba(255,255,255,0.5);
+}
+.fx-knob-slider::-moz-range-track {
+  width: 6px;
+  height: 48px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+  border-radius: 4px;
+}
+.fx-knob-slider::-moz-range-thumb {
+  width: 16px;
+  height: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 5px;
+  background: var(--knob-colour, #a855f7);
+  box-shadow: 0 0 8px var(--knob-colour, #a855f7);
+  cursor: ns-resize;
 }

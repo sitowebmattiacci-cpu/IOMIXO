@@ -2,9 +2,10 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Sparkles, Mail, Lock, User, Eye, EyeOff, ArrowRight, CheckCircle2, Send } from 'lucide-react'
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, CheckCircle2, Send } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
+import { Logo } from '@/components/Logo'
 import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
@@ -117,9 +118,7 @@ export default function RegisterPage() {
           {/* Left – value prop */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="hidden md:block">
             <div className="flex items-center gap-2 mb-8">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
+              <Logo size={40} />
               <span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">AI</span></span>
             </div>
             <h1 className="text-4xl font-black text-white leading-tight mb-4">
@@ -143,9 +142,7 @@ export default function RegisterPage() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <div className="text-center mb-6 md:hidden">
               <Link href="/" className="inline-flex items-center gap-2">
-                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-                  <Sparkles className="h-4 w-4 text-white" />
-                </div>
+                <Logo size={36} />
                 <span className="font-black text-white">IOMIXO</span>
               </Link>
             </div>

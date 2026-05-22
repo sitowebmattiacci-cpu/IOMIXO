@@ -1,0 +1,120 @@
+{
+  "common": {
+    "save": "Salva",
+    "cancel": "Annulla",
+    "delete": "Elimina",
+    "approve": "Approva",
+    "reject": "Rifiuta",
+    "loading": "Caricamento…",
+    "back": "Indietro",
+    "submit": "Invia",
+    "send": "Invia",
+    "close": "Chiudi",
+    "open": "Apri",
+    "active": "Attiva",
+    "inactive": "Chiusa",
+    "pending": "In attesa",
+    "approved": "Approvata",
+    "rejected": "Rifiutata",
+    "upgrade": "Passa a Pro Plus Wedding Edition",
+    "weddingPaywall": "Questa modalità è disponibile con Pro Plus Wedding Edition.",
+    "errorGeneric": "Si è verificato un errore."
+  },
+  "brand": {
+    "name": "IOMIXO",
+    "hubName": "IOMIXO Live Hub",
+    "tagline": "IOMIXO Live Hub: la regia interattiva per DJ, eventi e matrimoni.",
+    "claim": "Il DJ comanda. Il pubblico interagisce.",
+    "subtitle": "Crea una sessione live con QR Code, ricevi richieste musicali, raccogli dediche, attiva giochi e trasforma ogni serata in un'esperienza partecipativa.",
+    "audiences": "Cena spettacolo · Feste private · Compleanni · Matrimoni · Eventi aziendali · Club · Locali"
+  },
+  "plans": {
+    "free": "Free",
+    "pro": "Pro",
+    "wedding": "Pro Plus Wedding",
+    "weddingFull": "Pro Plus Wedding Edition",
+    "perMonth": "/mese",
+    "freeDesc": "1 sessione live attiva, max 30 richieste per sessione, QR Code base, branding IOMIXO.",
+    "proDesc": "Sessioni e richieste illimitate, approva/rifiuta, social pubblici, prossime date, presenze online, branding ridotto.",
+    "weddingDesc": "Tutto Pro + modalità matrimonio: dediche, roulette, sondaggi, album foto invitati, schermo live, branding personalizzabile."
+  },
+  "sessions": {
+    "title": "Sessioni Live",
+    "subtitle": "Crea, gestisci e chiudi le tue serate.",
+    "new": "Nuova sessione",
+    "createFirst": "Crea la prima",
+    "noneYet": "Nessuna sessione ancora.",
+    "type": "Tipo sessione",
+    "typeStandard": "Standard",
+    "typeWedding": "Pro Plus Wedding",
+    "eventName": "Nome evento *",
+    "djName": "Il tuo nome DJ (opzionale)",
+    "description": "Descrizione (opzionale)",
+    "coupleNames": "Nomi degli sposi (opzionale)",
+    "weddingDate": "Data del matrimonio (opzionale)",
+    "venueName": "Location (opzionale)",
+    "screenModeEnabled": "Abilita schermo live (TV/proiettore)",
+    "create": "Crea sessione",
+    "created": "Sessione creata",
+    "active": "Attiva",
+    "closed": "Chiusa"
+  },
+  "wedding": {
+    "regia": "Regia Wedding",
+    "tabRequests": "Richieste",
+    "tabDedications": "Dediche",
+    "tabGames": "Giochi",
+    "tabPhotos": "Foto",
+    "dedications": {
+      "publicTitle": "Lascia una dedica agli sposi",
+      "guestName": "Il tuo nome (opzionale)",
+      "message": "Messaggio",
+      "submitted": "La tua dedica è stata inviata.",
+      "send": "Invia dedica",
+      "empty": "Nessuna dedica ancora."
+    },
+    "roulette": {
+      "title": "Roulette Matrimonio",
+      "start": "Avvia roulette",
+      "spin": "Gira",
+      "reset": "Reset",
+      "running": "Pronta a girare…",
+      "idle": "In attesa",
+      "result": "Risultato"
+    },
+    "polls": {
+      "title": "Sondaggio Live",
+      "newPoll": "Nuovo sondaggio",
+      "question": "Domanda",
+      "addOption": "Aggiungi opzione",
+      "vote": "Vota",
+      "voted": "Voto registrato",
+      "closed": "Sondaggio chiuso",
+      "close": "Chiudi sondaggio"
+    },
+    "photos": {
+      "publicTitle": "Carica una foto per gli sposi",
+      "guestName": "Il tuo nome (opzionale)",
+      "caption": "Didascalia (opzionale)",
+      "choose": "Invia foto",
+      "submitted": "Foto inviata. Il DJ/staff potrà approvarla prima di mostrarla.",
+      "empty": "Nessuna foto ancora.",
+      "limits": "JPEG/PNG/WEBP — max 8 MB"
+    },
+    "screen": {
+      "title": "Schermo live",
+      "rouletteResult": "Roulette Matrimonio",
+      "activePoll": "Sondaggio attivo",
+      "recentDedications": "Ultime dediche",
+      "recentPhotos": "Ultime foto"
+    }
+  },
+  "live": {
+    "title": "Richieste live",
+    "trackTitle": "Titolo brano",
+    "artist": "Artista (opzionale)",
+    "messageForDj": "Messaggio per il DJ (opzionale)",
+    "submitRequest": "Invia richiesta",
+    "endedSession": "Questa sessione è terminata."
+  }
+}

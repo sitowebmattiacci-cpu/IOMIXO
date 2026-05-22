@@ -23,15 +23,19 @@ class MusicAnalysisStage(Stage):
                         message="Analyzing Track A")
         ctx.analysis_a = analyze_track(str(ctx.track_a_path))
 
-        reporter.update(self.name, "running", 50, 28, "Analyzing audio",
-                        message="Analyzing Track B")
-        ctx.analysis_b = analyze_track(str(ctx.track_b_path))
+        if ctx.track_b_s3_key:
+            reporter.update(self.name, "running", 50, 28, "Analyzing audio",
+                            message="Analyzing Track B")
+            ctx.analysis_b = analyze_track(str(ctx.track_b_path))
 
         reporter.mark(self.name, "complete", 100)
         reporter.report("processing", 35, "Analysis complete",
                         analysis_a=ctx.analysis_a, analysis_b=ctx.analysis_b)
+        b_summary = (
+            f"B: {ctx.analysis_b.get('bpm')} BPM {ctx.analysis_b.get('key')}"
+            if ctx.analysis_b else "B: skipped (remix mode)"
+        )
         logger.info(
             f"[{ctx.job_id}] Stage 2 done. "
-            f"A: {ctx.analysis_a.get('bpm')} BPM {ctx.analysis_a.get('key')} | "
-            f"B: {ctx.analysis_b.get('bpm')} BPM {ctx.analysis_b.get('key')}"
+            f"A: {ctx.analysis_a.get('bpm')} BPM {ctx.analysis_a.get('key')} | {b_summary}"
         )

@@ -1,0 +1,88 @@
+{
+  "common": {
+    "save": "Enregistrer", "cancel": "Annuler", "delete": "Supprimer",
+    "approve": "Approuver", "reject": "Rejeter", "loading": "Chargement…",
+    "back": "Retour", "submit": "Envoyer", "send": "Envoyer",
+    "close": "Fermer", "open": "Ouvrir",
+    "active": "Active", "inactive": "Fermée",
+    "pending": "En attente", "approved": "Approuvée", "rejected": "Rejetée",
+    "upgrade": "Passer à Pro Plus Wedding Edition",
+    "weddingPaywall": "Ce mode est disponible avec Pro Plus Wedding Edition.",
+    "errorGeneric": "Une erreur est survenue."
+  },
+  "brand": {
+    "name": "IOMIXO",
+    "hubName": "IOMIXO Live Hub",
+    "tagline": "IOMIXO Live Hub : la régie interactive pour DJs, événements et mariages.",
+    "claim": "Le DJ dirige. Le public interagit.",
+    "subtitle": "Lancez une session live avec un QR Code, recevez des demandes musicales, recueillez des dédicaces, activez des jeux et transformez chaque soirée en expérience partagée.",
+    "audiences": "Dîners spectacles · Soirées privées · Anniversaires · Mariages · Événements d'entreprise · Clubs · Lieux"
+  },
+  "plans": {
+    "free": "Free", "pro": "Pro", "wedding": "Pro Plus Wedding",
+    "weddingFull": "Pro Plus Wedding Edition",
+    "perMonth": "/mois",
+    "freeDesc": "1 session live active, jusqu'à 30 demandes par session, QR Code basique, branding IOMIXO.",
+    "proDesc": "Sessions et demandes illimitées, approuver/rejeter, réseaux publics, prochaines dates, présence en ligne, branding réduit.",
+    "weddingDesc": "Tout Pro + mode mariage : dédicaces, roulette, sondages, album photos invités, écran live, branding personnalisable."
+  },
+  "sessions": {
+    "title": "Sessions Live", "subtitle": "Créez, gérez et fermez vos soirées.",
+    "new": "Nouvelle session", "createFirst": "Créer la première",
+    "noneYet": "Pas encore de session.",
+    "type": "Type de session", "typeStandard": "Standard", "typeWedding": "Pro Plus Wedding",
+    "eventName": "Nom de l'événement *", "djName": "Votre nom de DJ (optionnel)",
+    "description": "Description (optionnelle)",
+    "coupleNames": "Noms des mariés (optionnel)",
+    "weddingDate": "Date du mariage (optionnel)",
+    "venueName": "Lieu (optionnel)",
+    "screenModeEnabled": "Activer l'écran live (TV/projecteur)",
+    "create": "Créer la session", "created": "Session créée",
+    "active": "Active", "closed": "Fermée"
+  },
+  "wedding": {
+    "regia": "Régie Wedding",
+    "tabRequests": "Demandes", "tabDedications": "Dédicaces",
+    "tabGames": "Jeux", "tabPhotos": "Photos",
+    "dedications": {
+      "publicTitle": "Laissez une dédicace aux mariés",
+      "guestName": "Votre nom (optionnel)", "message": "Message",
+      "submitted": "Votre dédicace a été envoyée.",
+      "send": "Envoyer la dédicace", "empty": "Pas encore de dédicaces."
+    },
+    "roulette": {
+      "title": "Roulette de mariage",
+      "start": "Lancer la roulette", "spin": "Tourner", "reset": "Réinitialiser",
+      "running": "Prête à tourner…", "idle": "En attente", "result": "Résultat"
+    },
+    "polls": {
+      "title": "Sondage live", "newPoll": "Nouveau sondage",
+      "question": "Question", "addOption": "Ajouter une option",
+      "vote": "Voter", "voted": "Vote enregistré",
+      "closed": "Sondage fermé", "close": "Fermer le sondage"
+    },
+    "photos": {
+      "publicTitle": "Envoyez une photo pour les mariés",
+      "guestName": "Votre nom (optionnel)",
+      "caption": "Légende (optionnelle)",
+      "choose": "Envoyer la photo",
+      "submitted": "Photo envoyée. Le DJ/staff devra l'approuver avant de l'afficher.",
+      "empty": "Pas encore de photos.",
+      "limits": "JPEG/PNG/WEBP — max 8 Mo"
+    },
+    "screen": {
+      "title": "Écran live",
+      "rouletteResult": "Roulette de mariage",
+      "activePoll": "Sondage actif",
+      "recentDedications": "Dernières dédicaces",
+      "recentPhotos": "Dernières photos"
+    }
+  },
+  "live": {
+    "title": "Demandes live",
+    "trackTitle": "Titre du morceau", "artist": "Artiste (optionnel)",
+    "messageForDj": "Message pour le DJ (optionnel)",
+    "submitRequest": "Envoyer la demande",
+    "endedSession": "Cette session est terminée."
+  }
+}

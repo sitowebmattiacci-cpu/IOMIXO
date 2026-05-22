@@ -17,16 +17,22 @@ class PipelineContext:
     # ── job request inputs ────────────────────────────────────────────────
     job_id: str
     track_a_s3_key: str
-    track_b_s3_key: str
+    track_b_s3_key: str | None = None  # None/empty when project_mode == 'remix'
+    project_id: str | None = None
+    user_id: str | None = None
     remix_style: str = "none"
     output_quality: str = "standard"
     user_plan: str = "free"
     pipeline_config: dict = field(default_factory=dict)
-    # Preview / Full split — drives stage gating and output shape.
-    mode: str = "full"                         # 'preview' | 'full'
-    preview_duration_sec: int = 30
+    # Retained for callsite compatibility but ignored by the orchestrator —
+    # there is only one upload-time pipeline (stem separation → analysis →
+    # harmonic matching → AI seed). Final audio is produced by user-driven
+    # renders via /render/arrangement, not here.
+    mode: str = "full"
+    # Product mode: 'mashup' = two tracks → AI seeds an arrangement with
+    # pre-placed clips. 'remix' = one track → stems only, empty timeline.
+    project_mode: str = "mashup"
     cached_analysis: dict | None = None
-    parent_job_id: str | None = None
 
     # ── filesystem ────────────────────────────────────────────────────────
     work_dir: Path | None = None
@@ -36,18 +42,14 @@ class PipelineContext:
     # ── stage outputs ─────────────────────────────────────────────────────
     stems_a: dict | None = None
     stems_b: dict | None = None
+    # Persisted stem storage keys (Supabase Storage, stems bucket).
+    # Shape: {stem_name: storage_key}, populated by StemSeparationStage when
+    # project_id is present. Consumed by AISeedStage and the workstation API.
+    stems_a_keys: dict[str, str] = field(default_factory=dict)
+    stems_b_keys: dict[str, str] = field(default_factory=dict)
     analysis_a: dict | None = None
     analysis_b: dict | None = None
     transform: dict | None = None
-
-    mashup_path: Path | None = None
-    composer_metadata: dict = field(default_factory=dict)
-
-    styled_path: Path | None = None
-    style_metadata: dict = field(default_factory=dict)
-
-    mastered_path: Path | None = None
-    mastering_meta: dict = field(default_factory=dict)
 
     output: dict = field(default_factory=dict)
 

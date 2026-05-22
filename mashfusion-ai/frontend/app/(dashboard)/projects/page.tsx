@@ -134,7 +134,7 @@ export default function ProjectsPage() {
                   )}
 
                   {jobId && (
-                    <Link href={`/studio/${jobId}`}>
+                    <Link href={`/studio/${project.id}`}>
                       <button className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors opacity-0 group-hover:opacity-100">
                         Open <ArrowRight className="h-3 w-3" />
                       </button>

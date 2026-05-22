@@ -16,8 +16,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Pre-download Demucs models into /models (baked into image)
-RUN python -c "import demucs.pretrained; demucs.pretrained.get_model('htdemucs_6s')" || true
+# Pre-download Demucs/MDX models into /models (baked into image)
+RUN python -c "import demucs.pretrained; demucs.pretrained.get_model('htdemucs_ft')" || true
+RUN python -c "import demucs.pretrained; demucs.pretrained.get_model('mdx_extra_q')" || true
 
 ENV MODELS_DIR=/models
 ENV TMP_DIR=/tmp/mashfusion

@@ -232,7 +232,7 @@ def render_clip(
     stems_b: dict,
     window: ClipWindow,
     work_dir: Path,
-) -> Path:
+) -> tuple[Path, dict]:
     """Render a single preview MP3 for one variant window.
 
     Strategy: render a slightly longer candidate around the rough source-pick
@@ -282,7 +282,19 @@ def render_clip(
     mp3_path = work_dir / f"preview_{window.variant.lower()}.mp3"
     sf.write(str(wav_path), snippet, sr)
     _encode_mp3(wav_path, mp3_path, bitrate="128k")
-    return mp3_path
+
+    # Translate selector pick back to absolute source-track timestamps so the
+    # full-mode SmartComposer can anchor on the same musical moment.
+    meta = {
+        "candidate_start_sec":  float(window.start_sec),
+        "candidate_end_sec":    float(window.start_sec + window.duration_sec),
+        "selector_start_a_sec": float(cand_start_a + best.start_sec),
+        "selector_end_a_sec":   float(cand_start_a + best.end_sec),
+        "selector_start_b_sec": float(cand_start_b + best.start_sec),
+        "selector_end_b_sec":   float(cand_start_b + best.end_sec),
+        "score":                float(best.score),
+    }
+    return mp3_path, meta
 
 
 def render_all_clips(
@@ -295,8 +307,8 @@ def render_all_clips(
     duration_b: float,
     preview_duration_sec: int,
     work_dir: Path,
-) -> list[tuple[ClipWindow, Path]]:
-    """Render all 3 variant clips and return [(window, mp3_path), …]."""
+) -> list[tuple[ClipWindow, Path, dict]]:
+    """Render all 3 variant clips and return [(window, mp3_path, meta), …]."""
     windows = select_hook_windows(
         analysis_a=analysis_a,
         analysis_b=analysis_b,
@@ -304,11 +316,11 @@ def render_all_clips(
         duration_b=duration_b,
         preview_duration_sec=preview_duration_sec,
     )
-    results: list[tuple[ClipWindow, Path]] = []
+    results: list[tuple[ClipWindow, Path, dict]] = []
     for w in windows:
         try:
-            path = render_clip(stems_a=stems_a, stems_b=stems_b, window=w, work_dir=work_dir)
-            results.append((w, path))
+            path, meta = render_clip(stems_a=stems_a, stems_b=stems_b, window=w, work_dir=work_dir)
+            results.append((w, path, meta))
         except Exception as exc:
             logger.warning(f"Preview clip {w.variant} render failed: {exc}")
     return results

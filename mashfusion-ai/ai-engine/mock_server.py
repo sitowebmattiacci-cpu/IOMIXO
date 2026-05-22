@@ -118,6 +118,12 @@ class JobRequest(BaseModel):
     output_quality: str = "preview"
 
 
+class GenerateSoundRequest(BaseModel):
+    prompt: str
+    bpm: float = 120.0
+    duration: float = 2.0
+
+
 @app.post("/api/v1/jobs/process", status_code=202)
 @app.post("/process", status_code=202)  # legacy alias
 def dispatch_job(
@@ -136,6 +142,21 @@ def dispatch_job(
     t.start()
 
     return {"queued": True, "job_id": body.job_id}
+
+
+@app.post("/ai-tools/generate-sound")
+def generate_sound(
+    body: GenerateSoundRequest,
+    x_internal_api_key: str | None = Header(default=None, alias="X-Internal-API-Key"),
+):
+    if x_internal_api_key != INTERNAL_KEY:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    # Mock response keeps contract stable while real model/synth is integrated.
+    return {
+        "audio_base64": "",
+        "audio_url": MOCK_PREVIEW_URL,
+        "duration": max(0.1, float(body.duration)),
+    }
 
 
 if __name__ == "__main__":

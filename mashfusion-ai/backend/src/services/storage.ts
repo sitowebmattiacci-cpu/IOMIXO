@@ -8,9 +8,13 @@ const supabase = createClient(
 )
 
 // Bucket names — must be created in Supabase dashboard
-const UPLOADS_BUCKET  = 'track-uploads'
-const OUTPUTS_BUCKET  = 'generated-outputs'
-const AVATARS_BUCKET  = 'avatars'
+const UPLOADS_BUCKET      = 'track-uploads'
+const OUTPUTS_BUCKET      = 'generated-outputs'
+const AVATARS_BUCKET      = 'avatars'
+export const STEMS_BUCKET        = 'stems'
+export const SOUNDBANK_BUCKET    = 'soundbank-samples'
+export const USER_SAMPLES_BUCKET = 'user_samples'
+export const WEDDING_PHOTOS_BUCKET = 'wedding-photos'
 
 /**
  * Generate a presigned upload URL so the client can PUT directly to Supabase Storage.
@@ -98,3 +102,81 @@ export async function deleteAvatar(avatarUrl: string): Promise<void> {
 
 // Legacy alias — keep callers in jobs.ts working
 export { createPresignedDownloadUrl as getSignedDownloadUrl }
+
+/**
+ * Generate a signed download URL against any bucket. Used by the remix
+ * workstation to expose stems, soundbank samples, and user samples for
+ * in-browser playback (Tone.js / WaveSurfer load via fetch).
+ */
+export async function createSignedUrlForBucket(
+  bucket:    string,
+  path:      string,
+  expiresIn: number = 3600
+): Promise<string> {
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn)
+  if (error || !data) throw new Error(`Storage signed url error (${bucket}): ${error?.message}`)
+  return data.signedUrl
+}
+
+/**
+ * Generate a presigned PUT URL for a user-supplied sample upload.
+ */
+export async function createUserSampleUploadUrl(userId: string, slug: string): Promise<{ path: string; url: string }> {
+  const path = `${userId}/${Date.now()}-${slug}`
+  const { data, error } = await supabase.storage
+    .from(USER_SAMPLES_BUCKET)
+    .createSignedUploadUrl(path)
+  if (error || !data) throw new Error(`User sample upload URL error: ${error?.message}`)
+  return { path, url: data.signedUrl }
+}
+
+/**
+ * Upload generated audio bytes directly into the user_samples bucket.
+ */
+export async function uploadUserSampleBuffer(
+  path: string,
+  fileBuffer: Buffer,
+  contentType: string,
+): Promise<void> {
+  const { error } = await supabase.storage
+    .from(USER_SAMPLES_BUCKET)
+    .upload(path, fileBuffer, { contentType, upsert: false, cacheControl: '31536000' })
+  if (error) throw new Error(`User sample upload error: ${error.message}`)
+}
+
+/**
+ * Generate a presigned PUT URL for an admin-driven soundbank sample upload.
+ * Files are organised by category so the bucket browser stays sane.
+ */
+export async function createSoundbankUploadUrl(category: string, slug: string): Promise<{ path: string; url: string }> {
+  const path = `${category}/${Date.now()}-${slug}`
+  const { data, error } = await supabase.storage
+    .from(SOUNDBANK_BUCKET)
+    .createSignedUploadUrl(path)
+  if (error || !data) throw new Error(`Soundbank upload URL error: ${error?.message}`)
+  return { path, url: data.signedUrl }
+}
+
+/** Presigned PUT URL for a guest photo upload (Wedding Edition). */
+export async function createWeddingPhotoUploadUrl(sessionId: string, ext: string): Promise<{ path: string; url: string }> {
+  const safeExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext.toLowerCase()) ? ext.toLowerCase() : 'jpg'
+  const path = `${sessionId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`
+  const { data, error } = await supabase.storage
+    .from(WEDDING_PHOTOS_BUCKET)
+    .createSignedUploadUrl(path)
+  if (error || !data) throw new Error(`Wedding photo upload URL error: ${error?.message}`)
+  return { path, url: data.signedUrl }
+}
+
+/** Signed download URL for a wedding photo (private bucket). */
+export async function createWeddingPhotoSignedUrl(path: string, expiresIn = 3600): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from(WEDDING_PHOTOS_BUCKET)
+    .createSignedUrl(path, expiresIn)
+  if (error || !data) throw new Error(`Wedding photo signed url error: ${error?.message}`)
+  return data.signedUrl
+}
+
+export async function deleteWeddingPhoto(path: string): Promise<void> {
+  await supabase.storage.from(WEDDING_PHOTOS_BUCKET).remove([path])
+}

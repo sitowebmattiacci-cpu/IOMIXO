@@ -24,17 +24,17 @@ export default function DownloadPage({ params }: { params: { jobId: string } }) 
 
   const [downloading, setDownloading] = useState<'mp3' | 'wav' | null>(null)
 
-  const { data: job, isLoading: jobLoading } = useSWR<RenderJob>(
+  const { data: job, isLoading: jobLoading } = useSWR<RenderJob & { final_outputs?: FinalOutput | FinalOutput[] }>(
     `job-dl-${jobId}`,
-    () => jobs.getStatus(jobId),
+    () => jobs.getStatus(jobId) as Promise<RenderJob & { final_outputs?: FinalOutput | FinalOutput[] }>,
     { revalidateOnFocus: false }
   )
 
-  const { data: output } = useSWR<FinalOutput>(
-    job?.status === 'complete' ? `preview-${jobId}` : null,
-    () => jobs.getPreview(jobId),
-    { revalidateOnFocus: false }
-  )
+  const output: FinalOutput | undefined = (() => {
+    const fo = job?.final_outputs
+    if (!fo) return undefined
+    return Array.isArray(fo) ? fo[0] : fo
+  })()
 
   const { data: me } = useSWR<User>('me', () => auth.me(), { revalidateOnFocus: false })
 

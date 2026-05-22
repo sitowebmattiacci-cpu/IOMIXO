@@ -44,17 +44,42 @@ const config: Config = {
           white: 'rgba(255,255,255,0.05)',
           border: 'rgba(255,255,255,0.08)',
         },
+        // Wedding Edition palette — romantic red/blush/taupe
+        wedding: {
+          ivory:     '#FFFDFB',  // page background (warm white)
+          card:      '#F7F4F3',  // card interior (light gray)
+          border:    '#E8B7C8',  // rose border
+          champagne: '#E8B7C8',  // rose (alias)
+          gold:      '#8F1D2C',  // elegant red (primary)
+          'gold-soft': '#FBEAF0', // pale pink
+          'gold-deep': '#741625', // primary hover
+          blush:     '#FBEAF0',  // pale pink
+          taupe:     '#B8A89A',
+          'taupe-light': '#E8DED6',
+          sage:      '#A7B8A1',
+          night:     '#101827',
+          ink:       '#2B2424',
+          muted:     '#6F6260',
+        },
       },
       backgroundImage: {
         'gradient-radial':   'radial-gradient(var(--tw-gradient-stops))',
         'gradient-hero':     'linear-gradient(135deg, #0f0f23 0%, #1a0a2e 50%, #0a1628 100%)',
         'gradient-brand':    'linear-gradient(135deg, #7c3aed, #ec4899, #22d3ee)',
         'gradient-card':     'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(236,72,153,0.08))',
+        'gradient-wedding':  'linear-gradient(180deg, #FFFDFB 0%, #FBEAF0 45%, #E8DED6 100%)',
+        'gradient-wedding-card': 'linear-gradient(140deg, rgba(255,255,255,0.85), rgba(245,215,161,0.18))',
         'noise':             "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E\")",
       },
       fontFamily: {
-        sans:  ['var(--font-inter)', 'system-ui', 'sans-serif'],
-        mono:  ['var(--font-mono)', 'monospace'],
+        sans:    ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        mono:    ['var(--font-mono)', 'monospace'],
+        wedding: ['var(--font-cormorant)', 'Cormorant Garamond', 'Didot', 'Georgia', 'serif'],
+        'wedding-playfair': ['var(--font-playfair)', 'Playfair Display', 'serif'],
+        'wedding-great-vibes': ['var(--font-great-vibes)', 'Great Vibes', 'cursive'],
+        'wedding-dancing': ['var(--font-dancing-script)', 'Dancing Script', 'cursive'],
+        'wedding-cinzel': ['var(--font-cinzel)', 'Cinzel', 'serif'],
+        'wedding-tangerine': ['var(--font-tangerine)', 'Tangerine', 'cursive'],
       },
       animation: {
         'pulse-slow':     'pulse 4s ease-in-out infinite',
@@ -111,6 +136,8 @@ const config: Config = {
         'neon-cyan':   '0 0 20px rgba(34,211,238,0.5), 0 0 60px rgba(34,211,238,0.2)',
         'glass':       '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
         'card':        '0 4px 24px rgba(0,0,0,0.3)',
+        'wedding':     '0 4px 16px rgba(143,29,44,0.06), 0 1px 3px rgba(143,29,44,0.04)',
+        'wedding-lg':  '0 12px 32px rgba(143,29,44,0.08), 0 2px 6px rgba(143,29,44,0.06)',
       },
     },
   },

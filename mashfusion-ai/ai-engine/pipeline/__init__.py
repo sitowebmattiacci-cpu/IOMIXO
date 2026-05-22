@@ -12,7 +12,6 @@ from .reporter import ProgressReporter
 from .orchestrator import (
     PipelineOrchestrator,
     build_default_pipeline,
-    build_preview_pipeline,
     build_pipeline_for_mode,
 )
 
@@ -22,6 +21,5 @@ __all__ = [
     "ProgressReporter",
     "PipelineOrchestrator",
     "build_default_pipeline",
-    "build_preview_pipeline",
     "build_pipeline_for_mode",
 ]

@@ -70,3 +70,5 @@ logs/
 # ── Coverage ──────────────────────────────────────────────────
 coverage/
 .nyc_output/
+*.env.bak*
+.env.local.bak*

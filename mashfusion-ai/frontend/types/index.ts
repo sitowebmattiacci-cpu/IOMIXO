@@ -2,7 +2,7 @@
 // MASHFUSION AI — Shared TypeScript Types
 // ────────────────────────────────────────────────────────────
 
-export type Plan = 'free' | 'pro' | 'studio'
+export type Plan = 'free' | 'pro' | 'wedding'
 export type JobStatus =
   | 'queued'
   | 'uploading'
@@ -117,6 +117,7 @@ export interface Project {
   id: string
   user_id: string
   title: string
+  mode: 'remix' | 'mashup'
   track_a_id: string | null
   track_b_id: string | null
   remix_style: RemixStyle
@@ -205,6 +206,20 @@ export interface Payment {
   created_at: string
 }
 
+// ── Wedding Pass 24H ──────────────────────────────────────────
+export interface WeddingPass {
+  id: string
+  user_id: string
+  session_id: string | null
+  stripe_payment_intent_id: string | null
+  amount_cents: number
+  currency: string
+  valid_until: string  // ISO timestamp
+  status: 'active' | 'expired' | 'refunded'
+  created_at: string
+  updated_at: string
+}
+
 // ── API Responses ─────────────────────────────────────────────
 export interface ApiResponse<T> {
   data: T | null
@@ -241,34 +256,64 @@ export interface StudioState {
   analysisB: AnalysisResult | null
 }
 
-// ── Plan metadata ─────────────────────────────────────────────
+// ── Plan metadata (IOMIXO Live Hub) ───────────────────────────
 export const PLAN_METADATA: Record<Plan, {
   name: string
-  monthlyCredits: number
   priceMonthly: number
-  quality: string[]
+  tagline: string
+  features: string[]
   stripePriceId: string | null
 }> = {
   free: {
     name: 'Free',
-    monthlyCredits: 1,
     priceMonthly: 0,
-    quality: ['Standard MP3'],
+    tagline: 'Per iniziare',
+    features: [
+      '1 sessione live attiva',
+      'Fino a 30 richieste per sessione',
+      'QR Code base',
+      'Pagina pubblica base',
+      'Branding IOMIXO visibile',
+    ],
     stripePriceId: null,
   },
   pro: {
     name: 'Pro',
-    monthlyCredits: 20,
-    priceMonthly: 29,
-    quality: ['HD MP3', 'WAV Export'],
+    priceMonthly: 9.99,
+    tagline: 'Per DJ professionisti',
+    features: [
+      'Sessioni live illimitate',
+      'Richieste illimitate',
+      'QR Code personalizzato',
+      'Persone online in tempo reale',
+      'Link social (Instagram, TikTok, Spotify, SoundCloud)',
+      'Prossime date / eventi',
+      'Approva/rifiuta richieste',
+      'Branding IOMIXO ridotto',
+      'Statistiche base',
+    ],
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID ?? '',
   },
-  studio: {
-    name: 'Studio',
-    monthlyCredits: 100,
-    priceMonthly: 79,
-    quality: ['Professional WAV', 'Stems Download', 'Priority Queue'],
-    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_STUDIO_PRICE_ID ?? '',
+  wedding: {
+    name: 'Pro Plus Wedding Edition',
+    priceMonthly: 19.99,
+    tagline: 'Per matrimoni ed eventi interattivi premium',
+    features: [
+      'Tutto del piano Pro',
+      'Modalità matrimonio dedicata',
+      'Dediche degli ospiti agli sposi',
+      'Roulette del matrimonio interattiva',
+      'Gioco della scarpa',
+      'Sondaggi live (2-4 opzioni)',
+      'Album foto degli ospiti con moderazione',
+      'Modalità schermo live (TV / proiettore)',
+      'Link album sposi',
+      'Branding personalizzabile',
+    ],
+    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_WEDDING_PRICE_ID
+      ?? process.env.NEXT_PUBLIC_STRIPE_CLUB_PRICE_ID
+      ?? process.env.NEXT_PUBLIC_STRIPE_STUDIO_PRICE_ID
+      ?? '',
   },
 }
 

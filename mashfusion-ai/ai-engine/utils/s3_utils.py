@@ -13,8 +13,11 @@ from config import get_settings
 _settings = get_settings()
 
 # Bucket names — must match what the backend creates
-_UPLOADS_BUCKET  = "track-uploads"
-_OUTPUTS_BUCKET  = "generated-outputs"
+_UPLOADS_BUCKET     = "track-uploads"
+_OUTPUTS_BUCKET     = "generated-outputs"
+STEMS_BUCKET        = "stems"
+SOUNDBANK_BUCKET    = "soundbank_samples"
+USER_SAMPLES_BUCKET = "user_samples"
 
 # Supabase Storage REST base URL
 _STORAGE_URL = f"{_settings.supabase_url}/storage/v1"
@@ -119,4 +122,3 @@ def list_s3_prefix(prefix: str, bucket: str = _OUTPUTS_BUCKET) -> list[str]:
     response.raise_for_status()
     items = response.json() or []
     return [f"{prefix.rstrip('/')}/{item['name']}" for item in items if item.get("name")]
-

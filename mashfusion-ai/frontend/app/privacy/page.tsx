@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Sparkles, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import { Logo } from '@/components/Logo'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -21,9 +22,7 @@ export default function PrivacyPage() {
 
       <header className="relative z-10 flex items-center justify-between px-6 py-5 max-w-4xl mx-auto">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-pink-600">
-            <Sparkles className="h-5 w-5 text-white" />
-          </div>
+          <Logo size={36} />
           <span className="text-lg font-black tracking-tight text-white">
             IOMIXO<span className="text-purple-400"> AI</span>
           </span>

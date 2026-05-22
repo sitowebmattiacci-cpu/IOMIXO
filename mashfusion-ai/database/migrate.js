@@ -30,13 +30,26 @@ const SQL_FILES = [
   path.join(__dirname, 'schema.sql'),
   path.join(__dirname, 'migrations/002_worker_infra.sql'),
   path.join(__dirname, 'migrations/003_remix_director.sql'),
+  path.join(__dirname, 'migrations/004_fix_security_definer_view.sql'),
+  path.join(__dirname, 'migrations/005_remix_workstation.sql'),
+  path.join(__dirname, 'migrations/006_soundbank_admin.sql'),
+  path.join(__dirname, 'migrations/007_project_mode.sql'),
+  path.join(__dirname, 'migrations/008_live_hub.sql'),
+  path.join(__dirname, 'migrations/009_wedding_edition.sql'),
+  path.join(__dirname, 'migrations/010_wedding_premium_games.sql'),
+  path.join(__dirname, 'migrations/011_screen_config.sql'),
 ]
 
-// ── Storage buckets to create (all private) ──────────────────
+// ── Storage buckets to create (all private unless noted) ─────
 const BUCKETS = [
   { name: 'track-uploads',     public: false, fileSizeLimit: 300 * 1024 * 1024 }, // 300 MB
   { name: 'generated-outputs', public: false, fileSizeLimit: 500 * 1024 * 1024 }, // 500 MB
   { name: 'avatars',           public: true,  fileSizeLimit: 5   * 1024 * 1024 }, // 5 MB — public for CDN
+  // Workstation buckets (Phase 0/5/7) — required for stem persistence,
+  // soundbank ingestion, and user-imported samples.
+  { name: 'stems',             public: false, fileSizeLimit: 50  * 1024 * 1024 }, // 50 MB per stem
+  { name: 'soundbank-samples', public: false, fileSizeLimit: 50  * 1024 * 1024 }, // 50 MB
+  { name: 'user_samples',      public: false, fileSizeLimit: 50  * 1024 * 1024 }, // 50 MB
 ]
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -114,9 +127,11 @@ async function main() {
   // ── Build connection string (prefer pooler over direct) ────
   // Supabase direct hostname (db.{ref}.supabase.co) is sometimes
   // blocked by ISP DNS. Pooler is always reachable.
-  const supabaseRef  = 'bpvvsuxehdmjpbachsaq'
+  const supabaseRef  = new URL(DATABASE_URL).hostname.match(/db\.([^.]+)\.supabase\.co/)?.[1]
+                     ?? new URL(DATABASE_URL).username.replace(/^postgres\./, '')
   const supabasePwd  = new URL(DATABASE_URL).password || 'Addiopersempre22'
-  const poolerUrl    = `postgresql://postgres.${supabaseRef}:${supabasePwd}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres`
+  const region       = process.env.SUPABASE_REGION || 'eu-central-1'
+  const poolerUrl    = `postgresql://postgres.${supabaseRef}:${supabasePwd}@aws-0-${region}.pooler.supabase.com:5432/postgres`
 
   console.log('📦  Connecting to Supabase PostgreSQL (via pooler)…')
 

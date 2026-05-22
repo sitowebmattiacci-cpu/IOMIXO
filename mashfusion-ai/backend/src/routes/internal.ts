@@ -3,10 +3,23 @@ import { supabaseAdmin } from '../config/supabase'
 import { logger } from '../config/logger'
 import { AppError } from '../middleware/errorHandler'
 import { publishJobUpdate } from '../services/sse'
+import { arrangementSchema } from '../schemas/arrangement'
 
 // Internal webhook endpoint — only reachable from AI engine
 // In production, enforce via INTERNAL_API_KEY or VPC-only network
 export const internalRouter = Router()
+
+function normalizeArrangementDoc<T extends { tracks: any[]; lanes?: any[] }>(doc: T): T {
+  const lanes = Array.isArray(doc.lanes) ? doc.lanes : []
+  const tracks = Array.isArray(doc.tracks) ? doc.tracks : []
+  if (lanes.length > 0 && tracks.length === 0) {
+    return { ...doc, tracks: lanes } as T
+  }
+  if (tracks.length > 0 && lanes.length === 0) {
+    return { ...doc, lanes: tracks } as T
+  }
+  return doc
+}
 
 function requireInternalKey(req: Request, _res: Response, next: NextFunction) {
   const key = req.headers['x-internal-api-key']
@@ -128,6 +141,84 @@ async function upsertAnalysis(trackId: string, data: any) {
 internalRouter.post('/cleanup-complete', async (_req: Request, res: Response) => {
   // job_temp_files table not in schema — stub OK
   res.json({ ok: true })
+})
+
+// ── POST /internal/stems ──────────────────────────────────────
+// Called by the AI engine's StemSeparationStage after each side's
+// stems are uploaded to the `stems` Supabase Storage bucket. Inserts
+// a row per stem so /projects/:id/stems can return signed URLs to the
+// workstation. Idempotent via UNIQUE (project_id, side, stem_name).
+internalRouter.post('/stems', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { project_id, source_track_id, stems } = req.body ?? {}
+    if (!project_id || !Array.isArray(stems) || stems.length === 0) {
+      throw new AppError('project_id and non-empty stems[] required', 400)
+    }
+
+    const rows = stems.map((s: any) => ({
+      project_id,
+      source_track_id: source_track_id ?? null,
+      side:            s.side,
+      stem_name:       s.stem_name,
+      s3_key:          s.s3_key,
+      duration_sec:    s.duration_sec ?? null,
+      sample_rate:     s.sample_rate  ?? null,
+    }))
+
+    const { data, error } = await supabaseAdmin
+      .from('stems')
+      .upsert(rows, { onConflict: 'project_id,side,stem_name' })
+      .select('id, side, stem_name')
+    if (error) throw new AppError(`Failed to persist stems: ${error.message}`, 500)
+
+    logger.info(`Stems persisted: project=${project_id}, count=${data?.length ?? 0}`)
+    res.json({ ok: true, count: data?.length ?? 0 })
+  } catch (err) { next(err) }
+})
+
+// ── POST /internal/arrangement-seed ───────────────────────────
+// Called by the AI engine's AISeedStage. Persists the starter arrangement
+// produced after stem separation + analysis + harmonic matching as a new
+// row in `arrangements` with source='ai_seed'. This is the only path by
+// which the engine writes timeline data — final audio is never produced
+// automatically; users render explicitly via /projects/:id/render.
+internalRouter.post('/arrangement-seed', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { job_id, project_id, arrangement } = req.body ?? {}
+    if (!job_id || !project_id || !arrangement) {
+      throw new AppError('job_id, project_id, arrangement required', 400)
+    }
+
+    const parsed = arrangementSchema.safeParse({ ...arrangement, project_id })
+    if (!parsed.success) {
+      throw new AppError(`Invalid arrangement: ${parsed.error.message}`, 400)
+    }
+    const normalizedDoc = normalizeArrangementDoc(parsed.data)
+
+    const { data: latest } = await supabaseAdmin
+      .from('arrangements')
+      .select('version')
+      .eq('project_id', project_id)
+      .order('version', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const nextVersion = (latest?.version ?? 0) + 1
+    const { data, error } = await supabaseAdmin
+      .from('arrangements')
+      .insert({
+        project_id,
+        version: nextVersion,
+        source:  'ai_seed',
+        doc:     normalizedDoc,
+      })
+      .select('id, version')
+      .single()
+    if (error) throw new AppError(`Failed to persist arrangement: ${error.message}`, 500)
+
+    logger.info(`Arrangement seed persisted: project=${project_id}, version=${data.version}, job=${job_id}`)
+    res.json({ ok: true, arrangement_id: data.id, version: data.version })
+  } catch (err) { next(err) }
 })
 
 // ── GET /internal/expired-temp-files ──────────────────────────

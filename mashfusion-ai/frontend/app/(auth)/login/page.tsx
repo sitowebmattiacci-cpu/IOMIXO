@@ -3,9 +3,10 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Sparkles, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
+import { Logo } from '@/components/Logo'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
@@ -50,9 +51,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
+            <Logo size={40} />
             <span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">AI</span></span>
           </Link>
           <h1 className="text-2xl font-bold text-white">Welcome back</h1>

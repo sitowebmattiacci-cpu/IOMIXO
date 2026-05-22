@@ -1,0 +1,88 @@
+{
+  "common": {
+    "save": "Save", "cancel": "Cancel", "delete": "Delete",
+    "approve": "Approve", "reject": "Reject", "loading": "Loading…",
+    "back": "Back", "submit": "Submit", "send": "Send",
+    "close": "Close", "open": "Open",
+    "active": "Active", "inactive": "Closed",
+    "pending": "Pending", "approved": "Approved", "rejected": "Rejected",
+    "upgrade": "Upgrade to Pro Plus Wedding Edition",
+    "weddingPaywall": "This mode is available with Pro Plus Wedding Edition.",
+    "errorGeneric": "Something went wrong."
+  },
+  "brand": {
+    "name": "IOMIXO",
+    "hubName": "IOMIXO Live Hub",
+    "tagline": "IOMIXO Live Hub: the interactive control room for DJs, events and weddings.",
+    "claim": "The DJ leads. The crowd interacts.",
+    "subtitle": "Spin up a live session with a QR Code, take song requests, collect dedications, run games and turn every night into a shared experience.",
+    "audiences": "Dinner shows · Private parties · Birthdays · Weddings · Corporate events · Clubs · Venues"
+  },
+  "plans": {
+    "free": "Free", "pro": "Pro", "wedding": "Pro Plus Wedding",
+    "weddingFull": "Pro Plus Wedding Edition",
+    "perMonth": "/month",
+    "freeDesc": "1 active live session, up to 30 requests per session, basic QR Code, IOMIXO branding.",
+    "proDesc": "Unlimited sessions and requests, approve/reject, public socials, upcoming dates, online presence, reduced branding.",
+    "weddingDesc": "Everything in Pro + wedding mode: dedications, roulette, polls, guest photo album, live screen, custom branding."
+  },
+  "sessions": {
+    "title": "Live Sessions", "subtitle": "Create, manage and close your events.",
+    "new": "New session", "createFirst": "Create the first one",
+    "noneYet": "No sessions yet.",
+    "type": "Session type", "typeStandard": "Standard", "typeWedding": "Pro Plus Wedding",
+    "eventName": "Event name *", "djName": "Your DJ name (optional)",
+    "description": "Description (optional)",
+    "coupleNames": "Couple names (optional)",
+    "weddingDate": "Wedding date (optional)",
+    "venueName": "Venue (optional)",
+    "screenModeEnabled": "Enable live screen (TV/projector)",
+    "create": "Create session", "created": "Session created",
+    "active": "Active", "closed": "Closed"
+  },
+  "wedding": {
+    "regia": "Wedding Control Room",
+    "tabRequests": "Requests", "tabDedications": "Dedications",
+    "tabGames": "Games", "tabPhotos": "Photos",
+    "dedications": {
+      "publicTitle": "Leave a dedication to the couple",
+      "guestName": "Your name (optional)", "message": "Message",
+      "submitted": "Your dedication has been submitted.",
+      "send": "Send dedication", "empty": "No dedications yet."
+    },
+    "roulette": {
+      "title": "Wedding Roulette",
+      "start": "Start roulette", "spin": "Spin", "reset": "Reset",
+      "running": "Ready to spin…", "idle": "Idle", "result": "Result"
+    },
+    "polls": {
+      "title": "Live Poll", "newPoll": "New poll",
+      "question": "Question", "addOption": "Add option",
+      "vote": "Vote", "voted": "Vote recorded",
+      "closed": "Poll closed", "close": "Close poll"
+    },
+    "photos": {
+      "publicTitle": "Upload a photo for the couple",
+      "guestName": "Your name (optional)",
+      "caption": "Caption (optional)",
+      "choose": "Send photo",
+      "submitted": "Photo submitted. The DJ/staff will review it before showing it.",
+      "empty": "No photos yet.",
+      "limits": "JPEG/PNG/WEBP — max 8 MB"
+    },
+    "screen": {
+      "title": "Live screen",
+      "rouletteResult": "Wedding Roulette",
+      "activePoll": "Active poll",
+      "recentDedications": "Recent dedications",
+      "recentPhotos": "Recent photos"
+    }
+  },
+  "live": {
+    "title": "Live requests",
+    "trackTitle": "Track title", "artist": "Artist (optional)",
+    "messageForDj": "Message for the DJ (optional)",
+    "submitRequest": "Send request",
+    "endedSession": "This session has ended."
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "common": {
+    "save": "Guardar", "cancel": "Cancelar", "delete": "Eliminar",
+    "approve": "Aprobar", "reject": "Rechazar", "loading": "Cargando…",
+    "back": "Atrás", "submit": "Enviar", "send": "Enviar",
+    "close": "Cerrar", "open": "Abrir",
+    "active": "Activa", "inactive": "Cerrada",
+    "pending": "Pendiente", "approved": "Aprobada", "rejected": "Rechazada",
+    "upgrade": "Pásate a Pro Plus Wedding Edition",
+    "weddingPaywall": "Este modo está disponible con Pro Plus Wedding Edition.",
+    "errorGeneric": "Algo ha ido mal."
+  },
+  "brand": {
+    "name": "IOMIXO",
+    "hubName": "IOMIXO Live Hub",
+    "tagline": "IOMIXO Live Hub: la cabina interactiva para DJs, eventos y bodas.",
+    "claim": "El DJ dirige. El público interactúa.",
+    "subtitle": "Crea una sesión live con código QR, recibe peticiones musicales, recoge dedicatorias, activa juegos y convierte cada noche en una experiencia compartida.",
+    "audiences": "Cenas espectáculo · Fiestas privadas · Cumpleaños · Bodas · Eventos corporativos · Clubes · Locales"
+  },
+  "plans": {
+    "free": "Free", "pro": "Pro", "wedding": "Pro Plus Wedding",
+    "weddingFull": "Pro Plus Wedding Edition",
+    "perMonth": "/mes",
+    "freeDesc": "1 sesión live activa, hasta 30 peticiones por sesión, QR básico, branding IOMIXO.",
+    "proDesc": "Sesiones y peticiones ilimitadas, aprobar/rechazar, redes públicas, próximas fechas, presencia online, branding reducido.",
+    "weddingDesc": "Todo Pro + modo boda: dedicatorias, ruleta, encuestas, álbum de fotos de invitados, pantalla live, branding personalizable."
+  },
+  "sessions": {
+    "title": "Sesiones Live", "subtitle": "Crea, gestiona y cierra tus eventos.",
+    "new": "Nueva sesión", "createFirst": "Crear la primera",
+    "noneYet": "Aún no hay sesiones.",
+    "type": "Tipo de sesión", "typeStandard": "Standard", "typeWedding": "Pro Plus Wedding",
+    "eventName": "Nombre del evento *", "djName": "Tu nombre de DJ (opcional)",
+    "description": "Descripción (opcional)",
+    "coupleNames": "Nombres de los novios (opcional)",
+    "weddingDate": "Fecha de la boda (opcional)",
+    "venueName": "Lugar (opcional)",
+    "screenModeEnabled": "Activar pantalla live (TV/proyector)",
+    "create": "Crear sesión", "created": "Sesión creada",
+    "active": "Activa", "closed": "Cerrada"
+  },
+  "wedding": {
+    "regia": "Control Wedding",
+    "tabRequests": "Peticiones", "tabDedications": "Dedicatorias",
+    "tabGames": "Juegos", "tabPhotos": "Fotos",
+    "dedications": {
+      "publicTitle": "Deja una dedicatoria a los novios",
+      "guestName": "Tu nombre (opcional)", "message": "Mensaje",
+      "submitted": "Tu dedicatoria se ha enviado.",
+      "send": "Enviar dedicatoria", "empty": "Aún no hay dedicatorias."
+    },
+    "roulette": {
+      "title": "Ruleta de boda",
+      "start": "Iniciar ruleta", "spin": "Girar", "reset": "Reiniciar",
+      "running": "Lista para girar…", "idle": "En espera", "result": "Resultado"
+    },
+    "polls": {
+      "title": "Encuesta live", "newPoll": "Nueva encuesta",
+      "question": "Pregunta", "addOption": "Añadir opción",
+      "vote": "Votar", "voted": "Voto registrado",
+      "closed": "Encuesta cerrada", "close": "Cerrar encuesta"
+    },
+    "photos": {
+      "publicTitle": "Sube una foto para los novios",
+      "guestName": "Tu nombre (opcional)",
+      "caption": "Pie de foto (opcional)",
+      "choose": "Enviar foto",
+      "submitted": "Foto enviada. El DJ/staff podrá aprobarla antes de mostrarla.",
+      "empty": "Aún no hay fotos.",
+      "limits": "JPEG/PNG/WEBP — máx 8 MB"
+    },
+    "screen": {
+      "title": "Pantalla live",
+      "rouletteResult": "Ruleta de boda",
+      "activePoll": "Encuesta activa",
+      "recentDedications": "Últimas dedicatorias",
+      "recentPhotos": "Últimas fotos"
+    }
+  },
+  "live": {
+    "title": "Peticiones live",
+    "trackTitle": "Título del tema", "artist": "Artista (opcional)",
+    "messageForDj": "Mensaje para el DJ (opcional)",
+    "submitRequest": "Enviar petición",
+    "endedSession": "Esta sesión ha terminado."
+  }
+}
