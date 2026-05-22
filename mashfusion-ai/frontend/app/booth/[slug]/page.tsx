@@ -30,6 +30,13 @@ export default function LiveBoothPage() {
     }
   }, [])
 
+  useEffect(() => {
+    if (cameraActive && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current
+      videoRef.current.play().catch(err => console.error('Video play failed:', err))
+    }
+  }, [cameraActive])
+
   if (error || !data) {
     return (
       <WeddingShell>
@@ -75,11 +82,8 @@ export default function LiveBoothPage() {
         video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       })
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        streamRef.current = stream
-        setCameraActive(true)
-      }
+      streamRef.current = stream
+      setCameraActive(true)
     } catch (err) {
       console.error('Camera error:', err)
       toast.error('Impossibile accedere alla fotocamera. Controlla i permessi del browser.')
