@@ -17,9 +17,9 @@ services:
       - key: LOG_LEVEL
         value: info
       - key: SUPABASE_URL
-        value: https://hdhjfmmhpyatezsanqha.supabase.co
+        value: https://zrayvqvxadjgfpupwhky.supabase.co
       - key: SUPABASE_ANON_KEY
-        value: sb_publishable_MtfZNQ60-WIEUhxxORfyxQ_ObwOxqtY
+        value: sb_publishable_T75MMxOIk6vT0J7Y4gmnrg_MZE9k7a-
       - key: ALLOWED_ORIGINS
         value: https://www.iomixo.com,https://iomixo.com
       - key: NEXT_PUBLIC_APP_URL
