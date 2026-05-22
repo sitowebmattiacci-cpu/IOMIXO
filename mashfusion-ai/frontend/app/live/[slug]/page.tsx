@@ -334,7 +334,6 @@ export default function PublicLivePage() {
         {isWedding && features.weddingGames && <ShoeGamePublic slug={slug!} />}
         {isWedding && features.livePolls && <PollPublic slug={slug!} />}
         {isWedding && features.weddingDedications && <DedicationsPublic slug={slug!} />}
-        {isWedding && features.guestPhotoAlbum && <PhotosPublic slug={slug!} />}
 
         {events.length > 0 && (
           <div className="mt-8">
