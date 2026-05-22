@@ -107,8 +107,12 @@ export default function LiveBoothPage() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Draw video frame
+    // Mirror horizontally to match the selfie-style preview
+    ctx.save()
+    ctx.translate(canvas.width, 0)
+    ctx.scale(-1, 1)
     ctx.drawImage(video, 0, 0)
+    ctx.restore()
 
     // Draw elegant overlay frame
     drawOverlay(ctx, canvas.width, canvas.height)

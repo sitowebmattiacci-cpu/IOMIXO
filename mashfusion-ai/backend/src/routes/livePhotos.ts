@@ -49,7 +49,7 @@ livePhotosRouter.post('/public/:slug/booth-photo', async (req, res, next) => {
     if (!storage_path.startsWith(`${session.id}/`)) throw new AppError('storage_path non valido', 400)
 
     const ipHash = hashClient(req)
-    if (!rateLimitOk(`booth:${session.id}`, ipHash, 15_000)) {
+    if (!rateLimitOk(`booth:${session.id}`, ipHash, 5_000)) {
       throw new AppError('Riprova tra qualche secondo.', 429)
     }
 
@@ -89,7 +89,7 @@ livePhotosRouter.post('/public/:slug/photos/init', async (req, res, next) => {
     }
 
     const ipHash = hashClient(req)
-    if (!rateLimitOk(`photo:${session.id}`, ipHash, 30_000)) {
+    if (!rateLimitOk(`photo:${session.id}`, ipHash, 5_000)) {
       throw new AppError('Riprova tra qualche secondo.', 429)
     }
 
