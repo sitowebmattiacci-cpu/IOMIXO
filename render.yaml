@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: iomixo-backend
+    runtime: node
+    plan: starter
+    region: frankfurt
+    branch: main
+    rootDir: mashfusion-ai/backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: LOG_LEVEL
+        value: info
+      - key: SUPABASE_URL
+        value: https://hdhjfmmhpyatezsanqha.supabase.co
+      - key: SUPABASE_ANON_KEY
+        value: sb_publishable_MtfZNQ60-WIEUhxxORfyxQ_ObwOxqtY
+      - key: ALLOWED_ORIGINS
+        value: https://www.iomixo.com,https://iomixo.com
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://www.iomixo.com
+      - key: APP_URL
+        value: https://www.iomixo.com
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRO_PRICE_ID
+        sync: false
+      - key: STRIPE_STUDIO_PRICE_ID
+        sync: false
