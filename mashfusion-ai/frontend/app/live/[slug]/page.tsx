@@ -189,7 +189,6 @@ export default function PublicLivePage() {
           {features.weddingGames && <BestPhotoPublic slug={slug!} />}
           {features.weddingDedications && <DedicationsPublic slug={slug!} />}
           {features.guestPhotoAlbum && <LiveBoothCard slug={slug!} session={session} />}
-          {features.guestPhotoAlbum && <PhotosPublic slug={slug!} />}
 
           {myRequests && myRequests.length > 0 && (
             <WeddingSection
