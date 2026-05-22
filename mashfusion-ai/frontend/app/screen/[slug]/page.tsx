@@ -21,34 +21,57 @@ export default function ScreenModePage() {
   const [wheelPenitenze, setWheelPenitenze] = useState<any[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
   const lastRouletteId = useRef<string | null>(null)
+  // Momento di apertura/refresh della pagina schermo: round creati PRIMA di
+  // questo timestamp sono considerati "vecchi" e non vengono rigiocati.
+  const pageLoadedAt = useRef<number>(Date.now())
 
   useEffect(() => {
     if (!data?.roulette) return
+    if (!data.roulette.result) return // round in corso senza risultato
 
-    // Se rilevo un nuovo round, mostra l'animazione
-    if (data.roulette.id !== lastRouletteId.current && data.roulette.result) {
+    // Se l'id non è cambiato, è lo stesso round già visto: niente da fare
+    if (data.roulette.id === lastRouletteId.current) return
+
+    // Round creato prima dell'apertura schermo → è "storico", solo segnalo
+    // come visto senza rigiocare l'animazione
+    const createdAt = data.roulette.created_at
+      ? new Date(data.roulette.created_at).getTime()
+      : 0
+    if (createdAt && createdAt < pageLoadedAt.current - 5000) {
       lastRouletteId.current = data.roulette.id
+      return
+    }
 
-      // Usa le penitenze e l'indice dal backend
-      const slots = data.roulette.config?.slots || []
-      const idx = data.roulette.result.slot_index ?? 0
+    // Nuovo round arrivato dopo il page load → fai partire la ruota
+    lastRouletteId.current = data.roulette.id
 
-      if (slots.length > 0 && idx >= 0) {
-        // Converti array di stringhe in array di oggetti per RouletteWheel
-        const penitenze = slots.map((label: string) => ({
-          label,
-          category: 'party' as const,
-          enabled: true,
-        }))
-        setWheelPenitenze(penitenze)
-        setSelectedIndex(idx)
-        setShowRouletteWheel(true)
+    // Il backend salva le penitenze in config.penitenze come array di oggetti
+    // { label, category, enabled }. Manteniamo fallback su "slots" per legacy.
+    const rawPenitenze: any[] =
+      data.roulette.config?.penitenze ||
+      data.roulette.config?.slots ||
+      []
+    const idx = data.roulette.result.slot_index ?? 0
 
-        // Nascondi dopo 17 secondi (12s roulette + 5s popup)
-        setTimeout(() => {
-          setShowRouletteWheel(false)
-        }, 17000)
-      }
+    if (rawPenitenze.length > 0 && idx >= 0) {
+      // Normalizza: supporta sia stringhe legacy sia oggetti { label, category, enabled }
+      const penitenze = rawPenitenze.map((p: any) =>
+        typeof p === 'string'
+          ? { label: p, category: 'party' as const, enabled: true }
+          : {
+              label: p.label ?? String(p),
+              category: (p.category ?? 'party') as 'soft' | 'party' | 'wild',
+              enabled: p.enabled ?? true,
+            }
+      )
+      setWheelPenitenze(penitenze)
+      setSelectedIndex(idx)
+      setShowRouletteWheel(true)
+
+      // Nascondi dopo 17 secondi (12s roulette + 5s popup)
+      setTimeout(() => {
+        setShowRouletteWheel(false)
+      }, 17000)
     }
   }, [data?.roulette])
 
@@ -77,13 +100,22 @@ export default function ScreenModePage() {
   const shoeQuestions: string[] = shoe_game?.config?.questions ?? []
   const shoeIdx: number = shoe_game?.config?.current_index ?? 0
 
-  // Conta quante sezioni sono attive
+  // Sezioni abilitate dal DJ nel pannello "Visibilità Schermo".
+  // Se è ON il pannello viene mostrato anche se ancora non c'è contenuto
+  // (es. dediche o sondaggi in attesa) — così il DJ vede subito il layout.
+  const cfg = session.screen_config ?? {}
+  const enabledRoulette   = cfg.show_roulette   !== false
+  const enabledShoeGame   = cfg.show_shoe_game  !== false
+  const enabledPolls      = cfg.show_polls      !== false
+  const enabledDedications = cfg.show_dedications !== false
+  const enabledPhotos     = cfg.show_photos     !== false
+
   const activeSections = [
-    roulette?.result ? 'roulette' : null,
-    shoeActive ? 'shoe' : null,
-    active_poll ? 'poll' : null,
-    dedications.length > 0 ? 'dedications' : null,
-    photos.length > 0 ? 'photos' : null,
+    enabledRoulette   ? 'roulette'    : null,
+    enabledShoeGame   ? 'shoe'        : null,
+    enabledPolls      ? 'poll'        : null,
+    enabledDedications ? 'dedications' : null,
+    enabledPhotos     ? 'photos'      : null,
   ].filter(Boolean)
 
   const hasContent = activeSections.length > 0
@@ -376,92 +408,114 @@ export default function ScreenModePage() {
           {/* 3-column grid */}
           <div className="grid grid-cols-3 gap-8 flex-1 min-h-0">
             <div className="space-y-6 col-span-1">
-              {roulette?.result && (
+              {enabledRoulette && (
                 <StagePanel icon={<Sparkles className="h-6 w-6" />} title={t('wedding.screen.rouletteResult')}>
-                  <div className="rounded-xl bg-gradient-to-br from-wedding-gold/20 to-wedding-blush/10 border border-wedding-gold/40 py-8 text-center">
-                    <p className="font-wedding text-4xl text-wedding-ivory leading-tight px-4">
-                      {roulette.result.slot_label}
-                    </p>
-                  </div>
+                  {roulette?.result ? (
+                    <div className="rounded-xl bg-gradient-to-br from-wedding-gold/20 to-wedding-blush/10 border border-wedding-gold/40 py-8 text-center">
+                      <p className="font-wedding text-4xl text-wedding-ivory leading-tight px-4">
+                        {roulette.result.slot_label}
+                      </p>
+                    </div>
+                  ) : (
+                    <EmptyPanel text="In attesa del prossimo giro…" />
+                  )}
                 </StagePanel>
               )}
-              {shoeActive && shoeQuestions[shoeIdx] && (
-                <StagePanel icon={<Sparkles className="h-6 w-6" />} title="Gioco della Scarpa">
-                  <div className="rounded-xl bg-gradient-to-br from-wedding-gold/20 to-wedding-blush/10 border border-wedding-gold/40 py-8 text-center">
-                    <p className="text-sm uppercase tracking-[0.32em] text-wedding-gold mb-4 tabular-nums">
-                      Domanda {shoeIdx + 1}/{shoeQuestions.length}
-                    </p>
-                    <p className="font-wedding text-4xl text-wedding-ivory leading-tight px-4">
-                      {shoeQuestions[shoeIdx]}
-                    </p>
-                  </div>
+              {enabledShoeGame && (
+                <StagePanel icon={<Footprints className="h-6 w-6" />} title="Gioco della Scarpa">
+                  {shoeActive && shoeQuestions[shoeIdx] ? (
+                    <div className="rounded-xl bg-gradient-to-br from-wedding-gold/20 to-wedding-blush/10 border border-wedding-gold/40 py-8 text-center">
+                      <p className="text-sm uppercase tracking-[0.32em] text-wedding-gold mb-4 tabular-nums">
+                        Domanda {shoeIdx + 1}/{shoeQuestions.length}
+                      </p>
+                      <p className="font-wedding text-4xl text-wedding-ivory leading-tight px-4">
+                        {shoeQuestions[shoeIdx]}
+                      </p>
+                    </div>
+                  ) : (
+                    <EmptyPanel text="In attesa della prossima domanda…" />
+                  )}
                 </StagePanel>
               )}
-              {active_poll && (
+              {enabledPolls && (
                 <StagePanel icon={<ListChecks className="h-6 w-6" />} title={t('wedding.screen.activePoll')}>
-                  <p className="font-wedding text-2xl text-wedding-ivory mb-4 italic">{active_poll.question}</p>
-                  <div className="space-y-3">
-                    {active_poll.options.map((opt, i) => {
-                      const tally = active_poll.tally?.[i] ?? 0
-                      const pct = total > 0 ? Math.round((tally / total) * 100) : 0
-                      return (
-                        <div key={i} className="relative rounded-xl overflow-hidden border border-wedding-gold/30 bg-wedding-ivory/5 h-12">
-                          <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-wedding-gold/40 to-wedding-champagne/30 transition-all duration-500" style={{ width: `${pct}%` }} />
-                          <div className="relative flex items-center justify-between h-full px-4">
-                            <span className="text-lg text-wedding-ivory">{opt}</span>
-                            <span className="text-lg font-semibold text-wedding-champagne">{pct}%</span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
+                  {active_poll ? (
+                    <>
+                      <p className="font-wedding text-2xl text-wedding-ivory mb-4 italic">{active_poll.question}</p>
+                      <div className="space-y-3">
+                        {active_poll.options.map((opt, i) => {
+                          const tally = active_poll.tally?.[i] ?? 0
+                          const pct = total > 0 ? Math.round((tally / total) * 100) : 0
+                          return (
+                            <div key={i} className="relative rounded-xl overflow-hidden border border-wedding-gold/30 bg-wedding-ivory/5 h-12">
+                              <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-wedding-gold/40 to-wedding-champagne/30 transition-all duration-500" style={{ width: `${pct}%` }} />
+                              <div className="relative flex items-center justify-between h-full px-4">
+                                <span className="text-lg text-wedding-ivory">{opt}</span>
+                                <span className="text-lg font-semibold text-wedding-champagne">{pct}%</span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </>
+                  ) : (
+                    <EmptyPanel text="Nessun sondaggio attivo al momento." />
+                  )}
                 </StagePanel>
               )}
             </div>
 
-            {dedications.length > 0 && (
+            {enabledDedications && (
               <StagePanel icon={<Heart className="h-6 w-6" />} title={t('wedding.screen.recentDedications')}>
-                <div className="space-y-4 overflow-y-auto max-h-[520px] pr-1">
-                  {dedications.slice(0, 30).map((d) => (
-                    <div key={d.id} className="rounded-xl border border-wedding-gold/20 bg-wedding-ivory/5 p-5">
-                      <p className="font-wedding text-xl italic text-wedding-ivory leading-snug whitespace-pre-line">
-                        "{d.message}"
-                      </p>
-                      <div className="flex items-center justify-between mt-3 gap-3">
-                        <p className="text-xs uppercase tracking-[0.22em] text-wedding-gold">
-                          — {d.guest_name ?? 'Anonimo'}
+                {dedications.length > 0 ? (
+                  <div className="space-y-4 overflow-y-auto max-h-[520px] pr-1">
+                    {dedications.slice(0, 30).map((d) => (
+                      <div key={d.id} className="rounded-xl border border-wedding-gold/20 bg-wedding-ivory/5 p-5">
+                        <p className="font-wedding text-xl italic text-wedding-ivory leading-snug whitespace-pre-line">
+                          "{d.message}"
                         </p>
-                        <p className="text-xs uppercase tracking-[0.18em] text-wedding-ivory/50 tabular-nums">
-                          {new Date(d.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
+                        <div className="flex items-center justify-between mt-3 gap-3">
+                          <p className="text-xs uppercase tracking-[0.22em] text-wedding-gold">
+                            — {d.guest_name ?? 'Anonimo'}
+                          </p>
+                          <p className="text-xs uppercase tracking-[0.18em] text-wedding-ivory/50 tabular-nums">
+                            {new Date(d.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyPanel text="Le dediche degli invitati appariranno qui ✨" />
+                )}
               </StagePanel>
             )}
 
-            {photos.length > 0 && (
+            {enabledPhotos && (
               <StagePanel icon={<Camera className="h-6 w-6" />} title={t('wedding.screen.recentPhotos')}>
-                <div className="grid grid-cols-2 gap-3 overflow-y-auto max-h-[520px] pr-1">
-                  {photos.slice(0, 60).map((p) => (
-                    <div
-                      key={p.id}
-                      className={`aspect-square rounded-xl overflow-hidden border shadow-lg relative transition-all duration-500 ${
-                        (p as any).is_featured
-                          ? 'border-wedding-gold/60 ring-2 ring-wedding-gold/40'
-                          : 'border-wedding-gold/20 bg-wedding-ivory/5'
-                      }`}
-                    >
-                      {p.url && <img src={p.url} alt="" className="w-full h-full object-cover" />}
-                      {(p as any).is_featured && (
-                        <div className="absolute top-1 right-1 bg-wedding-gold/95 text-wedding-ink px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                          ★
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                {photos.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3 overflow-y-auto max-h-[520px] pr-1">
+                    {photos.slice(0, 60).map((p) => (
+                      <div
+                        key={p.id}
+                        className={`aspect-square rounded-xl overflow-hidden border shadow-lg relative transition-all duration-500 ${
+                          (p as any).is_featured
+                            ? 'border-wedding-gold/60 ring-2 ring-wedding-gold/40'
+                            : 'border-wedding-gold/20 bg-wedding-ivory/5'
+                        }`}
+                      >
+                        {p.url && <img src={p.url} alt="" className="w-full h-full object-cover" />}
+                        {(p as any).is_featured && (
+                          <div className="absolute top-1 right-1 bg-wedding-gold/95 text-wedding-ink px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+                            ★
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyPanel text="Le foto degli invitati appariranno qui 📸" />
+                )}
               </StagePanel>
             )}
           </div>
@@ -485,5 +539,15 @@ function StagePanel({ icon, title, children }: { icon: React.ReactNode; title: s
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
     </section>
+  )
+}
+
+function EmptyPanel({ text }: { text: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-wedding-gold/25 bg-wedding-ivory/5 py-10 px-6 text-center">
+      <p className="font-wedding text-xl italic text-wedding-ivory/60 leading-snug">
+        {text}
+      </p>
+    </div>
   )
 }
