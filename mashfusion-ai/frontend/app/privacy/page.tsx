@@ -24,7 +24,7 @@ export default function PrivacyPage() {
         <Link href="/" className="flex items-center gap-2.5">
           <Logo size={36} />
           <span className="text-lg font-black tracking-tight text-white">
-            IOMIXO<span className="text-purple-400"> AI</span>
+            IOMIXO<span className="text-purple-400"> Live Hub</span>
           </span>
         </Link>
         <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors">

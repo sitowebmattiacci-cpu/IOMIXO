@@ -67,10 +67,10 @@ export default function RegisterPage() {
   }
 
   const perks = [
-    'AI stem separation (Demucs + MDX-Net)',
-    'BPM & key auto-detection',
-    'Professional mashup composer',
-    '1 free mashup included',
+    'Live music requests',
+    'On-screen dedications',
+    'Interactive games & roulette',
+    'Integrated Live Photo Booth',
   ]
 
   return (
@@ -119,14 +119,14 @@ export default function RegisterPage() {
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="hidden md:block">
             <div className="flex items-center gap-2 mb-8">
               <Logo size={40} />
-              <span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">AI</span></span>
+              <span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">Live Hub</span></span>
             </div>
             <h1 className="text-4xl font-black text-white leading-tight mb-4">
-              Create <span className="text-gradient">professional</span> mashups with AI
+              Create your <span className="text-gradient">interactive</span> events
             </h1>
             <p className="text-white/40 mb-8 leading-relaxed">
-              Join thousands of DJs and producers who are already using IOMIXO to create
-              studio-quality mashups in minutes.
+              The interactive control center for DJs and events. 
+              Engage your audience with live requests, messages, and games.
             </p>
             <ul className="space-y-3">
               {perks.map((p) => (

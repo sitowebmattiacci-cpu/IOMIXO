@@ -54,25 +54,25 @@ const tangerine = Tangerine({
 
 export const metadata: Metadata = {
   title: {
-    default: 'IOMIXO — AI-Powered Mashup & Remix Studio',
+    default: 'IOMIXO — Live Hub Interattivo per DJ ed Eventi',
     template: '%s | IOMIXO',
   },
   description:
-    'Professional AI-powered music mashup, remix, and fusion studio. Upload two songs and let our AI create a professional DJ-quality mashup in minutes.',
-  keywords: ['AI mashup', 'AI remix', 'song fusion', 'music AI', 'stem separation', 'DJ tool'],
+    'La regia interattiva per DJ, eventi e matrimoni. Coinvolgi il tuo pubblico con richieste musicali, dediche su schermo e giochi interattivi in tempo reale.',
+  keywords: ['Live Hub', 'DJ', 'Matrimoni', 'Eventi', 'Richieste Musicali', 'Interactive DJ', 'Roulette Matrimonio'],
   openGraph: {
     type: 'website',
     locale: 'it_IT',
     url: 'https://iomixo.ai',
     siteName: 'IOMIXO',
-    title: 'IOMIXO — AI-Powered Mashup & Remix Studio',
-    description: 'Transform any two songs into a professional mashup with AI.',
+    title: 'IOMIXO — Il Live Hub per il tuo evento',
+    description: 'Rendi il tuo evento interattivo con richieste live, messaggi e giochi per il pubblico.',
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'IOMIXO',
-    description: 'AI-powered professional mashup & remix studio.',
+    description: 'Il Live Hub interattivo per DJ, eventi e matrimoni.',
     images: ['/og-image.png'],
   },
   robots: {

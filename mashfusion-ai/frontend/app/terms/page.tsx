@@ -5,7 +5,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Terms of Service — IOMIXO',
-  description: 'The terms governing your use of the IOMIXO AI music transformation service.',
+  description: 'The terms governing your use of the IOMIXO Live Hub interactive service.',
 }
 
 const LAST_UPDATED = 'April 30, 2026'
@@ -24,7 +24,7 @@ export default function TermsPage() {
         <Link href="/" className="flex items-center gap-2.5">
           <Logo size={36} />
           <span className="text-lg font-black tracking-tight text-white">
-            IOMIXO<span className="text-purple-400"> AI</span>
+            IOMIXO<span className="text-purple-400"> Live Hub</span>
           </span>
         </Link>
         <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors">
