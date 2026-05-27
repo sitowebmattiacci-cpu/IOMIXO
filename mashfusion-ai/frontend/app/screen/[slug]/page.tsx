@@ -47,9 +47,10 @@ export default function ScreenModePage() {
 
     // Il backend salva le penitenze in config.penitenze come array di oggetti
     // { label, category, enabled }. Manteniamo fallback su "slots" per legacy.
+    const rouletteConfig = data.roulette.config as any
     const rawPenitenze: any[] =
-      data.roulette.config?.penitenze ||
-      data.roulette.config?.slots ||
+      rouletteConfig?.penitenze ||
+      rouletteConfig?.slots ||
       []
     const idx = data.roulette.result.slot_index ?? 0
 
