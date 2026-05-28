@@ -4,12 +4,14 @@ import { Mail } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Logo } from '@/components/Logo'
+import { useI18n } from '@/lib/i18n'
 
 /**
  * This page is shown after register when Supabase sends the confirmation email.
  * Actual verification happens automatically via /auth/callback when the user clicks the link.
  */
 export default function VerifyEmailPage() {
+  const { t } = useI18n()
   return (
     <div className="min-h-screen bg-surface-400 flex items-center justify-center p-4">
       <div className="pointer-events-none" aria-hidden>
@@ -34,15 +36,15 @@ export default function VerifyEmailPage() {
             <Mail className="h-8 w-8 text-purple-400" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-white">Check your inbox</h2>
+            <h2 className="text-2xl font-black text-white">{t('auth.verifyCheckInbox')}</h2>
             <p className="text-sm text-white/40 mt-2 leading-relaxed">
-              We&apos;ve sent you a confirmation link. Click it to activate your account and access your studio.
+              {t('auth.verifySent')}
             </p>
           </div>
           <Link href="/login">
-            <Button variant="secondary" className="w-full">Back to sign in</Button>
+            <Button variant="secondary" className="w-full">{t('auth.backToSignIn')}</Button>
           </Link>
-          <p className="text-xs text-white/20">Link expires in 24 hours</p>
+          <p className="text-xs text-white/20">{t('auth.linkExpires24h')}</p>
         </div>
       </motion.div>
     </div>

@@ -6,9 +6,11 @@ import { Mail, Lock, User, Eye, EyeOff, ArrowRight, CheckCircle2, Send } from 'l
 import { getSupabaseClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { Logo } from '@/components/Logo'
+import { useI18n } from '@/lib/i18n'
 import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
+  const { t } = useI18n()
   const [fullName, setFullName] = useState('')
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
@@ -28,8 +30,8 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!fullName || !email || !password) { toast.error('Please fill in all fields'); return }
-    if (password.length < 8) { toast.error('Password must be at least 8 characters'); return }
+    if (!fullName || !email || !password) { toast.error(t('auth.fillAllFields')); return }
+    if (password.length < 8) { toast.error(t('auth.passwordMin8')); return }
     setLoading(true)
     try {
       const { error } = await getSupabaseClient().auth.signUp({
@@ -43,7 +45,7 @@ export default function RegisterPage() {
       if (error) throw error
       setDone(true)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Registration failed')
+      toast.error(err instanceof Error ? err.message : t('auth.registrationFailed'))
     } finally {
       setLoading(false)
     }
@@ -58,19 +60,19 @@ export default function RegisterPage() {
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       })
       if (error) throw error
-      toast.success('New verification email sent!')
+      toast.success(t('auth.newVerificationSent'))
     } catch {
-      toast.error('Failed to resend. Try again in a moment.')
+      toast.error(t('auth.resendFailed'))
     } finally {
       setResending(false)
     }
   }
 
   const perks = [
-    'Live music requests',
-    'On-screen dedications',
-    'Interactive games & roulette',
-    'Integrated Live Photo Booth',
+    t('auth.perk1'),
+    t('auth.perk2'),
+    t('auth.perk3'),
+    t('auth.perk4'),
   ]
 
   return (
@@ -88,11 +90,10 @@ export default function RegisterPage() {
               <Mail className="h-8 w-8 text-purple-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-white">Check your inbox</h2>
+              <h2 className="text-2xl font-black text-white">{t('auth.checkInbox')}</h2>
               <p className="text-sm text-white/40 mt-2 leading-relaxed">
-                We&apos;ve sent a verification link to{' '}
-                <span className="text-purple-400 font-medium">{email}</span>.
-                Click it to activate your account.
+                {t('auth.sentVerification')}{' '}
+                <span className="text-purple-400 font-medium">{email}</span>{t('auth.clickActivate')}
               </p>
             </div>
             <div className="pt-2 space-y-3">
@@ -103,13 +104,13 @@ export default function RegisterPage() {
                 onClick={handleResend}
                 icon={<Send className="h-4 w-4" />}
               >
-                Resend verification email
+                {t('auth.resendVerification')}
               </Button>
               <Link href="/login">
-                <Button variant="ghost" className="w-full">Back to sign in</Button>
+                <Button variant="ghost" className="w-full">{t('auth.backToSignIn')}</Button>
               </Link>
             </div>
-            <p className="text-xs text-white/20">Link expires in 24 hours</p>
+            <p className="text-xs text-white/20">{t('auth.linkExpires24h')}</p>
           </div>
         </div>
       ) : (
@@ -122,11 +123,10 @@ export default function RegisterPage() {
               <span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">Live Hub</span></span>
             </div>
             <h1 className="text-4xl font-black text-white leading-tight mb-4">
-              Create your <span className="text-gradient">interactive</span> events
+              {t('auth.heroTitle1')} <span className="text-gradient">{t('auth.heroTitle2')}</span>
             </h1>
             <p className="text-white/40 mb-8 leading-relaxed">
-              The interactive control center for DJs and events. 
-              Engage your audience with live requests, messages, and games.
+              {t('auth.heroSubtitle')}
             </p>
             <ul className="space-y-3">
               {perks.map((p) => (
@@ -149,40 +149,40 @@ export default function RegisterPage() {
 
             <div className="glass rounded-2xl p-8 space-y-8">
               <div>
-                <h2 className="text-2xl font-bold text-white tracking-tight">Create your account</h2>
-                <p className="text-sm text-white/40 mt-1">Free forever — no credit card needed</p>
+                <h2 className="text-2xl font-bold text-white tracking-tight">{t('auth.createAccount')}</h2>
+                <p className="text-sm text-white/40 mt-1">{t('auth.freeForever')}</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6" data-gramm="false">
                 {/* Full name */}
                 <div className="space-y-2.5">
-                  <label className="text-sm font-medium text-white/60 ml-1">Full name</label>
+                  <label className="text-sm font-medium text-white/60 ml-1">{t('auth.fullName')}</label>
                   <div className="relative group">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors pointer-events-none z-10" />
                     <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)}
-                      placeholder="DJ Example" className="input-field h-12" style={{ paddingLeft: '3rem', paddingRight: '1rem' }} autoComplete="name" required spellCheck={false} />
+                      placeholder={t('auth.fullNamePh')} className="input-field h-12" style={{ paddingLeft: '3rem', paddingRight: '1rem' }} autoComplete="name" required spellCheck={false} />
                   </div>
                 </div>
 
                 {/* Email */}
                 <div className="space-y-2.5">
-                  <label className="text-sm font-medium text-white/60 ml-1">Email</label>
+                  <label className="text-sm font-medium text-white/60 ml-1">{t('auth.email')}</label>
                   <div className="relative group">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors pointer-events-none z-10" />
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com" className="input-field h-12" style={{ paddingLeft: '3rem', paddingRight: '1rem' }} autoComplete="email" required spellCheck={false} />
+                      placeholder={t('auth.emailPh')} className="input-field h-12" style={{ paddingLeft: '3rem', paddingRight: '1rem' }} autoComplete="email" required spellCheck={false} />
                   </div>
                 </div>
 
                 {/* Password */}
                 <div className="space-y-2.5">
-                  <label className="text-sm font-medium text-white/60 ml-1">Password</label>
+                  <label className="text-sm font-medium text-white/60 ml-1">{t('auth.password')}</label>
                   <div className="relative group">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors pointer-events-none z-10" />
                     <input
                       type={showPw ? 'text' : 'password'} value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Min. 8 characters" className="input-field h-12"
+                      placeholder={t('auth.passwordPhMin8')} className="input-field h-12"
                       style={{ paddingLeft: '3rem', paddingRight: '3rem' }}
                       autoComplete="new-password" required minLength={8}
                     />
@@ -206,19 +206,19 @@ export default function RegisterPage() {
 
                 <div className="pt-2">
                   <Button type="submit" loading={loading} className="w-full h-12 text-base shadow-lg shadow-purple-500/20" icon={<ArrowRight className="h-5 w-5" />}>
-                    Create account
+                    {t('auth.createAccountBtn')}
                   </Button>
                 </div>
               </form>
 
               <div className="flex items-center gap-4">
                 <div className="h-px flex-1 bg-white/[0.06]" />
-                <span className="text-xs font-medium text-white/20 whitespace-nowrap">Already have an account?</span>
+                <span className="text-xs font-medium text-white/20 whitespace-nowrap">{t('auth.alreadyHaveAccount')}</span>
                 <div className="h-px flex-1 bg-white/[0.06]" />
               </div>
 
               <Link href="/login" className="block">
-                <Button variant="secondary" className="w-full h-12 text-base">Sign in</Button>
+                <Button variant="secondary" className="w-full h-12 text-base">{t('auth.signIn')}</Button>
               </Link>
             </div>
           </motion.div>

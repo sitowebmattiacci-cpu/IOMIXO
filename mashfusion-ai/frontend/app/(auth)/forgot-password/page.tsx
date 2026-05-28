@@ -6,16 +6,18 @@ import { Mail, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { Logo } from '@/components/Logo'
+import { useI18n } from '@/lib/i18n'
 import toast from 'react-hot-toast'
 
 export default function ForgotPasswordPage() {
+  const { t } = useI18n()
   const [email,   setEmail]   = useState('')
   const [loading, setLoading] = useState(false)
   const [sent,    setSent]    = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email) { toast.error('Enter your email address'); return }
+    if (!email) { toast.error(t('auth.enterEmail')); return }
     setLoading(true)
     try {
       const { error } = await getSupabaseClient().auth.resetPasswordForEmail(
@@ -25,7 +27,7 @@ export default function ForgotPasswordPage() {
       if (error) throw error
       setSent(true)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Request failed. Try again.')
+      toast.error(err instanceof Error ? err.message : t('auth.requestFailed'))
     } finally {
       setLoading(false)
     }
@@ -49,9 +51,9 @@ export default function ForgotPasswordPage() {
             <Logo size={40} />
             <span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">AI</span></span>
           </Link>
-          <h1 className="text-2xl font-bold text-white">Forgot your password?</h1>
+          <h1 className="text-2xl font-bold text-white">{t('auth.forgotTitle')}</h1>
           <p className="mt-1 text-sm text-white/40">
-            {sent ? 'Check your inbox' : "No worries — we'll send you a reset link"}
+            {sent ? t('auth.forgotSubtitleSent') : t('auth.forgotSubtitleDefault')}
           </p>
         </div>
 
@@ -59,14 +61,14 @@ export default function ForgotPasswordPage() {
           {!sent ? (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <label className="text-xs font-medium text-white/50">Email address</label>
+                <label className="text-xs font-medium text-white/50">{t('auth.emailAddress')}</label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
+                    placeholder={t('auth.emailPh')}
                     className="input-field pl-10"
                     autoComplete="email"
                     required
@@ -76,12 +78,12 @@ export default function ForgotPasswordPage() {
 
               <div className="space-y-3 pt-2">
                 <Button type="submit" loading={loading} className="w-full" icon={<ArrowRight className="h-4 w-4" />}>
-                  Send reset link
+                  {t('auth.sendResetLink')}
                 </Button>
 
                 <Link href="/login">
                   <Button variant="ghost" className="w-full" icon={<ArrowLeft className="h-4 w-4" />}>
-                    Back to sign in
+                    {t('auth.backToSignIn')}
                   </Button>
                 </Link>
               </div>
@@ -96,16 +98,15 @@ export default function ForgotPasswordPage() {
                 <CheckCircle2 className="h-7 w-7 text-green-400" />
               </div>
               <div>
-                <p className="text-white font-semibold">Reset link sent</p>
+                <p className="text-white font-semibold">{t('auth.resetLinkSent')}</p>
                 <p className="text-sm text-white/40 mt-1.5 leading-relaxed">
-                  If <span className="text-purple-400">{email}</span> is registered, you&apos;ll
-                  receive a link to reset your password. Check your spam folder if you don&apos;t see it.
+                  {t('auth.ifRegistered1')} <span className="text-purple-400">{email}</span> {t('auth.ifRegistered2')}
                 </p>
               </div>
-              <p className="text-xs text-white/20">Link expires in 1 hour</p>
+              <p className="text-xs text-white/20">{t('auth.linkExpires1h')}</p>
               <Link href="/login">
                 <Button variant="secondary" className="w-full" icon={<ArrowLeft className="h-4 w-4" />}>
-                  Back to sign in
+                  {t('auth.backToSignIn')}
                 </Button>
               </Link>
             </motion.div>

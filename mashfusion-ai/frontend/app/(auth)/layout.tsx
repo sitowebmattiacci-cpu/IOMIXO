@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 export const metadata: Metadata = {
   title: {
@@ -8,7 +9,15 @@ export const metadata: Metadata = {
 }
 
 // Each auth page manages its own full-screen layout.
-// This layout is a transparent passthrough to avoid double min-h-screen wrappers.
+// We add a floating language switcher in the top-right so users can change
+// language from any auth page (the choice persists across the whole site).
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+  return (
+    <>
+      <div className="fixed top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
+      {children}
+    </>
+  )
 }

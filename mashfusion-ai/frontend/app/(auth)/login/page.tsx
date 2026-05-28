@@ -7,10 +7,12 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { Logo } from '@/components/Logo'
+import { useI18n } from '@/lib/i18n'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { t } = useI18n()
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
   const [showPw,   setShowPw]   = useState(false)
@@ -18,7 +20,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email || !password) { toast.error('Please fill in all fields'); return }
+    if (!email || !password) { toast.error(t('auth.fillAllFields')); return }
     setLoading(true)
     try {
       const { error } = await getSupabaseClient().auth.signInWithPassword({
@@ -26,10 +28,10 @@ export default function LoginPage() {
         password,
       })
       if (error) throw error
-      toast.success('Welcome back!')
+      toast.success(t('auth.loginSuccess'))
       router.push('/dashboard')
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Login failed')
+      toast.error(err instanceof Error ? err.message : t('auth.loginFailed'))
     } finally {
       setLoading(false)
     }
@@ -54,8 +56,8 @@ export default function LoginPage() {
             <Logo size={40} />
             <span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">Live Hub</span></span>
           </Link>
-          <h1 className="text-2xl font-bold text-white">Welcome back</h1>
-          <p className="mt-1 text-sm text-white/40">Sign in to your Live Hub</p>
+          <h1 className="text-2xl font-bold text-white">{t('auth.welcomeBack')}</h1>
+          <p className="mt-1 text-sm text-white/40">{t('auth.signInSubtitle')}</p>
         </div>
 
         {/* Form */}
@@ -63,14 +65,14 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email */}
             <div className="space-y-2.5">
-              <label className="text-sm font-medium text-white/60 ml-1">Email</label>
+              <label className="text-sm font-medium text-white/60 ml-1">{t('auth.email')}</label>
               <div className="relative group">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors pointer-events-none z-10" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder={t('auth.emailPh')}
                   className="input-field h-12"
                   style={{ paddingLeft: '3rem', paddingRight: '1rem' }}
                   autoComplete="email"
@@ -82,9 +84,9 @@ export default function LoginPage() {
             {/* Password */}
             <div className="space-y-2.5">
               <div className="flex items-center justify-between ml-1">
-                <label className="text-sm font-medium text-white/60">Password</label>
+                <label className="text-sm font-medium text-white/60">{t('auth.password')}</label>
                 <Link href="/forgot-password">
-                  <span className="text-xs text-purple-400 hover:text-purple-300 transition-colors">Forgot password?</span>
+                  <span className="text-xs text-purple-400 hover:text-purple-300 transition-colors">{t('auth.forgotPassword')}</span>
                 </Link>
               </div>
               <div className="relative group">
@@ -111,20 +113,20 @@ export default function LoginPage() {
 
             <div className="pt-2">
               <Button type="submit" loading={loading} className="w-full h-12 text-base shadow-lg shadow-purple-500/20" icon={<ArrowRight className="h-5 w-5" />}>
-                Sign in
+                {t('auth.signIn')}
               </Button>
             </div>
           </form>
 
           <div className="flex items-center gap-4">
             <div className="h-px flex-1 bg-white/[0.06]" />
-            <span className="text-xs font-medium text-white/20 whitespace-nowrap">New to IOMIXO?</span>
+            <span className="text-xs font-medium text-white/20 whitespace-nowrap">{t('auth.newToIomixo')}</span>
             <div className="h-px flex-1 bg-white/[0.06]" />
           </div>
 
           <Link href="/register" className="block">
             <Button variant="secondary" className="w-full h-12 text-base">
-              Create a free account
+              {t('auth.createFreeAccount')}
             </Button>
           </Link>
         </div>
