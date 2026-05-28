@@ -7,6 +7,7 @@ import { djProfile, auth, type DjProfile } from '@/lib/api'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { UpgradeGate } from '@/components/live/UpgradeGate'
+import { useI18n } from '@/lib/i18n'
 import type { User } from '@/types'
 
 const EMPTY: DjProfile = {
@@ -22,6 +23,7 @@ const EMPTY: DjProfile = {
 }
 
 export default function ProfilePage() {
+  const { t } = useI18n()
   const { data, mutate } = useSWR('dj-profile', () => djProfile.get())
   const { data: me } = useSWR<User>('me', () => auth.me())
   const isFree = !me || me.plan === 'free'
@@ -38,9 +40,9 @@ export default function ProfilePage() {
       const updated = await djProfile.uploadAvatar(file)
       await mutate(updated, { revalidate: false })
       setForm((f) => ({ ...f, avatar_url: updated.avatar_url ?? '' }))
-      toast.success('Foto profilo aggiornata')
+      toast.success(t('profile.photoUpdated'))
     } catch (err: any) {
-      toast.error(err?.message ?? 'Upload fallito')
+      toast.error(err?.message ?? t('profile.uploadFailed'))
     } finally {
       setUploading(false)
       if (fileRef.current) fileRef.current.value = ''
@@ -72,9 +74,9 @@ export default function ProfilePage() {
     try {
       const updated = await djProfile.update(form)
       await mutate(updated, { revalidate: false })
-      toast.success('Profilo aggiornato')
+      toast.success(t('profile.profileUpdated'))
     } catch (err: any) {
-      toast.error(err?.message ?? 'Errore')
+      toast.error(err?.message ?? t('profile.genericError'))
     } finally {
       setSaving(false)
     }
@@ -87,17 +89,17 @@ export default function ProfilePage() {
           <UserCircle className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-2xl font-black text-white">Profilo DJ</h1>
-          <p className="text-sm text-white/40">Personalizza la tua pagina pubblica.</p>
+          <h1 className="text-2xl font-black text-white">{t('profile.title')}</h1>
+          <p className="text-sm text-white/40">{t('profile.subtitle')}</p>
         </div>
       </div>
 
       <form onSubmit={submit} className="space-y-6">
         <Card className="space-y-4">
-          <Field label="Nome d'arte">
-            <input value={form.display_name ?? ''} onChange={set('display_name')} className={inputCls} placeholder="DJ Nome" />
+          <Field label={t('profile.stageName')}>
+            <input value={form.display_name ?? ''} onChange={set('display_name')} className={inputCls} placeholder={t('profile.stageNamePlaceholder')} />
           </Field>
-          <Field label="Foto profilo" hint="JPEG, PNG o WEBP — max 5 MB.">
+          <Field label={t('profile.avatar')} hint={t('profile.avatarHint')}>
             <div className="flex items-center gap-3 mt-1">
               {form.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -122,37 +124,37 @@ export default function ProfilePage() {
                 icon={<Upload className="h-3.5 w-3.5" />}
                 onClick={() => fileRef.current?.click()}
               >
-                {form.avatar_url ? 'Cambia foto' : 'Carica foto'}
+                {form.avatar_url ? t('profile.changePhoto') : t('profile.uploadPhoto')}
               </Button>
             </div>
           </Field>
-          <Field label="Slug pubblico" hint="Sarà /live/tuoslug (solo lettere, numeri, trattini)">
-            <input value={form.public_slug ?? ''} onChange={set('public_slug')} className={inputCls} placeholder="tuo-nome" />
+          <Field label={t('profile.slug')} hint={t('profile.slugHint')}>
+            <input value={form.public_slug ?? ''} onChange={set('public_slug')} className={inputCls} placeholder={t('profile.slugPlaceholder')} />
           </Field>
-          <Field label="Bio">
-            <textarea value={form.bio ?? ''} onChange={set('bio')} rows={3} className={inputCls} placeholder="Racconta chi sei…" />
+          <Field label={t('profile.bio')}>
+            <textarea value={form.bio ?? ''} onChange={set('bio')} rows={3} className={inputCls} placeholder={t('profile.bioPlaceholder')} />
           </Field>
         </Card>
 
         {isFree ? (
           <UpgradeGate
             compact
-            title="Link social bloccati"
-            message="Mostra Instagram, TikTok, Spotify e sito web sulla tua pagina pubblica con il piano Pro."
+            title={t('profile.socialLocked')}
+            message={t('profile.socialLockedMsg')}
           />
         ) : (
           <Card className="space-y-4">
-            <p className="text-xs text-white/40 uppercase tracking-wide">Social</p>
+            <p className="text-xs text-white/40 uppercase tracking-wide">{t('profile.social')}</p>
             <Field label="Instagram"><input value={form.instagram_url ?? ''} onChange={set('instagram_url')} className={inputCls} placeholder="https://instagram.com/…" /></Field>
             <Field label="TikTok"><input value={form.tiktok_url ?? ''} onChange={set('tiktok_url')} className={inputCls} placeholder="https://tiktok.com/@…" /></Field>
             <Field label="Spotify"><input value={form.spotify_url ?? ''} onChange={set('spotify_url')} className={inputCls} placeholder="https://open.spotify.com/…" /></Field>
             <Field label="SoundCloud"><input value={form.soundcloud_url ?? ''} onChange={set('soundcloud_url')} className={inputCls} placeholder="https://soundcloud.com/…" /></Field>
-            <Field label="Sito web"><input value={form.website_url ?? ''} onChange={set('website_url')} className={inputCls} placeholder="https://…" /></Field>
+            <Field label={t('profile.website')}><input value={form.website_url ?? ''} onChange={set('website_url')} className={inputCls} placeholder="https://…" /></Field>
           </Card>
         )}
 
         <div className="flex justify-end">
-          <Button type="submit" loading={saving} icon={<Save className="h-4 w-4" />}>Salva profilo</Button>
+          <Button type="submit" loading={saving} icon={<Save className="h-4 w-4" />}>{t('profile.save')}</Button>
         </div>
       </form>
     </div>

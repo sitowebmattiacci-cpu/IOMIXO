@@ -9,6 +9,7 @@ import { PLAN_METADATA, type Plan, type User } from '@/types'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { useState } from 'react'
+import { useI18n } from '@/lib/i18n'
 
 const PLAN_ICONS: Record<Plan, React.ReactNode> = {
   free: <Zap className="h-5 w-5" />,
@@ -29,6 +30,7 @@ function normalisePlan(p: string | undefined): Plan {
 }
 
 export default function BillingPage() {
+  const { t } = useI18n()
   const { data: me, isLoading: loadingMe } = useSWR<User>('me', () => auth.me())
   const { data: subscription } = useSWR('subscription', () => billing.getSubscription())
   const { data: payments }     = useSWR('payments', () => billing.getPaymentHistory(10))
@@ -43,7 +45,7 @@ export default function BillingPage() {
   const handleUpgrade = async (plan: Plan) => {
     const meta = PLAN_METADATA[plan]
     if (!meta.stripePriceId) {
-      toast.error('Price ID Stripe non configurato per questo piano.')
+      toast.error(t('billing.errPriceMissing'))
       return
     }
     setLoading(plan)
@@ -51,7 +53,7 @@ export default function BillingPage() {
       const { url } = await billing.createCheckoutSession(meta.stripePriceId)
       window.location.href = url
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Impossibile aprire il checkout')
+      toast.error(err instanceof Error ? err.message : t('billing.errCheckout'))
       setLoading(null)
     }
   }
@@ -62,7 +64,7 @@ export default function BillingPage() {
       const { url } = await billing.createPortalSession()
       window.location.href = url
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Impossibile aprire il portale')
+      toast.error(err instanceof Error ? err.message : t('billing.errPortal'))
       setLoading(null)
     }
   }
@@ -70,7 +72,7 @@ export default function BillingPage() {
   const handleWeddingPass = async () => {
     const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_WEDDING_PASS
     if (!priceId) {
-      toast.error('Wedding Pass non configurato. Contatta il supporto.')
+      toast.error(t('billing.errPassNotConfigured'))
       return
     }
     setLoading('wedding-pass')
@@ -78,7 +80,7 @@ export default function BillingPage() {
       const { url } = await billing.createCheckoutSession(priceId, 'payment')
       window.location.href = url
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Impossibile aprire il checkout')
+      toast.error(err instanceof Error ? err.message : t('billing.errCheckout'))
       setLoading(null)
     }
   }
@@ -97,8 +99,8 @@ export default function BillingPage() {
   return (
     <div className="flex-1 overflow-y-auto px-6 py-8 max-w-5xl mx-auto w-full">
       <div className="mb-8">
-        <h1 className="text-2xl font-black text-white">Abbonamento</h1>
-        <p className="text-sm text-white/40 mt-1">Gestisci il tuo piano IOMIXO Live Hub.</p>
+        <h1 className="text-2xl font-black text-white">{t('billing.title')}</h1>
+        <p className="text-sm text-white/40 mt-1">{t('billing.subtitle')}</p>
       </div>
 
       {/* Current plan */}
@@ -109,12 +111,12 @@ export default function BillingPage() {
               {PLAN_ICONS[currentPlan]}
             </div>
             <div>
-              <p className="font-semibold text-white">Piano {PLAN_METADATA[currentPlan].name}</p>
+              <p className="font-semibold text-white">{t('billing.planPrefix')} {PLAN_METADATA[currentPlan].name}</p>
               <p className="text-xs text-white/40">
                 {subscription?.current_period_end ? (
-                  <>Rinnovo: {format(new Date(subscription.current_period_end), 'd MMM yyyy')}</>
+                  <>{t('billing.renewing')}: {format(new Date(subscription.current_period_end), 'd MMM yyyy')}</>
                 ) : currentPlan === 'free' ? (
-                  'Stai usando il piano gratuito'
+                  t('billing.usingFree')
                 ) : null}
               </p>
             </div>
@@ -128,7 +130,7 @@ export default function BillingPage() {
               onClick={handlePortal}
               icon={<ExternalLink className="h-3.5 w-3.5" />}
             >
-              Gestisci abbonamento
+              {t('billing.manageSubscription')}
             </Button>
           )}
         </div>
@@ -136,7 +138,7 @@ export default function BillingPage() {
         {subscription?.cancel_at_period_end && (
           <div className="mt-4 flex items-center gap-2 text-sm text-amber-400">
             <Clock className="h-4 w-4" />
-            L&apos;abbonamento si annullerà a fine periodo
+            {t('billing.cancelAtEnd')}
           </div>
         )}
       </div>
@@ -145,9 +147,9 @@ export default function BillingPage() {
       {showWeddingPass && (
         <div className="mb-10">
           <div className="mb-4">
-            <h2 className="font-bold text-white">Wedding Pass 24H</h2>
+            <h2 className="font-bold text-white">{t('billing.weddingPassTitle')}</h2>
             <p className="text-sm text-white/40 mt-1">
-              Prova tutte le funzioni Wedding Edition per 24 ore
+              {t('billing.weddingPassSubtitle')}
             </p>
           </div>
 
@@ -158,7 +160,7 @@ export default function BillingPage() {
             {hasActivePass && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <span className="rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-1 text-[10px] font-semibold text-white flex items-center gap-1">
-                  <Clock className="h-3 w-3" /> Attivo
+                  <Clock className="h-3 w-3" /> {t('billing.active')}
                 </span>
               </div>
             )}
@@ -170,34 +172,34 @@ export default function BillingPage() {
                     <Heart className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-pink-300">Accesso temporaneo</p>
-                    <p className="font-bold text-white text-lg">Wedding Pass</p>
+                    <p className="text-xs uppercase tracking-wide text-pink-300">{t('billing.tempAccess')}</p>
+                    <p className="font-bold text-white text-lg">{t('billing.weddingPass')}</p>
                   </div>
                 </div>
 
                 <p className="text-4xl font-black text-white mb-1">€7,99</p>
-                <p className="text-sm text-white/40 mb-6">Valido 24 ore dal pagamento</p>
+                <p className="text-sm text-white/40 mb-6">{t('billing.validFor24h')}</p>
 
                 <ul className="space-y-2 mb-6">
                   <li className="flex items-start gap-2 text-sm text-white/80">
                     <CheckCircle2 className="h-4 w-4 text-pink-400 flex-shrink-0 mt-0.5" />
-                    <span>Dediche romantiche live</span>
+                    <span>{t('billing.feat1')}</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm text-white/80">
                     <CheckCircle2 className="h-4 w-4 text-pink-400 flex-shrink-0 mt-0.5" />
-                    <span>Roulette penitenze</span>
+                    <span>{t('billing.feat2')}</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm text-white/80">
                     <CheckCircle2 className="h-4 w-4 text-pink-400 flex-shrink-0 mt-0.5" />
-                    <span>Gioco della scarpa</span>
+                    <span>{t('billing.feat3')}</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm text-white/80">
                     <CheckCircle2 className="h-4 w-4 text-pink-400 flex-shrink-0 mt-0.5" />
-                    <span>Album foto ospiti</span>
+                    <span>{t('billing.feat4')}</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm text-white/80">
                     <CheckCircle2 className="h-4 w-4 text-pink-400 flex-shrink-0 mt-0.5" />
-                    <span>Screen mode per videoproiettore</span>
+                    <span>{t('billing.feat5')}</span>
                   </li>
                 </ul>
 
@@ -208,11 +210,11 @@ export default function BillingPage() {
                     loading={loading === 'wedding-pass'}
                     onClick={handleWeddingPass}
                   >
-                    Acquista Wedding Pass 24H
+                    {t('billing.buyPass')}
                   </Button>
                 ) : (
                   <div className="text-center py-2 text-sm text-pink-300 font-medium">
-                    ✓ Wedding Pass attivo
+                    {t('billing.passActiveCheck')}
                   </div>
                 )}
               </div>
@@ -220,31 +222,31 @@ export default function BillingPage() {
               {hasActivePass && activePass && (
                 <div className="bg-black/20 rounded-xl p-5 border border-pink-500/30">
                   <p className="text-xs uppercase tracking-wide text-pink-300 mb-3 font-semibold">
-                    Pass attivo
+                    {t('billing.passActive')}
                   </p>
 
                   <div className="mb-4">
-                    <p className="text-sm text-white/60 mb-1">Scadenza</p>
+                    <p className="text-sm text-white/60 mb-1">{t('billing.expires')}</p>
                     <p className="text-lg font-semibold text-white">
                       {format(new Date(activePass.valid_until), 'd MMM yyyy, HH:mm')}
                     </p>
                   </div>
 
                   <div className="mb-4">
-                    <p className="text-sm text-white/60 mb-1">Tempo rimanente</p>
+                    <p className="text-sm text-white/60 mb-1">{t('billing.timeLeft')}</p>
                     <p className="text-lg font-semibold text-pink-300">
                       {(() => {
                         const hoursLeft = Math.max(0, (new Date(activePass.valid_until).getTime() - Date.now()) / (1000 * 60 * 60))
                         return hoursLeft > 1
-                          ? `${hoursLeft.toFixed(1)} ore`
-                          : `${Math.floor(hoursLeft * 60)} minuti`
+                          ? `${hoursLeft.toFixed(1)} ${t('billing.hours')}`
+                          : `${Math.floor(hoursLeft * 60)} ${t('billing.minutes')}`
                       })()}
                     </p>
                   </div>
 
                   <div className="pt-3 border-t border-pink-500/20">
                     <p className="text-xs text-white/40 italic">
-                      Tutte le funzioni Wedding Edition sono disponibili fino alla scadenza
+                      {t('billing.allFeaturesAvailable')}
                     </p>
                   </div>
                 </div>
@@ -253,27 +255,26 @@ export default function BillingPage() {
               {!hasActivePass && (
                 <div className="bg-black/20 rounded-xl p-5 border border-pink-500/30">
                   <p className="text-xs uppercase tracking-wide text-pink-300 mb-3 font-semibold">
-                    Ideale per
+                    {t('billing.idealFor')}
                   </p>
                   <ul className="space-y-3 text-sm text-white/70">
                     <li className="flex items-start gap-2">
                       <span className="text-pink-400">•</span>
-                      <span>Provare le funzioni Wedding prima di abbonarti</span>
+                      <span>{t('billing.ideal1')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-pink-400">•</span>
-                      <span>Evento singolo (matrimonio, anniversario)</span>
+                      <span>{t('billing.ideal2')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-pink-400">•</span>
-                      <span>Accesso temporaneo senza abbonamento</span>
+                      <span>{t('billing.ideal3')}</span>
                     </li>
                   </ul>
 
                   <div className="mt-5 pt-4 border-t border-pink-500/20">
                     <p className="text-xs text-white/50">
-                      💡 <span className="font-medium">Suggerimento:</span> Se organizzi matrimoni regolarmente,
-                      il piano Wedding Edition mensile è più conveniente
+                      💡 <span className="font-medium">{t('billing.tip')}:</span> {t('billing.tipMsg')}
                     </p>
                   </div>
                 </div>
@@ -303,22 +304,22 @@ export default function BillingPage() {
               {plan === 'pro' && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <span className="rounded-full bg-gradient-brand px-3 py-1 text-[10px] font-semibold text-white">
-                    Più scelto
+                    {t('billing.mostChosen')}
                   </span>
                 </div>
               )}
 
               <div className="flex items-center justify-between">
                 <div className={PLAN_COLORS[plan]}>{PLAN_ICONS[plan]}</div>
-                {isCurrent && <Badge variant="complete">Attivo</Badge>}
+                {isCurrent && <Badge variant="complete">{t('billing.active')}</Badge>}
               </div>
 
               <div>
                 <p className="text-xs uppercase tracking-wide text-white/40">{meta.tagline}</p>
                 <p className="font-bold text-white mt-1">{meta.name}</p>
                 <p className="text-3xl font-black text-white mt-2">
-                  {meta.priceMonthly === 0 ? 'Gratis' : `€${meta.priceMonthly.toFixed(2)}`}
-                  {meta.priceMonthly > 0 && <span className="text-sm font-normal text-white/30">/mese</span>}
+                  {meta.priceMonthly === 0 ? t('billing.free') : `€${meta.priceMonthly.toFixed(2)}`}
+                  {meta.priceMonthly > 0 && <span className="text-sm font-normal text-white/30">{t('billing.perMonth')}</span>}
                 </p>
               </div>
 
@@ -338,11 +339,11 @@ export default function BillingPage() {
                   loading={loading === plan}
                   onClick={() => handleUpgrade(plan)}
                 >
-                  Passa a {meta.name}
+                  {t('billing.switchTo')} {meta.name}
                 </Button>
               )}
               {isCurrent && (
-                <div className="text-center text-xs text-white/25">Piano attivo</div>
+                <div className="text-center text-xs text-white/25">{t('billing.currentPlan')}</div>
               )}
             </motion.div>
           )
@@ -351,10 +352,10 @@ export default function BillingPage() {
 
       {/* Payment history */}
       <div>
-        <h2 className="font-bold text-white mb-4">Cronologia pagamenti</h2>
+        <h2 className="font-bold text-white mb-4">{t('billing.history')}</h2>
         {!payments || payments.length === 0 ? (
           <div className="glass rounded-xl p-8 text-center">
-            <p className="text-sm text-white/30">Nessun pagamento ancora.</p>
+            <p className="text-sm text-white/30">{t('billing.noPayments')}</p>
           </div>
         ) : (
           <div className="space-y-2">

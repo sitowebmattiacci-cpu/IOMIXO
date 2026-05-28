@@ -53,7 +53,7 @@ export default function SessionDetailPage() {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <Card className="text-center">
-          <p className="text-white/70 mb-4">Sessione non trovata.</p>
+          <p className="text-white/70 mb-4">{t('weddingPanels.sessionNotFound')}</p>
           <Link href="/sessions"><Button variant="secondary">{t('common.back')}</Button></Link>
         </Card>
       </div>
@@ -74,7 +74,7 @@ export default function SessionDetailPage() {
   }
 
   const removeSession = async () => {
-    if (!confirm('Eliminare definitivamente questa sessione?')) return
+    if (!confirm(t('weddingPanels.confirmDeleteSession'))) return
     try {
       await live.deleteSession(session.id)
       router.push('/sessions')
@@ -141,14 +141,14 @@ export default function SessionDetailPage() {
               {isFree ? (
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-white/50 inline-flex items-center gap-1.5">
-                    <Users className="h-3.5 w-3.5" /> Persone online
+                    <Users className="h-3.5 w-3.5" /> {t('weddingPanels.peopleOnline')}
                   </span>
-                  <Link href="/billing" className="text-[11px] text-purple-300">🔒 Solo Pro</Link>
+                  <Link href="/billing" className="text-[11px] text-purple-300">{t('weddingPanels.proOnly')}</Link>
                 </div>
               ) : (
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-white/50 inline-flex items-center gap-1.5">
-                    <Users className="h-3.5 w-3.5" /> Persone online
+                    <Users className="h-3.5 w-3.5" /> {t('weddingPanels.peopleOnline')}
                   </span>
                   <span className="font-bold text-emerald-300">{session.online_count ?? 0}</span>
                 </div>
@@ -225,7 +225,7 @@ export default function SessionDetailPage() {
         </div>
 
         <p className="text-center mt-10 text-[10px] uppercase tracking-[0.32em] text-[#B8A89A] font-medium">
-          Powered by <span className="text-[#8F1D2C] font-semibold">PRO+ Wedding Edition</span>
+          {t('weddingPanels.poweredBy')} <span className="text-[#8F1D2C] font-semibold">{t('weddingPanels.proWeddingEdition')}</span>
         </p>
       </div>
     </div>
@@ -271,7 +271,7 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
       console.log('📝 Saving config:', JSON.stringify(newConfig))
       await live.updateSession(session.id, { screen_config: newConfig })
       await mutate(['session', session.id])
-      toast.success('Aggiornato')
+      toast.success(t('weddingPanels.updated'))
     } catch (e: any) {
       toast.error(e?.message ?? t('common.errorGeneric'))
     } finally {
@@ -315,7 +315,7 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
           </div>
           {session.couple_names && (
             <p className="font-wedding text-lg italic text-[#8F1D2C] mt-2 mb-3">
-              Benvenuti al matrimonio di {session.couple_names}
+              {t('weddingPanels.welcome')} {session.couple_names}
             </p>
           )}
           <div className="flex items-center gap-2.5 flex-wrap mb-3">
@@ -323,7 +323,7 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
               {session.is_active ? t('sessions.active') : t('sessions.closed')}
             </span>
             <span className="inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wider bg-[#FBEAF0] border-[#E8B7C8] text-[#8F1D2C]">
-              💒 PRO+ Wedding
+              {t('weddingPanels.proWeddingBadge')}
             </span>
             {/* QR Ospiti badge - apre popup con QR grande */}
             <div className="relative">
@@ -331,7 +331,7 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                 onClick={() => setShowGuestQR(!showGuestQR)}
                 className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wider bg-white border-[#E8B7C8] text-[#8F1D2C] hover:bg-[#FBEAF0] transition"
               >
-                👥 QR Ospiti
+                {t('weddingPanels.guestQR')}
               </button>
               {showGuestQR && (
                 <>
@@ -342,7 +342,7 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                   <div className="absolute right-0 mt-2 w-64 rounded-xl border border-[#E8B7C8] bg-white shadow-lg z-20 p-4">
                     <div className="flex flex-col items-center">
                       <p className="text-xs uppercase tracking-wider text-[#8F1D2C] mb-3 font-semibold">
-                        QR Code Ospiti
+                        {t('weddingPanels.guestQRCodeTitle')}
                       </p>
                       <div className="bg-white p-2 rounded-lg border border-[#E8B7C8]">
                         <QRCodeSVG value={url} size={180} level="M" includeMargin={false} />
@@ -376,7 +376,7 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={copy} className={btnOutline}>
             {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-            {copied ? 'Copiato' : 'Copia link'}
+            {copied ? t('weddingPanels.copied') : t('weddingPanels.copyLink')}
           </button>
           <button onClick={download} className={btnOutline}>
             <Download className="h-3.5 w-3.5" /> QR
@@ -398,7 +398,7 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                   <div className="absolute right-0 mt-2 w-72 rounded-xl border border-[#E8B7C8] bg-white shadow-lg z-20 p-4">
                     <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#E8B7C8]">
                       <h3 className="text-xs font-semibold uppercase tracking-wider text-[#8F1D2C]">
-                        Visibilità Schermo
+                        {t('weddingPanels.screenVisibility')}
                       </h3>
                       <div className="flex items-center gap-2">
                         <button
@@ -415,23 +415,23 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                               }
                               await live.updateSession(session.id, { screen_config: resetConfig })
                               await mutate(['session', session.id])
-                              toast.success('Reset completato')
+                              toast.success(t('weddingPanels.resetDone'))
                             } catch (e: any) {
-                              toast.error('Errore')
+                              toast.error(t('weddingPanels.genericError'))
                             } finally {
                               setSaving(false)
                             }
                           }}
                           className="text-[10px] text-[#8F1D2C] hover:underline uppercase tracking-wider"
                         >
-                          Reset
+                          {t('weddingPanels.reset')}
                         </button>
                         <Link
                           href={`/screen/${slug}`}
                           target="_blank"
                           className="text-xs text-[#8F1D2C] hover:underline"
                         >
-                          Apri →
+                          {t('weddingPanels.open')}
                         </Link>
                       </div>
                     </div>
@@ -445,7 +445,7 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                           className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
                         />
                         <ImageIcon className="h-3.5 w-3.5 text-[#8F1D2C]" />
-                        <span className="text-sm text-[#2B2424]">Foto</span>
+                        <span className="text-sm text-[#2B2424]">{t('weddingPanels.photos')}</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer select-none p-2 rounded-lg hover:bg-[#FBEAF0] transition">
                         <input
@@ -456,7 +456,7 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                           className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
                         />
                         <Heart className="h-3.5 w-3.5 text-[#8F1D2C]" />
-                        <span className="text-sm text-[#2B2424]">Dediche</span>
+                        <span className="text-sm text-[#2B2424]">{t('weddingPanels.dedications')}</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer select-none p-2 rounded-lg hover:bg-[#FBEAF0] transition">
                         <input
@@ -467,7 +467,7 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                           className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
                         />
                         <Sparkles className="h-3.5 w-3.5 text-[#8F1D2C]" />
-                        <span className="text-sm text-[#2B2424]">Roulette</span>
+                        <span className="text-sm text-[#2B2424]">{t('weddingPanels.roulette')}</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer select-none p-2 rounded-lg hover:bg-[#FBEAF0] transition">
                         <input
@@ -478,7 +478,7 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                           className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
                         />
                         <Footprints className="h-3.5 w-3.5 text-[#8F1D2C]" />
-                        <span className="text-sm text-[#2B2424]">Gioco Scarpa</span>
+                        <span className="text-sm text-[#2B2424]">{t('weddingPanels.shoeGame')}</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer select-none p-2 rounded-lg hover:bg-[#FBEAF0] transition">
                         <input
@@ -489,14 +489,14 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                           className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
                         />
                         <ListChecks className="h-3.5 w-3.5 text-[#8F1D2C]" />
-                        <span className="text-sm text-[#2B2424]">Sondaggi</span>
+                        <span className="text-sm text-[#2B2424]">{t('weddingPanels.polls')}</span>
                       </label>
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-[#E8B7C8]">
                       <label className="block mb-2">
                         <span className="text-xs font-semibold uppercase tracking-wider text-[#8F1D2C]">
-                          Font Nomi Sposi
+                          {t('weddingPanels.coupleFont')}
                         </span>
                       </label>
                       <select
@@ -507,9 +507,9 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                             const newConfig = { ...screenConfig, couple_font: e.target.value as any }
                             await live.updateSession(session.id, { screen_config: newConfig })
                             await mutate(['session', session.id])
-                            toast.success('Font aggiornato')
+                            toast.success(t('weddingPanels.fontUpdated'))
                           } catch (err: any) {
-                            toast.error(err?.message ?? 'Errore')
+                            toast.error(err?.message ?? t('weddingPanels.genericError'))
                           } finally {
                             setSaving(false)
                           }
@@ -517,12 +517,12 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                         disabled={saving}
                         className="w-full rounded-lg border border-[#E8B7C8] bg-white px-3 py-2 text-sm text-[#2B2424] focus:border-[#8F1D2C] focus:ring-1 focus:ring-[#8F1D2C]"
                       >
-                        <option value="cormorant">Cormorant (classico)</option>
-                        <option value="playfair">Playfair (elegante)</option>
-                        <option value="great-vibes">Great Vibes (corsivo)</option>
-                        <option value="dancing">Dancing Script (romantico)</option>
-                        <option value="cinzel">Cinzel (imperiale)</option>
-                        <option value="tangerine">Tangerine (delicato)</option>
+                        <option value="cormorant">{t('weddingPanels.fontCormorant')}</option>
+                        <option value="playfair">{t('weddingPanels.fontPlayfair')}</option>
+                        <option value="great-vibes">{t('weddingPanels.fontGreatVibes')}</option>
+                        <option value="dancing">{t('weddingPanels.fontDancing')}</option>
+                        <option value="cinzel">{t('weddingPanels.fontCinzel')}</option>
+                        <option value="tangerine">{t('weddingPanels.fontTangerine')}</option>
                       </select>
                     </div>
                   </div>
@@ -544,6 +544,7 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
 }
 
 function WeddingQRCompact({ slug }: { slug: string }) {
+  const { t } = useI18n()
   const envBase = process.env.NEXT_PUBLIC_PUBLIC_BASE_URL
   const origin = envBase || (typeof window !== 'undefined' ? window.location.origin : 'https://www.iomixo.com')
   const remoteUrl = `${origin}/remote/${slug}`
@@ -555,12 +556,12 @@ function WeddingQRCompact({ slug }: { slug: string }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold uppercase tracking-wider text-[#8F1D2C] mb-1">
-            REMOTE CONTROL DJ
+            {t('weddingPanels.qrGuests')}
           </p>
           <p className="text-xs text-[#6F6260] mb-2">
-            Fai partecipare gli invitati
+            {t('weddingPanels.qrGuestsHint')}
           </p>
-          <p className="text-[10px] text-[#6F6260] break-all leading-relaxed italic">DJ Remote Control</p>
+          <p className="text-[10px] text-[#6F6260] break-all leading-relaxed italic">{t('weddingPanels.djRemoteCtrl')}</p>
         </div>
       </div>
     </div>
@@ -568,16 +569,17 @@ function WeddingQRCompact({ slug }: { slug: string }) {
 }
 
 function WeddingStats({ sessionId, pendingCount }: { sessionId: string; pendingCount: number }) {
+  const { t } = useI18n()
   const { data: dedications } = useSWR(['dedications', sessionId], () => liveDedications.listForDj(sessionId), { refreshInterval: 8_000 })
   const { data: photos }      = useSWR(['photos', sessionId],      () => livePhotos.listForDj(sessionId),      { refreshInterval: 8_000 })
   const { data: polls }       = useSWR(['polls', sessionId],       () => livePolls.list(sessionId),            { refreshInterval: 8_000 })
   const activeGames = (polls ?? []).filter((p: LivePoll) => p.is_active).length
   return (
     <div className="rounded-[18px] border border-[#E8B7C8] bg-[#F7F4F3] p-4 h-full grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <StatTile label="Richieste" value={pendingCount} icon={<MessageSquare className="h-4 w-4" />} />
-      <StatTile label="Dediche"   value={(dedications ?? []).length} icon={<Heart className="h-4 w-4" />} />
-      <StatTile label="Foto"      value={(photos ?? []).length}      icon={<ImageIcon className="h-4 w-4" />} />
-      <StatTile label="Giochi"    value={activeGames}                icon={<Sparkles className="h-4 w-4" />} />
+      <StatTile label={t('weddingPanels.statRequests')} value={pendingCount} icon={<MessageSquare className="h-4 w-4" />} />
+      <StatTile label={t('weddingPanels.statDedications')}   value={(dedications ?? []).length} icon={<Heart className="h-4 w-4" />} />
+      <StatTile label={t('weddingPanels.statPhotos')}      value={(photos ?? []).length}      icon={<ImageIcon className="h-4 w-4" />} />
+      <StatTile label={t('weddingPanels.statGames')}    value={activeGames}                icon={<Sparkles className="h-4 w-4" />} />
     </div>
   )
 }
@@ -629,7 +631,7 @@ function RequestsPanel({ pending, approved, rejected, busyId, isFree, onUpdate, 
           </div>
         )}
         {isFree && pending.length > 0 && (
-          <div className="mt-3"><UpgradeGate compact title="Approva o rifiuta solo con Pro" message="Con il piano Pro puoi gestire le richieste in tempo reale." /></div>
+          <div className="mt-3"><UpgradeGate compact title={t('weddingPanels.approveRejectPro')} message={t('weddingPanels.approveRejectProMsg')} /></div>
         )}
       </section>
       {approved.length > 0 && (
@@ -689,7 +691,7 @@ function DedicationsPanel({ sessionId }: { sessionId: string }) {
                 "{d.message}"
               </p>
               <p className="text-[11px] uppercase tracking-[0.22em] text-[#8F1D2C] mt-2">
-                — {d.guest_name ?? 'Anonimo'}
+                — {d.guest_name ?? t('weddingPanels.anonymous')}
                 <span className="ml-2 normal-case tracking-normal">
                   <WeddingBadge tone={d.status === 'approved' ? 'sage' : d.status === 'rejected' ? 'taupe' : 'gold'}>
                     {d.status}
@@ -737,7 +739,7 @@ function ScreenControlsPanel({ sessionId, session }: { sessionId: string; sessio
       const newConfig = { ...screenConfig, [key]: !screenConfig[key] }
       await live.updateSession(sessionId, { screen_config: newConfig })
       await mutate(['session', sessionId])
-      toast.success('Configurazione aggiornata')
+      toast.success(t('weddingPanels.configUpdated'))
     } catch (e: any) {
       toast.error(e?.message ?? t('common.errorGeneric'))
     } finally {
@@ -748,10 +750,10 @@ function ScreenControlsPanel({ sessionId, session }: { sessionId: string; sessio
   return (
     <WeddingCard tone="cream">
       <h2 className="font-wedding text-2xl text-wedding-ink mb-2 inline-flex items-center gap-2">
-        <Tv className="h-5 w-5 text-wedding-gold" /> Visibilità Schermo Live
+        <Tv className="h-5 w-5 text-wedding-gold" /> {t('weddingPanels.screenVisibilityLive')}
       </h2>
       <p className="text-xs text-wedding-ink/60 mb-5">
-        Scegli quali sezioni visualizzare sullo schermo live. Se nessuna è selezionata, comparirà solo il nome degli sposi centrato.
+        {t('weddingPanels.screenChoose')}
       </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -765,7 +767,7 @@ function ScreenControlsPanel({ sessionId, session }: { sessionId: string; sessio
           />
           <span className="text-sm text-wedding-ink flex items-center gap-1.5">
             <ImageIcon className="h-4 w-4 text-wedding-gold" />
-            Ultime Foto
+            {t('weddingPanels.latestPhotos')}
           </span>
         </label>
 
@@ -779,7 +781,7 @@ function ScreenControlsPanel({ sessionId, session }: { sessionId: string; sessio
           />
           <span className="text-sm text-wedding-ink flex items-center gap-1.5">
             <Heart className="h-4 w-4 text-wedding-gold" />
-            Ultime Dediche
+            {t('weddingPanels.latestDedications')}
           </span>
         </label>
 
@@ -793,7 +795,7 @@ function ScreenControlsPanel({ sessionId, session }: { sessionId: string; sessio
           />
           <span className="text-sm text-wedding-ink flex items-center gap-1.5">
             <Sparkles className="h-4 w-4 text-wedding-gold" />
-            Roulette
+            {t('weddingPanels.roulette')}
           </span>
         </label>
 
@@ -807,7 +809,7 @@ function ScreenControlsPanel({ sessionId, session }: { sessionId: string; sessio
           />
           <span className="text-sm text-wedding-ink flex items-center gap-1.5">
             <Footprints className="h-4 w-4 text-wedding-gold" />
-            Gioco Scarpa
+            {t('weddingPanels.shoeGame')}
           </span>
         </label>
 
@@ -821,7 +823,7 @@ function ScreenControlsPanel({ sessionId, session }: { sessionId: string; sessio
           />
           <span className="text-sm text-wedding-ink flex items-center gap-1.5">
             <ListChecks className="h-4 w-4 text-wedding-gold" />
-            Sondaggi
+            {t('weddingPanels.polls')}
           </span>
         </label>
       </div>
@@ -876,7 +878,7 @@ function GamesPanel({ sessionId, session }: { sessionId: string; session: any })
     try {
       await live.updateSession(sessionId, { roulette_penitenze: customPenitenze.length > 0 ? customPenitenze : null })
       await mutate(['session', sessionId])
-      toast.success('Penitenze salvate')
+      toast.success(t('weddingPanels.forfeitsSaved'))
       setShowPenitenzaEditor(false)
     } catch (e: any) {
       toast.error(e?.message ?? t('common.errorGeneric'))
@@ -891,7 +893,7 @@ function GamesPanel({ sessionId, session }: { sessionId: string; session: any })
       await live.updateSession(sessionId, { roulette_penitenze: null })
       await mutate(['session', sessionId])
       setCustomPenitenze([])
-      toast.success('Ripristinate penitenze di default')
+      toast.success(t('weddingPanels.defaultForfeitsRestored'))
     } catch (e: any) {
       toast.error(e?.message ?? t('common.errorGeneric'))
     } finally {
@@ -910,7 +912,7 @@ function GamesPanel({ sessionId, session }: { sessionId: string; session: any })
       // Esegui lo spin per ottenere il risultato
       const r = await liveGames.spinRoulette(sessionId)
 
-      toast.success('Roulette avviata! Guarda lo schermo live.')
+      toast.success(t('weddingPanels.rouletteStarted'))
 
       // Mostra il risultato SOLO DOPO che la roulette finisce (17 secondi: 12s spin + 5s popup)
       setTimeout(() => {
@@ -943,7 +945,7 @@ function GamesPanel({ sessionId, session }: { sessionId: string; session: any })
         <h2 className="font-wedding text-2xl font-semibold text-[#2B2424] mb-2 inline-flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-[#8F1D2C]" /> {t('wedding.roulette.title')}
         </h2>
-        <p className="text-xs text-[#6F6260] mb-4">Penitenze eleganti per intrattenimento matrimonio.</p>
+        <p className="text-xs text-[#6F6260] mb-4">{t('weddingPanels.rouletteSubtitle')}</p>
 
         <div className="mb-5 pb-4 border-b border-wedding-champagne/50">
           <button
@@ -969,19 +971,19 @@ function GamesPanel({ sessionId, session }: { sessionId: string; session: any })
             className="text-xs text-[#8F1D2C] hover:underline inline-flex items-center gap-1 font-medium"
           >
             <Plus className="h-3.5 w-3.5" />
-            {loadedPenitenze ? 'Modifica penitenze personalizzate' : 'Personalizza penitenze'}
+            {loadedPenitenze ? t('weddingPanels.editCustomForfeits') : t('weddingPanels.customizeForfeits')}
           </button>
 
           {showPenitenzaEditor && (
             <div className="mt-4 p-4 rounded-xl bg-white border border-wedding-champagne">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-wedding-ink">Modifica Penitenze</h3>
+                <h3 className="text-sm font-semibold text-wedding-ink">{t('weddingPanels.editForfeitsTitle')}</h3>
                 <div className="flex gap-2">
                   <button onClick={resetToDefault} disabled={editingPenitenze} className="text-xs text-wedding-taupe hover:underline">
-                    Ripristina default
+                    {t('weddingPanels.resetDefaults')}
                   </button>
                   <button onClick={savePenitenze} disabled={editingPenitenze} className="text-xs text-wedding-gold hover:underline font-semibold">
-                    Salva
+                    {t('weddingPanels.save')}
                   </button>
                 </div>
               </div>
@@ -997,7 +999,7 @@ function GamesPanel({ sessionId, session }: { sessionId: string; session: any })
                         setCustomPenitenze(updated)
                       }}
                       className="flex-1 text-sm px-3 py-1.5 rounded border border-wedding-champagne focus:border-wedding-gold focus:ring-1 focus:ring-wedding-gold"
-                      placeholder="Penitenza..."
+                      placeholder={t('weddingPanels.forfeitPlaceholder')}
                     />
                     <select
                       value={p.category}
@@ -1008,9 +1010,9 @@ function GamesPanel({ sessionId, session }: { sessionId: string; session: any })
                       }}
                       className="text-xs px-2 py-1.5 rounded border border-wedding-champagne focus:border-wedding-gold"
                     >
-                      <option value="soft">Soft</option>
-                      <option value="party">Party</option>
-                      <option value="wild">Wild</option>
+                      <option value="soft">{t('weddingPanels.catSoft')}</option>
+                      <option value="party">{t('weddingPanels.catParty')}</option>
+                      <option value="wild">{t('weddingPanels.catWild')}</option>
                     </select>
                     <button
                       onClick={() => {
@@ -1029,7 +1031,7 @@ function GamesPanel({ sessionId, session }: { sessionId: string; session: any })
                 }}
                 className="mt-3 text-xs text-wedding-gold hover:underline inline-flex items-center gap-1"
               >
-                <Plus className="h-3.5 w-3.5" /> Aggiungi penitenza
+                <Plus className="h-3.5 w-3.5" /> {t('weddingPanels.addForfeit')}
               </button>
             </div>
           )}
@@ -1043,7 +1045,7 @@ function GamesPanel({ sessionId, session }: { sessionId: string; session: any })
               onChange={() => toggleCategory('soft')}
               className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
             />
-            <span className="text-sm text-[#2B2424] font-medium">Soft (eleganti)</span>
+            <span className="text-sm text-[#2B2424] font-medium">{t('weddingPanels.catSoftLabel')}</span>
           </label>
           <label className="inline-flex items-center gap-2 cursor-pointer select-none px-3 py-1.5 rounded-full bg-white border border-[#E8B7C8] hover:bg-[#FBEAF0] transition">
             <input
@@ -1052,7 +1054,7 @@ function GamesPanel({ sessionId, session }: { sessionId: string; session: any })
               onChange={() => toggleCategory('party')}
               className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
             />
-            <span className="text-sm text-[#2B2424] font-medium">Party (divertenti)</span>
+            <span className="text-sm text-[#2B2424] font-medium">{t('weddingPanels.catPartyLabel')}</span>
           </label>
           <label className="inline-flex items-center gap-2 cursor-pointer select-none px-3 py-1.5 rounded-full bg-white border border-[#E8B7C8] hover:bg-[#FBEAF0] transition">
             <input
@@ -1061,15 +1063,15 @@ function GamesPanel({ sessionId, session }: { sessionId: string; session: any })
               onChange={() => toggleCategory('wild')}
               className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
             />
-            <span className="text-sm text-[#2B2424] font-semibold">Wild (estreme)</span>
+            <span className="text-sm text-[#2B2424] font-semibold">{t('weddingPanels.catWildLabel')}</span>
           </label>
         </div>
 
         {result && (
           <div className="rounded-2xl border-2 border-[#E8B7C8] bg-white p-8 text-center mb-5 shadow-lg">
-            <p className="text-[10px] uppercase tracking-[0.28em] text-[#8F1D2C] mb-3 font-semibold">RISULTATO</p>
+            <p className="text-[10px] uppercase tracking-[0.28em] text-[#8F1D2C] mb-3 font-semibold">{t('weddingPanels.result')}</p>
             <p className="text-4xl font-semibold text-[#2B2424] leading-tight">{result}</p>
-            <p className="text-xs text-[#6F6260] mt-3 italic">Visibile sullo schermo live</p>
+            <p className="text-xs text-[#6F6260] mt-3 italic">{t('weddingPanels.visibleOnScreen')}</p>
           </div>
         )}
 
@@ -1127,7 +1129,7 @@ function ShoeGamePanel({ sessionId }: { sessionId: string }) {
 
   const start = async () => {
     setBusy(true)
-    try { await liveGames.startShoe(sessionId); toast.success('Gioco della Scarpa avviato'); refresh() }
+    try { await liveGames.startShoe(sessionId); toast.success(t('weddingPanels.shoeStarted')); refresh() }
     catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric')) }
     finally { setBusy(false) }
   }
@@ -1150,9 +1152,9 @@ function ShoeGamePanel({ sessionId }: { sessionId: string }) {
     try {
       await live.updateSession(sessionId, { shoe_game_questions: customQuestions })
       await mutateSession()
-      toast.success('Domande salvate')
+      toast.success(t('weddingPanels.questionsSaved'))
     } catch (e: any) {
-      toast.error(e?.message ?? 'Errore nel salvataggio')
+      toast.error(e?.message ?? t('weddingPanels.saveError'))
     } finally {
       setEditingQuestions(false)
     }
@@ -1164,9 +1166,9 @@ function ShoeGamePanel({ sessionId }: { sessionId: string }) {
       await live.updateSession(sessionId, { shoe_game_questions: null })
       await mutateSession()
       setCustomQuestions(DEFAULT_SHOE_QUESTIONS)
-      toast.success('Domande ripristinate')
+      toast.success(t('weddingPanels.questionsRestored'))
     } catch (e: any) {
-      toast.error(e?.message ?? 'Errore')
+      toast.error(e?.message ?? t('weddingPanels.genericError'))
     } finally {
       setEditingQuestions(false)
     }
@@ -1175,16 +1177,16 @@ function ShoeGamePanel({ sessionId }: { sessionId: string }) {
   return (
     <WeddingCard tone="active">
       <h2 className="font-wedding text-2xl font-semibold text-[#2B2424] mb-2 inline-flex items-center gap-2">
-        <Footprints className="h-5 w-5 text-[#8F1D2C]" /> Gioco della Scarpa
+        <Footprints className="h-5 w-5 text-[#8F1D2C]" /> {t('weddingPanels.shoeGameTitle')}
       </h2>
       <p className="text-xs text-[#6F6260] mb-5">
-        Gli sposi rispondono alzando la scarpa di chi tra i due è la risposta. Solo il DJ può controllare.
+        {t('weddingPanels.shoeGameDesc')}
       </p>
 
       {isActive && questions.length > 0 && (
         <div className="rounded-2xl border-2 border-[#E8B7C8] bg-white p-8 text-center mb-5 shadow-lg">
           <p className="text-[10px] uppercase tracking-[0.28em] text-[#8F1D2C] mb-3 font-semibold">
-            Domanda {currentIndex + 1}/{questions.length}
+            {t('weddingPanels.question')} {currentIndex + 1}/{questions.length}
           </p>
           <p className="text-3xl font-semibold text-[#2B2424] leading-tight">{questions[currentIndex]}</p>
         </div>
@@ -1192,7 +1194,7 @@ function ShoeGamePanel({ sessionId }: { sessionId: string }) {
 
       <div className="flex gap-2 flex-wrap mb-5">
         <WeddingButton onClick={start} variant="outline" loading={busy} icon={<Play className="h-4 w-4" />}>
-          {isActive ? 'Riavvia gioco' : 'Avvia gioco'}
+          {isActive ? t('weddingPanels.restartGame') : t('weddingPanels.startGame')}
         </WeddingButton>
         <WeddingButton
           onClick={next}
@@ -1201,10 +1203,10 @@ function ShoeGamePanel({ sessionId }: { sessionId: string }) {
           disabled={!isActive || currentIndex >= questions.length - 1}
           icon={<SkipForward className="h-4 w-4" />}
         >
-          Prossima domanda
+          {t('weddingPanels.nextQuestion')}
         </WeddingButton>
         <WeddingButton onClick={reset} variant="ghost" icon={<RotateCw className="h-4 w-4" />}>
-          Reset
+          {t('weddingPanels.reset')}
         </WeddingButton>
         <button
           onClick={() => {
@@ -1217,24 +1219,24 @@ function ShoeGamePanel({ sessionId }: { sessionId: string }) {
           }}
           className="text-xs text-wedding-taupe hover:underline"
         >
-          {showQuestionsEditor ? 'Chiudi' : 'Personalizza Domande'}
+          {showQuestionsEditor ? t('weddingPanels.close') : t('weddingPanels.customizeQuestions')}
         </button>
       </div>
 
       {showQuestionsEditor && (
         <div className="mb-5 p-4 rounded-xl bg-white border border-wedding-champagne">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-wedding-ink">Modifica Domande</h3>
+            <h3 className="text-sm font-semibold text-wedding-ink">{t('weddingPanels.editQuestions')}</h3>
             <div className="flex gap-2">
               <button onClick={resetQuestionsToDefault} disabled={editingQuestions} className="text-xs text-wedding-taupe hover:underline">
-                Reset Default
+                {t('weddingPanels.resetDefault')}
               </button>
               <button
                 onClick={saveCustomQuestions}
                 disabled={editingQuestions || customQuestions.length === 0}
                 className="text-xs px-3 py-1 bg-wedding-gold text-white rounded-lg hover:bg-wedding-gold/90 disabled:opacity-50"
               >
-                {editingQuestions ? 'Salvataggio...' : 'Salva'}
+                {editingQuestions ? t('weddingPanels.saving') : t('weddingPanels.save')}
               </button>
             </div>
           </div>
@@ -1264,10 +1266,10 @@ function ShoeGamePanel({ sessionId }: { sessionId: string }) {
             ))}
           </div>
           <button
-            onClick={() => setCustomQuestions([...customQuestions, 'Nuova domanda'])}
+            onClick={() => setCustomQuestions([...customQuestions, t('weddingPanels.newQuestion')])}
             className="mt-3 text-xs text-wedding-gold hover:underline flex items-center gap-1"
           >
-            <Plus className="h-3.5 w-3.5" /> Aggiungi Domanda
+            <Plus className="h-3.5 w-3.5" /> {t('weddingPanels.addQuestion')}
           </button>
         </div>
       )}
@@ -1296,6 +1298,7 @@ function ShoeGamePanel({ sessionId }: { sessionId: string }) {
 }
 
 function BestPhotoPanel({ sessionId }: { sessionId: string }) {
+  const { t } = useI18n()
   const { data: photos, mutate: refresh } = useSWR(
     ['photo-votes', sessionId],
     () => bestPhoto.getVotesForDj(sessionId),
@@ -1308,14 +1311,14 @@ function BestPhotoPanel({ sessionId }: { sessionId: string }) {
   return (
     <WeddingCard tone="cream">
       <h2 className="font-wedding text-2xl font-semibold text-[#2B2424] mb-2 inline-flex items-center gap-2">
-        <ImageIcon className="h-5 w-5 text-[#8F1D2C]" /> Concorso Foto
+        <ImageIcon className="h-5 w-5 text-[#8F1D2C]" /> {t('weddingPanels.photoContest')}
       </h2>
       <p className="text-xs text-[#6F6260] mb-5">
-        Votazione foto. Ogni ospite può votare una volta per foto.
+        {t('weddingPanels.photoContestDesc')}
       </p>
 
       {sorted.length === 0 ? (
-        <p className="text-sm text-[#6F6260] text-center py-4">Nessuna foto approvata ancora.</p>
+        <p className="text-sm text-[#6F6260] text-center py-4">{t('weddingPanels.noApprovedPhotos')}</p>
       ) : (
         <div className="space-y-3">
           {sorted.map((p, i) => (
@@ -1327,12 +1330,12 @@ function BestPhotoPanel({ sessionId }: { sessionId: string }) {
               )}
               <div className="flex-1 min-w-0">
                 {p.caption && <p className="text-sm font-semibold text-[#2B2424] truncate">{p.caption}</p>}
-                <p className="text-xs text-[#6F6260]">{p.guest_name ?? 'Anonimo'}</p>
+                <p className="text-xs text-[#6F6260]">{p.guest_name ?? t('weddingPanels.anonymous')}</p>
               </div>
               <div className="text-center">
                 <p className="text-3xl font-bold text-[#8F1D2C] tabular-nums">{p.votes ?? 0}</p>
-                <p className="text-[10px] uppercase tracking-wide text-[#6F6260] font-semibold">voti</p>
-                {i === 0 && p.votes! > 0 && <p className="text-[11px] text-[#8F1D2C] font-semibold mt-1">🏆 Vincitore</p>}
+                <p className="text-[10px] uppercase tracking-wide text-[#6F6260] font-semibold">{t('weddingPanels.votes')}</p>
+                {i === 0 && p.votes! > 0 && <p className="text-[11px] text-[#8F1D2C] font-semibold mt-1">{t('weddingPanels.winner')}</p>}
               </div>
             </div>
           ))}
@@ -1382,7 +1385,7 @@ function PollsPanel({ sessionId }: { sessionId: string }) {
         {options.map((opt, i) => (
           <WeddingInput key={i} value={opt}
             onChange={(e) => setOptions(options.map((o, j) => j === i ? e.target.value : o))}
-            placeholder={`Opzione ${i + 1}`} />
+            placeholder={`${t('weddingPanels.option')} ${i + 1}`} />
         ))}
         <div className="flex gap-2 pt-1">
           {options.length < 4 && (
@@ -1464,7 +1467,7 @@ function PhotosPanel({ sessionId }: { sessionId: string }) {
                 : 'text-[#6F6260] hover:text-[#2B2424]'
             }`}
           >
-            Album Ospiti
+            {t('weddingPanels.guestAlbum')}
           </button>
           <button
             onClick={() => setPhotoTab('booth')}
@@ -1474,7 +1477,7 @@ function PhotosPanel({ sessionId }: { sessionId: string }) {
                 : 'text-[#6F6260] hover:text-[#2B2424]'
             }`}
           >
-            <Camera className="h-3.5 w-3.5" /> Live Booth
+            <Camera className="h-3.5 w-3.5" /> {t('weddingPanels.liveBooth')}
           </button>
         </div>
       </div>
@@ -1482,14 +1485,14 @@ function PhotosPanel({ sessionId }: { sessionId: string }) {
       {showBoothQR && (
         <WeddingCard tone="ivory" className="p-4 flex items-center gap-4">
           <div className="flex-1">
-            <p className="text-sm font-semibold text-wedding-ink mb-1">📸 Live Booth attivo</p>
-            <p className="text-xs text-wedding-taupe">Gli invitati possono scansionare il QR o visitare il link per scattare foto eleganti.</p>
+            <p className="text-sm font-semibold text-wedding-ink mb-1">{t('weddingPanels.liveBoothActive')}</p>
+            <p className="text-xs text-wedding-taupe">{t('weddingPanels.liveBoothDesc')}</p>
             <button
               onClick={copyBoothUrl}
               className="mt-2 inline-flex items-center gap-1.5 text-xs text-wedding-burgundy hover:underline"
             >
               {copiedBooth ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-              {copiedBooth ? 'Link copiato' : 'Copia link'}
+              {copiedBooth ? t('weddingPanels.linkCopied') : t('weddingPanels.copyLink')}
             </button>
           </div>
           <div className="bg-white p-3 rounded-xl border-2 border-wedding-gold/30">
@@ -1500,7 +1503,7 @@ function PhotosPanel({ sessionId }: { sessionId: string }) {
 
       {items.length === 0 && (
         <WeddingCard tone="ivory" className="text-center py-8 text-sm text-wedding-ink/50">
-          {photoTab === 'booth' ? 'Nessuna foto booth ancora.' : t('wedding.photos.empty')}
+          {photoTab === 'booth' ? t('weddingPanels.noBoothPhotos') : t('wedding.photos.empty')}
         </WeddingCard>
       )}
 
@@ -1519,13 +1522,13 @@ function PhotosPanel({ sessionId }: { sessionId: string }) {
               )}
               {p.is_featured && (
                 <div className="absolute top-2 right-2 bg-wedding-gold text-wedding-ink px-2 py-1 rounded-full text-[10px] font-bold shadow-lg">
-                  ★ In evidenza
+                  {t('weddingPanels.featured')}
                 </div>
               )}
               <div className="p-3">
                 <p className="text-xs text-wedding-ink/70 line-clamp-2">{p.caption ?? '—'}</p>
                 <p className="text-[10px] uppercase tracking-[0.22em] text-wedding-gold mt-2 flex items-center gap-2">
-                  <span>— {p.guest_name ?? 'Anonimo'}</span>
+                  <span>— {p.guest_name ?? t('weddingPanels.anonymous')}</span>
                   <span className="normal-case tracking-normal">
                     <WeddingBadge tone={p.status === 'approved' ? 'sage' : p.status === 'rejected' ? 'taupe' : 'gold'}>
                       {p.status}
@@ -1541,7 +1544,7 @@ function PhotosPanel({ sessionId }: { sessionId: string }) {
                           ? 'bg-wedding-gold/40 text-wedding-ink hover:bg-wedding-gold/60'
                           : 'bg-wedding-champagne/40 text-wedding-taupe hover:bg-wedding-champagne/60'
                       }`}
-                      title="Evidenzia/Rimuovi evidenza"
+                      title={t('weddingPanels.toggleFeatured')}
                     >
                       <Star className={`h-4 w-4 mx-auto ${p.is_featured ? 'fill-current' : ''}`} />
                     </button>
