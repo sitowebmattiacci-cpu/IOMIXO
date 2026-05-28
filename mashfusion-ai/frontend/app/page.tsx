@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import {
   QrCode, MessageSquare, ListChecks, Share2, CalendarDays,
   CheckCircle2, ArrowRight, Music2, Radio,
+  Heart, Dices, Footprints, BarChart3, Camera, Monitor, Palette, Smartphone,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -117,6 +118,63 @@ function Features() {
               </div>
             )
           })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── Wedding Edition Showcase ───────────────────────────────────
+const WEDDING_KEYS = ['dedications', 'roulette', 'shoeGame', 'polls', 'photos', 'screen', 'branding', 'remote'] as const
+const WEDDING_ICONS: Record<typeof WEDDING_KEYS[number], typeof Heart> = {
+  dedications: Heart,
+  roulette:    Dices,
+  shoeGame:    Footprints,
+  polls:       BarChart3,
+  photos:      Camera,
+  screen:      Monitor,
+  branding:    Palette,
+  remote:      Smartphone,
+}
+
+function WeddingShowcase() {
+  const { t } = useI18n()
+  return (
+    <section id="wedding-edition" className="py-20 sm:py-28 border-t border-white/5 relative overflow-hidden">
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-pink-950/30 via-black to-black" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-pink-600/10 blur-3xl -z-10" />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-14">
+          <span className="inline-flex items-center gap-2 rounded-full border border-pink-500/30 bg-pink-500/10 px-3 py-1 text-xs font-semibold text-pink-200 mb-5">
+            {t('landing.weddingShowcase.badge')}
+          </span>
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            {t('landing.weddingShowcase.title')}
+          </h2>
+          <p className="text-white/60 max-w-2xl mx-auto">
+            {t('landing.weddingShowcase.subtitle')}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          {WEDDING_KEYS.map((key) => {
+            const Icon = WEDDING_ICONS[key]
+            return (
+              <div key={key} className="rounded-2xl p-6 bg-gradient-to-b from-pink-500/10 to-rose-500/5 border border-pink-400/20 hover:border-pink-400/40 transition">
+                <div className="h-10 w-10 rounded-xl bg-pink-500/15 flex items-center justify-center mb-4">
+                  <Icon className="h-5 w-5 text-pink-300" />
+                </div>
+                <h3 className="text-base font-semibold text-white mb-2">{t(`landing.weddingShowcase.${key}.title`)}</h3>
+                <p className="text-sm text-white/65 leading-relaxed">{t(`landing.weddingShowcase.${key}.body`)}</p>
+              </div>
+            )
+          })}
+        </div>
+        <div className="mt-10 flex justify-center">
+          <a href="#pricing">
+            <Button className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600">
+              {t('landing.weddingShowcase.cta')} <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </a>
         </div>
       </div>
     </section>
@@ -266,6 +324,7 @@ export default function HomePage() {
       <TopNav />
       <Hero />
       <Features />
+      <WeddingShowcase />
       <Pricing />
       <Footer />
     </main>
