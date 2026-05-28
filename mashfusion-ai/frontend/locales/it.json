@@ -116,5 +116,61 @@
     "messageForDj": "Messaggio per il DJ (opzionale)",
     "submitRequest": "Invia richiesta",
     "endedSession": "Questa sessione è terminata."
+  },
+  "landing": {
+    "nav": {
+      "features": "Funzioni",
+      "pricing": "Piani",
+      "login": "Accedi",
+      "cta": "Crea il tuo Live Hub",
+      "ctaShort": "Inizia"
+    },
+    "hero": {
+      "badge": "Il Live Hub interattivo per DJ",
+      "tagline": "La regia interattiva per DJ, eventi e matrimoni.",
+      "claim": "Il DJ comanda. Il pubblico interagisce.",
+      "audiences": "Cene spettacolo · Feste private · Compleanni · Matrimoni · Eventi aziendali · Club · Locali",
+      "ctaPrimary": "Crea il tuo Live Hub",
+      "ctaSecondary": "Scopri i piani"
+    },
+    "features": {
+      "title": "Tutto quello che serve per gestire la serata",
+      "subtitle": "IOMIXO Live Hub è il ponte tra te e il tuo pubblico — senza distrarti dal mix.",
+      "qr": { "title": "Mostra il QR Code in console", "body": "Il pubblico scansiona il QR e accede alla tua pagina live." },
+      "requests": { "title": "Ricevi richieste senza essere interrotto", "body": "Niente più persone che ti parlano all'orecchio mentre mixi. Le richieste arrivano ordinate nella tua dashboard." },
+      "control": { "title": "Decidi tu cosa suonare", "body": "Approva, rifiuta o ignora ogni richiesta. Il controllo resta sempre al DJ." },
+      "social": { "title": "Promuovi i tuoi social", "body": "Aggiungi Instagram, TikTok, Spotify, SoundCloud e i tuoi link principali." },
+      "dates": { "title": "Mostra le prossime date", "body": "Trasforma ogni serata in un'occasione per farti seguire e portare pubblico ai prossimi eventi." },
+      "events": { "title": "Perfetto per DJ, club, matrimoni ed eventi privati", "body": "Una piattaforma pensata per chi vive la musica live: dal mobile DJ al locale, dal wedding all'agenzia eventi." }
+    },
+    "pricing": {
+      "title": "Piani semplici, per ogni serata",
+      "subtitle": "Scegli il piano che meglio si adatta al tuo modo di lavorare.",
+      "perMonth": "/mese",
+      "free": "Gratis",
+      "mostChosen": "Più scelto",
+      "premium": "✦ Premium",
+      "startFree": "Inizia gratis",
+      "upgradeTo": "Passa a",
+      "or24h": "Oppure prova per 24 ore",
+      "or24hDesc": "Hai un evento singolo? Acquista l'accesso temporaneo senza abbonamento.",
+      "tempAccess": "⏱️ Accesso temporaneo",
+      "trial24h": "Prova completa 24h",
+      "weddingPass": "Wedding Pass",
+      "oneTime": "una tantum",
+      "weddingPassDesc": "Accesso completo a tutte le funzioni Wedding Edition per 24 ore dal pagamento. Perfetto per matrimoni, eventi singoli o per provare prima di abbonarti.",
+      "buyPass": "Acquista Wedding Pass 24H",
+      "includes": "Include",
+      "f1": "Dediche romantiche live",
+      "f2": "Roulette penitenze",
+      "f3": "Gioco della scarpa",
+      "f4": "Album foto ospiti con votazione",
+      "f5": "Screen mode per videoproiettore",
+      "f6": "Sondaggi interattivi"
+    },
+    "footer": {
+      "privacy": "Privacy",
+      "terms": "Termini"
+    }
   }
 }
