@@ -353,7 +353,9 @@ body {
 
 /* ── Input fields ────────────────────────────── */
 .input-field {
-  @apply w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200;
+  @apply w-full py-3 rounded-xl text-sm outline-none transition-all duration-200;
+  padding-left: 1rem;
+  padding-right: 1rem;
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
   color: #f0f0f5;
@@ -363,6 +365,11 @@ body {
   border-color: rgba(124,58,237,0.5);
   box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
 }
+/* Forza padding quando combinato con utility Tailwind */
+.input-field.pl-10  { padding-left: 2.5rem; }
+.input-field.pl-12  { padding-left: 3rem; }
+.input-field.pr-10  { padding-right: 2.5rem; }
+.input-field.pr-12  { padding-right: 3rem; }
 
 /* ── Status badges ───────────────────────────── */
 .badge-processing { @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20; }
