@@ -147,75 +147,77 @@ export default function RegisterPage() {
               </Link>
             </div>
 
-            <div className="glass rounded-2xl p-8 space-y-6">
+            <div className="glass rounded-2xl p-8 space-y-8">
               <div>
-                <h2 className="text-xl font-bold text-white">Create your account</h2>
+                <h2 className="text-2xl font-bold text-white tracking-tight">Create your account</h2>
                 <p className="text-sm text-white/40 mt-1">Free forever — no credit card needed</p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5" data-gramm="false">
+              <form onSubmit={handleSubmit} className="space-y-6" data-gramm="false">
                 {/* Full name */}
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-white/50">Full name</label>
-                  <div className="relative">
-                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
+                <div className="space-y-2.5">
+                  <label className="text-sm font-medium text-white/60 ml-1">Full name</label>
+                  <div className="relative group">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors" />
                     <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)}
-                      placeholder="DJ Example" className="input-field pl-10" autoComplete="name" required spellCheck={false} />
+                      placeholder="DJ Example" className="input-field pl-12 h-12" autoComplete="name" required spellCheck={false} />
                   </div>
                 </div>
 
                 {/* Email */}
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-white/50">Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
+                <div className="space-y-2.5">
+                  <label className="text-sm font-medium text-white/60 ml-1">Email</label>
+                  <div className="relative group">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors" />
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com" className="input-field pl-10" autoComplete="email" required spellCheck={false} />
+                      placeholder="you@example.com" className="input-field pl-12 h-12" autoComplete="email" required spellCheck={false} />
                   </div>
                 </div>
 
                 {/* Password */}
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-white/50">Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
+                <div className="space-y-2.5">
+                  <label className="text-sm font-medium text-white/60 ml-1">Password</label>
+                  <div className="relative group">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors" />
                     <input
                       type={showPw ? 'text' : 'password'} value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Min. 8 characters" className="input-field pl-10 pr-10"
+                      placeholder="Min. 8 characters" className="input-field pl-12 pr-12 h-12"
                       autoComplete="new-password" required minLength={8}
                     />
                     <button type="button" onClick={() => setShowPw(!showPw)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors">
-                      {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors">
+                      {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
                   {password.length > 0 && (
-                    <div className="flex gap-1 pt-1">
+                    <div className="flex gap-1.5 px-1 pt-1">
                       {[1, 2, 3, 4].map((n) => (
-                        <div key={n} className={`h-1 flex-1 rounded-full transition-all ${
+                        <div key={n} className={`h-1 flex-1 rounded-full transition-all duration-300 ${
                           n <= pwStrength
-                            ? pwStrength <= 1 ? 'bg-red-500' : pwStrength === 2 ? 'bg-yellow-500' : pwStrength === 3 ? 'bg-blue-500' : 'bg-green-500'
-                            : 'bg-white/10'
+                            ? pwStrength <= 1 ? 'bg-red-500/80' : pwStrength === 2 ? 'bg-yellow-500/80' : pwStrength === 3 ? 'bg-blue-500/80' : 'bg-green-500/80'
+                            : 'bg-white/5'
                         }`} />
                       ))}
                     </div>
                   )}
                 </div>
 
-                <Button type="submit" loading={loading} className="w-full mt-2" icon={<ArrowRight className="h-4 w-4" />}>
-                  Create account
-                </Button>
+                <div className="pt-2">
+                  <Button type="submit" loading={loading} className="w-full h-12 text-base shadow-lg shadow-purple-500/20" icon={<ArrowRight className="h-5 w-5" />}>
+                    Create account
+                  </Button>
+                </div>
               </form>
 
-              <div className="flex items-center gap-4 py-2">
-                <div className="h-px flex-1 bg-white/5" />
-                <span className="text-xs text-white/20">Already have an account?</span>
-                <div className="h-px flex-1 bg-white/5" />
+              <div className="flex items-center gap-4">
+                <div className="h-px flex-1 bg-white/[0.06]" />
+                <span className="text-xs font-medium text-white/20 whitespace-nowrap">Already have an account?</span>
+                <div className="h-px flex-1 bg-white/[0.06]" />
               </div>
 
-              <Link href="/login">
-                <Button variant="secondary" className="w-full">Sign in</Button>
+              <Link href="/login" className="block">
+                <Button variant="secondary" className="w-full h-12 text-base">Sign in</Button>
               </Link>
             </div>
           </motion.div>

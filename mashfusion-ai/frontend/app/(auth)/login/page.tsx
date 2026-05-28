@@ -59,19 +59,19 @@ export default function LoginPage() {
         </div>
 
         {/* Form */}
-        <div className="glass rounded-2xl p-8 space-y-6">
-          <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="glass rounded-2xl p-8 space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email */}
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-white/50">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
+            <div className="space-y-2.5">
+              <label className="text-sm font-medium text-white/60 ml-1">Email</label>
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="input-field pl-10"
+                  className="input-field pl-12 h-12"
                   autoComplete="email"
                   required
                 />
@@ -79,47 +79,49 @@ export default function LoginPage() {
             </div>
 
             {/* Password */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-white/50">Password</label>
-                <Link href="/forgot-password" className="text-xs text-purple-400 hover:text-purple-300 transition-colors">
-                  Forgot password?
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between ml-1">
+                <label className="text-sm font-medium text-white/60">Password</label>
+                <Link href="/forgot-password">
+                  <span className="text-xs text-purple-400 hover:text-purple-300 transition-colors">Forgot password?</span>
                 </Link>
               </div>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors" />
                 <input
                   type={showPw ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="input-field pl-10 pr-10"
+                  className="input-field pl-12 pr-12 h-12"
                   autoComplete="current-password"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors"
                 >
-                  {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
 
-            <Button type="submit" loading={loading} className="w-full mt-2" icon={<ArrowRight className="h-4 w-4" />}>
-              Sign in
-            </Button>
+            <div className="pt-2">
+              <Button type="submit" loading={loading} className="w-full h-12 text-base shadow-lg shadow-purple-500/20" icon={<ArrowRight className="h-5 w-5" />}>
+                Sign in
+              </Button>
+            </div>
           </form>
 
-          <div className="flex items-center gap-4 py-2">
-            <div className="h-px flex-1 bg-white/5" />
-            <span className="text-xs text-white/20">New to IOMIXO?</span>
-            <div className="h-px flex-1 bg-white/5" />
+          <div className="flex items-center gap-4">
+            <div className="h-px flex-1 bg-white/[0.06]" />
+            <span className="text-xs font-medium text-white/20 whitespace-nowrap">New to IOMIXO?</span>
+            <div className="h-px flex-1 bg-white/[0.06]" />
           </div>
 
-          <Link href="/register">
-            <Button variant="secondary" className="w-full">
+          <Link href="/register" className="block">
+            <Button variant="secondary" className="w-full h-12 text-base">
               Create a free account
             </Button>
           </Link>
