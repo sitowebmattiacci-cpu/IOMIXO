@@ -147,15 +147,15 @@ export default function RegisterPage() {
               </Link>
             </div>
 
-            <div className="glass rounded-2xl p-8 space-y-5">
+            <div className="glass rounded-2xl p-8 space-y-6">
               <div>
                 <h2 className="text-xl font-bold text-white">Create your account</h2>
                 <p className="text-sm text-white/40 mt-1">Free forever — no credit card needed</p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4" data-gramm="false">
+              <form onSubmit={handleSubmit} className="space-y-5" data-gramm="false">
                 {/* Full name */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-xs font-medium text-white/50">Full name</label>
                   <div className="relative">
                     <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
@@ -165,7 +165,7 @@ export default function RegisterPage() {
                 </div>
 
                 {/* Email */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-xs font-medium text-white/50">Email</label>
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
@@ -175,7 +175,7 @@ export default function RegisterPage() {
                 </div>
 
                 {/* Password */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-xs font-medium text-white/50">Password</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
@@ -191,7 +191,7 @@ export default function RegisterPage() {
                     </button>
                   </div>
                   {password.length > 0 && (
-                    <div className="flex gap-1 mt-1.5">
+                    <div className="flex gap-1 pt-1">
                       {[1, 2, 3, 4].map((n) => (
                         <div key={n} className={`h-1 flex-1 rounded-full transition-all ${
                           n <= pwStrength
@@ -203,18 +203,15 @@ export default function RegisterPage() {
                   )}
                 </div>
 
-                <Button type="submit" loading={loading} className="w-full" icon={<ArrowRight className="h-4 w-4" />}>
+                <Button type="submit" loading={loading} className="w-full mt-2" icon={<ArrowRight className="h-4 w-4" />}>
                   Create account
                 </Button>
               </form>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/6" />
-                </div>
-                <div className="relative flex justify-center text-xs text-white/25">
-                  <span className="px-2 bg-transparent">Already have an account?</span>
-                </div>
+              <div className="flex items-center gap-4 py-2">
+                <div className="h-px flex-1 bg-white/5" />
+                <span className="text-xs text-white/20">Already have an account?</span>
+                <div className="h-px flex-1 bg-white/5" />
               </div>
 
               <Link href="/login">

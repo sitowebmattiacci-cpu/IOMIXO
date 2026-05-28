@@ -57,8 +57,8 @@ export default function ForgotPasswordPage() {
 
         <div className="glass rounded-2xl p-8">
           {!sent ? (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1.5">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
                 <label className="text-xs font-medium text-white/50">Email address</label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
@@ -74,15 +74,17 @@ export default function ForgotPasswordPage() {
                 </div>
               </div>
 
-              <Button type="submit" loading={loading} className="w-full" icon={<ArrowRight className="h-4 w-4" />}>
-                Send reset link
-              </Button>
-
-              <Link href="/login">
-                <Button variant="ghost" className="w-full mt-1" icon={<ArrowLeft className="h-4 w-4" />}>
-                  Back to sign in
+              <div className="space-y-3 pt-2">
+                <Button type="submit" loading={loading} className="w-full" icon={<ArrowRight className="h-4 w-4" />}>
+                  Send reset link
                 </Button>
-              </Link>
+
+                <Link href="/login">
+                  <Button variant="ghost" className="w-full" icon={<ArrowLeft className="h-4 w-4" />}>
+                    Back to sign in
+                  </Button>
+                </Link>
+              </div>
             </form>
           ) : (
             <motion.div

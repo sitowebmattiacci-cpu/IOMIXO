@@ -75,9 +75,9 @@ function ResetPasswordContent() {
 
         <div className="glass rounded-2xl p-8">
           {!done ? (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {/* New password */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-xs font-medium text-white/50">New password</label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
@@ -97,7 +97,7 @@ function ResetPasswordContent() {
                   </button>
                 </div>
                 {password.length > 0 && (
-                  <div className="flex gap-1 mt-1.5">
+                  <div className="flex gap-1 pt-1">
                     {[1, 2, 3, 4].map((n) => (
                       <div key={n} className={`h-1 flex-1 rounded-full transition-all ${
                         n <= pwStrength
@@ -110,7 +110,7 @@ function ResetPasswordContent() {
               </div>
 
               {/* Confirm password */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-xs font-medium text-white/50">Confirm password</label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
@@ -135,19 +135,22 @@ function ResetPasswordContent() {
                 )}
               </div>
 
-              <Button
-                type="submit"
-                loading={loading}
-                disabled={!password || !confirm || password !== confirm}
-                className="w-full"
-                icon={<ArrowRight className="h-4 w-4" />}
-              >
-                Update password
-              </Button>
+              <div className="space-y-3 pt-2">
+                <Button
+                  type="submit"
+                  loading={loading}
+                  disabled={!password || !confirm || password !== confirm}
+                  className="w-full"
+                  icon={<ArrowRight className="h-4 w-4" />}
+                >
+                  Update password
+                </Button>
 
-              <Link href="/login">
-                <Button variant="ghost" className="w-full mt-1">Back to sign in</Button>
-              </Link>
+                <Link href="/login">
+                  <Button variant="ghost" className="w-full">Back to sign in</Button>
+                </Link>
+              </div>
+            </form>
             </form>
           ) : (
             <motion.div
