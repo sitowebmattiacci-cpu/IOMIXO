@@ -151,7 +151,6 @@ function ResetPasswordContent() {
                 </Link>
               </div>
             </form>
-            </form>
           ) : (
             <motion.div
               initial={{ opacity: 0, scale: 0.96 }}
