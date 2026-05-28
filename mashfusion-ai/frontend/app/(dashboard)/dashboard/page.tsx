@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { formatRelativeTime } from '@/lib/utils'
+import { useI18n } from '@/lib/i18n'
 import type { User } from '@/types'
 
 function PlanLabel({ plan }: { plan: string }) {
@@ -16,6 +17,7 @@ function PlanLabel({ plan }: { plan: string }) {
 }
 
 function DashboardInner() {
+  const { t } = useI18n()
   const { data: me }       = useSWR<User>('me', () => auth.me())
   const { data: sessions } = useSWR('live-sessions', () => live.listSessions())
 
@@ -28,12 +30,12 @@ function DashboardInner() {
       <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-black text-white">
-            Ciao{me?.full_name ? `, ${me.full_name.split(' ')[0]}` : ''} 👋
+            {t('dashboard.hello')}{me?.full_name ? `, ${me.full_name.split(' ')[0]}` : ''} 👋
           </h1>
-          <p className="text-sm text-white/40 mt-1">Il tuo Live Hub in un colpo d&apos;occhio.</p>
+          <p className="text-sm text-white/40 mt-1">{t('dashboard.subtitle')}</p>
         </div>
         <Link href="/sessions">
-          <Button icon={<Plus className="h-4 w-4" />}>Crea sessione live</Button>
+          <Button icon={<Plus className="h-4 w-4" />}>{t('dashboard.createSession')}</Button>
         </Link>
       </div>
 
@@ -44,17 +46,17 @@ function DashboardInner() {
             <Crown className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-xs text-white/40">Piano attuale</p>
+            <p className="text-xs text-white/40">{t('dashboard.currentPlan')}</p>
             <p className="font-semibold text-white"><PlanLabel plan={me?.plan ?? 'free'} /></p>
           </div>
         </div>
         {isFree ? (
           <Link href="/billing">
-            <Button size="sm">Passa a Pro</Button>
+            <Button size="sm">{t('dashboard.upgradeToPro')}</Button>
           </Link>
         ) : (
           <Link href="/billing">
-            <Button size="sm" variant="secondary">Gestisci abbonamento</Button>
+            <Button size="sm" variant="secondary">{t('dashboard.manageSubscription')}</Button>
           </Link>
         )}
       </Card>
@@ -62,17 +64,17 @@ function DashboardInner() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
         <Card className="p-4">
-          <p className="text-xs text-white/40">Sessioni totali</p>
+          <p className="text-xs text-white/40">{t('dashboard.totalSessions')}</p>
           <p className="text-2xl font-black text-white mt-1">{sessions?.length ?? 0}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-xs text-white/40">Sessioni attive</p>
+          <p className="text-xs text-white/40">{t('dashboard.activeSessions')}</p>
           <p className="text-2xl font-black text-white mt-1">{activeCount}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-xs text-white/40">Limite piano Free</p>
+          <p className="text-xs text-white/40">{t('dashboard.freeLimit')}</p>
           <p className="text-2xl font-black text-white mt-1">
-            {isFree ? '1 sessione · 30 richieste' : 'Illimitato'}
+            {isFree ? t('dashboard.freeLimitValue') : t('dashboard.unlimited')}
           </p>
         </Card>
       </div>
@@ -80,19 +82,19 @@ function DashboardInner() {
       {/* Sessions list */}
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-lg font-bold text-white flex items-center gap-2">
-          <Radio className="h-4 w-4 text-purple-400" /> Le tue sessioni
+          <Radio className="h-4 w-4 text-purple-400" /> {t('dashboard.yourSessions')}
         </h2>
         <Link href="/sessions" className="text-xs text-purple-300 hover:text-purple-200 flex items-center gap-1">
-          Vedi tutte <ArrowRight className="h-3 w-3" />
+          {t('dashboard.viewAll')} <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
 
       {!sessions || sessions.length === 0 ? (
         <Card className="text-center py-12">
           <Radio className="h-10 w-10 text-white/20 mx-auto mb-4" />
-          <p className="text-white/60 mb-4">Non hai ancora creato sessioni live.</p>
+          <p className="text-white/60 mb-4">{t('dashboard.noSessions')}</p>
           <Link href="/sessions">
-            <Button icon={<Plus className="h-4 w-4" />}>Crea la prima sessione</Button>
+            <Button icon={<Plus className="h-4 w-4" />}>{t('dashboard.createFirst')}</Button>
           </Link>
         </Card>
       ) : (
@@ -107,7 +109,7 @@ function DashboardInner() {
                   </p>
                 </div>
                 <Badge variant={s.is_active ? 'processing' : 'complete'}>
-                  {s.is_active ? 'Attiva' : 'Chiusa'}
+                  {s.is_active ? t('dashboard.active') : t('dashboard.closed')}
                 </Badge>
               </Card>
             </Link>
@@ -121,8 +123,8 @@ function DashboardInner() {
           <Card className="flex items-center gap-3 hover:bg-white/5 transition">
             <UserCircle className="h-5 w-5 text-purple-300" />
             <div>
-              <p className="font-semibold text-white text-sm">Profilo DJ</p>
-              <p className="text-xs text-white/40">Bio, social e slug pubblico</p>
+              <p className="font-semibold text-white text-sm">{t('dashboard.profileDjTitle')}</p>
+              <p className="text-xs text-white/40">{t('dashboard.profileDjDesc')}</p>
             </div>
           </Card>
         </Link>
@@ -130,8 +132,8 @@ function DashboardInner() {
           <Card className="flex items-center gap-3 hover:bg-white/5 transition">
             <CalendarDays className="h-5 w-5 text-purple-300" />
             <div>
-              <p className="font-semibold text-white text-sm">Prossime date</p>
-              <p className="text-xs text-white/40">Mostra i tuoi eventi sulla pagina pubblica</p>
+              <p className="font-semibold text-white text-sm">{t('dashboard.upcomingDatesTitle')}</p>
+              <p className="text-xs text-white/40">{t('dashboard.upcomingDatesDesc')}</p>
             </div>
           </Card>
         </Link>

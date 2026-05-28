@@ -11,18 +11,19 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { auth, live } from '@/lib/api'
+import { useI18n } from '@/lib/i18n'
 import toast from 'react-hot-toast'
 import type { User } from '@/types'
 import { Logo } from '@/components/Logo'
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard',    icon: LayoutDashboard, proOnly: false },
-  { href: '/sessions',  label: 'Sessioni Live', icon: Radio,           proOnly: false },
-  { href: '/profile',   label: 'Profilo DJ',    icon: UserCircle,      proOnly: false },
-  { href: '/events',    label: 'Prossime date', icon: CalendarDays,    proOnly: true  },
-  { href: '/billing',   label: 'Abbonamento',   icon: CreditCard,      proOnly: false },
-  { href: '/settings',  label: 'Impostazioni',  icon: Settings,        proOnly: false },
-]
+  { href: '/dashboard', key: 'dashboard',     icon: LayoutDashboard, proOnly: false },
+  { href: '/sessions',  key: 'sessionsLive',  icon: Radio,           proOnly: false },
+  { href: '/profile',   key: 'profileDj',     icon: UserCircle,      proOnly: false },
+  { href: '/events',    key: 'upcomingDates', icon: CalendarDays,    proOnly: true  },
+  { href: '/billing',   key: 'subscription',  icon: CreditCard,      proOnly: false },
+  { href: '/settings',  key: 'settings',      icon: Settings,        proOnly: false },
+] as const
 
 const PLAN_LABEL: Record<string, string> = {
   free:   'Free',
@@ -36,6 +37,7 @@ const SIDEBAR_STORAGE_KEY = 'iomixo.sidebar.collapsed'
 export function Sidebar() {
   const pathname = usePathname()
   const router   = useRouter()
+  const { t } = useI18n()
 
   const [collapsed, setCollapsed] = useState(false)
 
@@ -62,7 +64,7 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     await auth.logout()
-    toast.success('Disconnesso')
+    toast.success(t('sidebar.loggedOut'))
     router.push('/login')
   }
 
@@ -105,8 +107,8 @@ export function Sidebar() {
               : 'text-white/40 hover:text-white/80 hover:bg-white/5',
             collapsed && 'ml-0',
           )}
-          title={collapsed ? 'Espandi' : 'Riduci'}
-          aria-label={collapsed ? 'Espandi sidebar' : 'Riduci sidebar'}
+          title={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
+          aria-label={collapsed ? t('sidebar.expandSidebar') : t('sidebar.collapseSidebar')}
         >
           {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
         </button>
@@ -114,9 +116,10 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className={cn('flex-1 py-5 space-y-1', collapsed ? 'px-2' : 'px-3')}>
-        {NAV_ITEMS.map(({ href, label, icon: Icon, proOnly }) => {
+        {NAV_ITEMS.map(({ href, key, icon: Icon, proOnly }) => {
           const active = pathname === href || (href !== '/dashboard' && pathname?.startsWith(href))
           const locked = proOnly && (!user || user.plan === 'free')
+          const label = t(`sidebar.${key}`)
           return (
             <Link key={href} href={href}>
               <motion.div
@@ -163,12 +166,12 @@ export function Sidebar() {
           'mx-3 mb-3 rounded-xl p-3',
           wedding ? 'bg-white border border-[#E8B7C8]' : 'glass',
         )}>
-          <p className={cn('text-[10px] uppercase tracking-wide mb-1', wedding ? 'text-[#6F6260]' : 'text-white/40')}>Piano attuale</p>
+          <p className={cn('text-[10px] uppercase tracking-wide mb-1', wedding ? 'text-[#6F6260]' : 'text-white/40')}>{t('sidebar.currentPlan')}</p>
           <div className="flex items-center justify-between">
             <p className={cn('text-sm font-semibold', wedding ? 'text-[#2B2424]' : 'text-white')}>{PLAN_LABEL[user.plan] ?? 'Free'}</p>
             {user.plan === 'free' && (
               <Link href="/billing" className={cn('text-[11px]', wedding ? 'text-[#8F1D2C] hover:text-[#741625]' : 'text-purple-300 hover:text-purple-200')}>
-                Passa a Pro
+                {t('sidebar.upgradeToPro')}
               </Link>
             )}
           </div>
@@ -205,7 +208,7 @@ export function Sidebar() {
           <button
             onClick={handleLogout}
             className={cn('transition-colors', wedding ? 'text-[#6F6260] hover:text-[#8F1D2C]' : 'text-white/20 hover:text-red-400')}
-            title="Esci"
+            title={t('sidebar.logout')}
           >
             <LogOut className="h-4 w-4" />
           </button>
