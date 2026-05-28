@@ -158,9 +158,9 @@ export default function RegisterPage() {
                 <div className="space-y-2.5">
                   <label className="text-sm font-medium text-white/60 ml-1">Full name</label>
                   <div className="relative group">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors pointer-events-none z-10" />
                     <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)}
-                      placeholder="DJ Example" className="input-field pl-12 h-12" autoComplete="name" required spellCheck={false} />
+                      placeholder="DJ Example" className="input-field h-12" style={{ paddingLeft: '3rem', paddingRight: '1rem' }} autoComplete="name" required spellCheck={false} />
                   </div>
                 </div>
 
@@ -168,9 +168,9 @@ export default function RegisterPage() {
                 <div className="space-y-2.5">
                   <label className="text-sm font-medium text-white/60 ml-1">Email</label>
                   <div className="relative group">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors" />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors pointer-events-none z-10" />
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com" className="input-field pl-12 h-12" autoComplete="email" required spellCheck={false} />
+                      placeholder="you@example.com" className="input-field h-12" style={{ paddingLeft: '3rem', paddingRight: '1rem' }} autoComplete="email" required spellCheck={false} />
                   </div>
                 </div>
 
@@ -178,11 +178,12 @@ export default function RegisterPage() {
                 <div className="space-y-2.5">
                   <label className="text-sm font-medium text-white/60 ml-1">Password</label>
                   <div className="relative group">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors" />
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors pointer-events-none z-10" />
                     <input
                       type={showPw ? 'text' : 'password'} value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Min. 8 characters" className="input-field pl-12 pr-12 h-12"
+                      placeholder="Min. 8 characters" className="input-field h-12"
+                      style={{ paddingLeft: '3rem', paddingRight: '3rem' }}
                       autoComplete="new-password" required minLength={8}
                     />
                     <button type="button" onClick={() => setShowPw(!showPw)}
