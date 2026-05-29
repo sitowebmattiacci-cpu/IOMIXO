@@ -3,8 +3,8 @@ import { supabaseAdmin } from '../config/supabase'
 import { requireAuth } from '../middleware/auth'
 import { AppError } from '../middleware/errorHandler'
 import { hashClient, rateLimitOk } from '../utils/ipHash'
-import { getUserPlan } from '../services/plan'
-import { PLAN_LIMITS } from '../config/plans'
+import { hasWeddingAccess } from '../services/plan'
+import { isEventSession } from '../utils/sessionType'
 
 export const livePollsRouter = Router()
 
@@ -19,10 +19,10 @@ async function ownedSession(sessionId: string, djId: string) {
   return data
 }
 
-async function requireLivePolls(djId: string) {
-  const plan = await getUserPlan(djId)
-  if (!PLAN_LIMITS[plan].livePolls) {
-    throw new AppError('Sondaggi disponibili con Pro Plus Wedding Edition.', 402)
+async function requireLivePolls(djId: string, sessionId?: string) {
+  const hasAccess = await hasWeddingAccess(djId, sessionId)
+  if (!hasAccess) {
+    throw new AppError('Sondaggi disponibili con il piano Advance o un Wedding Pass 24H.', 402)
   }
 }
 
@@ -36,10 +36,10 @@ livePollsRouter.post('/sessions/:id/polls', requireAuth, async (req, res, next) 
     }
 
     const session = await ownedSession(req.params.id, userId(req))
-    if (session.session_type !== 'wedding') {
-      throw new AppError('Sondaggi disponibili solo per sessioni Wedding Edition.', 400)
+    if (!isEventSession(session.session_type)) {
+      throw new AppError('Sondaggi disponibili solo per sessioni Party Mode o Wedding Edition.', 400)
     }
-    await requireLivePolls(userId(req))
+    await requireLivePolls(userId(req), session.id)
 
     const normalised = options.map((o: unknown) => String(o).slice(0, 80))
 
@@ -109,7 +109,7 @@ livePollsRouter.get('/public/:slug/polls/active', async (req, res, next) => {
       .from('live_sessions').select('id, session_type')
       .eq('public_slug', req.params.slug).maybeSingle()
     if (!session) throw new AppError('Sessione non trovata', 404)
-    if (session.session_type !== 'wedding') return res.json({ data: null })
+    if (!isEventSession(session.session_type)) return res.json({ data: null })
 
     const { data: poll } = await supabaseAdmin
       .from('live_polls').select('id, question, options, created_at')

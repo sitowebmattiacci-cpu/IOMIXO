@@ -10,6 +10,7 @@ import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { useState } from 'react'
 import { useI18n } from '@/lib/i18n'
+import { normalisePlan as normalisePlanShared } from '@/lib/plan'
 
 const PLAN_ICONS: Record<Plan, React.ReactNode> = {
   free: <Zap className="h-5 w-5" />,
@@ -24,9 +25,8 @@ const PLAN_COLORS: Record<Plan, string> = {
 }
 
 function normalisePlan(p: string | undefined): Plan {
-  if (p === 'pro') return 'pro'
-  if (p === 'wedding' || p === 'club' || p === 'studio') return 'wedding'
-  return 'free'
+  // delega all'helper centralizzato: ogni alias Advance → 'wedding'.
+  return normalisePlanShared(p) as Plan
 }
 
 export default function BillingPage() {

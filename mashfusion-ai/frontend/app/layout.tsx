@@ -54,25 +54,25 @@ const tangerine = Tangerine({
 
 export const metadata: Metadata = {
   title: {
-    default: 'IOMIXO — Live Hub Interattivo per DJ ed Eventi',
-    template: '%s | IOMIXO',
+    default: 'IOMIXO Live Hub — Interactive platform for DJs, weddings and events',
+    template: '%s | IOMIXO Live Hub',
   },
   description:
-    'La regia interattiva per DJ, eventi e matrimoni. Coinvolgi il tuo pubblico con richieste musicali, dediche su schermo e giochi interattivi in tempo reale.',
-  keywords: ['Live Hub', 'DJ', 'Matrimoni', 'Eventi', 'Richieste Musicali', 'Interactive DJ', 'Roulette Matrimonio'],
+    'Create live QR sessions, receive music requests, run wedding games, collect guest photos and manage interactive event experiences.',
+  keywords: ['Live Hub', 'DJ', 'Weddings', 'Events', 'Music Requests', 'Interactive DJ', 'Wedding Roulette', 'QR Sessions', 'Guest Photos'],
   openGraph: {
     type: 'website',
     locale: 'it_IT',
     url: 'https://iomixo.ai',
-    siteName: 'IOMIXO',
-    title: 'IOMIXO — Il Live Hub per il tuo evento',
-    description: 'Rendi il tuo evento interattivo con richieste live, messaggi e giochi per il pubblico.',
+    siteName: 'IOMIXO Live Hub',
+    title: 'IOMIXO Live Hub — Interactive platform for DJs, weddings and events',
+    description: 'Create live QR sessions, receive music requests, run wedding games, collect guest photos and manage interactive event experiences.',
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'IOMIXO',
-    description: 'Il Live Hub interattivo per DJ, eventi e matrimoni.',
+    title: 'IOMIXO Live Hub',
+    description: 'Interactive platform for DJs, weddings and events.',
     images: ['/og-image.png'],
   },
   robots: {
@@ -83,7 +83,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#7c3aed',
+  themeColor: '#8F1D2C',
   width: 'device-width',
   initialScale: 1,
 }

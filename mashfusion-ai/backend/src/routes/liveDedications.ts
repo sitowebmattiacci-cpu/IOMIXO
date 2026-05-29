@@ -5,6 +5,7 @@ import { AppError } from '../middleware/errorHandler'
 import { hashClient, rateLimitOk } from '../utils/ipHash'
 import { getUserPlan, hasFeature, hasWeddingAccess } from '../services/plan'
 import { PLAN_LIMITS } from '../config/plans'
+import { isEventSession } from '../utils/sessionType'
 
 export const liveDedicationsRouter = Router()
 
@@ -37,11 +38,11 @@ liveDedicationsRouter.post('/public/:slug/dedications', async (req, res, next) =
 
     const session = await getSessionBySlug(req.params.slug)
     if (!session) throw new AppError('Sessione non trovata', 404)
-    if (session.session_type !== 'wedding') {
-      throw new AppError('Dediche disponibili solo per sessioni Wedding Edition.', 400)
+    if (!isEventSession(session.session_type)) {
+      throw new AppError('Dediche disponibili solo per sessioni Party Mode o Wedding Edition.', 400)
     }
-    if (!(await hasWeddingAccess(session.dj_id))) {
-      throw new AppError('Le funzioni Wedding Edition sono sospese. Riattiva il piano o acquista un Wedding Pass 24H.', 402)
+    if (!(await hasWeddingAccess(session.dj_id, session.id))) {
+      throw new AppError('Funzione disponibile con il piano Advance o un Wedding Pass 24H.', 402)
     }
     if (!session.is_active) throw new AppError('Questa sessione live è terminata.', 410)
 
@@ -66,7 +67,7 @@ liveDedicationsRouter.get('/public/:slug/dedications', async (req, res, next) =>
   try {
     const session = await getSessionBySlug(req.params.slug)
     if (!session) throw new AppError('Sessione non trovata', 404)
-    if (session.session_type !== 'wedding') return res.json({ data: [] })
+    if (!isEventSession(session.session_type)) return res.json({ data: [] })
 
     const { data, error } = await supabaseAdmin
       .from('live_dedications')
@@ -105,9 +106,8 @@ liveDedicationsRouter.patch('/dedications/:id', requireAuth, async (req, res, ne
     if (!existing || (existing as any).live_sessions?.dj_id !== userId(req)) {
       throw new AppError('Dedica non trovata', 404)
     }
-    const plan = await getUserPlan(userId(req))
-    if (!PLAN_LIMITS[plan].weddingDedications) {
-      throw new AppError('Le funzioni Wedding Edition sono sospese. Riattiva il piano per continuare.', 402)
+    if (!(await hasWeddingAccess(userId(req)))) {
+      throw new AppError('Funzione disponibile con il piano Advance o un Wedding Pass 24H.', 402)
     }
 
     const { data, error } = await supabaseAdmin

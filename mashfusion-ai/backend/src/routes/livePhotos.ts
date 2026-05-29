@@ -3,8 +3,8 @@ import { supabaseAdmin } from '../config/supabase'
 import { requireAuth } from '../middleware/auth'
 import { AppError } from '../middleware/errorHandler'
 import { hashClient, rateLimitOk } from '../utils/ipHash'
-import { getUserPlan, hasFeature } from '../services/plan'
-import { PLAN_LIMITS } from '../config/plans'
+import { hasWeddingAccess } from '../services/plan'
+import { isEventSession } from '../utils/sessionType'
 import {
   createWeddingPhotoUploadUrl,
   createWeddingPhotoSignedUrl,
@@ -23,10 +23,17 @@ async function ownedWeddingSession(sessionId: string, djId: string) {
     .select('id, dj_id, session_type')
     .eq('id', sessionId).eq('dj_id', djId).maybeSingle()
   if (!data) throw new AppError('Sessione non trovata', 404)
-  if (data.session_type !== 'wedding') {
-    throw new AppError('Album foto disponibile solo per sessioni Wedding Edition.', 400)
+  if (!isEventSession(data.session_type)) {
+    throw new AppError('Album foto disponibile solo per sessioni Party Mode o Wedding Edition.', 400)
   }
   return data
+}
+
+async function requireEventAccess(djId: string, sessionId?: string) {
+  const hasAccess = await hasWeddingAccess(djId, sessionId)
+  if (!hasAccess) {
+    throw new AppError('Funzione disponibile con il piano Advance o un Wedding Pass 24H.', 402)
+  }
 }
 
 // ── PUBLIC: Live Booth photo (direct upload + confirm in one step) ────────
@@ -40,16 +47,16 @@ livePhotosRouter.post('/public/:slug/booth-photo', async (req, res, next) => {
       .eq('public_slug', req.params.slug).maybeSingle()
     if (!session) throw new AppError('Sessione non trovata', 404)
     if (!session.is_active) throw new AppError('Questa sessione live è terminata.', 410)
-    if (session.session_type !== 'wedding') {
-      throw new AppError('Live Booth disponibile solo per sessioni Wedding Edition.', 400)
+    if (!isEventSession(session.session_type)) {
+      throw new AppError('Live Booth disponibile solo per sessioni Party Mode o Wedding Edition.', 400)
     }
-    if (!(await hasFeature(session.dj_id, 'guestPhotoAlbum'))) {
-      throw new AppError('Le funzioni Wedding Edition sono sospese.', 402)
+    if (!(await hasWeddingAccess(session.dj_id, session.id))) {
+      throw new AppError('Funzione disponibile con il piano Advance o un Wedding Pass 24H.', 402)
     }
     if (!storage_path.startsWith(`${session.id}/`)) throw new AppError('storage_path non valido', 400)
 
     const ipHash = hashClient(req)
-    if (!rateLimitOk(`booth:${session.id}`, ipHash, 5_000)) {
+    if (!rateLimitOk(`booth:${session.id}`, ipHash, 15_000)) {
       throw new AppError('Riprova tra qualche secondo.', 429)
     }
 
@@ -81,15 +88,15 @@ livePhotosRouter.post('/public/:slug/photos/init', async (req, res, next) => {
       .eq('public_slug', req.params.slug).maybeSingle()
     if (!session) throw new AppError('Sessione non trovata', 404)
     if (!session.is_active) throw new AppError('Questa sessione live è terminata.', 410)
-    if (session.session_type !== 'wedding') {
-      throw new AppError('Album foto disponibile solo per sessioni Wedding Edition.', 400)
+    if (!isEventSession(session.session_type)) {
+      throw new AppError('Album foto disponibile solo per sessioni Party Mode o Wedding Edition.', 400)
     }
-    if (!(await hasFeature(session.dj_id, 'guestPhotoAlbum'))) {
-      throw new AppError('Le funzioni Wedding Edition sono sospese.', 402)
+    if (!(await hasWeddingAccess(session.dj_id, session.id))) {
+      throw new AppError('Funzione disponibile con il piano Advance o un Wedding Pass 24H.', 402)
     }
 
     const ipHash = hashClient(req)
-    if (!rateLimitOk(`photo:${session.id}`, ipHash, 5_000)) {
+    if (!rateLimitOk(`photo:${session.id}`, ipHash, 30_000)) {
       throw new AppError('Riprova tra qualche secondo.', 429)
     }
 
@@ -109,8 +116,8 @@ livePhotosRouter.post('/public/:slug/photos', async (req, res, next) => {
       .eq('public_slug', req.params.slug).maybeSingle()
     if (!session) throw new AppError('Sessione non trovata', 404)
     if (!session.is_active) throw new AppError('Questa sessione live è terminata.', 410)
-    if (session.session_type !== 'wedding') {
-      throw new AppError('Album foto disponibile solo per sessioni Wedding Edition.', 400)
+    if (!isEventSession(session.session_type)) {
+      throw new AppError('Album foto disponibile solo per sessioni Party Mode o Wedding Edition.', 400)
     }
     if (!storage_path.startsWith(`${session.id}/`)) throw new AppError('storage_path non valido', 400)
 
@@ -133,7 +140,7 @@ livePhotosRouter.get('/public/:slug/photos', async (req, res, next) => {
       .from('live_sessions').select('id, session_type')
       .eq('public_slug', req.params.slug).maybeSingle()
     if (!session) throw new AppError('Sessione non trovata', 404)
-    if (session.session_type !== 'wedding') return res.json({ data: [] })
+    if (!isEventSession(session.session_type)) return res.json({ data: [] })
 
     const { data: rows } = await supabaseAdmin
       .from('live_photos')
@@ -182,10 +189,7 @@ livePhotosRouter.patch('/photos/:id', requireAuth, async (req, res, next) => {
     if (!existing || (existing as any).live_sessions?.dj_id !== userId(req)) {
       throw new AppError('Foto non trovata', 404)
     }
-    const plan = await getUserPlan(userId(req))
-    if (!PLAN_LIMITS[plan].guestPhotoAlbum) {
-      throw new AppError('Le funzioni Wedding Edition sono sospese.', 402)
-    }
+    await requireEventAccess(userId(req))
     const { data, error } = await supabaseAdmin
       .from('live_photos').update({ status }).eq('id', req.params.id)
       .select('*').single()
@@ -206,10 +210,7 @@ livePhotosRouter.patch('/photos/:id/feature', requireAuth, async (req, res, next
     if (!existing || (existing as any).live_sessions?.dj_id !== userId(req)) {
       throw new AppError('Foto non trovata', 404)
     }
-    const plan = await getUserPlan(userId(req))
-    if (!PLAN_LIMITS[plan].guestPhotoAlbum) {
-      throw new AppError('Le funzioni Wedding Edition sono sospese.', 402)
-    }
+    await requireEventAccess(userId(req))
     const { data, error } = await supabaseAdmin
       .from('live_photos').update({ is_featured }).eq('id', req.params.id)
       .select('*').single()
@@ -227,10 +228,7 @@ livePhotosRouter.patch('/photos/:id/approve', requireAuth, async (req, res, next
     if (!existing || (existing as any).live_sessions?.dj_id !== userId(req)) {
       throw new AppError('Foto non trovata', 404)
     }
-    const plan = await getUserPlan(userId(req))
-    if (!PLAN_LIMITS[plan].guestPhotoAlbum) {
-      throw new AppError('Le funzioni Wedding Edition sono sospese.', 402)
-    }
+    await requireEventAccess(userId(req))
     const { data, error } = await supabaseAdmin
       .from('live_photos').update({ status: 'approved' }).eq('id', req.params.id)
       .select('*').single()

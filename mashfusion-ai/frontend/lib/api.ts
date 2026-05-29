@@ -447,7 +447,7 @@ export const billing = {
 // IOMIXO LIVE HUB
 // ══════════════════════════════════════════════════════════════
 export type LiveRequestStatus = 'pending' | 'approved' | 'rejected'
-export type SessionType = 'standard' | 'wedding'
+export type SessionType = 'standard' | 'party' | 'wedding'
 export type PlanTier = 'free' | 'pro' | 'wedding'
 
 export interface LiveSession {

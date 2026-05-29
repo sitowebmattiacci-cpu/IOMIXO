@@ -170,7 +170,7 @@ export default function ScreenModePage() {
               <div className="inline-flex items-center gap-3 mb-6 text-wedding-gold">
                 <span className="h-px w-20 bg-gradient-to-r from-transparent to-wedding-gold/60" />
                 <span className="text-3xl">✦</span>
-                <span className="text-sm uppercase tracking-[0.4em] font-medium">Pro Plus Wedding</span>
+                <span className="text-sm uppercase tracking-[0.4em] font-medium">Wedding Edition</span>
                 <span className="text-3xl">✦</span>
                 <span className="h-px w-20 bg-gradient-to-l from-transparent to-wedding-gold/60" />
               </div>
@@ -189,7 +189,7 @@ export default function ScreenModePage() {
               )}
             </div>
             <footer className="absolute bottom-8 text-xs uppercase tracking-[0.3em] text-wedding-taupe">
-              Powered by <span className="text-wedding-gold">Pro Plus Wedding Edition</span>
+              Powered by <span className="text-wedding-gold">IOMIXO Live Hub</span>
             </footer>
           </div>
         )}
@@ -321,7 +321,7 @@ export default function ScreenModePage() {
             </div>
 
             <footer className="mt-12 text-xs uppercase tracking-[0.3em] text-wedding-taupe">
-              Powered by <span className="text-wedding-gold">Pro Plus Wedding Edition</span>
+              Powered by <span className="text-wedding-gold">IOMIXO Live Hub</span>
             </footer>
           </div>
         )}
@@ -374,7 +374,7 @@ export default function ScreenModePage() {
             </div>
 
             <footer className="absolute bottom-8 text-xs uppercase tracking-[0.3em] text-wedding-taupe">
-              Powered by <span className="text-wedding-gold">Pro Plus Wedding Edition</span>
+              Powered by <span className="text-wedding-gold">IOMIXO Live Hub</span>
             </footer>
           </div>
         )}
@@ -387,7 +387,7 @@ export default function ScreenModePage() {
             <div className="inline-flex items-center gap-3 mb-4 text-wedding-gold">
               <span className="h-px w-16 bg-gradient-to-r from-transparent to-wedding-gold/60" />
               <span className="text-2xl">✦</span>
-              <span className="text-[12px] uppercase tracking-[0.4em] font-medium">Pro Plus Wedding</span>
+              <span className="text-[12px] uppercase tracking-[0.4em] font-medium">Wedding Edition</span>
               <span className="text-2xl">✦</span>
               <span className="h-px w-16 bg-gradient-to-l from-transparent to-wedding-gold/60" />
             </div>
@@ -522,7 +522,7 @@ export default function ScreenModePage() {
           </div>
 
           <footer className="mt-8 text-center text-xs uppercase tracking-[0.3em] text-wedding-taupe">
-            Powered by <span className="text-wedding-gold">Pro Plus Wedding Edition</span>
+            Powered by <span className="text-wedding-gold">IOMIXO Live Hub</span>
           </footer>
           </div>
         )}

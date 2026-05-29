@@ -348,8 +348,8 @@
     "pending": "In attesa",
     "approved": "Approvata",
     "rejected": "Rifiutata",
-    "upgrade": "Passa a Pro Plus Wedding Edition",
-    "weddingPaywall": "Questa modalità è disponibile con Pro Plus Wedding Edition.",
+    "upgrade": "Passa al piano Advance",
+    "weddingPaywall": "Questa modalità è disponibile con il piano Advance.",
     "errorGeneric": "Si è verificato un errore."
   },
   "brand": {
@@ -363,8 +363,8 @@
   "plans": {
     "free": "Free",
     "pro": "Pro",
-    "wedding": "Pro Plus Wedding",
-    "weddingFull": "Pro Plus Wedding Edition",
+    "wedding": "Advance",
+    "weddingFull": "Advance",
     "perMonth": "/mese",
     "freeDesc": "1 sessione live attiva, max 30 richieste per sessione, QR Code base, branding IOMIXO.",
     "proDesc": "Sessioni e richieste illimitate, approva/rifiuta, social pubblici, prossime date, presenze online, branding ridotto.",
@@ -378,7 +378,14 @@
     "noneYet": "Nessuna sessione ancora.",
     "type": "Tipo sessione",
     "typeStandard": "Standard",
-    "typeWedding": "Pro Plus Wedding",
+    "typeParty": "Party Mode",
+    "typeWedding": "Wedding Edition",
+    "chooseExperience": "Che tipo di esperienza vuoi creare?",
+    "chooseExperienceSubtitle": "Disponibile con il piano Advance. Potrai personalizzare la sessione subito dopo.",
+    "partyTitle": "Party Mode",
+    "partyPerfectFor": "Perfetto per: compleanni, diciottesimi, feste private, locali, aperitivi, lauree, eventi aziendali, serate DJ.",
+    "weddingTitle": "Wedding Edition",
+    "weddingPerfectFor": "Perfetto per: matrimoni, anniversari, eventi romantici.",
     "eventName": "Nome evento *",
     "djName": "Il tuo nome DJ (opzionale)",
     "description": "Descrizione (opzionale)",
@@ -458,12 +465,20 @@
       "ctaShort": "Inizia"
     },
     "hero": {
-      "badge": "Il Live Hub interattivo per DJ",
-      "tagline": "La regia interattiva per DJ, eventi e matrimoni.",
+      "badge": "Live · Interattivo · Per il tuo pubblico",
+      "tagline": "La piattaforma interattiva per DJ, eventi e matrimoni.",
+      "description": "Crea una sessione live con QR Code, ricevi richieste musicali, attiva giochi, raccogli dediche e crea un'esperienza coinvolgente per il tuo pubblico.",
       "claim": "Il DJ comanda. Il pubblico interagisce.",
       "audiences": "Cene spettacolo · Feste private · Compleanni · Matrimoni · Eventi aziendali · Club · Locali",
       "ctaPrimary": "Crea il tuo Live Hub",
-      "ctaSecondary": "Scopri i piani"
+      "ctaSecondary": "Scopri come funziona"
+    },
+    "sections": {
+      "requests":  { "title": "Richieste musicali senza interruzioni", "body": "Gli ospiti inviano le richieste dal telefono. Il DJ approva, rifiuta o gestisce tutto dalla dashboard." },
+      "wedding":   { "title": "Esperienze interattive per matrimoni", "body": "Dediche agli sposi, giochi live, roulette wedding, gioco della scarpa e momenti speciali guidati dal DJ." },
+      "booth":     { "title": "Live Booth fotografico", "body": "Gli invitati scattano foto dal telefono, partecipano al Photo Moment e le immagini entrano nell'album degli sposi." },
+      "screen":    { "title": "Tutto anche su schermo", "body": "Mostra QR Code, foto, risultati dei giochi e momenti live su TV o proiettore." },
+      "album":     { "title": "Album ospiti pronto da condividere", "body": "Le foto approvate finiscono in una libreria privata con link dedicato per gli sposi." }
     },
     "features": {
       "title": "Tutto quello che serve per gestire la serata",
@@ -487,7 +502,7 @@
       "screen": { "title": "Schermo condiviso (TV / proiettore)", "body": "Modalità a schermo intero pensata per videoproiettore o TV: dediche, foto, sondaggi e QR persistente per partecipare." },
       "branding": { "title": "Branding personalizzabile", "body": "Nomi degli sposi, data, location e colori dedicati: ogni pagina live diventa parte dell'atmosfera del matrimonio." },
       "remote": { "title": "DJ Remote Control", "body": "Gestisci dediche, giochi e schermo dal telefono mentre sei in consolle, senza fermarti." },
-      "cta": "Scopri Pro Plus Wedding Edition"
+      "cta": "Scopri il piano Advance"
     },
     "pricing": {
       "title": "Piani semplici, per ogni serata",
@@ -504,7 +519,7 @@
       "trial24h": "Prova completa 24h",
       "weddingPass": "Wedding Pass",
       "oneTime": "una tantum",
-      "weddingPassDesc": "Accesso completo a tutte le funzioni Wedding Edition per 24 ore dal pagamento. Perfetto per matrimoni, eventi singoli o per provare prima di abbonarti.",
+      "weddingPassDesc": "Accesso completo a tutte le funzioni Wedding Edition per 24 ore dal pagamento. Perfetto per matrimoni, eventi singoli o per provare prima di abbonarti al piano Advance.",
       "buyPass": "Acquista Wedding Pass 24H",
       "includes": "Include",
       "f1": "Dediche romantiche live",

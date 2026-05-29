@@ -338,8 +338,8 @@
     "close": "Cerrar", "open": "Abrir",
     "active": "Activa", "inactive": "Cerrada",
     "pending": "Pendiente", "approved": "Aprobada", "rejected": "Rechazada",
-    "upgrade": "Pásate a Pro Plus Wedding Edition",
-    "weddingPaywall": "Este modo está disponible con Pro Plus Wedding Edition.",
+    "upgrade": "Pásate al plan Advance",
+    "weddingPaywall": "Este modo está disponible con el plan Advance.",
     "errorGeneric": "Algo ha ido mal."
   },
   "brand": {
@@ -351,8 +351,8 @@
     "audiences": "Cenas espectáculo · Fiestas privadas · Cumpleaños · Bodas · Eventos corporativos · Clubes · Locales"
   },
   "plans": {
-    "free": "Free", "pro": "Pro", "wedding": "Pro Plus Wedding",
-    "weddingFull": "Pro Plus Wedding Edition",
+    "free": "Free", "pro": "Pro", "wedding": "Advance",
+    "weddingFull": "Advance",
     "perMonth": "/mes",
     "freeDesc": "1 sesión live activa, hasta 30 peticiones por sesión, QR básico, branding IOMIXO.",
     "proDesc": "Sesiones y peticiones ilimitadas, aprobar/rechazar, redes públicas, próximas fechas, presencia online, branding reducido.",
@@ -362,7 +362,13 @@
     "title": "Sesiones Live", "subtitle": "Crea, gestiona y cierra tus eventos.",
     "new": "Nueva sesión", "createFirst": "Crear la primera",
     "noneYet": "Aún no hay sesiones.",
-    "type": "Tipo de sesión", "typeStandard": "Standard", "typeWedding": "Pro Plus Wedding",
+    "type": "Tipo de sesión", "typeStandard": "Standard", "typeParty": "Party Mode", "typeWedding": "Wedding Edition",
+    "chooseExperience": "¿Qué tipo de experiencia quieres crear?",
+    "chooseExperienceSubtitle": "Disponible con el plan Advance. Podrás personalizar la sesión justo después.",
+    "partyTitle": "Party Mode",
+    "partyPerfectFor": "Perfecto para: cumpleaños, fiestas privadas, locales, aperitivos, graduaciones, eventos corporativos, noches DJ.",
+    "weddingTitle": "Wedding Edition",
+    "weddingPerfectFor": "Perfecto para: bodas, aniversarios, eventos románticos.",
     "eventName": "Nombre del evento *", "djName": "Tu nombre de DJ (opcional)",
     "description": "Descripción (opcional)",
     "coupleNames": "Nombres de los novios (opcional)",
@@ -426,12 +432,20 @@
       "ctaShort": "Empezar"
     },
     "hero": {
-      "badge": "El Live Hub interactivo para DJs",
-      "tagline": "La cabina interactiva para DJs, eventos y bodas.",
+      "badge": "Live · Interactivo · Para tu público",
+      "tagline": "La plataforma interactiva para DJs, eventos y bodas.",
+      "description": "Crea una sesión live con QR Code, recibe peticiones musicales, activa juegos, recoge dedicatorias y crea una experiencia envolvente para tu público.",
       "claim": "El DJ manda. El público interactúa.",
       "audiences": "Cenas espectáculo · Fiestas privadas · Cumpleaños · Bodas · Eventos corporativos · Clubs · Locales",
       "ctaPrimary": "Crea tu Live Hub",
-      "ctaSecondary": "Ver planes"
+      "ctaSecondary": "Descubre cómo funciona"
+    },
+    "sections": {
+      "requests":  { "title": "Peticiones musicales sin interrupciones", "body": "Los invitados envían sus peticiones desde el móvil. El DJ aprueba, rechaza o lo gestiona todo desde el panel." },
+      "wedding":   { "title": "Experiencias interactivas para bodas", "body": "Dedicatorias a los novios, juegos live, ruleta wedding, juego del zapato y momentos especiales dirigidos por el DJ." },
+      "booth":     { "title": "Live Booth fotográfico", "body": "Los invitados hacen fotos desde el móvil, participan en el Photo Moment y las imágenes pasan al álbum de los novios." },
+      "screen":    { "title": "Todo también en pantalla", "body": "Muestra QR Code, fotos, resultados de los juegos y momentos live en TV o proyector." },
+      "album":     { "title": "Álbum de invitados listo para compartir", "body": "Las fotos aprobadas terminan en una biblioteca privada con enlace dedicado para los novios." }
     },
     "features": {
       "title": "Todo lo que necesitas para gestionar la noche",
@@ -455,7 +469,7 @@
       "screen": { "title": "Pantalla compartida (TV / proyector)", "body": "Modo pantalla completa para proyector o TV: dedicatorias, fotos, encuestas y QR persistente para participar." },
       "branding": { "title": "Branding personalizable", "body": "Nombres de los novios, fecha, lugar y colores dedicados: cada página live forma parte del ambiente de la boda." },
       "remote": { "title": "DJ Remote Control", "body": "Gestiona dedicatorias, juegos y pantalla desde el móvil mientras estás en cabina." },
-      "cta": "Descubre Pro Plus Wedding Edition"
+      "cta": "Descubre el plan Advance"
     },
     "pricing": {
       "title": "Planes simples, para cada noche",

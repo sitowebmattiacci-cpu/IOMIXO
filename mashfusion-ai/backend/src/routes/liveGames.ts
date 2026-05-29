@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth'
 import { AppError } from '../middleware/errorHandler'
 import { getUserPlan, hasWeddingAccess } from '../services/plan'
 import { PLAN_LIMITS } from '../config/plans'
+import { isEventSession } from '../utils/sessionType'
 
 export const liveGamesRouter = Router()
 
@@ -44,24 +45,27 @@ const DEFAULT_SHOE_QUESTIONS: string[] = [
   'Chi ama di più l\u2019altro? ❤️',
 ]
 
-async function ownedWeddingSession(sessionId: string, djId: string) {
+async function ownedEventSession(sessionId: string, djId: string) {
   const { data } = await supabaseAdmin
     .from('live_sessions')
     .select('id, dj_id, session_type, is_active')
     .eq('id', sessionId).eq('dj_id', djId).maybeSingle()
   if (!data) throw new AppError('Sessione non trovata', 404)
-  if (data.session_type !== 'wedding') {
-    throw new AppError('Funzione disponibile solo per sessioni Wedding Edition.', 400)
+  if (!isEventSession(data.session_type)) {
+    throw new AppError('Funzione disponibile solo per sessioni Party Mode o Wedding Edition.', 400)
   }
   return data
 }
+// Backward-compat alias: callers in this file used to call ownedWeddingSession.
+const ownedWeddingSession = ownedEventSession
 
-async function requireWeddingFeature(djId: string) {
-  const hasAccess = await hasWeddingAccess(djId)
+async function requireEventAccess(djId: string, sessionId?: string) {
+  const hasAccess = await hasWeddingAccess(djId, sessionId)
   if (!hasAccess) {
-    throw new AppError('Le funzioni Wedding Edition sono sospese. Riattiva il piano o acquista un Wedding Pass 24H per continuare.', 402)
+    throw new AppError('Le funzioni evento sono sospese. Riattiva il piano Advance o acquista un Wedding Pass 24H per continuare.', 402)
   }
 }
+const requireWeddingFeature = requireEventAccess
 
 // ── DJ: start a roulette round ─────────────────────────────────
 liveGamesRouter.post('/sessions/:id/games/roulette/start', requireAuth, async (req, res, next) => {
@@ -182,7 +186,7 @@ liveGamesRouter.get('/public/:slug/games', async (req, res, next) => {
       .from('live_sessions').select('id, session_type')
       .eq('public_slug', req.params.slug).maybeSingle()
     if (!session) throw new AppError('Sessione non trovata', 404)
-    if (session.session_type !== 'wedding') return res.json({ data: { roulette: null, shoeGame: null } })
+    if (!isEventSession(session.session_type)) return res.json({ data: { roulette: null, shoeGame: null } })
 
     const { data: latest } = await supabaseAdmin
       .from('live_game_rounds').select('id, game_type, status, result, config, created_at, updated_at')

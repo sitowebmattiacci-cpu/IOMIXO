@@ -53,7 +53,7 @@ export default function LiveBoothPage() {
       <WeddingShell>
         <div className="min-h-screen flex items-center justify-center px-6">
           <p className="text-wedding-taupe text-center">
-            Live Booth disponibile solo per Pro Plus Wedding Edition.
+            Live Booth disponibile solo per il piano Advance.
           </p>
         </div>
       </WeddingShell>
@@ -183,7 +183,7 @@ export default function LiveBoothPage() {
     } catch (err: any) {
       const msg = err?.message ?? 'Errore durante l\'invio.'
       if (msg.includes('Wedding Edition') || msg.includes('sospese')) {
-        toast.error('Live Booth disponibile solo per Pro Plus Wedding Edition.')
+        toast.error('Live Booth disponibile solo per il piano Advance.')
       } else {
         toast.error(msg)
       }
@@ -298,7 +298,7 @@ export default function LiveBoothPage() {
         </div>
 
         <p className="text-center mt-10 text-[10px] uppercase tracking-[0.32em] text-wedding-taupe">
-          Powered by <span className="text-wedding-burgundy">Pro Plus Wedding Edition</span>
+          Powered by <span className="text-wedding-burgundy">IOMIXO Live Hub</span>
         </p>
       </div>
     </WeddingShell>

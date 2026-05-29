@@ -25,7 +25,7 @@ async function ownedWeddingSession(sessionId: string, djId: string) {
 async function requireWeddingFeature(djId: string) {
   const hasAccess = await hasWeddingAccess(djId)
   if (!hasAccess) {
-    throw new AppError('Le funzioni Wedding Edition sono sospese. Riattiva il piano o acquista un Wedding Pass 24H per continuare.', 402)
+    throw new AppError('Funzione disponibile con il piano Advance o un Wedding Pass 24H.', 402)
   }
 }
 

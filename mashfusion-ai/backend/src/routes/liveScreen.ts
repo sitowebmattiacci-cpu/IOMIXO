@@ -1,8 +1,8 @@
 import { Router } from 'express'
 import { supabaseAdmin } from '../config/supabase'
 import { AppError } from '../middleware/errorHandler'
-import { getUserPlan } from '../services/plan'
-import { PLAN_LIMITS } from '../config/plans'
+import { hasWeddingAccess } from '../services/plan'
+import { isEventSession } from '../utils/sessionType'
 import { createWeddingPhotoSignedUrl } from '../services/storage'
 
 export const liveScreenRouter = Router()
@@ -16,13 +16,12 @@ liveScreenRouter.get('/public/:slug/screen', async (req, res, next) => {
       .select('id, dj_id, event_name, dj_name, session_type, couple_names, wedding_date, venue_name, screen_mode_enabled, screen_config, is_active')
       .eq('public_slug', req.params.slug).maybeSingle()
     if (!session) throw new AppError('Sessione non trovata', 404)
-    if (session.session_type !== 'wedding') {
-      throw new AppError('Schermo live disponibile solo per Wedding Edition.', 400)
+    if (!isEventSession(session.session_type)) {
+      throw new AppError('Schermo live disponibile solo per sessioni Party Mode o Wedding Edition.', 400)
     }
 
-    const plan = await getUserPlan(session.dj_id)
-    if (!PLAN_LIMITS[plan].screenMode) {
-      throw new AppError('Le funzioni Wedding Edition sono sospese.', 402)
+    if (!(await hasWeddingAccess(session.dj_id, session.id))) {
+      throw new AppError('Funzione disponibile con il piano Advance o un Wedding Pass 24H.', 402)
     }
 
     const [roundRes, shoeRes, pollRes, dedRes, photoRes] = await Promise.all([

@@ -113,7 +113,7 @@ export default function PublicLivePage() {
           {/* Wedding header */}
           <div className="text-center mb-12">
             <p className="text-[11px] font-semibold uppercase tracking-[0.4em] text-[#8F1D2C] mb-4">
-              ✦ Pro Plus Wedding ✦
+              ✦ Wedding Edition ✦
             </p>
             <h1 className="font-wedding text-5xl sm:text-6xl text-[#2B2424] leading-[1.1] tracking-wide">
               {session.couple_names ?? session.event_name}
@@ -213,7 +213,7 @@ export default function PublicLivePage() {
           )}
 
           <p className="text-center mt-14 text-[10px] uppercase tracking-[0.32em] text-[#6F6260]">
-            Powered by <span className="text-[#8F1D2C]">Pro Plus Wedding Edition</span>
+            Powered by <span className="text-[#8F1D2C]">IOMIXO Live Hub</span>
           </p>
         </div>
       </WeddingShell>

@@ -14,12 +14,12 @@ export async function getUserPlanLimits(userId: string): Promise<{ plan: PlanTie
   return { plan, limits: PLAN_LIMITS[plan] }
 }
 
-/** Throws AppError(402) if the user is not on the Wedding Edition plan. */
+/** Throws AppError(402) if the user is not on the Advance plan. */
 export async function requireWeddingPlan(userId: string): Promise<PlanTier> {
   const plan = await getUserPlan(userId)
   if (plan !== 'wedding') {
     throw new AppError(
-      'Funzione disponibile con Pro Plus Wedding Edition. Aggiorna il piano per continuare.',
+      'Funzione disponibile con il piano Advance. Aggiorna il piano per continuare.',
       402,
     )
   }
@@ -82,7 +82,7 @@ export async function requireWeddingAccess(userId: string, sessionId?: string): 
   const hasAccess = await hasWeddingAccess(userId, sessionId)
   if (!hasAccess) {
     throw new AppError(
-      'Funzione disponibile con Pro Plus Wedding Edition o Wedding Pass 24H. Acquista il pass o aggiorna il piano.',
+      'Funzione disponibile con il piano Advance o un Wedding Pass 24H. Acquista il pass o aggiorna il piano.',
       402,
     )
   }

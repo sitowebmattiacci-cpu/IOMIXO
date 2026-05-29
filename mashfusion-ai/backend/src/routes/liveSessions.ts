@@ -21,14 +21,18 @@ liveSessionsRouter.post('/sessions', requireAuth, async (req, res, next) => {
     } = req.body ?? {}
     if (!event_name || typeof event_name !== 'string') throw new AppError('event_name richiesto', 400)
 
-    const type = session_type === 'wedding' ? 'wedding' : 'standard'
+    // Session type can be 'standard' | 'party' | 'wedding'.
+    // Both 'party' and 'wedding' require the Advance plan.
+    const type: 'standard' | 'party' | 'wedding' =
+      session_type === 'wedding' ? 'wedding'
+      : session_type === 'party' ? 'party'
+      : 'standard'
 
-    // Wedding sessions require the Wedding Edition plan.
-    if (type === 'wedding') {
+    if (type === 'wedding' || type === 'party') {
       const plan = await getUserPlan(userId(req))
       if (!PLAN_LIMITS[plan].weddingMode) {
         throw new AppError(
-          'Questa modalità è disponibile con Pro Plus Wedding Edition.',
+          'Questa modalità è disponibile con il piano Advance.',
           402,
         )
       }

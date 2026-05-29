@@ -9,11 +9,11 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { formatRelativeTime } from '@/lib/utils'
 import { useI18n } from '@/lib/i18n'
+import { planLabel, isFreePlan } from '@/lib/plan'
 import type { User } from '@/types'
 
 function PlanLabel({ plan }: { plan: string }) {
-  const label = plan === 'pro' ? 'Pro' : plan === 'wedding' || plan === 'club' || plan === 'studio' ? 'Pro Plus Wedding' : 'Free'
-  return <span className="capitalize">{label}</span>
+  return <span className="capitalize">{planLabel(plan)}</span>
 }
 
 function DashboardInner() {
@@ -21,7 +21,7 @@ function DashboardInner() {
   const { data: me }       = useSWR<User>('me', () => auth.me())
   const { data: sessions } = useSWR('live-sessions', () => live.listSessions())
 
-  const isFree = (me?.plan ?? 'free') === 'free'
+  const isFree = isFreePlan(me?.plan)
   const activeCount = sessions?.filter((s) => s.is_active).length ?? 0
 
   return (
