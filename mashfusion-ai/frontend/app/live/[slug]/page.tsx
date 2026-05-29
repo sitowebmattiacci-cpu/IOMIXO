@@ -105,6 +105,7 @@ export default function PublicLivePage() {
   const limitReached = requestsRemaining !== null && requestsRemaining <= 0
   const disabled     = closed || limitReached
   const isWedding    = session.session_type === 'wedding'
+  const isParty      = session.session_type === 'party'
 
   if (isWedding) {
     return (
@@ -330,6 +331,8 @@ export default function PublicLivePage() {
             </p>
           </div>
         )}
+
+        {isParty && <PartyLiveSections slug={slug!} />}
 
         {isWedding && features.weddingGames && <ShoeGamePublic slug={slug!} />}
         {isWedding && features.livePolls && <PollPublic slug={slug!} />}
@@ -655,5 +658,155 @@ function LiveBoothCard({ slug, session }: { slug: string; session: any }) {
         </div>
       </div>
     </LocalCard>
+  )
+}
+
+// ════════════════════════════════════════════════════════════════
+// PARTY MODE — guest-facing live sections (mobile-first)
+// ════════════════════════════════════════════════════════════════
+
+function PartyLiveSections({ slug }: { slug: string }) {
+  return (
+    <div className="mt-8 space-y-5">
+      <PartyBoothCTA slug={slug} />
+      <PartyMusicBattle slug={slug} />
+      <PartyRouletteResult slug={slug} />
+      <PartyApprovedPhotos slug={slug} />
+    </div>
+  )
+}
+
+function PartyBoothCTA({ slug }: { slug: string }) {
+  return (
+    <a
+      href={`/booth/${slug}`}
+      className="block rounded-2xl p-5 bg-gradient-to-br from-[#8B0E2F] via-[#B82E54] to-[#FF3D8A] shadow-[0_10px_40px_rgba(255,61,138,0.35)] border border-[#FF7AB6]/40 hover:scale-[1.01] transition active:scale-[0.99]"
+    >
+      <div className="flex items-center gap-4">
+        <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0">
+          <Camera className="h-7 w-7 text-white" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">Live Booth</p>
+          <p className="text-lg font-black text-white leading-tight">Photo Moment!</p>
+          <p className="text-xs text-white/85 mt-0.5">Scatta una foto e finisci sullo schermo</p>
+        </div>
+        <span className="text-white text-xl">→</span>
+      </div>
+    </a>
+  )
+}
+
+function PartyMusicBattle({ slug }: { slug: string }) {
+  const { data } = useSWR(['public-poll', slug], () => livePolls.publicActive(slug), { refreshInterval: 5_000 })
+  const poll: LivePoll | null = (data as any) ?? null
+  const [voted, setVoted] = useState<number | null>(null)
+  const [voting, setVoting] = useState(false)
+
+  useEffect(() => {
+    if (!poll) return
+    const key = `iomixo.partyPollVote.${poll.id}`
+    const v = typeof window !== 'undefined' ? localStorage.getItem(key) : null
+    setVoted(v ? Number(v) : null)
+  }, [poll?.id])
+
+  if (!poll) return null
+
+  const total = (poll.tally ?? []).reduce((a, b) => a + b, 0)
+
+  const vote = async (idx: number) => {
+    if (voted !== null || voting) return
+    setVoting(true)
+    try {
+      await livePolls.publicVote(slug, poll.id, idx)
+      localStorage.setItem(`iomixo.partyPollVote.${poll.id}`, String(idx))
+      setVoted(idx)
+      await mutate(['public-poll', slug])
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Errore voto')
+    } finally { setVoting(false) }
+  }
+
+  return (
+    <div className="rounded-2xl bg-gradient-to-br from-black/60 to-[#8B0E2F]/30 border border-[#FF3D8A]/30 backdrop-blur p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#FF7AB6]">Music Battle</span>
+        <span className="text-[10px] text-white/40">· {total} {total === 1 ? 'voto' : 'voti'}</span>
+      </div>
+      <p className="text-lg font-bold text-white mb-4 leading-snug">{poll.question}</p>
+      <div className="space-y-2.5">
+        {poll.options.map((opt, i) => {
+          const tally = poll.tally?.[i] ?? 0
+          const pct = total > 0 ? Math.round((tally / total) * 100) : 0
+          const isMine = voted === i
+          const max = Math.max(...(poll.tally ?? [0]))
+          const winning = total > 0 && tally === max && tally > 0
+          return (
+            <button
+              key={i}
+              onClick={() => vote(i)}
+              disabled={voted !== null || voting}
+              className={`relative w-full rounded-xl overflow-hidden border h-14 transition ${
+                isMine ? 'border-[#FF3D8A] ring-2 ring-[#FF3D8A]/40' :
+                winning ? 'border-[#FF3D8A]/50' : 'border-white/15'
+              } ${voted === null ? 'hover:border-[#FF7AB6]/60 active:scale-[0.99]' : 'cursor-default'} bg-white/[0.04]`}
+            >
+              <div
+                className={`absolute inset-y-0 left-0 transition-all duration-700 ${
+                  isMine ? 'bg-gradient-to-r from-[#FF3D8A] to-[#FF7AB6]' :
+                  winning ? 'bg-gradient-to-r from-[#8B0E2F] to-[#B82E54]' :
+                  'bg-gradient-to-r from-[#8B0E2F]/40 to-[#B82E54]/30'
+                }`}
+                style={{ width: voted !== null || total > 0 ? `${pct}%` : '0%' }}
+              />
+              <div className="relative flex items-center justify-between h-full px-4">
+                <span className="font-bold text-white text-sm">{opt}{isMine && ' ✓'}</span>
+                {(voted !== null || total > 0) && (
+                  <span className="text-sm font-black text-white tabular-nums">{pct}%</span>
+                )}
+              </div>
+            </button>
+          )
+        })}
+      </div>
+      {voted === null && (
+        <p className="text-[11px] text-white/40 mt-3 text-center">Tocca un'opzione per votare</p>
+      )}
+    </div>
+  )
+}
+
+function PartyRouletteResult({ slug }: { slug: string }) {
+  const { data } = useSWR(['public-roulette', slug], () => liveGames.publicLatest(slug), { refreshInterval: 5_000 })
+  const r: LiveGameRound | null = data?.roulette ?? null
+  if (!r || r.status !== 'completed' || !r.result?.slot_label) return null
+  return (
+    <div className="rounded-2xl p-6 bg-gradient-to-br from-[#FF3D8A]/30 via-[#8B0E2F]/40 to-black/60 border border-[#FF3D8A]/40 text-center shadow-[0_10px_40px_rgba(255,61,138,0.25)]">
+      <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-[#FF7AB6] mb-3">
+        🎲 Party Roulette
+      </p>
+      <p className="text-2xl font-black text-white leading-tight">{r.result.slot_label}</p>
+    </div>
+  )
+}
+
+function PartyApprovedPhotos({ slug }: { slug: string }) {
+  const { data } = useSWR(['public-photos', slug], () => livePhotos.publicListApproved(slug), { refreshInterval: 8_000 })
+  const photos = (data ?? []).slice(0, 6)
+  if (photos.length === 0) return null
+  return (
+    <div className="rounded-2xl bg-black/40 border border-white/10 backdrop-blur p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Camera className="h-4 w-4 text-[#FF7AB6]" />
+        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#FF7AB6]">Live Booth — Pubbliche</span>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {photos.map((p: any) => (
+          <div key={p.id} className="aspect-square rounded-lg overflow-hidden bg-white/5 border border-white/10">
+            {p.url && <img src={p.url} alt="" className="w-full h-full object-cover" />}
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }

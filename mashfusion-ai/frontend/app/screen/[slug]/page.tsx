@@ -1,11 +1,13 @@
 'use client'
 import { useParams } from 'next/navigation'
 import useSWR from 'swr'
-import { Heart, Sparkles, ListChecks, Camera, Footprints } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
+import { Heart, Sparkles, ListChecks, Camera, Footprints, Music2, Star } from 'lucide-react'
 import { liveScreen } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
 import { RouletteWheel } from '@/components/wedding/RouletteWheel'
+import { PartyShell, PartyDivider, PARTY } from '@/components/party/PartyUI'
 import { useEffect, useRef, useState } from 'react'
 
 export default function ScreenModePage() {
@@ -96,6 +98,21 @@ export default function ScreenModePage() {
   }
 
   const { session, roulette, shoe_game, active_poll, dedications, photos } = data
+  const isParty = (session as any).session_type === 'party'
+
+  // ─── PARTY MODE SCREEN (dark premium / red wine / fuchsia) ───
+  if (isParty) {
+    return (
+      <PartyScreen
+        slug={slug!}
+        session={session as any}
+        roulette={roulette}
+        active_poll={active_poll}
+        photos={photos as any}
+      />
+    )
+  }
+
   const total = (active_poll?.tally ?? []).reduce((a, b) => a + b, 0) || 0
   const shoeActive = shoe_game?.status === 'running' && shoe_game?.config?.is_active
   const shoeQuestions: string[] = shoe_game?.config?.questions ?? []
@@ -550,5 +567,182 @@ function EmptyPanel({ text }: { text: string }) {
         {text}
       </p>
     </div>
+  )
+}
+
+// ════════════════════════════════════════════════════════════════
+// PARTY MODE SCREEN — dark premium with red wine & fuchsia accents
+// Designed for TV/projector at clubs / private parties / events.
+// ════════════════════════════════════════════════════════════════
+
+function PartyScreen({
+  slug, session, roulette, active_poll, photos,
+}: {
+  slug: string
+  session: { event_name: string; dj_name: string | null; is_active: boolean; screen_config?: any }
+  roulette: any
+  active_poll: any
+  photos: any[]
+}) {
+  const envBase = process.env.NEXT_PUBLIC_PUBLIC_BASE_URL
+  const origin = envBase || (typeof window !== 'undefined' ? window.location.origin : 'https://www.iomixo.com')
+  const liveUrl = `${origin}/live/${slug}`
+
+  const total = (active_poll?.tally ?? []).reduce((a: number, b: number) => a + b, 0) || 0
+  const featured = photos?.find((p: any) => p.is_featured) ?? null
+  const rest = (photos ?? []).filter((p: any) => p.id !== featured?.id)
+
+  // simple photo carousel
+  const [carouselIdx, setCarouselIdx] = useState(0)
+  useEffect(() => {
+    if (rest.length <= 1) return
+    const id = setInterval(() => setCarouselIdx((i) => (i + 1) % rest.length), 4500)
+    return () => clearInterval(id)
+  }, [rest.length])
+
+  return (
+    <PartyShell>
+      <div className="min-h-screen w-screen overflow-hidden flex flex-col p-10 relative">
+        {/* HEADER */}
+        <header className="flex items-start justify-between gap-6 mb-8">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.45em] text-[#FF7AB6] mb-3">
+              ✦ Party Mode Live ✦
+            </p>
+            <h1 className="text-7xl xl:text-8xl font-black text-white leading-[0.95] tracking-tight">
+              {session.event_name}
+            </h1>
+            {session.dj_name && (
+              <p className="text-2xl text-white/60 mt-3">DJ <span className="text-[#FF7AB6] font-semibold">{session.dj_name}</span></p>
+            )}
+          </div>
+          <div className="shrink-0 text-center">
+            <div className="bg-white p-3 rounded-2xl shadow-[0_0_40px_rgba(255,61,138,0.4)] border-2 border-[#FF3D8A]/60">
+              <QRCodeSVG value={liveUrl} size={180} level="M" includeMargin={false} />
+            </div>
+            <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.3em] text-white">
+              Scansiona & partecipa
+            </p>
+            <p className="text-[10px] text-[#FF7AB6] mt-1 font-mono">
+              {liveUrl.replace(/^https?:\/\//, '')}
+            </p>
+          </div>
+        </header>
+
+        {/* MAIN GRID */}
+        <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
+          {/* LEFT — Roulette + Music Battle */}
+          <div className="col-span-5 flex flex-col gap-6 min-h-0">
+            {roulette?.result && (
+              <PartyScreenPanel icon={<Sparkles />} title="Party Roulette">
+                <div className="rounded-2xl bg-gradient-to-br from-[#8B0E2F]/40 to-[#FF3D8A]/30 border border-[#FF3D8A]/40 py-10 px-6 text-center">
+                  <p className="text-5xl xl:text-6xl font-black text-white leading-tight">
+                    {roulette.result.slot_label}
+                  </p>
+                </div>
+              </PartyScreenPanel>
+            )}
+
+            {active_poll ? (
+              <PartyScreenPanel icon={<ListChecks />} title="Music Battle" subtitle="Vota dal telefono">
+                <p className="text-3xl font-bold text-white mb-5 leading-snug">{active_poll.question}</p>
+                <div className="space-y-3">
+                  {active_poll.options.map((opt: string, i: number) => {
+                    const tally = active_poll.tally?.[i] ?? 0
+                    const pct = total > 0 ? Math.round((tally / total) * 100) : 0
+                    const max = Math.max(...(active_poll.tally ?? [0]))
+                    const winning = total > 0 && tally === max && tally > 0
+                    return (
+                      <div key={i} className={`relative rounded-2xl overflow-hidden border h-16 ${winning ? 'border-[#FF3D8A]/70 shadow-[0_0_20px_rgba(255,61,138,0.4)]' : 'border-white/15'} bg-white/[0.05]`}>
+                        <div
+                          className={`absolute inset-y-0 left-0 transition-all duration-700 ${winning ? 'bg-gradient-to-r from-[#FF3D8A] to-[#8B0E2F]' : 'bg-gradient-to-r from-[#8B0E2F]/50 to-[#B82E54]/40'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                        <div className="relative flex items-center justify-between h-full px-6">
+                          <span className={`text-xl font-bold ${winning ? 'text-white' : 'text-white/90'}`}>{opt}</span>
+                          <span className="text-xl font-black tabular-nums text-white">{pct}%</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <p className="text-[11px] uppercase tracking-[0.3em] text-white/40 mt-4 text-center">
+                  {total} {total === 1 ? 'voto' : 'voti'}
+                </p>
+              </PartyScreenPanel>
+            ) : !roulette?.result ? (
+              <PartyScreenPanel icon={<Music2 />} title="In attesa">
+                <div className="text-center py-10">
+                  <p className="text-xl text-white/50 italic">
+                    Il DJ avvierà presto una Music Battle o la Party Roulette…
+                  </p>
+                </div>
+              </PartyScreenPanel>
+            ) : null}
+          </div>
+
+          {/* RIGHT — Live Booth photos */}
+          <div className="col-span-7 flex flex-col min-h-0">
+            <PartyScreenPanel icon={<Camera />} title="Live Booth" subtitle="Foto del pubblico" className="flex-1">
+              {featured && (
+                <div className="mb-4 relative rounded-2xl overflow-hidden border-2 border-[#FF3D8A]/70 ring-4 ring-[#FF3D8A]/20 shadow-[0_0_50px_rgba(255,61,138,0.35)] max-h-[420px]">
+                  <img src={featured.url} alt="" className="w-full h-full object-cover" />
+                  <div className="absolute top-3 right-3 bg-[#FF3D8A] text-white px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
+                    <Star className="h-3 w-3 fill-current" /> In evidenza
+                  </div>
+                </div>
+              )}
+
+              {rest.length > 0 ? (
+                <div className="grid grid-cols-4 gap-3">
+                  {rest.slice(0, 8).map((p: any, i: number) => (
+                    <div
+                      key={p.id}
+                      className={`aspect-square rounded-xl overflow-hidden border bg-white/[0.04] transition-all duration-500 ${
+                        i === carouselIdx % Math.max(rest.length, 1) ? 'border-[#FF3D8A]/60 ring-2 ring-[#FF3D8A]/30 scale-[1.04]' : 'border-white/10'
+                      }`}
+                    >
+                      {p.url && <img src={p.url} alt="" className="w-full h-full object-cover" />}
+                    </div>
+                  ))}
+                </div>
+              ) : !featured ? (
+                <div className="rounded-2xl border-2 border-dashed border-[#FF3D8A]/30 bg-white/[0.02] py-20 text-center">
+                  <Camera className="h-14 w-14 text-[#FF3D8A]/40 mx-auto mb-4" />
+                  <p className="text-2xl font-bold text-white mb-2">Photo Moment in arrivo!</p>
+                  <p className="text-sm text-white/50">
+                    Scansiona il QR e scatta la prima foto della serata
+                  </p>
+                </div>
+              ) : null}
+            </PartyScreenPanel>
+          </div>
+        </div>
+
+        <footer className="mt-8">
+          <PartyDivider />
+          <p className="text-center text-[11px] uppercase tracking-[0.4em] text-white/50 mt-4">
+            Powered by <span className="text-[#FF7AB6] font-bold">IOMIXO Live Hub</span>
+          </p>
+        </footer>
+      </div>
+    </PartyShell>
+  )
+}
+
+function PartyScreenPanel({
+  icon, title, subtitle, children, className = '',
+}: { icon: React.ReactNode; title: string; subtitle?: string; children: React.ReactNode; className?: string }) {
+  return (
+    <section className={`rounded-2xl backdrop-blur-md bg-white/[0.04] border border-white/[0.1] p-6 flex flex-col min-h-0 shadow-[0_8px_40px_rgba(139,14,47,0.25)] ${className}`}>
+      <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/10">
+        <span className="text-[#FF3D8A]">{icon}</span>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-base font-bold uppercase tracking-[0.3em] text-white">{title}</h2>
+          {subtitle && <p className="text-[10px] uppercase tracking-[0.25em] text-white/40 mt-0.5">{subtitle}</p>}
+        </div>
+      </div>
+      <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+    </section>
   )
 }

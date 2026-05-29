@@ -940,6 +940,7 @@ export interface ScreenPayload {
   session: {
     event_name: string
     dj_name: string | null
+    session_type?: SessionType
     couple_names: string | null
     wedding_date: string | null
     venue_name: string | null

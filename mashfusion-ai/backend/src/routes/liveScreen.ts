@@ -77,6 +77,7 @@ liveScreenRouter.get('/public/:slug/screen', async (req, res, next) => {
         session: {
           event_name:    session.event_name,
           dj_name:       session.dj_name,
+          session_type:  session.session_type ?? 'standard',
           couple_names:  session.couple_names,
           wedding_date:  session.wedding_date,
           venue_name:    session.venue_name,

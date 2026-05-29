@@ -6,7 +6,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import {
   ArrowLeft, Trash2, Power, Heart, MessageSquare,
   Sparkles, Image as ImageIcon, ListChecks, Play, RotateCw, Tv,
-  Check, X, Plus, Copy, Download, MapPin, CalendarDays, Footprints, SkipForward, Users, Camera, Star,
+  Check, X, Plus, Copy, Download, MapPin, CalendarDays, Footprints, SkipForward, Users, Camera, Star, Music2,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -24,6 +24,10 @@ import { UpgradeGate } from '@/components/live/UpgradeGate'
 import {
   WeddingCard, WeddingButton, WeddingBadge, WeddingInput, WeddingTextarea, WeddingDivider,
 } from '@/components/wedding/WeddingUI'
+import {
+  PartyShell, PartyCard, PartyButton, PartyBadge, PartyInput, PartyTextarea,
+  PartyDivider, PartyEyebrow, PartyPaywall, PARTY,
+} from '@/components/party/PartyUI'
 import { useI18n } from '@/lib/i18n'
 import type { User } from '@/types'
 
@@ -103,6 +107,25 @@ export default function SessionDetailPage() {
   const pending  = requests?.filter((r) => r.status === 'pending')  ?? []
   const approved = requests?.filter((r) => r.status === 'approved') ?? []
   const rejected = requests?.filter((r) => r.status === 'rejected') ?? []
+
+  // ── Party Mode (private parties / clubs / aperitivi / DJ nights) ──
+  if (session.session_type === 'party') {
+    return (
+      <PartyDashboard
+        session={session}
+        isFree={isFree}
+        pending={pending}
+        approved={approved}
+        rejected={rejected}
+        busyId={busyId}
+        togglingActive={togglingActive}
+        onToggleActive={toggleActive}
+        onDeleteSession={removeSession}
+        onUpdateRequest={updateRequest}
+        onDeleteRequest={deleteRequest}
+      />
+    )
+  }
 
   // ── Standard (DJ/Club) — untouched dark theme ──────────────────
   if (!isWedding) {
@@ -1569,5 +1592,612 @@ function PhotosPanel({ sessionId }: { sessionId: string }) {
         </div>
       )}
     </section>
+  )
+}
+
+// ════════════════════════════════════════════════════════════════
+// PARTY DASHBOARD — for session_type === 'party'
+// Tabs: Richieste · Live Booth · Music Battle · Party Games · Screen
+// ════════════════════════════════════════════════════════════════
+
+const PARTY_PRESETS: Array<{ q: string; opts: [string, string] }> = [
+  { q: 'Anni 90 vs Anni 2000',          opts: ['Anni 90', 'Anni 2000'] },
+  { q: 'Latino vs Commerciale',         opts: ['Latino', 'Commerciale'] },
+  { q: 'House vs Revival',              opts: ['House', 'Revival'] },
+  { q: 'Dance vs Reggaeton',            opts: ['Dance', 'Reggaeton'] },
+  { q: 'Uomo Ragno vs Nord Sud Ovest Est', opts: ['Uomo Ragno', 'Nord Sud Ovest Est'] },
+]
+
+const PARTY_PENITENZE_DEFAULT = [
+  'Tutti in pista!',
+  'Brindisi generale',
+  'Foto di gruppo con il DJ',
+  'Canta il ritornello al microfono',
+  'Scegli un amico e ballate insieme',
+  'Il tavolo più rumoroso vince un drink',
+  'Sfida di applausi',
+  'Il DJ sceglie la prossima hit',
+]
+
+function PartyDashboard({
+  session, isFree, pending, approved, rejected, busyId,
+  togglingActive, onToggleActive, onDeleteSession,
+  onUpdateRequest, onDeleteRequest,
+}: any) {
+  const { t } = useI18n()
+  const [tab, setTab] = useState<'requests' | 'booth' | 'battle' | 'games' | 'screen'>('requests')
+
+  const envBase = process.env.NEXT_PUBLIC_PUBLIC_BASE_URL
+  const origin = envBase || (typeof window !== 'undefined' ? window.location.origin : 'https://www.iomixo.com')
+  const liveUrl = `${origin}/live/${session.public_slug}`
+  const boothUrl = `${origin}/booth/${session.public_slug}`
+  const screenUrl = `${origin}/screen/${session.public_slug}`
+
+  const copy = (url: string, label = 'Link copiato') => {
+    navigator.clipboard.writeText(url).then(() => toast.success(label)).catch(() => {})
+  }
+
+  return (
+    <PartyShell>
+      <div className="max-w-6xl mx-auto px-6 py-6">
+        <div className="mb-4">
+          <Link href="/sessions" className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white">
+            <ArrowLeft className="h-3 w-3" /> {t('common.back')}
+          </Link>
+        </div>
+
+        {/* HEADER */}
+        <PartyCard tone="hi" className="mb-5">
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div className="min-w-0">
+              <PartyEyebrow>Party Mode</PartyEyebrow>
+              <h1 className="text-3xl sm:text-4xl font-black text-white mt-2 leading-tight">{session.event_name}</h1>
+              <div className="flex items-center gap-3 mt-3 flex-wrap">
+                <PartyBadge tone={session.is_active ? 'fuchsia' : 'soft'}>
+                  {session.is_active ? '● LIVE' : 'CHIUSA'}
+                </PartyBadge>
+                {session.dj_name && <span className="text-sm text-white/60">DJ {session.dj_name}</span>}
+              </div>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <PartyButton variant="outline" size="sm" loading={togglingActive} onClick={onToggleActive}
+                icon={<Power className="h-3.5 w-3.5" />}>
+                {session.is_active ? t('common.close') : t('common.open')}
+              </PartyButton>
+              <PartyButton variant="ghost" size="sm" onClick={onDeleteSession} icon={<Trash2 className="h-3.5 w-3.5" />}>
+                {t('common.delete')}
+              </PartyButton>
+            </div>
+          </div>
+
+          <PartyDivider className="my-5" />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <PartyLinkRow label="Pagina Live" url={liveUrl} onCopy={() => copy(liveUrl)} />
+            <PartyLinkRow label="Live Booth" url={boothUrl} onCopy={() => copy(boothUrl)} />
+            <PartyLinkRow label="Schermo TV" url={screenUrl} onCopy={() => copy(screenUrl)} external />
+          </div>
+        </PartyCard>
+
+        {/* STATS */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+          <PartyStat icon={<Music2 className="h-4 w-4" />} label="Richieste" value={(pending.length + approved.length).toString()} />
+          <PartyStatLive sessionId={session.id} />
+          <PartyStatPhotos sessionId={session.id} />
+          <PartyStatPolls sessionId={session.id} />
+        </div>
+
+        {/* TABS */}
+        <div className="flex gap-2 mb-4 flex-wrap">
+          <PartyTabBtn active={tab === 'requests'} onClick={() => setTab('requests')} icon={<Music2 className="h-3.5 w-3.5" />}>Richieste {pending.length > 0 && <span className="ml-1 text-[10px] text-[#FF7AB6]">({pending.length})</span>}</PartyTabBtn>
+          <PartyTabBtn active={tab === 'booth'} onClick={() => setTab('booth')} icon={<Camera className="h-3.5 w-3.5" />}>Live Booth</PartyTabBtn>
+          <PartyTabBtn active={tab === 'battle'} onClick={() => setTab('battle')} icon={<ListChecks className="h-3.5 w-3.5" />}>Music Battle</PartyTabBtn>
+          <PartyTabBtn active={tab === 'games'} onClick={() => setTab('games')} icon={<Sparkles className="h-3.5 w-3.5" />}>Party Games</PartyTabBtn>
+          <PartyTabBtn active={tab === 'screen'} onClick={() => setTab('screen')} icon={<Tv className="h-3.5 w-3.5" />}>Schermo</PartyTabBtn>
+        </div>
+
+        {/* QR card on the right (visible on requests tab only, to keep things focused) */}
+        {tab === 'requests' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div className="lg:col-span-1">
+              <PartyCard>
+                <PartyEyebrow>QR per i guests</PartyEyebrow>
+                <div className="bg-white p-3 rounded-2xl mt-3 mx-auto w-fit">
+                  <QRCodeSVG value={liveUrl} size={170} level="M" />
+                </div>
+                <p className="mt-3 text-xs text-center text-white/60 break-all">{liveUrl}</p>
+                <PartyButton variant="outline" size="sm" className="w-full mt-3" onClick={() => copy(liveUrl)} icon={<Copy className="h-3.5 w-3.5" />}>
+                  Copia link
+                </PartyButton>
+              </PartyCard>
+            </div>
+            <div className="lg:col-span-2">
+              <RequestsPanel
+                pending={pending} approved={approved} rejected={rejected}
+                busyId={busyId} isFree={isFree}
+                onUpdate={onUpdateRequest} onDelete={onDeleteRequest}
+              />
+            </div>
+          </div>
+        )}
+
+        {tab === 'booth' && <PartyBoothPanel session={session} boothUrl={boothUrl} onCopy={() => copy(boothUrl)} isFree={isFree} />}
+        {tab === 'battle' && <PartyBattlePanel sessionId={session.id} isFree={isFree} />}
+        {tab === 'games' && <PartyGamesPanel session={session} isFree={isFree} onJumpToBattle={() => setTab('battle')} />}
+        {tab === 'screen' && <PartyScreenPanel session={session} screenUrl={screenUrl} />}
+      </div>
+    </PartyShell>
+  )
+}
+
+function PartyTabBtn({ active, onClick, icon, children }: any) {
+  return (
+    <button onClick={onClick}
+      className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 transition border ${
+        active ? 'bg-gradient-to-r from-[#8B0E2F] to-[#FF3D8A] text-white border-transparent shadow-[0_4px_20px_rgba(255,61,138,0.35)]'
+               : 'bg-white/[0.04] text-white/70 border-white/10 hover:bg-white/[0.08] hover:text-white'
+      }`}>
+      {icon}{children}
+    </button>
+  )
+}
+
+function PartyLinkRow({ label, url, onCopy, external }: { label: string; url: string; onCopy: () => void; external?: boolean }) {
+  return (
+    <div className="rounded-xl bg-black/30 border border-white/10 p-3">
+      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#FF7AB6]">{label}</p>
+      <p className="text-xs text-white/70 font-mono mt-1 truncate" title={url}>{url.replace(/^https?:\/\//, '')}</p>
+      <div className="flex gap-1.5 mt-2">
+        <button onClick={onCopy} className="text-[10px] px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 inline-flex items-center gap-1">
+          <Copy className="h-3 w-3" /> Copia
+        </button>
+        {external && (
+          <a href={url} target="_blank" rel="noreferrer" className="text-[10px] px-2.5 py-1 rounded-md bg-[#FF3D8A]/20 border border-[#FF3D8A]/40 text-[#FF7AB6] hover:bg-[#FF3D8A]/30 inline-flex items-center gap-1">
+            <Tv className="h-3 w-3" /> Apri
+          </a>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function PartyStat({ icon, label, value, hint }: { icon: React.ReactNode; label: string; value: string; hint?: string }) {
+  return (
+    <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-4 backdrop-blur">
+      <div className="flex items-center gap-2 text-[#FF7AB6]">{icon}<span className="text-[10px] font-bold uppercase tracking-wider">{label}</span></div>
+      <p className="text-2xl font-black text-white mt-1">{value}</p>
+      {hint && <p className="text-[10px] text-white/40 mt-0.5">{hint}</p>}
+    </div>
+  )
+}
+
+function PartyStatLive({ sessionId }: { sessionId: string }) {
+  const { data } = useSWR(['session', sessionId], () => live.getSession(sessionId), { refreshInterval: 8_000 })
+  return <PartyStat icon={<Users className="h-4 w-4" />} label="Online" value={String(data?.online_count ?? 0)} />
+}
+
+function PartyStatPhotos({ sessionId }: { sessionId: string }) {
+  const { data } = useSWR(['booth-photos', sessionId], () => livePhotos.listBoothPhotos(sessionId).catch(() => []), { refreshInterval: 8_000 })
+  return <PartyStat icon={<Camera className="h-4 w-4" />} label="Foto Booth" value={String(data?.length ?? 0)} />
+}
+
+function PartyStatPolls({ sessionId }: { sessionId: string }) {
+  const { data } = useSWR(['polls', sessionId], () => livePolls.list(sessionId).catch(() => []), { refreshInterval: 8_000 })
+  const active = (data ?? []).filter((p) => p.is_active).length
+  return <PartyStat icon={<ListChecks className="h-4 w-4" />} label="Battle attive" value={String(active)} />
+}
+
+// ─────────────── BOOTH PANEL ───────────────
+function PartyBoothPanel({ session, boothUrl, onCopy, isFree }: any) {
+  const { data: photos, mutate: refreshPhotos } = useSWR(
+    ['booth-photos', session.id],
+    () => livePhotos.listBoothPhotos(session.id),
+    { refreshInterval: 5_000 },
+  )
+
+  const setStatus = async (id: string, status: 'approved' | 'rejected') => {
+    try { await livePhotos.setStatus(id, status); await refreshPhotos() } catch (e: any) { toast.error(e?.message ?? 'Errore') }
+  }
+  const setFeatured = async (id: string, v: boolean) => {
+    try { await livePhotos.setFeatured(id, v); await refreshPhotos() } catch (e: any) { toast.error(e?.message ?? 'Errore') }
+  }
+  const remove = async (id: string) => {
+    if (!confirm('Eliminare definitivamente questa foto?')) return
+    try { await livePhotos.remove(id); await refreshPhotos() } catch (e: any) { toast.error(e?.message ?? 'Errore') }
+  }
+
+  if (isFree) return <PartyPaywall title="Live Booth bloccato" message="Attiva un Event Pass 24H o passa al piano Advance per sbloccare il Live Booth." />
+
+  const pending = (photos ?? []).filter((p: any) => p.status === 'pending')
+  const approved = (photos ?? []).filter((p: any) => p.status === 'approved')
+
+  return (
+    <div className="space-y-5">
+      <PartyCard tone="fuchsia">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="h-16 w-16 rounded-2xl bg-white/20 flex items-center justify-center"><Camera className="h-8 w-8 text-white" /></div>
+          <div className="flex-1 min-w-[200px]">
+            <PartyEyebrow>Link Live Booth</PartyEyebrow>
+            <p className="text-sm text-white/80 font-mono mt-1 break-all">{boothUrl}</p>
+          </div>
+          <div className="flex gap-2">
+            <PartyButton variant="outline" size="sm" onClick={onCopy} icon={<Copy className="h-3.5 w-3.5" />}>Copia</PartyButton>
+            <a href={boothUrl} target="_blank" rel="noreferrer">
+              <PartyButton variant="fuchsia" size="sm" icon={<Camera className="h-3.5 w-3.5" />}>Apri</PartyButton>
+            </a>
+          </div>
+        </div>
+      </PartyCard>
+
+      {pending.length > 0 && (
+        <PartyCard>
+          <PartyEyebrow>In attesa di approvazione ({pending.length})</PartyEyebrow>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+            {pending.map((p: any) => (
+              <PartyPhotoTile key={p.id} photo={p} onApprove={() => setStatus(p.id, 'approved')} onReject={() => setStatus(p.id, 'rejected')} onRemove={() => remove(p.id)} onFeature={() => setFeatured(p.id, !p.is_featured)} />
+            ))}
+          </div>
+        </PartyCard>
+      )}
+
+      <PartyCard>
+        <PartyEyebrow>Approvate ({approved.length})</PartyEyebrow>
+        {approved.length === 0 ? (
+          <p className="text-sm text-white/40 italic mt-3">Nessuna foto approvata ancora.</p>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+            {approved.map((p: any) => (
+              <PartyPhotoTile key={p.id} photo={p} onReject={() => setStatus(p.id, 'rejected')} onRemove={() => remove(p.id)} onFeature={() => setFeatured(p.id, !p.is_featured)} approved />
+            ))}
+          </div>
+        )}
+      </PartyCard>
+    </div>
+  )
+}
+
+function PartyPhotoTile({ photo, onApprove, onReject, onRemove, onFeature, approved }: any) {
+  return (
+    <div className={`relative rounded-xl overflow-hidden border ${photo.is_featured ? 'border-[#FF3D8A] ring-2 ring-[#FF3D8A]/40' : 'border-white/10'} bg-black/30 group`}>
+      <div className="aspect-square">
+        {photo.url && <img src={photo.url} alt="" className="w-full h-full object-cover" />}
+      </div>
+      {photo.is_featured && (
+        <span className="absolute top-1.5 left-1.5 bg-[#FF3D8A] text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
+          <Star className="h-2.5 w-2.5 fill-current" /> Top
+        </span>
+      )}
+      <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/90 to-transparent flex gap-1">
+        {onApprove && <button onClick={onApprove} title="Approva" className="flex-1 p-1.5 rounded bg-emerald-500/80 text-white hover:bg-emerald-500"><Check className="h-3 w-3 mx-auto" /></button>}
+        {onFeature && <button onClick={onFeature} title="In evidenza" className={`flex-1 p-1.5 rounded ${photo.is_featured ? 'bg-[#FF3D8A]' : 'bg-white/20 hover:bg-white/30'} text-white`}><Star className="h-3 w-3 mx-auto" /></button>}
+        {onReject && <button onClick={onReject} title={approved ? 'Rifiuta' : 'Scarta'} className="flex-1 p-1.5 rounded bg-amber-500/80 text-white hover:bg-amber-500"><X className="h-3 w-3 mx-auto" /></button>}
+        {onRemove && <button onClick={onRemove} title="Elimina" className="flex-1 p-1.5 rounded bg-red-500/80 text-white hover:bg-red-500"><Trash2 className="h-3 w-3 mx-auto" /></button>}
+      </div>
+    </div>
+  )
+}
+
+// ─────────────── MUSIC BATTLE PANEL ───────────────
+function PartyBattlePanel({ sessionId, isFree }: { sessionId: string; isFree: boolean }) {
+  const { data: polls, mutate: refresh } = useSWR(['polls', sessionId], () => livePolls.list(sessionId), { refreshInterval: 5_000 })
+  const [customQ, setCustomQ] = useState('')
+  const [customA, setCustomA] = useState('')
+  const [customB, setCustomB] = useState('')
+  const [creating, setCreating] = useState(false)
+
+  const create = async (q: string, opts: string[]) => {
+    setCreating(true)
+    try {
+      await livePolls.create(sessionId, { question: q, options: opts })
+      toast.success('Music Battle creata!')
+      setCustomQ(''); setCustomA(''); setCustomB('')
+      await refresh()
+    } catch (e: any) { toast.error(e?.message ?? 'Errore') }
+    finally { setCreating(false) }
+  }
+  const toggle = async (id: string, isActive: boolean) => {
+    try { await livePolls.setActive(id, isActive); await refresh() } catch (e: any) { toast.error(e?.message ?? 'Errore') }
+  }
+
+  if (isFree) return <PartyPaywall title="Music Battle bloccata" message="Attiva un Event Pass 24H o passa al piano Advance per creare le Music Battle." />
+
+  return (
+    <div className="space-y-5">
+      <PartyCard tone="wine">
+        <PartyEyebrow>⚡ Battaglie preset</PartyEyebrow>
+        <p className="text-sm text-white/70 mt-1 mb-4">Lancia una battle in un tap. Il pubblico vota dal telefono.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {PARTY_PRESETS.map((p) => (
+            <button key={p.q} disabled={creating} onClick={() => create(p.q, p.opts)}
+              className="text-left rounded-xl bg-black/30 hover:bg-black/50 border border-[#FF3D8A]/30 hover:border-[#FF3D8A]/60 p-3 transition disabled:opacity-50">
+              <p className="text-sm font-bold text-white">{p.q}</p>
+              <p className="text-[11px] text-[#FF7AB6] mt-0.5">{p.opts.join(' · ')}</p>
+            </button>
+          ))}
+        </div>
+      </PartyCard>
+
+      <PartyCard>
+        <PartyEyebrow>Crea battle personalizzata</PartyEyebrow>
+        <div className="mt-3 space-y-2.5">
+          <PartyInput placeholder="Domanda (es. Rock vs Pop)" value={customQ} onChange={(e: any) => setCustomQ(e.target.value)} />
+          <div className="grid grid-cols-2 gap-2.5">
+            <PartyInput placeholder="Opzione A" value={customA} onChange={(e: any) => setCustomA(e.target.value)} />
+            <PartyInput placeholder="Opzione B" value={customB} onChange={(e: any) => setCustomB(e.target.value)} />
+          </div>
+          <PartyButton variant="fuchsia" disabled={!customQ.trim() || !customA.trim() || !customB.trim() || creating} loading={creating}
+            onClick={() => create(customQ.trim(), [customA.trim(), customB.trim()])} icon={<Plus className="h-3.5 w-3.5" />}>
+            Crea Music Battle
+          </PartyButton>
+        </div>
+      </PartyCard>
+
+      <PartyCard>
+        <PartyEyebrow>Storico battle</PartyEyebrow>
+        {!polls || polls.length === 0 ? (
+          <p className="text-sm text-white/40 italic mt-3">Nessuna battle creata ancora.</p>
+        ) : (
+          <div className="mt-3 space-y-2">
+            {polls.map((p) => {
+              const total = (p.tally ?? []).reduce((a, b) => a + b, 0)
+              return (
+                <div key={p.id} className="rounded-xl bg-black/30 border border-white/10 p-3">
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-white text-sm">{p.question}</p>
+                      <p className="text-[11px] text-white/50 mt-0.5">{p.options.join(' vs ')} · {total} {total === 1 ? 'voto' : 'voti'}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <PartyBadge tone={p.is_active ? 'fuchsia' : 'soft'}>{p.is_active ? 'ATTIVA' : 'CHIUSA'}</PartyBadge>
+                      <button onClick={() => toggle(p.id, !p.is_active)} className="text-[10px] px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-white hover:bg-white/10">
+                        {p.is_active ? 'Chiudi' : 'Riapri'}
+                      </button>
+                    </div>
+                  </div>
+                  {total > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {p.options.map((opt, i) => {
+                        const tally = p.tally?.[i] ?? 0
+                        const pct = total > 0 ? Math.round((tally / total) * 100) : 0
+                        return (
+                          <div key={i} className="flex items-center gap-2 text-xs">
+                            <span className="text-white/70 w-32 truncate">{opt}</span>
+                            <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
+                              <div className="h-full bg-gradient-to-r from-[#8B0E2F] to-[#FF3D8A]" style={{ width: `${pct}%` }} />
+                            </div>
+                            <span className="text-white font-bold tabular-nums w-10 text-right">{pct}%</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </PartyCard>
+    </div>
+  )
+}
+
+// ─────────────── PARTY GAMES PANEL ───────────────
+function PartyGamesPanel({ session, isFree, onJumpToBattle }: any) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <PartyRouletteCard session={session} isFree={isFree} />
+      <PartyCard tone="wine">
+        <div className="flex items-center gap-3">
+          <ListChecks className="h-6 w-6 text-[#FF7AB6]" />
+          <h3 className="text-lg font-black text-white">Music Battle</h3>
+        </div>
+        <p className="text-sm text-white/70 mt-2">Sondaggi musicali live con voto dal telefono.</p>
+        <PartyButton variant="outline" size="sm" className="mt-4" onClick={onJumpToBattle}>
+          Vai alle Music Battle
+        </PartyButton>
+      </PartyCard>
+
+      <PartyComingSoonCard
+        icon={<Users className="h-6 w-6 text-[#FF7AB6]" />}
+        title="Top Fan"
+        description="Classifica del pubblico più attivo della serata. Vincono richieste, voti e foto."
+      />
+      <PartyComingSoonCard
+        icon={<Music2 className="h-6 w-6 text-[#FF7AB6]" />}
+        title="Indovina la Canzone"
+        description="Mini-quiz musicale live: chi indovina per primo vince un premio dal DJ."
+      />
+    </div>
+  )
+}
+
+function PartyComingSoonCard({ icon, title, description }: any) {
+  return (
+    <PartyCard className="relative overflow-hidden opacity-90">
+      <div className="absolute top-3 right-3">
+        <PartyBadge tone="gold">In arrivo</PartyBadge>
+      </div>
+      <div className="flex items-center gap-3">
+        {icon}
+        <h3 className="text-lg font-black text-white">{title}</h3>
+      </div>
+      <p className="text-sm text-white/70 mt-2">{description}</p>
+    </PartyCard>
+  )
+}
+
+function PartyRouletteCard({ session, isFree }: any) {
+  const { data: round, mutate: refresh } = useSWR(
+    ['party-roulette', session.id],
+    () => liveGames.publicLatest(session.public_slug).then((d) => d.roulette).catch(() => null),
+    { refreshInterval: 4_000 },
+  )
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState<string[]>(() => {
+    const cur = (session.roulette_penitenze ?? []).map((p: any) => p.label).filter(Boolean)
+    return cur.length ? cur : PARTY_PENITENZE_DEFAULT
+  })
+  const [busy, setBusy] = useState<string | null>(null)
+
+  const savePenitenze = async () => {
+    setBusy('save')
+    try {
+      const arr = draft.map((label) => ({ label: label.trim(), category: 'party' as const, enabled: true })).filter((x) => x.label)
+      await live.updateSession(session.id, { roulette_penitenze: arr })
+      toast.success('Penitenze salvate')
+      setEditing(false)
+      await mutate(['session', session.id])
+    } catch (e: any) { toast.error(e?.message ?? 'Errore') }
+    finally { setBusy(null) }
+  }
+
+  const start = async () => {
+    setBusy('start')
+    try { await liveGames.startRoulette(session.id); await refresh() }
+    catch (e: any) { toast.error(e?.message ?? 'Errore') }
+    finally { setBusy(null) }
+  }
+  const spin = async () => {
+    setBusy('spin')
+    try { await liveGames.spinRoulette(session.id); await refresh() }
+    catch (e: any) { toast.error(e?.message ?? 'Errore') }
+    finally { setBusy(null) }
+  }
+  const reset = async () => {
+    setBusy('reset')
+    try { await liveGames.resetRoulette(session.id); await refresh() }
+    catch (e: any) { toast.error(e?.message ?? 'Errore') }
+    finally { setBusy(null) }
+  }
+
+  if (isFree) {
+    return (
+      <PartyCard tone="fuchsia">
+        <div className="flex items-center gap-3"><Sparkles className="h-6 w-6 text-white" /><h3 className="text-lg font-black text-white">Party Roulette</h3></div>
+        <p className="text-sm text-white/80 mt-2">Attiva Event Pass 24H per sbloccare la roulette.</p>
+        <Link href="/billing" className="inline-block mt-3"><PartyButton variant="outline" size="sm">Sblocca</PartyButton></Link>
+      </PartyCard>
+    )
+  }
+
+  return (
+    <PartyCard tone="fuchsia">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <Sparkles className="h-6 w-6 text-white" />
+          <h3 className="text-lg font-black text-white">Party Roulette</h3>
+        </div>
+        <button onClick={() => setEditing((v) => !v)} className="text-[10px] uppercase tracking-wider text-white/80 hover:text-white">
+          {editing ? 'Annulla' : 'Modifica penitenze'}
+        </button>
+      </div>
+
+      {editing ? (
+        <div className="mt-4 space-y-2">
+          {draft.map((p, i) => (
+            <div key={i} className="flex gap-2">
+              <PartyInput value={p} onChange={(e: any) => setDraft(draft.map((d, di) => di === i ? e.target.value : d))} className="flex-1" />
+              <button onClick={() => setDraft(draft.filter((_, di) => di !== i))} className="p-2 rounded-md bg-white/10 text-white hover:bg-white/20"><X className="h-3.5 w-3.5" /></button>
+            </div>
+          ))}
+          <button onClick={() => setDraft([...draft, ''])} className="text-xs text-white/80 hover:text-white inline-flex items-center gap-1 mt-1">
+            <Plus className="h-3 w-3" /> Aggiungi penitenza
+          </button>
+          <div className="flex gap-2 mt-3">
+            <PartyButton variant="fuchsia" size="sm" onClick={savePenitenze} loading={busy === 'save'}>Salva</PartyButton>
+            <PartyButton variant="ghost" size="sm" onClick={() => setDraft(PARTY_PENITENZE_DEFAULT)}>Ripristina default</PartyButton>
+          </div>
+        </div>
+      ) : (
+        <>
+          {round?.result?.slot_label ? (
+            <div className="mt-4 rounded-2xl bg-black/40 border-2 border-white/20 p-5 text-center">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-[#FF7AB6] mb-2">Risultato</p>
+              <p className="text-2xl font-black text-white">{round.result.slot_label}</p>
+            </div>
+          ) : (
+            <p className="text-sm text-white/80 mt-2">
+              {(session.roulette_penitenze ?? PARTY_PENITENZE_DEFAULT).length} penitenze caricate. Avvia la roulette quando vuoi.
+            </p>
+          )}
+
+          <div className="flex gap-2 mt-4 flex-wrap">
+            {!round || round.status === 'completed' ? (
+              <PartyButton variant="outline" size="sm" onClick={start} loading={busy === 'start'} icon={<Play className="h-3.5 w-3.5" />}>
+                Avvia
+              </PartyButton>
+            ) : (
+              <PartyButton variant="fuchsia" size="sm" onClick={spin} loading={busy === 'spin'} icon={<RotateCw className="h-3.5 w-3.5" />}>
+                Gira!
+              </PartyButton>
+            )}
+            {round && (
+              <PartyButton variant="ghost" size="sm" onClick={reset} loading={busy === 'reset'}>Reset</PartyButton>
+            )}
+          </div>
+        </>
+      )}
+    </PartyCard>
+  )
+}
+
+// ─────────────── SCREEN PANEL ───────────────
+function PartyScreenPanel({ session, screenUrl }: any) {
+  const cfg = session.screen_config ?? {}
+  const [draft, setDraft] = useState({
+    show_photos: cfg.show_photos !== false,
+    show_polls: cfg.show_polls !== false,
+    show_roulette: cfg.show_roulette !== false,
+  })
+  const [saving, setSaving] = useState(false)
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      await live.updateSession(session.id, { screen_config: { ...cfg, ...draft } })
+      toast.success('Schermo aggiornato')
+      await mutate(['session', session.id])
+    } catch (e: any) { toast.error(e?.message ?? 'Errore') }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <div className="space-y-5">
+      <PartyCard tone="hi">
+        <PartyEyebrow>Schermo TV / Proiettore</PartyEyebrow>
+        <p className="text-sm text-white/70 mt-2">Apri questo link sulla TV o proiettore della serata.</p>
+        <p className="text-xs text-white/60 font-mono mt-3 break-all">{screenUrl}</p>
+        <div className="flex gap-2 mt-3 flex-wrap">
+          <a href={screenUrl} target="_blank" rel="noreferrer">
+            <PartyButton variant="fuchsia" size="sm" icon={<Tv className="h-3.5 w-3.5" />}>Apri Schermo</PartyButton>
+          </a>
+          <PartyButton variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(screenUrl); toast.success('Link copiato') }} icon={<Copy className="h-3.5 w-3.5" />}>
+            Copia link
+          </PartyButton>
+        </div>
+      </PartyCard>
+
+      <PartyCard>
+        <PartyEyebrow>Cosa mostrare sullo schermo</PartyEyebrow>
+        <div className="mt-4 space-y-2.5">
+          <ScreenToggle label="Foto Live Booth" value={draft.show_photos} onChange={(v) => setDraft({ ...draft, show_photos: v })} />
+          <ScreenToggle label="Music Battle" value={draft.show_polls} onChange={(v) => setDraft({ ...draft, show_polls: v })} />
+          <ScreenToggle label="Party Roulette" value={draft.show_roulette} onChange={(v) => setDraft({ ...draft, show_roulette: v })} />
+        </div>
+        <PartyButton variant="fuchsia" size="sm" className="mt-4" onClick={save} loading={saving}>Salva preferenze</PartyButton>
+      </PartyCard>
+    </div>
+  )
+}
+
+function ScreenToggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-center justify-between rounded-xl bg-black/30 border border-white/10 px-4 py-3 cursor-pointer hover:bg-black/40">
+      <span className="text-sm text-white">{label}</span>
+      <button type="button" onClick={() => onChange(!value)}
+        className={`relative w-11 h-6 rounded-full transition ${value ? 'bg-[#FF3D8A]' : 'bg-white/15'}`}>
+        <span className={`absolute top-0.5 left-0.5 h-5 w-5 bg-white rounded-full transition ${value ? 'translate-x-5' : ''}`} />
+      </button>
+    </label>
   )
 }

@@ -2,9 +2,12 @@
 import { useParams } from 'next/navigation'
 import useSWR from 'swr'
 import { useState, useRef, useEffect } from 'react'
-import { Camera, X, RotateCw, Check, Heart, Loader } from 'lucide-react'
+import { Camera, X, RotateCw, Check, Sparkles } from 'lucide-react'
 import { publicLive, livePhotos } from '@/lib/api'
 import { WeddingShell, WeddingButton } from '@/components/wedding/WeddingUI'
+import {
+  PartyShell, PartyButton, PartyCard, PartyEyebrow, PartyDivider,
+} from '@/components/party/PartyUI'
 import toast from 'react-hot-toast'
 
 export default function LiveBoothPage() {
@@ -18,84 +21,148 @@ export default function LiveBoothPage() {
   const [cameraActive, setCameraActive] = useState(false)
   const [photo, setPhoto] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [countdown, setCountdown] = useState<number | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const countdownTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(t => t.stop())
-      }
+      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop())
+      if (countdownTimer.current) clearTimeout(countdownTimer.current)
     }
   }, [])
 
   useEffect(() => {
     if (cameraActive && videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current
-      videoRef.current.play().catch(err => console.error('Video play failed:', err))
+      videoRef.current.play().catch((err) => console.error('Video play failed:', err))
     }
   }, [cameraActive])
 
   if (error || !data) {
     return (
-      <WeddingShell>
+      <PartyShell>
         <div className="min-h-screen flex items-center justify-center px-6">
-          <p className="text-wedding-taupe text-center">Sessione non trovata.</p>
+          <p className="text-white/60 text-center">Sessione non trovata.</p>
         </div>
-      </WeddingShell>
+      </PartyShell>
     )
   }
 
   const { session } = data
-  if (session.session_type !== 'wedding') {
+  const isParty   = session.session_type === 'party'
+  const isWedding = session.session_type === 'wedding'
+
+  if (!isParty && !isWedding) {
     return (
-      <WeddingShell>
+      <PartyShell>
         <div className="min-h-screen flex items-center justify-center px-6">
-          <p className="text-wedding-taupe text-center">
-            Live Booth disponibile solo per il piano Advance.
+          <p className="text-white/70 text-center">
+            Live Booth disponibile solo per le sessioni Party Mode o Wedding Edition.
           </p>
         </div>
-      </WeddingShell>
+      </PartyShell>
     )
   }
 
   if (!session.is_active) {
-    return (
+    return isWedding ? (
       <WeddingShell>
         <div className="min-h-screen flex items-center justify-center px-6">
           <p className="text-wedding-taupe text-center">La sessione è terminata.</p>
         </div>
       </WeddingShell>
+    ) : (
+      <PartyShell>
+        <div className="min-h-screen flex items-center justify-center px-6">
+          <p className="text-white/60 text-center">La sessione è terminata.</p>
+        </div>
+      </PartyShell>
     )
   }
 
+  // ─── Camera helpers ──────────────────────────────────────────
   const startCamera = async () => {
     try {
-      // Check if mediaDevices is available (requires HTTPS or localhost)
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        toast.error('La fotocamera richiede HTTPS. Usa https:// invece di http://')
+      if (!navigator.mediaDevices?.getUserMedia) {
+        toast.error('La fotocamera richiede HTTPS.')
         return
       }
-
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       })
       streamRef.current = stream
       setCameraActive(true)
-    } catch (err) {
-      console.error('Camera error:', err)
+    } catch {
       toast.error('Impossibile accedere alla fotocamera. Controlla i permessi del browser.')
     }
   }
 
   const stopCamera = () => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop())
+      streamRef.current.getTracks().forEach((t) => t.stop())
       streamRef.current = null
     }
     setCameraActive(false)
+    setCountdown(null)
+    if (countdownTimer.current) clearTimeout(countdownTimer.current)
+  }
+
+  const drawPartyOverlay = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+    const pad = Math.min(w, h) * 0.04
+    const grd = ctx.createLinearGradient(0, 0, w, 0)
+    grd.addColorStop(0, '#FF3D8A')
+    grd.addColorStop(1, '#8B0E2F')
+    ctx.strokeStyle = grd
+    ctx.lineWidth = Math.min(w, h) * 0.008
+    ctx.strokeRect(pad, pad, w - pad * 2, h - pad * 2)
+
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'
+    const bandH = Math.min(w, h) * 0.11
+    ctx.fillRect(pad, h - pad - bandH, w - pad * 2, bandH)
+
+    ctx.fillStyle = '#FFFFFF'
+    ctx.font = `700 ${Math.min(w, h) * 0.04}px Inter, sans-serif`
+    ctx.textAlign = 'center'
+    ctx.fillText(session.event_name, w / 2, h - pad - bandH * 0.55)
+
+    ctx.fillStyle = '#FF7AB6'
+    ctx.font = `${Math.min(w, h) * 0.025}px Inter, sans-serif`
+    ctx.fillText('IOMIXO LIVE BOOTH', w / 2, h - pad - bandH * 0.2)
+  }
+
+  const drawWeddingOverlay = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+    const padding = Math.min(w, h) * 0.05
+    const cornerLen = Math.min(w, h) * 0.08
+    const strokeWidth = Math.min(w, h) * 0.005
+    ctx.strokeStyle = 'rgba(232, 183, 200, 0.9)'
+    ctx.lineWidth = strokeWidth
+    ctx.strokeRect(padding, padding, w - padding * 2, h - padding * 2)
+    ctx.strokeStyle = 'rgba(143, 29, 44, 0.8)'
+    ctx.lineWidth = strokeWidth * 1.5
+    const corners = [
+      [padding, padding, padding + cornerLen, padding, padding, padding + cornerLen],
+      [w - padding, padding, w - padding - cornerLen, padding, w - padding, padding + cornerLen],
+      [padding, h - padding, padding + cornerLen, h - padding, padding, h - padding - cornerLen],
+      [w - padding, h - padding, w - padding - cornerLen, h - padding, w - padding, h - padding - cornerLen],
+    ]
+    corners.forEach(([x, y, x1, y1, x2, y2]) => {
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x, y); ctx.lineTo(x2, y2); ctx.stroke()
+    })
+    ctx.fillStyle = 'rgba(43, 36, 36, 0.9)'
+    ctx.font = `${Math.min(w, h) * 0.04}px "Cormorant Garamond", serif`
+    ctx.textAlign = 'center'
+    const names = session.couple_names ?? session.event_name
+    ctx.fillText(names, w / 2, h - padding * 2.5)
+    if (session.wedding_date) {
+      ctx.font = `italic ${Math.min(w, h) * 0.025}px "Cormorant Garamond", serif`
+      ctx.fillStyle = 'rgba(111, 98, 96, 0.9)'
+      const date = new Date(session.wedding_date).toLocaleDateString('it-IT', { dateStyle: 'long' })
+      ctx.fillText(date, w / 2, h - padding * 1.5)
+    }
   }
 
   const capturePhoto = () => {
@@ -106,69 +173,33 @@ export default function LiveBoothPage() {
     canvas.height = video.videoHeight
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-
-    // Mirror horizontally to match the selfie-style preview
     ctx.save()
     ctx.translate(canvas.width, 0)
     ctx.scale(-1, 1)
     ctx.drawImage(video, 0, 0)
     ctx.restore()
-
-    // Draw elegant overlay frame
-    drawOverlay(ctx, canvas.width, canvas.height)
-
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9)
-    setPhoto(dataUrl)
+    if (isWedding) drawWeddingOverlay(ctx, canvas.width, canvas.height)
+    else           drawPartyOverlay(ctx, canvas.width, canvas.height)
+    setPhoto(canvas.toDataURL('image/jpeg', 0.9))
     stopCamera()
   }
 
-  const drawOverlay = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-    const padding = Math.min(w, h) * 0.05
-    const cornerLen = Math.min(w, h) * 0.08
-    const strokeWidth = Math.min(w, h) * 0.005
-
-    // Border
-    ctx.strokeStyle = 'rgba(232, 183, 200, 0.9)' // wedding-blush
-    ctx.lineWidth = strokeWidth
-    ctx.strokeRect(padding, padding, w - padding * 2, h - padding * 2)
-
-    // Corner accents
-    ctx.strokeStyle = 'rgba(143, 29, 44, 0.8)' // wedding-burgundy
-    ctx.lineWidth = strokeWidth * 1.5
-
-    const corners = [
-      [padding, padding, padding + cornerLen, padding, padding, padding + cornerLen],
-      [w - padding, padding, w - padding - cornerLen, padding, w - padding, padding + cornerLen],
-      [padding, h - padding, padding + cornerLen, h - padding, padding, h - padding - cornerLen],
-      [w - padding, h - padding, w - padding - cornerLen, h - padding, w - padding, h - padding - cornerLen],
-    ]
-    corners.forEach(([x, y, x1, y1, x2, y2]) => {
-      ctx.beginPath()
-      ctx.moveTo(x1, y1)
-      ctx.lineTo(x, y)
-      ctx.lineTo(x2, y2)
-      ctx.stroke()
-    })
-
-    // Text overlay
-    ctx.fillStyle = 'rgba(43, 36, 36, 0.9)'
-    ctx.font = `${Math.min(w, h) * 0.04}px "Cormorant Garamond", serif`
-    ctx.textAlign = 'center'
-    const names = session.couple_names ?? session.event_name
-    ctx.fillText(names, w / 2, h - padding * 2.5)
-
-    if (session.wedding_date) {
-      ctx.font = `italic ${Math.min(w, h) * 0.025}px "Cormorant Garamond", serif`
-      ctx.fillStyle = 'rgba(111, 98, 96, 0.9)'
-      const date = new Date(session.wedding_date).toLocaleDateString('it-IT', { dateStyle: 'long' })
-      ctx.fillText(date, w / 2, h - padding * 1.5)
+  /** PHOTO MOMENT 3-2-1 countdown then capture. */
+  const startPhotoMoment = () => {
+    if (!cameraActive) return
+    const tick = (n: number) => {
+      if (n <= 0) {
+        setCountdown(null)
+        capturePhoto()
+        return
+      }
+      setCountdown(n)
+      countdownTimer.current = setTimeout(() => tick(n - 1), 1000)
     }
+    tick(3)
   }
 
-  const retakePhoto = () => {
-    setPhoto(null)
-    startCamera()
-  }
+  const retakePhoto = () => { setPhoto(null); startCamera() }
 
   const uploadPhoto = async () => {
     if (!photo) return
@@ -177,21 +208,124 @@ export default function LiveBoothPage() {
       const blob = await (await fetch(photo)).blob()
       const file = new File([blob], 'booth-photo.jpg', { type: 'image/jpeg' })
       await livePhotos.boothUpload(slug!, file, {})
-      toast.success('La tua foto apparirà sul Live Booth ❤️')
+      toast.success(isWedding
+        ? 'La tua foto apparirà sul Live Booth ❤️'
+        : 'Foto inviata! Potrebbe apparire sullo schermo live.')
       setPhoto(null)
-      // Optionally restart camera or show success state
     } catch (err: any) {
       const msg = err?.message ?? 'Errore durante l\'invio.'
-      if (msg.includes('Wedding Edition') || msg.includes('sospese')) {
-        toast.error('Live Booth disponibile solo per il piano Advance.')
+      if (msg.includes('Advance') || msg.includes('Pass') || msg.includes('sospese')) {
+        toast.error('Live Booth disponibile con Advance o Event Pass 24H.')
       } else {
         toast.error(msg)
       }
-    } finally {
-      setUploading(false)
-    }
+    } finally { setUploading(false) }
   }
 
+  // ─── PARTY UI ────────────────────────────────────────────────
+  if (isParty) {
+    if (photo) {
+      return (
+        <PartyShell>
+          <div className="min-h-screen flex flex-col items-center justify-center p-6 space-y-6">
+            <div className="relative max-w-2xl w-full rounded-3xl overflow-hidden ring-2 ring-[#FF3D8A]/40 shadow-[0_25px_80px_rgba(255,61,138,0.35)]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photo} alt="Preview" className="w-full h-auto" />
+            </div>
+            <div className="flex gap-3 flex-wrap justify-center">
+              <PartyButton variant="ghost" onClick={retakePhoto} disabled={uploading} icon={<RotateCw className="h-5 w-5" />} size="lg">
+                Rifai
+              </PartyButton>
+              <PartyButton variant="fuchsia" onClick={uploadPhoto} disabled={uploading} loading={uploading} icon={<Check className="h-5 w-5" />} size="lg">
+                Usa questa foto
+              </PartyButton>
+            </div>
+          </div>
+        </PartyShell>
+      )
+    }
+
+    if (cameraActive) {
+      return (
+        <PartyShell>
+          <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
+            <div className="relative max-w-2xl w-full rounded-3xl overflow-hidden ring-2 ring-[#FF3D8A]/40 shadow-[0_25px_80px_rgba(255,61,138,0.35)]">
+              <video ref={videoRef} autoPlay playsInline muted className="w-full h-auto mirror" />
+              {countdown !== null && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 backdrop-blur-sm">
+                  <p className="text-[#FF7AB6] text-2xl font-black tracking-[0.5em] uppercase mb-6 animate-pulse">
+                    Photo Moment
+                  </p>
+                  <p key={countdown} className="text-white text-[12rem] sm:text-[16rem] font-black leading-none drop-shadow-[0_0_40px_rgba(255,61,138,0.7)]">
+                    {countdown}
+                  </p>
+                </div>
+              )}
+            </div>
+            <canvas ref={canvasRef} className="hidden" />
+            <div className="flex gap-3 mt-6 flex-wrap justify-center">
+              <PartyButton variant="ghost" onClick={stopCamera} icon={<X className="h-5 w-5" />} size="lg">
+                Chiudi
+              </PartyButton>
+              <PartyButton
+                variant="fuchsia"
+                onClick={startPhotoMoment}
+                disabled={countdown !== null}
+                icon={<Camera className="h-5 w-5" />}
+                size="lg"
+              >
+                {countdown !== null ? `${countdown}…` : 'Photo Moment'}
+              </PartyButton>
+            </div>
+          </div>
+          <style jsx global>{`.mirror { transform: scaleX(-1); }`}</style>
+        </PartyShell>
+      )
+    }
+
+    return (
+      <PartyShell>
+        <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center space-y-8 max-w-lg mx-auto py-12">
+          <div>
+            <PartyEyebrow>✦ Live Booth ✦</PartyEyebrow>
+            <h1 className="text-5xl sm:text-6xl font-black text-white mt-3 leading-tight">
+              {session.event_name}
+            </h1>
+            <PartyDivider className="my-6" />
+            <p className="text-base text-white/70">
+              Partecipa al Photo Moment.
+              <br />
+              La tua foto può apparire live sullo schermo della serata.
+            </p>
+          </div>
+
+          <PartyCard tone="fuchsia" className="w-full">
+            <div className="flex items-center justify-center gap-2 text-[#FF7AB6] mb-3">
+              <Sparkles className="h-4 w-4" />
+              <p className="text-[11px] uppercase tracking-[0.3em] font-semibold">Come funziona</p>
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <ol className="text-sm text-white/80 space-y-1.5 text-left list-decimal list-inside">
+              <li>Apri la fotocamera</li>
+              <li>Posa per il countdown <span className="text-[#FF7AB6] font-bold">3… 2… 1</span></li>
+              <li>Conferma o rifai lo scatto</li>
+              <li>Invia: il DJ potrà mostrarla sullo schermo</li>
+            </ol>
+          </PartyCard>
+
+          <PartyButton onClick={startCamera} icon={<Camera className="h-5 w-5" />} size="lg" variant="fuchsia" className="w-full">
+            Partecipa al Live Booth
+          </PartyButton>
+
+          <p className="text-[10px] uppercase tracking-[0.32em] text-white/30">
+            Powered by <span className="text-[#FF7AB6]">IOMIXO Live Hub</span>
+          </p>
+        </div>
+      </PartyShell>
+    )
+  }
+
+  // ─── WEDDING UI (unchanged behaviour) ────────────────────────
   if (photo) {
     return (
       <WeddingShell>
@@ -201,23 +335,8 @@ export default function LiveBoothPage() {
             <img src={photo} alt="Preview" className="w-full h-auto" />
           </div>
           <div className="flex gap-4">
-            <WeddingButton
-              onClick={retakePhoto}
-              disabled={uploading}
-              icon={<RotateCw className="h-5 w-5" />}
-              size="lg"
-            >
-              Rifai
-            </WeddingButton>
-            <WeddingButton
-              onClick={uploadPhoto}
-              disabled={uploading}
-              loading={uploading}
-              icon={<Check className="h-5 w-5" />}
-              size="lg"
-            >
-              Invia
-            </WeddingButton>
+            <WeddingButton onClick={retakePhoto} disabled={uploading} icon={<RotateCw className="h-5 w-5" />} size="lg">Rifai</WeddingButton>
+            <WeddingButton onClick={uploadPhoto} disabled={uploading} loading={uploading} icon={<Check className="h-5 w-5" />} size="lg">Invia</WeddingButton>
           </div>
         </div>
       </WeddingShell>
@@ -229,38 +348,15 @@ export default function LiveBoothPage() {
       <WeddingShell>
         <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
           <div className="relative max-w-2xl w-full rounded-2xl overflow-hidden shadow-wedding-lg border-4 border-wedding-gold/30">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-auto mirror"
-            />
-            <div className="absolute inset-0 pointer-events-none">
-              <CameraOverlay session={session} />
-            </div>
+            <video ref={videoRef} autoPlay playsInline muted className="w-full h-auto mirror" />
           </div>
           <canvas ref={canvasRef} className="hidden" />
           <div className="flex gap-4 mt-6">
-            <WeddingButton
-              onClick={stopCamera}
-              icon={<X className="h-5 w-5" />}
-              size="lg"
-            >
-              Chiudi
-            </WeddingButton>
-            <WeddingButton
-              onClick={capturePhoto}
-              icon={<Camera className="h-5 w-5" />}
-              size="lg"
-            >
-              Scatta foto
-            </WeddingButton>
+            <WeddingButton onClick={stopCamera} icon={<X className="h-5 w-5" />} size="lg">Chiudi</WeddingButton>
+            <WeddingButton onClick={capturePhoto} icon={<Camera className="h-5 w-5" />} size="lg">Scatta foto</WeddingButton>
           </div>
         </div>
-        <style jsx global>{`
-          .mirror { transform: scaleX(-1); }
-        `}</style>
+        <style jsx global>{`.mirror { transform: scaleX(-1); }`}</style>
       </WeddingShell>
     )
   }
@@ -281,72 +377,16 @@ export default function LiveBoothPage() {
             </p>
           )}
         </div>
-
         <div className="max-w-md">
           <p className="text-wedding-ink/70 mb-6">
             Scatta una foto e partecipa al Live Booth del matrimonio.
             La tua foto apparirà sullo schermo live!
           </p>
-          <WeddingButton
-            onClick={startCamera}
-            icon={<Camera className="h-5 w-5" />}
-            size="lg"
-            className="w-full"
-          >
+          <WeddingButton onClick={startCamera} icon={<Camera className="h-5 w-5" />} size="lg" className="w-full">
             Apri fotocamera
           </WeddingButton>
         </div>
-
-        <p className="text-center mt-10 text-[10px] uppercase tracking-[0.32em] text-wedding-taupe">
-          Powered by <span className="text-wedding-burgundy">IOMIXO Live Hub</span>
-        </p>
       </div>
     </WeddingShell>
-  )
-}
-
-function CameraOverlay({ session }: { session: { couple_names: string | null; event_name: string; wedding_date: string | null } }) {
-  return (
-    <div className="absolute inset-0 flex flex-col justify-between p-4 sm:p-6 pointer-events-none">
-      {/* Top corners */}
-      <div className="flex justify-between">
-        <Corner />
-        <Corner className="rotate-90" />
-      </div>
-
-      {/* Bottom overlay */}
-      <div className="text-center space-y-1">
-        <p className="font-wedding text-2xl sm:text-3xl text-white drop-shadow-lg">
-          {session.couple_names ?? session.event_name}
-        </p>
-        {session.wedding_date && (
-          <p className="font-wedding text-sm sm:text-base italic text-white/90 drop-shadow-lg">
-            {new Date(session.wedding_date).toLocaleDateString('it-IT', { dateStyle: 'long' })}
-          </p>
-        )}
-      </div>
-
-      {/* Bottom corners */}
-      <div className="flex justify-between">
-        <Corner className="-rotate-90" />
-        <Corner className="rotate-180" />
-      </div>
-    </div>
-  )
-}
-
-function Corner({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      width="40"
-      height="40"
-      viewBox="0 0 40 40"
-      className={`text-wedding-blush opacity-90 ${className}`}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path d="M0 12 L0 0 L12 0" />
-    </svg>
   )
 }
