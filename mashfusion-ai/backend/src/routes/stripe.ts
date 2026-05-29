@@ -93,19 +93,21 @@ stripeRouter.get('/payments', requireAuth, async (req: Request, res: Response, n
   } catch (err) { next(err) }
 })
 
-// ── GET /stripe/wedding-passes ─────────────────────────────────
-stripeRouter.get('/wedding-passes', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+// ── GET /stripe/event-passes (alias: /wedding-passes per back-compat) ──
+async function listEventPassesHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = (req as any).user.sub
     const { data } = await supabaseAdmin
-      .from('wedding_passes')
+      .from('event_passes')
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(10)
     res.json({ data: data ?? [], error: null })
   } catch (err) { next(err) }
-})
+}
+stripeRouter.get('/event-passes',   requireAuth, listEventPassesHandler)
+stripeRouter.get('/wedding-passes', requireAuth, listEventPassesHandler)
 
 // ── POST /stripe/webhook ───────────────────────────────────────
 stripeRouter.post('/webhook', async (req: Request, res: Response) => {
@@ -129,7 +131,7 @@ stripeRouter.post('/webhook', async (req: Request, res: Response) => {
         if (session.mode === 'subscription') {
           await handleCheckoutComplete(session)
         } else if (session.mode === 'payment') {
-          await handleWeddingPassPayment(session)
+          await handleEventPassPayment(session)
         }
         break
       }
@@ -267,17 +269,17 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   logger.warn(`Payment failed for user ${userRow.id}`)
 }
 
-// ── Wedding Pass 24H handler ───────────────────────────────────
-async function handleWeddingPassPayment(session: Stripe.Checkout.Session) {
+// ── Event Pass 24H handler (Party Mode + Wedding Edition) ─────
+async function handleEventPassPayment(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.user_id
   if (!userId) {
-    logger.warn('Wedding Pass payment: missing user_id in metadata')
+    logger.warn('Event Pass payment: missing user_id in metadata')
     return
   }
 
   const paymentIntentId = session.payment_intent as string
   if (!paymentIntentId) {
-    logger.warn('Wedding Pass payment: missing payment_intent')
+    logger.warn('Event Pass payment: missing payment_intent')
     return
   }
 
@@ -285,11 +287,11 @@ async function handleWeddingPassPayment(session: Stripe.Checkout.Session) {
   const amountTotal = session.amount_total || 0
   const currency = session.currency || 'eur'
 
-  // Crea wedding pass valido 24h
+  // Crea event pass valido 24h
   const validUntil = new Date()
   validUntil.setHours(validUntil.getHours() + 24)
 
-  const { error: insertError } = await supabaseAdmin.from('wedding_passes').insert({
+  const { error: insertError } = await supabaseAdmin.from('event_passes').insert({
     user_id: userId,
     session_id: sessionId,
     stripe_payment_intent_id: paymentIntentId,
@@ -300,7 +302,7 @@ async function handleWeddingPassPayment(session: Stripe.Checkout.Session) {
   })
 
   if (insertError) {
-    logger.error('Failed to create wedding pass', { userId, error: insertError })
+    logger.error('Failed to create event pass', { userId, error: insertError })
     return
   }
 
@@ -311,8 +313,8 @@ async function handleWeddingPassPayment(session: Stripe.Checkout.Session) {
     amount_cents: amountTotal,
     currency,
     status: 'succeeded',
-    description: `Wedding Pass 24H — valido fino al ${validUntil.toISOString()}`,
+    description: `Event Pass 24H — valido fino al ${validUntil.toISOString()}`,
   }, { ignoreDuplicates: true, onConflict: 'stripe_payment_intent_id' })
 
-  logger.info(`Wedding Pass created for user ${userId}, valid until ${validUntil.toISOString()}`)
+  logger.info(`Event Pass created for user ${userId}, valid until ${validUntil.toISOString()}`)
 }

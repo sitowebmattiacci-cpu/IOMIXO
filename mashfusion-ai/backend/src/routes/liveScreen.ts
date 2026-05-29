@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { supabaseAdmin } from '../config/supabase'
 import { AppError } from '../middleware/errorHandler'
-import { hasWeddingAccess } from '../services/plan'
+import { hasEventAccess } from '../services/plan'
 import { isEventSession } from '../utils/sessionType'
 import { createWeddingPhotoSignedUrl } from '../services/storage'
 
@@ -20,8 +20,8 @@ liveScreenRouter.get('/public/:slug/screen', async (req, res, next) => {
       throw new AppError('Schermo live disponibile solo per sessioni Party Mode o Wedding Edition.', 400)
     }
 
-    if (!(await hasWeddingAccess(session.dj_id, session.id))) {
-      throw new AppError('Funzione disponibile con il piano Advance o un Wedding Pass 24H.', 402)
+    if (!(await hasEventAccess(session.dj_id, session.id))) {
+      throw new AppError('Funzione disponibile con il piano Advance o un Event Pass 24H.', 402)
     }
 
     const [roundRes, shoeRes, pollRes, dedRes, photoRes] = await Promise.all([

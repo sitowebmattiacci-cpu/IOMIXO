@@ -34,22 +34,22 @@ export async function hasFeature(userId: string, feature: keyof PlanLimits): Pro
 }
 
 /**
- * Check se l'utente ha accesso alle feature Wedding Edition:
- * - piano wedding attivo, OPPURE
- * - wedding pass 24h valido (valid_until > now())
+ * Check se l'utente ha accesso alle feature evento (Party Mode + Wedding Edition):
+ * - piano wedding/advance attivo, OPPURE
+ * - event pass 24h valido (valid_until > now())
  *
  * @param userId - ID utente
  * @param sessionId - (opzionale) ID sessione specifica
  * @returns true se ha accesso, false altrimenti
  */
-export async function hasWeddingAccess(userId: string, sessionId?: string): Promise<boolean> {
+export async function hasEventAccess(userId: string, sessionId?: string): Promise<boolean> {
   // Check piano utente
   const plan = await getUserPlan(userId)
   if (plan === 'wedding') return true
 
-  // Check wedding pass valido
+  // Check event pass valido
   const { data } = await supabaseAdmin
-    .from('wedding_passes')
+    .from('event_passes')
     .select('valid_until')
     .eq('user_id', userId)
     .eq('status', 'active')
@@ -61,11 +61,11 @@ export async function hasWeddingAccess(userId: string, sessionId?: string): Prom
 }
 
 /**
- * Ritorna il wedding pass attivo per l'utente (se presente)
+ * Ritorna l'event pass attivo per l'utente (se presente)
  */
-export async function getActiveWeddingPass(userId: string, sessionId?: string) {
+export async function getActiveEventPass(userId: string, sessionId?: string) {
   const { data } = await supabaseAdmin
-    .from('wedding_passes')
+    .from('event_passes')
     .select('*')
     .eq('user_id', userId)
     .eq('status', 'active')
@@ -77,13 +77,23 @@ export async function getActiveWeddingPass(userId: string, sessionId?: string) {
   return data
 }
 
-/** Throws AppError(402) se l'utente non ha accesso Wedding */
-export async function requireWeddingAccess(userId: string, sessionId?: string): Promise<void> {
-  const hasAccess = await hasWeddingAccess(userId, sessionId)
+/** Throws AppError(402) se l'utente non ha accesso Evento (Party Mode + Wedding Edition) */
+export async function requireEventAccess(userId: string, sessionId?: string): Promise<void> {
+  const hasAccess = await hasEventAccess(userId, sessionId)
   if (!hasAccess) {
     throw new AppError(
-      'Funzione disponibile con il piano Advance o un Wedding Pass 24H. Acquista il pass o aggiorna il piano.',
+      'Funzione disponibile con il piano Advance o un Event Pass 24H. Acquista il pass o aggiorna il piano.',
       402,
     )
   }
 }
+
+// ─── Back-compat aliases (deprecated) ─────────────────────────
+// Mantenuti per non rompere eventuali import esterni; preferire
+// le nuove API hasEventAccess / getActiveEventPass / requireEventAccess.
+/** @deprecated use hasEventAccess */
+export const hasWeddingAccess = hasEventAccess
+/** @deprecated use getActiveEventPass */
+export const getActiveWeddingPass = getActiveEventPass
+/** @deprecated use requireEventAccess */
+export const requireWeddingAccess = requireEventAccess

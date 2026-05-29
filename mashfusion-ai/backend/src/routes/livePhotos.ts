@@ -3,7 +3,7 @@ import { supabaseAdmin } from '../config/supabase'
 import { requireAuth } from '../middleware/auth'
 import { AppError } from '../middleware/errorHandler'
 import { hashClient, rateLimitOk } from '../utils/ipHash'
-import { hasWeddingAccess } from '../services/plan'
+import { hasEventAccess } from '../services/plan'
 import { isEventSession } from '../utils/sessionType'
 import {
   createWeddingPhotoUploadUrl,
@@ -30,9 +30,9 @@ async function ownedWeddingSession(sessionId: string, djId: string) {
 }
 
 async function requireEventAccess(djId: string, sessionId?: string) {
-  const hasAccess = await hasWeddingAccess(djId, sessionId)
+  const hasAccess = await hasEventAccess(djId, sessionId)
   if (!hasAccess) {
-    throw new AppError('Funzione disponibile con il piano Advance o un Wedding Pass 24H.', 402)
+    throw new AppError('Funzione disponibile con il piano Advance o un Event Pass 24H.', 402)
   }
 }
 
@@ -50,8 +50,8 @@ livePhotosRouter.post('/public/:slug/booth-photo', async (req, res, next) => {
     if (!isEventSession(session.session_type)) {
       throw new AppError('Live Booth disponibile solo per sessioni Party Mode o Wedding Edition.', 400)
     }
-    if (!(await hasWeddingAccess(session.dj_id, session.id))) {
-      throw new AppError('Funzione disponibile con il piano Advance o un Wedding Pass 24H.', 402)
+    if (!(await hasEventAccess(session.dj_id, session.id))) {
+      throw new AppError('Funzione disponibile con il piano Advance o un Event Pass 24H.', 402)
     }
     if (!storage_path.startsWith(`${session.id}/`)) throw new AppError('storage_path non valido', 400)
 
@@ -91,8 +91,8 @@ livePhotosRouter.post('/public/:slug/photos/init', async (req, res, next) => {
     if (!isEventSession(session.session_type)) {
       throw new AppError('Album foto disponibile solo per sessioni Party Mode o Wedding Edition.', 400)
     }
-    if (!(await hasWeddingAccess(session.dj_id, session.id))) {
-      throw new AppError('Funzione disponibile con il piano Advance o un Wedding Pass 24H.', 402)
+    if (!(await hasEventAccess(session.dj_id, session.id))) {
+      throw new AppError('Funzione disponibile con il piano Advance o un Event Pass 24H.', 402)
     }
 
     const ipHash = hashClient(req)

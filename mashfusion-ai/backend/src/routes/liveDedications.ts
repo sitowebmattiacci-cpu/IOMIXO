@@ -3,7 +3,7 @@ import { supabaseAdmin } from '../config/supabase'
 import { requireAuth } from '../middleware/auth'
 import { AppError } from '../middleware/errorHandler'
 import { hashClient, rateLimitOk } from '../utils/ipHash'
-import { getUserPlan, hasFeature, hasWeddingAccess } from '../services/plan'
+import { getUserPlan, hasFeature, hasEventAccess } from '../services/plan'
 import { PLAN_LIMITS } from '../config/plans'
 import { isEventSession } from '../utils/sessionType'
 
@@ -41,8 +41,8 @@ liveDedicationsRouter.post('/public/:slug/dedications', async (req, res, next) =
     if (!isEventSession(session.session_type)) {
       throw new AppError('Dediche disponibili solo per sessioni Party Mode o Wedding Edition.', 400)
     }
-    if (!(await hasWeddingAccess(session.dj_id, session.id))) {
-      throw new AppError('Funzione disponibile con il piano Advance o un Wedding Pass 24H.', 402)
+    if (!(await hasEventAccess(session.dj_id, session.id))) {
+      throw new AppError('Funzione disponibile con il piano Advance o un Event Pass 24H.', 402)
     }
     if (!session.is_active) throw new AppError('Questa sessione live è terminata.', 410)
 
@@ -106,8 +106,8 @@ liveDedicationsRouter.patch('/dedications/:id', requireAuth, async (req, res, ne
     if (!existing || (existing as any).live_sessions?.dj_id !== userId(req)) {
       throw new AppError('Dedica non trovata', 404)
     }
-    if (!(await hasWeddingAccess(userId(req)))) {
-      throw new AppError('Funzione disponibile con il piano Advance o un Wedding Pass 24H.', 402)
+    if (!(await hasEventAccess(userId(req)))) {
+      throw new AppError('Funzione disponibile con il piano Advance o un Event Pass 24H.', 402)
     }
 
     const { data, error } = await supabaseAdmin

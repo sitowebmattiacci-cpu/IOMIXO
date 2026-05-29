@@ -410,11 +410,16 @@ export const billing = {
     } catch (e) { apiError(e) }
   },
 
-  async getWeddingPasses() {
+  async getEventPasses() {
     try {
-      const { data } = await getClient().get<ApiResponse<any[]>>('/stripe/wedding-passes')
+      const { data } = await getClient().get<ApiResponse<any[]>>('/stripe/event-passes')
       return data.data ?? []
     } catch (e) { apiError(e) }
+  },
+
+  /** @deprecated use getEventPasses */
+  async getWeddingPasses() {
+    return this.getEventPasses()
   },
 
   async createPortalSession(): Promise<{ url: string }> {

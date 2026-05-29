@@ -206,8 +206,8 @@ export interface Payment {
   created_at: string
 }
 
-// ── Wedding Pass 24H ──────────────────────────────────────────
-export interface WeddingPass {
+// ── Event Pass 24H (ex Wedding Pass) ────────────────────────
+export interface EventPass {
   id: string
   user_id: string
   session_id: string | null
@@ -219,6 +219,9 @@ export interface WeddingPass {
   created_at: string
   updated_at: string
 }
+
+/** @deprecated use EventPass */
+export type WeddingPass = EventPass
 
 // ── API Responses ─────────────────────────────────────────────
 export interface ApiResponse<T> {

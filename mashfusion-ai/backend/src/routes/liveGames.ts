@@ -2,7 +2,7 @@ import { Router, Request } from 'express'
 import { supabaseAdmin } from '../config/supabase'
 import { requireAuth } from '../middleware/auth'
 import { AppError } from '../middleware/errorHandler'
-import { getUserPlan, hasWeddingAccess } from '../services/plan'
+import { getUserPlan, hasEventAccess } from '../services/plan'
 import { PLAN_LIMITS } from '../config/plans'
 import { isEventSession } from '../utils/sessionType'
 
@@ -60,9 +60,9 @@ async function ownedEventSession(sessionId: string, djId: string) {
 const ownedWeddingSession = ownedEventSession
 
 async function requireEventAccess(djId: string, sessionId?: string) {
-  const hasAccess = await hasWeddingAccess(djId, sessionId)
+  const hasAccess = await hasEventAccess(djId, sessionId)
   if (!hasAccess) {
-    throw new AppError('Le funzioni evento sono sospese. Riattiva il piano Advance o acquista un Wedding Pass 24H per continuare.', 402)
+    throw new AppError('Le funzioni evento sono sospese. Riattiva il piano Advance o acquista un Event Pass 24H per continuare.', 402)
   }
 }
 const requireWeddingFeature = requireEventAccess

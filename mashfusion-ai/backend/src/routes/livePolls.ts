@@ -3,7 +3,7 @@ import { supabaseAdmin } from '../config/supabase'
 import { requireAuth } from '../middleware/auth'
 import { AppError } from '../middleware/errorHandler'
 import { hashClient, rateLimitOk } from '../utils/ipHash'
-import { hasWeddingAccess } from '../services/plan'
+import { hasEventAccess } from '../services/plan'
 import { isEventSession } from '../utils/sessionType'
 
 export const livePollsRouter = Router()
@@ -20,9 +20,9 @@ async function ownedSession(sessionId: string, djId: string) {
 }
 
 async function requireLivePolls(djId: string, sessionId?: string) {
-  const hasAccess = await hasWeddingAccess(djId, sessionId)
+  const hasAccess = await hasEventAccess(djId, sessionId)
   if (!hasAccess) {
-    throw new AppError('Sondaggi disponibili con il piano Advance o un Wedding Pass 24H.', 402)
+    throw new AppError('Sondaggi disponibili con il piano Advance o un Event Pass 24H.', 402)
   }
 }
 

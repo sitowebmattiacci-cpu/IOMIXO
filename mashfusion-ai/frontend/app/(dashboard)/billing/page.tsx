@@ -34,13 +34,13 @@ export default function BillingPage() {
   const { data: me, isLoading: loadingMe } = useSWR<User>('me', () => auth.me())
   const { data: subscription } = useSWR('subscription', () => billing.getSubscription())
   const { data: payments }     = useSWR('payments', () => billing.getPaymentHistory(10))
-  const { data: weddingPasses, error: passesError } = useSWR('wedding-passes', () => billing.getWeddingPasses(), {
+  const { data: eventPasses, error: passesError } = useSWR('event-passes', () => billing.getEventPasses(), {
     onError: (err) => {
-      console.warn('Wedding passes API non disponibile:', err)
+      console.warn('Event passes API non disponibile:', err)
     }
   })
 
-  const [loading, setLoading] = useState<Plan | 'portal' | 'wedding-pass' | null>(null)
+  const [loading, setLoading] = useState<Plan | 'portal' | 'event-pass' | null>(null)
 
   const handleUpgrade = async (plan: Plan) => {
     const meta = PLAN_METADATA[plan]
@@ -69,13 +69,15 @@ export default function BillingPage() {
     }
   }
 
-  const handleWeddingPass = async () => {
-    const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_WEDDING_PASS
+  const handleEventPass = async () => {
+    const priceId =
+      process.env.NEXT_PUBLIC_STRIPE_PRICE_EVENT_PASS ||
+      process.env.NEXT_PUBLIC_STRIPE_PRICE_WEDDING_PASS
     if (!priceId) {
       toast.error(t('billing.errPassNotConfigured'))
       return
     }
-    setLoading('wedding-pass')
+    setLoading('event-pass')
     try {
       const { url } = await billing.createCheckoutSession(priceId, 'payment')
       window.location.href = url
@@ -87,14 +89,14 @@ export default function BillingPage() {
 
   const currentPlan = normalisePlan(me?.plan)
 
-  // Wedding Pass attivo
-  const activePass = weddingPasses?.find((p: any) =>
+  // Event Pass attivo
+  const activePass = eventPasses?.find((p: any) =>
     p.status === 'active' && new Date(p.valid_until) > new Date()
   )
   const hasActivePass = !!activePass
 
-  // Mostra Wedding Pass se: dati caricati E piano non è wedding
-  const showWeddingPass = !loadingMe && currentPlan !== 'wedding'
+  // Mostra Event Pass se: dati caricati E piano non è wedding/advance
+  const showEventPass = !loadingMe && currentPlan !== 'wedding'
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-8 max-w-5xl mx-auto w-full">
@@ -143,13 +145,13 @@ export default function BillingPage() {
         )}
       </div>
 
-      {/* Wedding Pass 24H */}
-      {showWeddingPass && (
+      {/* Event Pass 24H */}
+      {showEventPass && (
         <div className="mb-10">
           <div className="mb-4">
-            <h2 className="font-bold text-white">{t('billing.weddingPassTitle')}</h2>
+            <h2 className="font-bold text-white">{t('billing.eventPassTitle')}</h2>
             <p className="text-sm text-white/40 mt-1">
-              {t('billing.weddingPassSubtitle')}
+              {t('billing.eventPassSubtitle')}
             </p>
           </div>
 
@@ -173,7 +175,7 @@ export default function BillingPage() {
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-wide text-pink-300">{t('billing.tempAccess')}</p>
-                    <p className="font-bold text-white text-lg">{t('billing.weddingPass')}</p>
+                    <p className="font-bold text-white text-lg">{t('billing.eventPass')}</p>
                   </div>
                 </div>
 
@@ -207,8 +209,8 @@ export default function BillingPage() {
                   <Button
                     variant="primary"
                     className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
-                    loading={loading === 'wedding-pass'}
-                    onClick={handleWeddingPass}
+                    loading={loading === 'event-pass'}
+                    onClick={handleEventPass}
                   >
                     {t('billing.buyPass')}
                   </Button>

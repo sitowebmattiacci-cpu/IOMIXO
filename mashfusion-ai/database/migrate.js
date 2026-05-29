@@ -43,6 +43,7 @@ const SQL_FILES = [
   path.join(__dirname, 'migrations/013_shoe_game_questions.sql'),
   path.join(__dirname, 'migrations/014_live_booth.sql'),
   path.join(__dirname, 'migrations/015_advance_rebrand.sql'),
+  path.join(__dirname, 'migrations/016_event_pass_rebrand.sql'),
 ]
 
 // ── Storage buckets to create (all private unless noted) ─────

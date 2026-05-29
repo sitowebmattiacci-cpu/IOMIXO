@@ -3,7 +3,7 @@ import { supabaseAdmin } from '../config/supabase'
 import { requireAuth } from '../middleware/auth'
 import { AppError } from '../middleware/errorHandler'
 import { hashClient, rateLimitOk } from '../utils/ipHash'
-import { getUserPlan, hasWeddingAccess } from '../services/plan'
+import { getUserPlan, hasEventAccess } from '../services/plan'
 import { PLAN_LIMITS } from '../config/plans'
 
 export const weddingGamesRouter = Router()
@@ -23,9 +23,9 @@ async function ownedWeddingSession(sessionId: string, djId: string) {
 }
 
 async function requireWeddingFeature(djId: string) {
-  const hasAccess = await hasWeddingAccess(djId)
+  const hasAccess = await hasEventAccess(djId)
   if (!hasAccess) {
-    throw new AppError('Funzione disponibile con il piano Advance o un Wedding Pass 24H.', 402)
+    throw new AppError('Funzione disponibile con il piano Advance o un Event Pass 24H.', 402)
   }
 }
 
