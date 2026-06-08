@@ -4,15 +4,8 @@ import helmet from 'helmet'
 import compression from 'compression'
 import morgan from 'morgan'
 
-import { tracksRouter }   from './routes/tracks'
-import { jobsRouter }     from './routes/jobs'
 import { userRouter }     from './routes/user'
 import { stripeRouter }   from './routes/stripe'
-import { internalRouter } from './routes/internal'
-import { projectsRouter } from './routes/projects'
-import { soundbankRouter, samplesRouter } from './routes/soundbank'
-import { adminRouter } from './routes/admin'
-import { aiRouter } from './routes/ai'
 import { liveSessionsRouter } from './routes/liveSessions'
 import { livePublicRouter }   from './routes/livePublic'
 import { liveDedicationsRouter } from './routes/liveDedications'
@@ -66,17 +59,8 @@ app.use('/api', apiRateLimit({ windowMs: 60_000, max: 120 }))
 // ── Routes ─────────────────────────────────────────────────────
 // Auth is handled entirely by Supabase on the frontend.
 // Express only exposes business-logic routes.
-app.use('/tracks',   tracksRouter)
-app.use('/jobs',     jobsRouter)
 app.use('/user',     userRouter)
 app.use('/stripe',   stripeRouter)
-app.use('/internal', internalRouter)     // AI engine webhooks (internal only)
-app.use('/projects', projectsRouter)
-app.use('/soundbank', soundbankRouter)
-app.use('/samples',   samplesRouter)
-app.use('/admin',     adminRouter)
-app.use('/api/ai',    aiRouter)
-app.use('/ai',        aiRouter)  // backward-compatible alias
 
 // ── IOMIXO Live Hub ────────────────────────────────────────────
 app.use('/api/live',        liveSessionsRouter)   // /sessions/*, /requests/*

@@ -1,3 +1,9 @@
+-- NOTE: This file shares the `011_` prefix with `011_screen_config.sql`.
+-- The duplicate numbering is INTENTIONAL — it reflects the historical
+-- order in which the two migrations were authored. Both files have
+-- already been APPLIED in production. Do NOT rename either file:
+-- renumbering would break the migration tracker and re-trigger them.
+--
 -- ═════════════════════════════════════════════════════════════════
 -- Wedding Pass 24H — One-time payment per accesso temporaneo
 -- ═════════════════════════════════════════════════════════════════
