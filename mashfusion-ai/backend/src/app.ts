@@ -4,15 +4,6 @@ import helmet from 'helmet'
 import compression from 'compression'
 import morgan from 'morgan'
 
-// ── LEGACY MashFusion AI routers (DISABLED 2026-06-08 — to be removed) ──
-// import { tracksRouter }   from './routes/tracks'
-// import { jobsRouter }     from './routes/jobs'
-// import { internalRouter } from './routes/internal'
-// import { projectsRouter } from './routes/projects'
-// import { soundbankRouter, samplesRouter } from './routes/soundbank'
-// import { adminRouter } from './routes/admin'
-// import { aiRouter } from './routes/ai'
-
 import { userRouter }     from './routes/user'
 import { stripeRouter }   from './routes/stripe'
 import { liveSessionsRouter } from './routes/liveSessions'
@@ -70,18 +61,6 @@ app.use('/api', apiRateLimit({ windowMs: 60_000, max: 120 }))
 // Express only exposes business-logic routes.
 app.use('/user',     userRouter)
 app.use('/stripe',   stripeRouter)
-
-// ── LEGACY MashFusion AI mounts (DISABLED 2026-06-08) ──────────
-// TODO: remove with the corresponding route files in cleanup/remove-legacy-ai.
-// app.use('/tracks',   tracksRouter)
-// app.use('/jobs',     jobsRouter)
-// app.use('/internal', internalRouter)     // AI engine webhooks (internal only)
-// app.use('/projects', projectsRouter)
-// app.use('/soundbank', soundbankRouter)
-// app.use('/samples',   samplesRouter)
-// app.use('/admin',     adminRouter)
-// app.use('/api/ai',    aiRouter)
-// app.use('/ai',        aiRouter)  // backward-compatible alias
 
 // ── IOMIXO Live Hub ────────────────────────────────────────────
 app.use('/api/live',        liveSessionsRouter)   // /sessions/*, /requests/*
