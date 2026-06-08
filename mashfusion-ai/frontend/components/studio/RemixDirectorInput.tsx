@@ -7,6 +7,7 @@ import { Sparkles, Mic2, X } from 'lucide-react'
 const CHIPS = [
   { label: 'EDM',         insert: 'Make it an explosive EDM festival anthem with a massive drop' },
   { label: 'House',       insert: 'Groovy house club banger with punchy kicks and smooth transitions' },
+  { label: 'Afro House',  insert: 'Deep afro house with rolling bassline, organic percussion and wide spacious mix — Black Coffee vibe' },
   { label: 'Chill',       insert: 'Chill lo-fi sunset vibe — relaxed tempo, warm atmospheric pads' },
   { label: 'Emotional',   insert: 'Deep emotional and cinematic — slow build, nostalgic mood' },
   { label: 'Radio Pop',   insert: 'Catchy radio-ready pop with a powerful chorus and modern sound' },

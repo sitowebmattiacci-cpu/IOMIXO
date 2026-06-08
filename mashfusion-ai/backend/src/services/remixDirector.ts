@@ -18,7 +18,7 @@ import { logger } from '../config/logger'
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export type EnergyProfile    = 'slow_build' | 'medium_slow_rise' | 'steady' | 'high_energy' | 'explosive' | 'dreamy'
-export type StyleProfile     = 'edm_festival' | 'house_club' | 'deep_emotional' | 'pop_radio' | 'cinematic' | 'chill_sunset' | 'viral_modern' | 'auto'
+export type StyleProfile     = 'edm_festival' | 'house_club' | 'afro_house' | 'deep_emotional' | 'pop_radio' | 'cinematic' | 'chill_sunset' | 'viral_modern' | 'auto'
 export type TempoAdjustment  = 'slower' | 'slightly_slower' | 'original' | 'slightly_faster' | 'faster'
 export type VocalPriority    = 'track_a' | 'track_b' | 'balanced' | 'instrumental'
 export type TransitionDensity= 'minimal' | 'smooth' | 'dynamic' | 'aggressive'
@@ -88,6 +88,10 @@ const RULES: RuleSet[] = [
   {
     patterns: [/\bhouse\b/i, /\bclub\b/i, /\bdancefloor\b/i, /\bgroov/i, /\b4[- ]?4\b/i],
     apply: (p) => { p.style_profile = 'house_club'; p.target_energy = 'high_energy'; p.transition_density = 'dynamic' },
+  },
+  {
+    patterns: [/\bafro\b/i, /\bafro[- ]?house\b/i, /\bblack coffee\b/i, /\bkeinemusik\b/i, /\borganic house\b/i, /\btribal\b/i, /\bpercussive\b/i],
+    apply: (p) => { p.style_profile = 'afro_house'; p.target_energy = 'medium_slow_rise'; p.transition_density = 'smooth'; p.tempo_adjustment = 'original' },
   },
   {
     patterns: [/\bchill\b/i, /\blofi\b/i, /\blo[- ]?fi\b/i, /\brelax/i, /\bsunset\b/i, /\blaid[- ]back\b/i],
@@ -234,6 +238,7 @@ const RULES: RuleSet[] = [
 const PROCESSING_STEPS: Record<StyleProfile, string[]> = {
   edm_festival:    ['Analysing festival energy curve…', 'Setting explosive drop points…', 'Injecting EDM power structure…', 'Mastering for stadium volume…'],
   house_club:      ['Detecting groove pockets…', 'Aligning 4/4 pulse across tracks…', 'Injecting club-ready transitions…', 'Mastering for dancefloor…'],
+  afro_house:      ['Detecting organic groove…', 'Layering rolling bassline…', 'Widening stereo for spatial mix…', 'Mastering with warm afro tones…'],
   deep_emotional:  ['Mapping emotional arc…', 'Selecting vocal dominance…', 'Designing atmospheric layers…', 'Shaping melancholic energy curve…'],
   pop_radio:       ['Optimising verse-chorus flow…', 'Tuning commercial hook timing…', 'Polishing for radio brightness…', 'Applying competitive loudness…'],
   cinematic:       ['Building cinematic tension arc…', 'Layering orchestral texture…', 'Designing dramatic finale…', 'Applying film-grade mastering…'],
@@ -246,6 +251,7 @@ function buildHeadline(params: Partial<RemixDirectorParams>): string {
   const mood: Record<StyleProfile, string> = {
     edm_festival:   'explosive EDM festival',
     house_club:     'groovy house club',
+    afro_house:     'organic afro house',
     deep_emotional: 'emotional & cinematic',
     pop_radio:      'radio-ready pop',
     cinematic:      'epic cinematic',
@@ -295,7 +301,7 @@ async function enhanceWithLLM(
 Convert the user's remix description into structured JSON parameters.
 Return ONLY valid JSON matching this exact schema (all fields required):
 {
-  "style_profile": "edm_festival|house_club|deep_emotional|pop_radio|cinematic|chill_sunset|viral_modern|auto",
+  "style_profile": "edm_festival|house_club|afro_house|deep_emotional|pop_radio|cinematic|chill_sunset|viral_modern|auto",
   "target_energy": "slow_build|medium_slow_rise|steady|high_energy|explosive|dreamy",
   "tempo_adjustment": "slower|slightly_slower|original|slightly_faster|faster",
   "vocal_priority": "track_a|track_b|balanced|instrumental",
@@ -343,7 +349,7 @@ Current rule-engine result: ${JSON.stringify(ruleParams)}`
 function sanitiseLLMOutput(raw: Record<string, unknown>): Partial<RemixDirectorParams> {
   const valid: Partial<RemixDirectorParams> = {}
 
-  const STYLE_PROFILES    = new Set(['edm_festival','house_club','deep_emotional','pop_radio','cinematic','chill_sunset','viral_modern','auto'])
+  const STYLE_PROFILES    = new Set(['edm_festival','house_club','afro_house','deep_emotional','pop_radio','cinematic','chill_sunset','viral_modern','auto'])
   const ENERGY_PROFILES   = new Set(['slow_build','medium_slow_rise','steady','high_energy','explosive','dreamy'])
   const TEMPO_ADJ         = new Set(['slower','slightly_slower','original','slightly_faster','faster'])
   const VOCAL_PRIO        = new Set(['track_a','track_b','balanced','instrumental'])

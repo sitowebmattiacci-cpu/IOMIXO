@@ -176,11 +176,19 @@ def process_mashup_job(self, payload: dict):
             stages = stage_ctx(stages, "stem_separation", "running", 20, "Separating stems — Track A")
             report_progress(job_id, "processing", 5, "Stem separation", stages)
 
-            stems_a = separate_stems(str(track_a_path), str(work_dir / "stems_a"))
+            stems_a = separate_stems(
+                str(track_a_path),
+                str(work_dir / "stems_a"),
+                pipeline_config.get("stem_separation", {}),
+            )
             stages = stage_ctx(stages, "stem_separation", "running", 60, "Separating stems — Track B")
             report_progress(job_id, "processing", 12, "Stem separation", stages)
 
-            stems_b = separate_stems(str(track_b_path), str(work_dir / "stems_b"))
+            stems_b = separate_stems(
+                str(track_b_path),
+                str(work_dir / "stems_b"),
+                pipeline_config.get("stem_separation", {}),
+            )
             stages = stage_ctx(stages, "stem_separation", "complete", 100)
             save_checkpoint(job_id, "stem_separation", stages,
                             extra={"stems_a": stems_a, "stems_b": stems_b},

@@ -24,10 +24,14 @@ def build_default_pipeline_config() -> dict[str, Any]:
     return {
         # ── Stem separation ───────────────────────────────────────
         "stem_separation": {
-            "model": "htdemucs",
-            "device": "auto",        # "cuda" | "cpu" | "auto"
-            "vocal_boost_a": 1.0,    # scale factor applied to track-A vocals
-            "vocal_boost_b": 1.0,    # scale factor applied to track-B vocals
+            "model": "htdemucs_ft",   # kept for backward compatibility
+            "demucs_model": "htdemucs_ft",
+            "mdx_model": "mdx_extra_q",
+            "quality": "balanced",   # fast | balanced | high_quality
+            "normalize": True,
+            "device": "auto",         # "cuda" | "cpu" | "auto"
+            "vocal_boost_a": 1.0,     # scale factor applied to track-A vocals
+            "vocal_boost_b": 1.0,     # scale factor applied to track-B vocals
         },
         # ── Harmonic matching ─────────────────────────────────────
         "harmonic_matching": {
