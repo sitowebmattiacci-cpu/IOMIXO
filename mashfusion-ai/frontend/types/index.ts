@@ -2,7 +2,7 @@
 // MASHFUSION AI — Shared TypeScript Types
 // ────────────────────────────────────────────────────────────
 
-export type Plan = 'free' | 'pro' | 'wedding'
+export type Plan = 'free' | 'pro' | 'studio'
 export type JobStatus =
   | 'queued'
   | 'uploading'
@@ -20,7 +20,6 @@ export type RemixStyle =
   | 'none'
   | 'edm_festival'
   | 'house_club'
-  | 'afro_house'
   | 'deep_emotional'
   | 'pop_radio'
   | 'cinematic'
@@ -117,7 +116,6 @@ export interface Project {
   id: string
   user_id: string
   title: string
-  mode: 'remix' | 'mashup'
   track_a_id: string | null
   track_b_id: string | null
   remix_style: RemixStyle
@@ -151,8 +149,6 @@ export interface RenderJob {
   remix_prompt?: string
   remix_director_params?: RemixDirectorParams
   output?: FinalOutput
-  mode?: 'preview' | 'full'
-  parent_job_id?: string | null
 }
 
 export type ProcessingStage =
@@ -177,16 +173,11 @@ export interface FinalOutput {
   id: string
   job_id: string
   project_id: string
-  preview_mp3_url: string | null
+  preview_mp3_url: string
   full_wav_url: string | null
   full_mp3_url: string | null
-  // Preview-mode teaser variants (only populated when is_preview=true)
-  is_preview: boolean
-  preview_a_url: string | null
-  preview_b_url: string | null
-  preview_c_url: string | null
   duration_seconds: number
-  loudness_lufs: number | null
+  loudness_lufs: number
   sample_rate: number
   bit_depth: number
   file_size_bytes: number
@@ -205,23 +196,6 @@ export interface Payment {
   description: string
   created_at: string
 }
-
-// ── Event Pass 24H (ex Wedding Pass) ────────────────────────
-export interface EventPass {
-  id: string
-  user_id: string
-  session_id: string | null
-  stripe_payment_intent_id: string | null
-  amount_cents: number
-  currency: string
-  valid_until: string  // ISO timestamp
-  status: 'active' | 'expired' | 'refunded'
-  created_at: string
-  updated_at: string
-}
-
-/** @deprecated use EventPass */
-export type WeddingPass = EventPass
 
 // ── API Responses ─────────────────────────────────────────────
 export interface ApiResponse<T> {
@@ -259,64 +233,34 @@ export interface StudioState {
   analysisB: AnalysisResult | null
 }
 
-// ── Plan metadata (IOMIXO Live Hub) ───────────────────────────
+// ── Plan metadata ─────────────────────────────────────────────
 export const PLAN_METADATA: Record<Plan, {
   name: string
+  monthlyCredits: number
   priceMonthly: number
-  tagline: string
-  features: string[]
+  quality: string[]
   stripePriceId: string | null
 }> = {
   free: {
     name: 'Free',
+    monthlyCredits: 1,
     priceMonthly: 0,
-    tagline: 'Per iniziare',
-    features: [
-      '1 sessione live attiva',
-      'Fino a 30 richieste per sessione',
-      'QR Code base',
-      'Pagina pubblica base',
-      'Branding IOMIXO visibile',
-    ],
+    quality: ['Standard MP3'],
     stripePriceId: null,
   },
   pro: {
     name: 'Pro',
-    priceMonthly: 9.99,
-    tagline: 'Per DJ professionisti',
-    features: [
-      'Sessioni live illimitate',
-      'Richieste illimitate',
-      'QR Code per ogni sessione live',
-      'Persone online in tempo reale',
-      'Link social (Instagram, TikTok, Spotify, SoundCloud)',
-      'Prossime date / eventi',
-      'Approva/rifiuta richieste',
-      'Branding IOMIXO ridotto',
-      'Statistiche di sessione',
-    ],
+    monthlyCredits: 20,
+    priceMonthly: 29,
+    quality: ['HD MP3', 'WAV Export'],
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID ?? '',
   },
-  wedding: {
-    name: 'Advance',
-    priceMonthly: 19.99,
-    tagline: 'Per DJ ed eventi interattivi premium',
-    features: [
-      'Tutto del piano Pro',
-      'Party Mode (compleanni, locali, lauree, serate DJ)',
-      'Wedding Edition (matrimoni, anniversari)',
-      'Live Booth con QR foto guest',
-      'Screen Mode (TV / proiettore)',
-      'Album evento con moderazione',
-      'Sondaggi live (Live Polls)',
-      'Party Games (Roulette, Music Battle, Top Fan, Indovina la Canzone, Sfida Tavoli)',
-      'Giochi Wedding (Roulette, Gioco della Scarpa, Chi conosce meglio gli sposi, Lui o Lei, Messaggi agli Sposi)',
-      'Analytics avanzate',
-    ],
-    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_WEDDING_PRICE_ID
-      ?? process.env.NEXT_PUBLIC_STRIPE_CLUB_PRICE_ID
-      ?? process.env.NEXT_PUBLIC_STRIPE_STUDIO_PRICE_ID
-      ?? '',
+  studio: {
+    name: 'Studio',
+    monthlyCredits: 100,
+    priceMonthly: 79,
+    quality: ['Professional WAV', 'Stems Download', 'Priority Queue'],
+    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_STUDIO_PRICE_ID ?? '',
   },
 }
 
@@ -334,7 +278,6 @@ export const REMIX_STYLE_LABELS: Record<RemixStyle, { label: string; description
   none:          { label: 'Original Style', description: 'Preserve both songs original sonic character', icon: '🎵' },
   edm_festival:  { label: 'EDM Festival',   description: 'Big room drops, festival energy, supersaw leads', icon: '⚡' },
   house_club:    { label: 'House Club',      description: 'Deep 4/4 groove, punchy kick, club-ready mix', icon: '🏠' },
-  afro_house:    { label: 'Afro House',      description: 'Rolling bassline, organic percussion, wide spacious mix — Black Coffee feel', icon: '🥁' },
   deep_emotional:{ label: 'Deep Emotional',  description: 'Atmospheric pads, cinematic tension, emotional build', icon: '🌊' },
   pop_radio:     { label: 'Pop Radio',       description: 'Radio-ready compression, polished production', icon: '📻' },
   cinematic:     { label: 'Cinematic',       description: 'Orchestral elements, epic transitions, film score feel', icon: '🎬' },

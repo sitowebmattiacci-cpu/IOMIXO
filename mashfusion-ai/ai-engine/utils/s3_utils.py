@@ -13,11 +13,8 @@ from config import get_settings
 _settings = get_settings()
 
 # Bucket names — must match what the backend creates
-_UPLOADS_BUCKET     = "track-uploads"
-_OUTPUTS_BUCKET     = "generated-outputs"
-STEMS_BUCKET        = "stems"
-SOUNDBANK_BUCKET    = "soundbank_samples"
-USER_SAMPLES_BUCKET = "user_samples"
+_UPLOADS_BUCKET  = "track-uploads"
+_OUTPUTS_BUCKET  = "generated-outputs"
 
 # Supabase Storage REST base URL
 _STORAGE_URL = f"{_settings.supabase_url}/storage/v1"
@@ -76,7 +73,7 @@ def get_signed_download_url(storage_path: str, expires_in: int = 3600, bucket: s
         raise ValueError(f"Supabase did not return a signed URL: {data}")
     # Supabase returns a relative path — make it absolute
     if signed_url.startswith("/"):
-        signed_url = f"{_settings.supabase_url}/storage/v1{signed_url}"
+        signed_url = f"{_settings.supabase_url}{signed_url}"
     return signed_url
 
 
@@ -122,3 +119,4 @@ def list_s3_prefix(prefix: str, bucket: str = _OUTPUTS_BUCKET) -> list[str]:
     response.raise_for_status()
     items = response.json() or []
     return [f"{prefix.rstrip('/')}/{item['name']}" for item in items if item.get("name")]
+

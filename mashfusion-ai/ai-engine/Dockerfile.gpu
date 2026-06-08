@@ -1,5 +1,5 @@
 # MASHFUSION AI — GPU Worker Dockerfile
-# Based on CUDA 12.1 + cuDNN 8 for Demucs htdemucs_ft + MDX-Net.
+# Based on CUDA 12.1 + cuDNN 8 for Demucs htdemucs_6s.
 # Used ONLY for the celery-gpu-worker service.
 # CPU-only services use Dockerfile (no CUDA base).
 
@@ -30,12 +30,11 @@ RUN pip install --no-cache-dir --upgrade pip \
  && pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 \
  && pip install --no-cache-dir -r requirements.txt
 
-# ── Pre-download Demucs/MDX models into image (baked cache) ───
+# ── Pre-download Demucs model into image (baked cache) ────────
 # This avoids a 300 MB download on every worker cold start.
 ENV DEMUCS_MODELS_DIR=/models
 RUN mkdir -p /models \
- && python -c "import demucs.pretrained; demucs.pretrained.get_model('htdemucs_ft')" || true \
- && python -c "import demucs.pretrained; demucs.pretrained.get_model('mdx_extra_q')" || true
+ && python -c "import demucs.pretrained; demucs.pretrained.get_model('htdemucs_6s')" || true
 
 # ── App source ────────────────────────────────────────────────
 ENV MODELS_DIR=/models

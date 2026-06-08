@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Sparkles, ChevronRight, Zap, HelpCircle, Music, Layers } from 'lucide-react'
+import { Sparkles, ChevronRight, Zap, HelpCircle } from 'lucide-react'
 import { projects, jobs } from '@/lib/api'
 import { Button } from '@/components/ui/Button'
 import { TrackUploader } from '@/components/studio/DualUploader'
@@ -14,8 +14,6 @@ import useSWR from 'swr'
 import { auth } from '@/lib/api'
 import type { User } from '@/types'
 
-type ProjectMode = 'remix' | 'mashup'
-
 const QUALITY_OPTIONS = [
   { value: 'standard',     label: 'Standard MP3',  desc: '192 kbps MP3',              plans: ['free', 'pro', 'studio'] },
   { value: 'hd',           label: 'HD MP3',         desc: '320 kbps MP3',              plans: ['pro', 'studio'] },
@@ -26,7 +24,6 @@ export default function NewStudioPage() {
   const router = useRouter()
   const { data: me } = useSWR<User>('me', () => auth.me())
 
-  const [mode,           setMode]           = useState<ProjectMode | null>(null)
   const [step,           setStep]           = useState<1 | 2 | 3>(1)
   const [projectId,      setProjectId]      = useState<string | null>(null)
   const [trackA,         setTrackA]         = useState<UploadedTrack | null>(null)
@@ -36,109 +33,46 @@ export default function NewStudioPage() {
   const [remixPrompt,    setRemixPrompt]    = useState<string>('')
   const [launching,      setLaunching]      = useState(false)
 
-  // Lazily create the project once the user has chosen a mode and is about
-  // to upload — so the project's `mode` is set correctly from creation.
-  const ensureProject = useCallback(async (currentMode: ProjectMode) => {
+  // Create project lazily when first track is uploaded
+  const ensureProject = useCallback(async () => {
     if (projectId) return projectId
-    const project = await projects.create(`${currentMode === 'remix' ? 'Remix' : 'Mashup'} ${new Date().toLocaleDateString()}`, currentMode)
+    const project = await projects.create(`Mashup ${new Date().toLocaleDateString()}`)
     setProjectId(project.id)
     return project.id
   }, [projectId])
 
   const handleTrackASuccess = useCallback(async (track: UploadedTrack) => {
     setTrackA(track)
-    if (mode === 'remix') {
-      // Remix mode: one track is enough — go straight to launch.
-      setStep(3)
-    } else if (trackB) {
-      setStep(2)
-    }
-  }, [mode, trackB])
+    if (trackB) setStep(2)
+  }, [trackB])
 
   const handleTrackBSuccess = useCallback(async (track: UploadedTrack) => {
     setTrackB(track)
     if (trackA) setStep(2)
   }, [trackA])
 
-  const canLaunch = mode === 'remix' ? !!trackA : !!trackA && !!trackB
-
   const handleLaunch = async () => {
-    if (!projectId || !canLaunch) {
-      toast.error(mode === 'remix' ? 'Please upload your track first' : 'Please upload both tracks first')
+    if (!trackA || !trackB || !projectId) {
+      toast.error('Please upload both tracks first')
+      return
+    }
+    if (me?.credits_remaining === 0) {
+      toast.error('No credits remaining. Please upgrade your plan.')
       return
     }
 
     setLaunching(true)
     try {
       const job = await jobs.startRemix(projectId, remixStyle, outputQuality, remixPrompt || undefined)
-      toast.success(mode === 'remix'
-        ? 'Separating stems… you’ll be in the workstation in a minute'
-        : 'Generating your starting arrangement…')
-      router.push(`/studio/${job.project_id}`)
+      toast.success('Mashup job launched! Tracking progress…')
+      router.push(`/studio/${job.id}`)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to start job')
       setLaunching(false)
     }
   }
 
-  // ── Step 0: pick mode ──────────────────────────────────────────────
-  if (!mode) {
-    return (
-      <div className="flex-1 overflow-y-auto px-6 py-8 max-w-3xl mx-auto w-full">
-        <div className="mb-8">
-          <div className="flex items-center gap-2 text-xs text-white/30 mb-3">
-            <span>Studio</span>
-            <ChevronRight className="h-3 w-3" />
-            <span className="text-purple-400">New Project</span>
-          </div>
-          <h1 className="text-2xl font-black text-white">What do you want to create?</h1>
-          <p className="text-sm text-white/40 mt-1">
-            You’re the creative director. IOMIXO is your AI co-producer.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <button
-            onClick={() => setMode('remix')}
-            className="glass rounded-2xl p-6 text-left border border-white/8 hover:border-purple-500/50 transition-all group"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/15 mb-4 group-hover:scale-105 transition-transform">
-              <Music className="h-6 w-6 text-purple-300" />
-            </div>
-            <h2 className="text-lg font-semibold text-white">Remix</h2>
-            <p className="text-xs text-white/50 mt-1 leading-relaxed">
-              Upload <span className="text-white/80">one track</span>. We separate stems and drop you
-              into the workstation with an empty timeline. Build your remix from scratch.
-            </p>
-            <div className="mt-4 flex items-center gap-1 text-[11px] text-purple-300">
-              <Zap className="h-3 w-3" />
-              Stems · empty timeline · soundbank · samples
-            </div>
-          </button>
-
-          <button
-            onClick={() => setMode('mashup')}
-            className="glass rounded-2xl p-6 text-left border border-white/8 hover:border-pink-500/50 transition-all group"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-pink-500/15 mb-4 group-hover:scale-105 transition-transform">
-              <Layers className="h-6 w-6 text-pink-300" />
-            </div>
-            <h2 className="text-lg font-semibold text-white">Mashup</h2>
-            <p className="text-xs text-white/50 mt-1 leading-relaxed">
-              Upload <span className="text-white/80">two tracks</span>. AI seeds an editable starting
-              arrangement on the timeline so you can sculpt the mashup from there.
-            </p>
-            <div className="mt-4 flex items-center gap-1 text-[11px] text-pink-300">
-              <Sparkles className="h-3 w-3" />
-              AI seed · pre-placed clips · harmonic match
-            </div>
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  const isRemix = mode === 'remix'
+  const canLaunch = !!trackA && !!trackB
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-8 max-w-3xl mx-auto w-full">
@@ -147,41 +81,32 @@ export default function NewStudioPage() {
         <div className="flex items-center gap-2 text-xs text-white/30 mb-3">
           <span>Studio</span>
           <ChevronRight className="h-3 w-3" />
-          <button onClick={() => { setMode(null); setStep(1); setProjectId(null); setTrackA(null); setTrackB(null) }} className="hover:text-white/60">
-            New Project
-          </button>
-          <ChevronRight className="h-3 w-3" />
-          <span className={isRemix ? 'text-purple-400' : 'text-pink-400'}>{isRemix ? 'Remix' : 'Mashup'}</span>
+          <span className="text-purple-400">New Mashup</span>
         </div>
-        <h1 className="text-2xl font-black text-white">
-          {isRemix ? 'Create New Remix' : 'Create New Mashup'}
-        </h1>
-        <p className="text-sm text-white/40 mt-1">
-          {isRemix
-            ? 'Upload one track. We split it into stems for you to remix.'
-            : 'Upload two tracks. AI seeds an editable starting arrangement.'}
-        </p>
+        <h1 className="text-2xl font-black text-white">Create New Mashup</h1>
+        <p className="text-sm text-white/40 mt-1">Upload two tracks and let the AI do the rest.</p>
       </div>
 
       {/* Steps indicator */}
       <div className="flex items-center gap-3 mb-8">
-        {(isRemix
-          ? [{ n: 1, label: 'Upload Track' }, { n: 3, label: 'Launch' }]
-          : [{ n: 1, label: 'Upload Tracks' }, { n: 2, label: 'Configure' }, { n: 3, label: 'Launch' }]
-        ).map(({ n, label }, i, arr) => (
+        {[
+          { n: 1, label: 'Upload Tracks' },
+          { n: 2, label: 'Configure' },
+          { n: 3, label: 'Launch' },
+        ].map(({ n, label }, i, arr) => (
           <div key={n} className="flex items-center gap-3">
             <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all ${
               step >= n
-                ? (isRemix ? 'bg-purple-600 text-white' : 'bg-pink-600 text-white')
+                ? 'bg-purple-600 text-white'
                 : 'bg-white/5 text-white/30'
             }`}>
-              {i + 1}
+              {n}
             </div>
             <span className={`text-xs font-medium hidden sm:block ${step >= n ? 'text-white/70' : 'text-white/25'}`}>
               {label}
             </span>
             {i < arr.length - 1 && (
-              <div className={`h-px w-8 transition-all ${step > n ? (isRemix ? 'bg-purple-500' : 'bg-pink-500') : 'bg-white/10'}`} />
+              <div className={`h-px w-8 transition-all ${step > n ? 'bg-purple-500' : 'bg-white/10'}`} />
             )}
           </div>
         ))}
@@ -190,50 +115,38 @@ export default function NewStudioPage() {
       <div className="space-y-6">
         {/* ── STEP 1: Upload ───────────────────────────────── */}
         <motion.div layout className="space-y-4">
-          <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">
-            Step 1 — {isRemix ? 'Upload Track' : 'Upload Tracks'}
-          </p>
+          <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Step 1 — Upload Tracks</p>
 
           {projectId ? (
-            isRemix ? (
+            <div className="grid md:grid-cols-2 gap-4">
               <TrackUploader
                 projectId={projectId}
                 role="track_a"
-                label="Your Track"
+                label="Track A — Vocals / Main Song"
                 accent="purple"
                 onSuccess={handleTrackASuccess}
               />
-            ) : (
-              <div className="grid md:grid-cols-2 gap-4">
-                <TrackUploader
-                  projectId={projectId}
-                  role="track_a"
-                  label="Track A — Vocals / Main Song"
-                  accent="purple"
-                  onSuccess={handleTrackASuccess}
-                />
-                <TrackUploader
-                  projectId={projectId}
-                  role="track_b"
-                  label="Track B — Instrumental / Second Song"
-                  accent="pink"
-                  onSuccess={handleTrackBSuccess}
-                />
-              </div>
-            )
+              <TrackUploader
+                projectId={projectId}
+                role="track_b"
+                label="Track B — Instrumental / Second Song"
+                accent="pink"
+                onSuccess={handleTrackBSuccess}
+              />
+            </div>
           ) : (
             <div
               className="glass rounded-2xl p-8 text-center border-2 border-dashed border-white/10 cursor-pointer hover:border-purple-500/40 transition-all"
               onClick={async () => {
                 try {
-                  await ensureProject(mode)
+                  await ensureProject()
                 } catch {
                   toast.error('Failed to create project')
                 }
               }}
             >
               <p className="text-sm font-semibold text-white/60">Click to start — create your project</p>
-              <p className="text-xs text-white/25 mt-1">You can upload {isRemix ? 'your track' : 'tracks'} after</p>
+              <p className="text-xs text-white/25 mt-1">You can upload tracks after</p>
             </div>
           )}
 
@@ -242,7 +155,7 @@ export default function NewStudioPage() {
               className="w-full"
               variant="secondary"
               onClick={async () => {
-                try { await ensureProject(mode) }
+                try { await ensureProject() }
                 catch { toast.error('Failed to create project') }
               }}
             >
@@ -251,8 +164,8 @@ export default function NewStudioPage() {
           )}
         </motion.div>
 
-        {/* ── STEP 2: Configure (mashup only) ─────────────────── */}
-        {!isRemix && (step >= 2 || canLaunch) && (
+        {/* ── STEP 2: Configure ────────────────────────────── */}
+        {(step >= 2 || canLaunch) && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -262,8 +175,10 @@ export default function NewStudioPage() {
 
             <StylePresetSelector value={remixStyle} onChange={setRemixStyle} />
 
+            {/* Remix Director — natural language vision */}
             <RemixDirectorInput value={remixPrompt} onChange={setRemixPrompt} />
 
+            {/* Output quality */}
             <div>
               <p className="mb-3 text-sm font-semibold text-white/70">Output Quality</p>
               <div className="grid grid-cols-3 gap-2">
@@ -303,21 +218,22 @@ export default function NewStudioPage() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`glass rounded-2xl p-6 border ${isRemix ? 'border-purple-500/20' : 'border-pink-500/20'}`}
+            className="glass rounded-2xl p-6 border border-purple-500/20"
           >
             <div className="flex items-start gap-4">
-              <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${isRemix ? 'bg-purple-500/15' : 'bg-pink-500/15'}`}>
-                <Sparkles className={`h-6 w-6 ${isRemix ? 'text-purple-400' : 'text-pink-400'}`} />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/15">
+                <Sparkles className="h-6 w-6 text-purple-400" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-white">
-                  {isRemix ? 'Open the workstation with your stems' : 'Generate the starting arrangement'}
-                </h3>
+                <h3 className="font-semibold text-white">Ready to launch</h3>
                 <p className="text-sm text-white/40 mt-1">
-                  {isRemix
-                    ? 'We will separate your track into stems (vocals, drums, bass, etc.) and open the workstation with an empty timeline. Drag stems and samples in to build your remix.'
-                    : 'The AI will analyze, separate stems, and seed an editable arrangement on the timeline. Edit it freely and render when you’re happy.'}
+                  Both tracks uploaded. The AI will now analyze, separate stems, compose, and
+                  master your mashup.
                 </p>
+                <div className="mt-3 flex items-center gap-2 text-xs text-amber-400">
+                  <Zap className="h-3.5 w-3.5" />
+                  <span>This will use 1 credit ({me?.credits_remaining ?? '?'} remaining)</span>
+                </div>
               </div>
             </div>
 
@@ -328,12 +244,12 @@ export default function NewStudioPage() {
               onClick={handleLaunch}
               icon={<Sparkles className="h-4 w-4" />}
             >
-              {isRemix ? 'Separate Stems & Open Workstation' : 'Generate Starting Arrangement'}
+              Launch AI Mashup
             </Button>
 
             <p className="mt-3 flex items-center justify-center gap-1 text-xs text-white/20">
               <HelpCircle className="h-3 w-3" />
-              {isRemix ? 'Stem separation typically takes 1–2 minutes.' : 'Seeding typically takes 1–3 minutes.'}
+              Processing typically takes 3–8 minutes depending on song length.
             </p>
           </motion.div>
         )}

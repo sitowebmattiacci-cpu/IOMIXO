@@ -184,13 +184,6 @@ export default function ScreenModePage() {
         {!hasContent && (
           <div className="w-full flex flex-col items-center justify-center p-12 relative z-10">
             <div className="text-center">
-              <div className="inline-flex items-center gap-3 mb-6 text-wedding-gold">
-                <span className="h-px w-20 bg-gradient-to-r from-transparent to-wedding-gold/60" />
-                <span className="text-3xl">✦</span>
-                <span className="text-sm uppercase tracking-[0.4em] font-medium">Wedding Edition</span>
-                <span className="text-3xl">✦</span>
-                <span className="h-px w-20 bg-gradient-to-l from-transparent to-wedding-gold/60" />
-              </div>
               <h1 className={`${largeFontSize} text-wedding-ivory tracking-tight leading-[0.9]`} style={{ fontFamily: coupleFontFamily }}>
                 {session.couple_names ?? session.event_name}
               </h1>
@@ -401,13 +394,6 @@ export default function ScreenModePage() {
           <div className="w-full flex flex-col p-12 relative z-10">
           {/* Header */}
           <header className="text-center mb-10">
-            <div className="inline-flex items-center gap-3 mb-4 text-wedding-gold">
-              <span className="h-px w-16 bg-gradient-to-r from-transparent to-wedding-gold/60" />
-              <span className="text-2xl">✦</span>
-              <span className="text-[12px] uppercase tracking-[0.4em] font-medium">Wedding Edition</span>
-              <span className="text-2xl">✦</span>
-              <span className="h-px w-16 bg-gradient-to-l from-transparent to-wedding-gold/60" />
-            </div>
             <h1 className={`${mediumFontSize} text-wedding-ivory tracking-tight leading-tight`} style={{ fontFamily: coupleFontFamily }}>
               {session.couple_names ?? session.event_name}
             </h1>

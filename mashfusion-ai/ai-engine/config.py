@@ -25,9 +25,7 @@ class Settings(BaseSettings):
     # ── Processing ───────────────────────────────────────────────
     models_dir:          str = "/models"
     tmp_dir:             str = "/tmp/mashfusion"
-    demucs_model:        str = "htdemucs_ft"   # 4-stem: drums, bass, other, vocals
-    mdx_model:           str = "mdx_extra_q"   # MDX-Net vocals/instrumental
-    stem_separation_quality: str = "balanced" # fast | balanced | high_quality
+    demucs_model:        str = "htdemucs_6s"   # 6-stem: drums, bass, other, vocals, guitar, piano
     max_audio_duration:  int = 600             # 10 minutes
 
     # ── Worker identity ──────────────────────────────────────────
@@ -42,7 +40,6 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
-        extra = "ignore"
 
 
 @lru_cache()
