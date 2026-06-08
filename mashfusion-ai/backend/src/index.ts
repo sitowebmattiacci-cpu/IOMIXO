@@ -2,7 +2,8 @@ import 'dotenv/config'
 import { app } from './app'
 import { logger } from './config/logger'
 import { redis, pingRedis } from './config/redis'
-import { startCreditResetScheduler } from './services/creditScheduler'
+// LEGACY MashFusion AI scheduler — DISABLED 2026-06-08
+// import { startCreditResetScheduler } from './services/creditScheduler'
 import { verifySmtpConnection } from './services/mailer'
 
 const PORT = parseInt(process.env.PORT ?? '4000', 10)
@@ -28,7 +29,8 @@ async function bootstrap() {
   // ── Start server ───────────────────────────────────────────
   const server = app.listen(PORT, () => {
     logger.info(`🚀 IOMIXO backend running on port ${PORT}`)
-    try { startCreditResetScheduler() } catch { /* skip if Redis unavailable */ }
+    // LEGACY MashFusion AI scheduler — DISABLED 2026-06-08
+    // try { startCreditResetScheduler() } catch { /* skip if Redis unavailable */ }
   })
 
   // ── Graceful shutdown ──────────────────────────────────────

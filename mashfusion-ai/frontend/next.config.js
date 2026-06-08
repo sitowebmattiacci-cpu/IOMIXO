@@ -24,6 +24,18 @@ const nextConfig = {
       },
     ]
   },
+  // Redirect dei vecchi percorsi MashFusion AI (studio remix / progetti / download)
+  // verso la dashboard IOMIXO Live Hub. Aggiunti 2026-06-08 nella pulizia legacy.
+  async redirects() {
+    return [
+      { source: '/studio',          destination: '/dashboard', permanent: true },
+      { source: '/studio/:path*',   destination: '/dashboard', permanent: true },
+      { source: '/projects',        destination: '/dashboard', permanent: true },
+      { source: '/projects/:path*', destination: '/dashboard', permanent: true },
+      { source: '/download',        destination: '/dashboard', permanent: true },
+      { source: '/download/:path*', destination: '/dashboard', permanent: true },
+    ]
+  },
 }
 
 module.exports = nextConfig
