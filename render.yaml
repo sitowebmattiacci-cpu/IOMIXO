@@ -26,8 +26,6 @@ services:
         value: https://www.iomixo.com
       - key: APP_URL
         value: https://www.iomixo.com
-      - key: JWT_SECRET
-        generateValue: true
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: DATABASE_URL
