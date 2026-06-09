@@ -44,8 +44,8 @@ export default function PrivacyPage() {
           <section>
             <p className="text-white/60">
               This Privacy Policy describes how IOMIXO (&ldquo;we&rdquo;, &ldquo;us&rdquo;) collects, uses, and protects
-              information when you use our AI music transformation services. By using IOMIXO you agree to the
-              practices described here. If you do not agree, do not use the service.
+              information when you use IOMIXO Live Hub, our live event interaction service. By using IOMIXO you agree
+              to the practices described here. If you do not agree, do not use the service.
             </p>
           </section>
 
@@ -53,28 +53,26 @@ export default function PrivacyPage() {
             <p>We collect the minimum data needed to operate the service:</p>
             <ul>
               <li><strong>Account data</strong> — email address, hashed password, account creation date.</li>
-              <li><strong>Uploaded audio</strong> — files you upload as source material for AI transformations.</li>
-              <li><strong>Generated outputs</strong> — files produced by our AI engine from your sources.</li>
+              <li><strong>Event content</strong> — content you and your guests submit during live events, such as messages, dedications, poll responses, game answers, and photos.</li>
               <li><strong>Billing data</strong> — handled by Stripe (we never see or store full card details). We retain plan, subscription status, customer ID, and payment history metadata.</li>
-              <li><strong>Usage data</strong> — number of transformations, plan, login timestamps, basic technical logs (IP address, user agent) for security and abuse prevention.</li>
+              <li><strong>Usage data</strong> — plan, login timestamps, and basic technical logs (IP address, user agent) for security and abuse prevention.</li>
             </ul>
           </Section>
 
           <Section title="2. How we use your data">
             <ul>
-              <li>To run AI analysis and produce transformed audio outputs you request.</li>
-              <li>To manage your subscription, credits, and billing.</li>
+              <li>To run your live events and display the content you and your guests submit.</li>
+              <li>To manage your subscription and billing.</li>
               <li>To provide customer support and respond to your requests.</li>
               <li>To detect abuse, fraud, and violations of our Terms of Service.</li>
               <li>To comply with legal obligations (tax records, lawful requests from authorities).</li>
             </ul>
-            <p>We do <strong>not</strong> use your uploaded audio or generated outputs to train public AI models.</p>
+            <p>We do <strong>not</strong> sell your data or use your event content for advertising.</p>
           </Section>
 
           <Section title="3. Storage and retention">
             <ul>
-              <li><strong>Source uploads</strong> are processed for the requested transformation and automatically deleted from active storage within a short window after processing completes (typically 24-72 hours).</li>
-              <li><strong>Generated outputs</strong> remain available in your account until you delete them or close your account.</li>
+              <li><strong>Event content</strong> remains available in your account until you delete it or close your account.</li>
               <li><strong>Account and billing records</strong> are retained as long as your account is active, plus the period required by tax and accounting law (typically up to 10 years for invoices in the EU).</li>
               <li><strong>Logs</strong> are retained for up to 90 days unless required longer for security investigations.</li>
             </ul>
@@ -83,10 +81,10 @@ export default function PrivacyPage() {
           <Section title="4. Sub-processors">
             <p>We share data only with vendors strictly required to operate the service:</p>
             <ul>
-              <li><strong>Supabase</strong> — database and authentication (EU region).</li>
-              <li><strong>Google Cloud (Cloud Run, Cloud Storage)</strong> — backend hosting and audio file storage.</li>
-              <li><strong>Stripe</strong> — payment processing. Stripe&apos;s privacy policy applies to card data.</li>
+              <li><strong>Supabase</strong> — database, authentication, and storage (EU region).</li>
+              <li><strong>Render</strong> — backend and API hosting.</li>
               <li><strong>Vercel</strong> — frontend hosting.</li>
+              <li><strong>Stripe</strong> — payment processing. Stripe&apos;s privacy policy applies to card data.</li>
             </ul>
             <p>Each sub-processor is contractually bound to data protection terms compatible with GDPR.</p>
           </Section>
