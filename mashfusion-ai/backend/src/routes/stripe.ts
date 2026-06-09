@@ -169,8 +169,15 @@ import { PLAN_CREDITS, normalizePlan, type PlanTier } from '../config/plans'
 
 function buildPlanPriceMap(): Record<string, PlanTier> {
   const map: Record<string, PlanTier> = {}
-  const proIds = [process.env.STRIPE_PRICE_PRO_MONTHLY, process.env.STRIPE_PRO_PRICE_ID].filter(Boolean) as string[]
+  const proIds = [
+    process.env.STRIPE_PRICE_PRO_MONTHLY_EUR,
+    process.env.STRIPE_PRICE_PRO_MONTHLY_USD,
+    process.env.STRIPE_PRICE_PRO_MONTHLY,
+    process.env.STRIPE_PRO_PRICE_ID,
+  ].filter(Boolean) as string[]
   const weddingIds = [
+    process.env.STRIPE_PRICE_WEDDING_MONTHLY_EUR,
+    process.env.STRIPE_PRICE_WEDDING_MONTHLY_USD,
     process.env.STRIPE_PRICE_WEDDING_MONTHLY,
     process.env.STRIPE_PRICE_CLUB_MONTHLY,   // legacy alias → wedding
     process.env.STRIPE_STUDIO_PRICE_ID,      // legacy alias → wedding

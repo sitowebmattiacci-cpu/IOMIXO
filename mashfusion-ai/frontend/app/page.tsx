@@ -11,6 +11,10 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { PLAN_METADATA, type Plan } from '@/types'
 import { Logo } from '@/components/Logo'
 import { useI18n } from '@/lib/i18n'
+import {
+  currencyForLocale, formatPrice, PLAN_PRICING, EVENT_PASS_PRICING,
+  type PaidPlan,
+} from '@/lib/pricing'
 
 // ── Brand tokens (DARK wine palette) ────────────────────────────
 // bg-deep:        #0F0A0C  (page background)
@@ -300,7 +304,9 @@ function Sections() {
 // ── Pricing ────────────────────────────────────────────────────
 function PricingCard({ plan, highlight }: { plan: Plan; highlight?: boolean }) {
   const meta = PLAN_METADATA[plan]
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const currency = currencyForLocale(locale)
+  const amount = plan === 'free' ? 0 : PLAN_PRICING[plan as PaidPlan][currency]
 
   const isWedding = plan === 'wedding'
   return (
@@ -327,9 +333,9 @@ function PricingCard({ plan, highlight }: { plan: Plan; highlight?: boolean }) {
       <h3 className="text-2xl font-bold text-[#F7F4F3]">{meta.name}</h3>
       <div className="my-4 flex items-baseline gap-1">
         <span className="text-4xl font-bold text-[#F7F4F3]">
-          {meta.priceMonthly === 0 ? t('landing.pricing.free') : `€${meta.priceMonthly.toFixed(2)}`}
+          {amount === 0 ? t('landing.pricing.free') : formatPrice(amount, currency)}
         </span>
-        {meta.priceMonthly > 0 && <span className="text-[#A89A98] text-sm">{t('landing.pricing.perMonth')}</span>}
+        {amount > 0 && <span className="text-[#A89A98] text-sm">{t('landing.pricing.perMonth')}</span>}
       </div>
       <ul className="space-y-2 mb-6">
         {meta.features.map((f) => (
@@ -355,7 +361,8 @@ function PricingCard({ plan, highlight }: { plan: Plan; highlight?: boolean }) {
 }
 
 function Pricing() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const currency = currencyForLocale(locale)
   return (
     <section id="pricing" className="py-20 sm:py-28 bg-[#170F11] border-t border-[#2B1B1F]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -389,7 +396,7 @@ function Pricing() {
                   <p className="text-xs uppercase tracking-wider text-[#E8B7C8] mb-2">{t('landing.pricing.trial24h')}</p>
                   <h3 className="text-3xl font-bold text-[#F7F4F3] mb-3">{t('landing.pricing.eventPass')}</h3>
                   <div className="flex items-baseline gap-2 mb-6">
-                    <span className="text-5xl font-bold text-[#F7F4F3]">€7,99</span>
+                    <span className="text-5xl font-bold text-[#F7F4F3]">{formatPrice(EVENT_PASS_PRICING[currency], currency)}</span>
                     <span className="text-[#A89A98] text-sm">{t('landing.pricing.oneTime')}</span>
                   </div>
                   <p className="text-sm text-[#A89A98] mb-6">

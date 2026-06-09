@@ -11,6 +11,10 @@ import toast from 'react-hot-toast'
 import { useState } from 'react'
 import { useI18n } from '@/lib/i18n'
 import { normalisePlan as normalisePlanShared } from '@/lib/plan'
+import {
+  currencyForLocale, formatPrice, planPriceId, eventPassPriceId,
+  PLAN_PRICING, EVENT_PASS_PRICING, type PaidPlan,
+} from '@/lib/pricing'
 
 const PLAN_ICONS: Record<Plan, React.ReactNode> = {
   free: <Zap className="h-5 w-5" />,
@@ -30,7 +34,8 @@ function normalisePlan(p: string | undefined): Plan {
 }
 
 export default function BillingPage() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const currency = currencyForLocale(locale)
   const { data: me, isLoading: loadingMe } = useSWR<User>('me', () => auth.me())
   const { data: subscription } = useSWR('subscription', () => billing.getSubscription())
   const { data: payments }     = useSWR('payments', () => billing.getPaymentHistory(10))
@@ -43,14 +48,14 @@ export default function BillingPage() {
   const [loading, setLoading] = useState<Plan | 'portal' | 'event-pass' | null>(null)
 
   const handleUpgrade = async (plan: Plan) => {
-    const meta = PLAN_METADATA[plan]
-    if (!meta.stripePriceId) {
+    const priceId = plan === 'free' ? '' : planPriceId(plan as PaidPlan, currency)
+    if (!priceId) {
       toast.error(t('billing.errPriceMissing'))
       return
     }
     setLoading(plan)
     try {
-      const { url } = await billing.createCheckoutSession(meta.stripePriceId)
+      const { url } = await billing.createCheckoutSession(priceId)
       window.location.href = url
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t('billing.errCheckout'))
@@ -70,9 +75,7 @@ export default function BillingPage() {
   }
 
   const handleEventPass = async () => {
-    const priceId =
-      process.env.NEXT_PUBLIC_STRIPE_PRICE_EVENT_PASS ||
-      process.env.NEXT_PUBLIC_STRIPE_PRICE_WEDDING_PASS
+    const priceId = eventPassPriceId(currency)
     if (!priceId) {
       toast.error(t('billing.errPassNotConfigured'))
       return
@@ -179,7 +182,7 @@ export default function BillingPage() {
                   </div>
                 </div>
 
-                <p className="text-4xl font-black text-white mb-1">€7,99</p>
+                <p className="text-4xl font-black text-white mb-1">{formatPrice(EVENT_PASS_PRICING[currency], currency)}</p>
                 <p className="text-sm text-white/40 mb-6">{t('billing.validFor24h')}</p>
 
                 <ul className="space-y-2 mb-6">
@@ -320,8 +323,8 @@ export default function BillingPage() {
                 <p className="text-xs uppercase tracking-wide text-white/40">{meta.tagline}</p>
                 <p className="font-bold text-white mt-1">{meta.name}</p>
                 <p className="text-3xl font-black text-white mt-2">
-                  {meta.priceMonthly === 0 ? t('billing.free') : `€${meta.priceMonthly.toFixed(2)}`}
-                  {meta.priceMonthly > 0 && <span className="text-sm font-normal text-white/30">{t('billing.perMonth')}</span>}
+                  {plan === 'free' ? t('billing.free') : formatPrice(PLAN_PRICING[plan as PaidPlan][currency], currency)}
+                  {plan !== 'free' && <span className="text-sm font-normal text-white/30">{t('billing.perMonth')}</span>}
                 </p>
               </div>
 
