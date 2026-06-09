@@ -45,7 +45,19 @@ stripeRouter.post('/create-checkout', requireAuth, async (req: Request, res: Res
       sessionConfig.subscription_data = { metadata }
     }
 
-    const session = await stripe.checkout.sessions.create(sessionConfig)
+    let session: Stripe.Checkout.Session
+    try {
+      session = await stripe.checkout.sessions.create(sessionConfig)
+    } catch (stripeErr) {
+      if (stripeErr instanceof Stripe.errors.StripeError) {
+        logger.error('Stripe checkout creation failed', {
+          type: stripeErr.type, code: stripeErr.code, param: stripeErr.param,
+          message: stripeErr.message, price_id, mode,
+        })
+        throw new AppError(`Stripe: ${stripeErr.message}`, 400)
+      }
+      throw stripeErr
+    }
 
     res.json({ url: session.url })
   } catch (err) { next(err) }
