@@ -6,9 +6,13 @@ import type { Locale } from '@/lib/i18n'
 export type Currency = 'eur' | 'usd'
 export type PaidPlan = 'pro' | 'wedding'
 
-/** English audience pays in USD, everyone else (it/fr/es) in EUR. */
-export function currencyForLocale(locale: Locale): Currency {
-  return locale === 'en' ? 'usd' : 'eur'
+/**
+ * English audience pays in USD, everyone else (it/fr/es) in EUR.
+ * Defensive: accepts any locale string (e.g. 'en', 'EN', 'en-US', 'en_US',
+ * undefined) and routes anything starting with "en" to USD, the rest to EUR.
+ */
+export function currencyForLocale(locale: Locale | string | null | undefined): Currency {
+  return String(locale ?? '').toLowerCase().startsWith('en') ? 'usd' : 'eur'
 }
 
 export function currencySymbol(currency: Currency): string {
