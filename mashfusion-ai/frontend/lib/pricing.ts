@@ -35,9 +35,15 @@ export function formatPrice(amount: number, currency: Currency): string {
 }
 
 // ── Stripe Price ID selection ─────────────────────────────────
-// NEXT_PUBLIC_* vars must be referenced literally so Next.js inlines them
-// at build time. Per-currency vars take priority; the legacy single-currency
-// vars remain as a fallback so existing deployments keep working.
+// Active Stripe TEST price IDs (public identifiers, not secrets) used as the
+// guaranteed default so checkout always targets a purchasable, active price
+// even if a deployment's env vars are stale or missing. NEXT_PUBLIC_* env vars
+// (inlined by Next.js at build time) still take priority when present.
+const DEFAULT_PRICE_IDS = {
+  pro:     { eur: 'price_1TghhxK5K6YO4jBDSLcSF6Az', usd: 'price_1TghhxK5K6YO4jBD3e2E0q0D' },
+  wedding: { eur: 'price_1TghhyK5K6YO4jBDJfrAoceZ', usd: 'price_1TghhzK5K6YO4jBDnKol76T2' },
+  event:   { eur: 'price_1TghhzK5K6YO4jBDZT9Ob31A', usd: 'price_1Tghi0K5K6YO4jBDGWTdYmGS' },
+} as const
 
 export function planPriceId(plan: PaidPlan, currency: Currency): string {
   if (plan === 'pro') {
@@ -45,18 +51,14 @@ export function planPriceId(plan: PaidPlan, currency: Currency): string {
       (currency === 'usd'
         ? process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID_USD
         : process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID_EUR) ||
-      process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID ||
-      ''
+      DEFAULT_PRICE_IDS.pro[currency]
     )
   }
   return (
     (currency === 'usd'
       ? process.env.NEXT_PUBLIC_STRIPE_WEDDING_PRICE_ID_USD
       : process.env.NEXT_PUBLIC_STRIPE_WEDDING_PRICE_ID_EUR) ||
-    process.env.NEXT_PUBLIC_STRIPE_WEDDING_PRICE_ID ||
-    process.env.NEXT_PUBLIC_STRIPE_CLUB_PRICE_ID ||
-    process.env.NEXT_PUBLIC_STRIPE_STUDIO_PRICE_ID ||
-    ''
+    DEFAULT_PRICE_IDS.wedding[currency]
   )
 }
 
@@ -65,8 +67,6 @@ export function eventPassPriceId(currency: Currency): string {
     (currency === 'usd'
       ? process.env.NEXT_PUBLIC_STRIPE_PRICE_EVENT_PASS_USD
       : process.env.NEXT_PUBLIC_STRIPE_PRICE_EVENT_PASS_EUR) ||
-    process.env.NEXT_PUBLIC_STRIPE_PRICE_EVENT_PASS ||
-    process.env.NEXT_PUBLIC_STRIPE_PRICE_WEDDING_PASS ||
-    ''
+    DEFAULT_PRICE_IDS.event[currency]
   )
 }

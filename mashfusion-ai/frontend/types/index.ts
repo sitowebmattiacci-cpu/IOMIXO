@@ -295,7 +295,9 @@ export const PLAN_METADATA: Record<Plan, {
       'Branding IOMIXO ridotto',
       'Statistiche di sessione',
     ],
-    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID ?? '',
+    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID_EUR
+      ?? process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID
+      ?? 'price_1TghhxK5K6YO4jBDSLcSF6Az',
   },
   wedding: {
     name: 'Advance',
@@ -313,10 +315,9 @@ export const PLAN_METADATA: Record<Plan, {
       'Giochi Wedding (Roulette, Gioco della Scarpa, Chi conosce meglio gli sposi, Lui o Lei, Messaggi agli Sposi)',
       'Analytics avanzate',
     ],
-    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_WEDDING_PRICE_ID
-      ?? process.env.NEXT_PUBLIC_STRIPE_CLUB_PRICE_ID
-      ?? process.env.NEXT_PUBLIC_STRIPE_STUDIO_PRICE_ID
-      ?? '',
+    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_WEDDING_PRICE_ID_EUR
+      ?? process.env.NEXT_PUBLIC_STRIPE_WEDDING_PRICE_ID
+      ?? 'price_1TghhyK5K6YO4jBDJfrAoceZ',
   },
 }
 
