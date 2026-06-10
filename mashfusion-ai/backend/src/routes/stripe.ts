@@ -19,6 +19,41 @@ const STALE_PRICE_REMAP: Record<string, string> = {
   price_1TRfpyK5K6YO4jBDFW333Skh: 'price_1TghhyK5K6YO4jBDJfrAoceZ',
 }
 
+// Returns a Stripe customer id that is guaranteed to exist in the CURRENT Stripe
+// environment (test or live). If the user has no saved customer, or the saved
+// one belongs to another environment (e.g. a test-mode customer after switching
+// to live keys), a fresh customer is created and persisted to Supabase.
+// This prevents the "No such customer ... a similar object exists in test mode"
+// failure when migrating from test to live without dropping the checkout.
+async function ensureCustomer(
+  userId: string,
+  email: string,
+  savedCustomerId: string | null,
+): Promise<string> {
+  if (savedCustomerId) {
+    try {
+      const existing = await stripe.customers.retrieve(savedCustomerId)
+      if (!('deleted' in existing && existing.deleted)) {
+        return savedCustomerId
+      }
+      logger.warn('Stripe customer was deleted; recreating', { userId })
+    } catch (err) {
+      // resource_missing → the saved id does not exist in this environment.
+      if (err instanceof Stripe.errors.StripeError && err.code === 'resource_missing') {
+        logger.warn('Saved Stripe customer not found in current environment; recreating', { userId })
+      } else {
+        throw err
+      }
+    }
+  }
+
+  const customer = await stripe.customers.create({ email, metadata: { user_id: userId } })
+  await supabaseAdmin.from('users').update({ stripe_customer_id: customer.id }).eq('id', userId)
+  logger.info('Created new Stripe customer', { userId })
+  return customer.id
+}
+
+
 // ── POST /stripe/create-checkout ───────────────────────────────
 stripeRouter.post('/create-checkout', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -33,12 +68,7 @@ stripeRouter.post('/create-checkout', requireAuth, async (req: Request, res: Res
       .from('users').select('email, stripe_customer_id').eq('id', userId).single()
     if (userErr || !userRow) throw new AppError('User not found', 404)
 
-    let customerId: string = userRow.stripe_customer_id
-    if (!customerId) {
-      const customer = await stripe.customers.create({ email: userRow.email, metadata: { user_id: userId } })
-      customerId = customer.id
-      await supabaseAdmin.from('users').update({ stripe_customer_id: customerId }).eq('id', userId)
-    }
+    const customerId = await ensureCustomer(userId, userRow.email, userRow.stripe_customer_id)
 
     const metadata: Record<string, string> = { user_id: userId }
     if (session_id) metadata.session_id = session_id
