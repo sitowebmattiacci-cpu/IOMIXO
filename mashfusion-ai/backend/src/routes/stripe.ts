@@ -9,13 +9,24 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-04
 
 export const stripeRouter = Router()
 
+// Remap legacy/inactive Stripe price IDs (whose products were archived) to the
+// current active price IDs. Acts as a safety net so checkout keeps working even
+// if a stale frontend build still sends an old price ID.
+const STALE_PRICE_REMAP: Record<string, string> = {
+  // legacy Pro    → active Pro (EUR)
+  price_1TRfnnK5K6YO4jBDC2AUKQtT: 'price_1TghhxK5K6YO4jBDSLcSF6Az',
+  // legacy Studio → active Advance/Wedding (EUR)
+  price_1TRfpyK5K6YO4jBDFW333Skh: 'price_1TghhyK5K6YO4jBDJfrAoceZ',
+}
+
 // ── POST /stripe/create-checkout ───────────────────────────────
 stripeRouter.post('/create-checkout', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.sub
-    const { price_id, success_url, cancel_url, mode = 'subscription', session_id } = req.body
+    const { price_id: rawPriceId, success_url, cancel_url, mode = 'subscription', session_id } = req.body
+    const price_id = STALE_PRICE_REMAP[rawPriceId] ?? rawPriceId
 
-    if (!price_id || !success_url || !cancel_url) throw new AppError('Missing required fields', 400)
+    if (!rawPriceId || !success_url || !cancel_url) throw new AppError('Missing required fields', 400)
     if (!['subscription', 'payment'].includes(mode)) throw new AppError('Invalid mode', 400)
 
     const { data: userRow, error: userErr } = await supabaseAdmin
