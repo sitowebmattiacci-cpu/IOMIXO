@@ -5,7 +5,7 @@ import { AppError } from '../middleware/errorHandler'
 import { uniqueSlug } from '../utils/slug'
 import { canCreateSession } from '../services/liveLimits'
 import { countOnline } from '../services/livePresence'
-import { getUserPlan } from '../services/plan'
+import { getUserPlan, hasEventAccess } from '../services/plan'
 import { PLAN_LIMITS } from '../config/plans'
 
 export const liveSessionsRouter = Router()
@@ -22,17 +22,18 @@ liveSessionsRouter.post('/sessions', requireAuth, async (req, res, next) => {
     if (!event_name || typeof event_name !== 'string') throw new AppError('event_name richiesto', 400)
 
     // Session type can be 'standard' | 'party' | 'wedding'.
-    // Both 'party' and 'wedding' require the Advance plan.
+    // Both 'party' and 'wedding' require Advance access: piano Advance reale
+    // OPPURE un Event Pass 24H attivo (accesso premium temporaneo).
     const type: 'standard' | 'party' | 'wedding' =
       session_type === 'wedding' ? 'wedding'
       : session_type === 'party' ? 'party'
       : 'standard'
 
     if (type === 'wedding' || type === 'party') {
-      const plan = await getUserPlan(userId(req))
-      if (!PLAN_LIMITS[plan].weddingMode) {
+      const hasAccess = await hasEventAccess(userId(req))
+      if (!hasAccess) {
         throw new AppError(
-          'Questa modalità è disponibile con il piano Advance.',
+          'Questa modalità è disponibile con il piano Advance o un Event Pass 24H.',
           402,
         )
       }
