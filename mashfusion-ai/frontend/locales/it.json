@@ -474,7 +474,8 @@
       "activePoll": "Sondaggio attivo",
       "recentDedications": "Ultime dediche",
       "recentPhotos": "Ultime foto"
-    }
+    },
+    "photoFrameTitle": "Oggi Sposi"
   },
   "live": {
     "title": "Richieste live",

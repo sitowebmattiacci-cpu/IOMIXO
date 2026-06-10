@@ -6,6 +6,7 @@ import { Heart, Sparkles, ListChecks, Camera, Footprints, Music2, Star } from 'l
 import { liveScreen } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
+import { WeddingPhotoFrame } from '@/components/wedding/WeddingPhotoFrame'
 import { RouletteWheel } from '@/components/wedding/RouletteWheel'
 import { PartyShell, PartyDivider, PARTY } from '@/components/party/PartyUI'
 import { useEffect, useRef, useState } from 'react'
@@ -310,21 +311,15 @@ export default function ScreenModePage() {
                   </div>
                   <div className="grid grid-cols-3 gap-6 max-h-[600px] overflow-y-auto">
                     {photos.slice(0, 12).map((p) => (
-                      <div
+                      <WeddingPhotoFrame
                         key={p.id}
-                        className={`aspect-square rounded-xl overflow-hidden border shadow-lg transition-all duration-500 ${
-                          (p as any).is_featured
-                            ? 'border-wedding-gold/60 ring-4 ring-wedding-gold/30 scale-105'
-                            : 'border-wedding-gold/20 bg-wedding-ivory/5'
-                        }`}
-                      >
-                        {p.url && <img src={p.url} alt="" className="w-full h-full object-cover" />}
-                        {(p as any).is_featured && (
-                          <div className="absolute top-2 right-2 bg-wedding-gold/90 text-wedding-ink px-2 py-1 rounded-full text-xs font-semibold">
-                            ★ In evidenza
-                          </div>
-                        )}
-                      </div>
+                        url={p.url}
+                        caption={(p as any).caption}
+                        coupleNames={session.couple_names ?? session.event_name}
+                        weddingDate={session.wedding_date}
+                        featured={(p as any).is_featured}
+                        variant="screen"
+                      />
                     ))}
                   </div>
                 </div>
@@ -501,21 +496,15 @@ export default function ScreenModePage() {
                 {photos.length > 0 ? (
                   <div className="grid grid-cols-2 gap-3 overflow-y-auto max-h-[520px] pr-1">
                     {photos.slice(0, 60).map((p) => (
-                      <div
+                      <WeddingPhotoFrame
                         key={p.id}
-                        className={`aspect-square rounded-xl overflow-hidden border shadow-lg relative transition-all duration-500 ${
-                          (p as any).is_featured
-                            ? 'border-wedding-gold/60 ring-2 ring-wedding-gold/40'
-                            : 'border-wedding-gold/20 bg-wedding-ivory/5'
-                        }`}
-                      >
-                        {p.url && <img src={p.url} alt="" className="w-full h-full object-cover" />}
-                        {(p as any).is_featured && (
-                          <div className="absolute top-1 right-1 bg-wedding-gold/95 text-wedding-ink px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                            ★
-                          </div>
-                        )}
-                      </div>
+                        url={p.url}
+                        caption={(p as any).caption}
+                        coupleNames={session.couple_names ?? session.event_name}
+                        weddingDate={session.wedding_date}
+                        featured={(p as any).is_featured}
+                        variant="screen"
+                      />
                     ))}
                   </div>
                 ) : (

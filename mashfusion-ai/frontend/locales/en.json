@@ -442,7 +442,8 @@
       "activePoll": "Active poll",
       "recentDedications": "Recent dedications",
       "recentPhotos": "Recent photos"
-    }
+    },
+    "photoFrameTitle": "Just Married"
   },
   "live": {
     "title": "Live requests",

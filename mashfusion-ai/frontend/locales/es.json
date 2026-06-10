@@ -442,7 +442,8 @@
       "activePoll": "Encuesta activa",
       "recentDedications": "Últimas dedicatorias",
       "recentPhotos": "Últimas fotos"
-    }
+    },
+    "photoFrameTitle": "Recién Casados"
   },
   "live": {
     "title": "Peticiones live",

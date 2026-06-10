@@ -24,6 +24,7 @@ import { UpgradeGate } from '@/components/live/UpgradeGate'
 import {
   WeddingCard, WeddingButton, WeddingBadge, WeddingInput, WeddingTextarea, WeddingDivider,
 } from '@/components/wedding/WeddingUI'
+import { WeddingPhotoFrame } from '@/components/wedding/WeddingPhotoFrame'
 import {
   PartyShell, PartyCard, PartyButton, PartyBadge, PartyInput, PartyTextarea,
   PartyDivider, PartyEyebrow, PartyPaywall, PARTY,
@@ -245,7 +246,7 @@ export default function SessionDetailPage() {
           )}
           {tab === 'dedications' && <DedicationsPanel sessionId={session.id} />}
           {tab === 'games'       && <GamesPanel       sessionId={session.id} session={session} />}
-          {tab === 'photos'      && <PhotosPanel      sessionId={session.id} />}
+          {tab === 'photos'      && <PhotosPanel      sessionId={session.id} session={session} />}
           {tab === 'guests'      && <GuestVisibilityPanel sessionId={session.id} session={session} sessionType="wedding" hasAccess={hasAdvanceAccess} />}
         </div>
 
@@ -1562,7 +1563,7 @@ function PollsPanel({ sessionId }: { sessionId: string }) {
   )
 }
 
-function PhotosPanel({ sessionId }: { sessionId: string }) {
+function PhotosPanel({ sessionId, session }: { sessionId: string; session: any }) {
   const { t } = useI18n()
   const [photoTab, setPhotoTab] = useState<'album' | 'booth'>('album')
   const { data, mutate: refresh } = useSWR(
@@ -1662,19 +1663,17 @@ function PhotosPanel({ sessionId }: { sessionId: string }) {
             <div key={p.id} className={`rounded-2xl overflow-hidden border bg-white/80 shadow-wedding relative ${
               p.is_featured ? 'border-wedding-gold/80 ring-2 ring-wedding-gold/40' : 'border-wedding-champagne/60'
             }`}>
-              {p.url ? (
-                <img src={p.url} alt={p.caption ?? ''} className="w-full aspect-square object-cover" />
-              ) : (
-                <div className="w-full aspect-square bg-wedding-champagne/20 flex items-center justify-center text-wedding-ink/40">
-                  <ImageIcon className="h-8 w-8" />
-                </div>
-              )}
-              {p.is_featured && (
-                <div className="absolute top-2 right-2 bg-wedding-gold text-wedding-ink px-2 py-1 rounded-full text-[10px] font-bold shadow-lg">
-                  {t('weddingPanels.featured')}
-                </div>
-              )}
-              <div className="p-3">
+              <div className="p-2">
+                <WeddingPhotoFrame
+                  url={p.url}
+                  caption={p.caption}
+                  coupleNames={session?.couple_names ?? session?.event_name}
+                  weddingDate={session?.wedding_date}
+                  featured={p.is_featured}
+                  variant="compact"
+                />
+              </div>
+              <div className="p-3 pt-1">
                 <p className="text-xs text-wedding-ink/70 line-clamp-2">{p.caption ?? '—'}</p>
                 <p className="text-[10px] uppercase tracking-[0.22em] text-wedding-gold mt-2 flex items-center gap-2">
                   <span>— {p.guest_name ?? t('weddingPanels.anonymous')}</span>

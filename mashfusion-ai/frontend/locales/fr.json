@@ -442,7 +442,8 @@
       "activePoll": "Sondage actif",
       "recentDedications": "Dernières dédicaces",
       "recentPhotos": "Dernières photos"
-    }
+    },
+    "photoFrameTitle": "Jeunes Mariés"
   },
   "live": {
     "title": "Demandes live",
