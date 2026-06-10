@@ -891,7 +891,6 @@ function GuestVisibilityPanel({
     { key: 'dedications', icon: <Heart className="h-4 w-4" />,      label: t('guestVisibility.dedications') },
     { key: 'shoe_game',   icon: <Footprints className="h-4 w-4" />, label: t('guestVisibility.shoeGame') },
     { key: 'polls',       icon: <ListChecks className="h-4 w-4" />, label: t('guestVisibility.polls') },
-    { key: 'photos',      icon: <ImageIcon className="h-4 w-4" />,  label: t('guestVisibility.photos') },
     { key: 'live_booth',  icon: <Camera className="h-4 w-4" />,     label: t('guestVisibility.liveBooth') },
   ]
   const partyItems = [
@@ -899,7 +898,6 @@ function GuestVisibilityPanel({
     { key: 'live_booth',   icon: <Camera className="h-4 w-4" />,     label: t('guestVisibility.liveBooth') },
     { key: 'music_battle', icon: <ListChecks className="h-4 w-4" />, label: t('guestVisibility.musicBattle') },
     { key: 'roulette',     icon: <Sparkles className="h-4 w-4" />,   label: t('guestVisibility.roulette') },
-    { key: 'photos',       icon: <ImageIcon className="h-4 w-4" />,  label: t('guestVisibility.photos') },
   ]
   const items = sessionType === 'wedding' ? weddingItems : partyItems
 

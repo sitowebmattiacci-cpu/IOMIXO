@@ -197,7 +197,6 @@ export default function PublicLivePage() {
           {!guestOn('requests')
             && !(features.weddingGames && guestOn('shoe_game'))
             && !(features.livePolls && guestOn('polls'))
-            && !(features.weddingGames && guestOn('photos'))
             && !(features.weddingDedications && guestOn('dedications'))
             && !(features.guestPhotoAlbum && guestOn('live_booth')) && (
             <WeddingCard tone="cream" className="mb-8 text-center text-sm text-[#6F6260]">
@@ -207,7 +206,6 @@ export default function PublicLivePage() {
 
           {features.weddingGames && guestOn('shoe_game') && <ShoeGamePublic slug={slug!} />}
           {features.livePolls && guestOn('polls') && <PollPublic slug={slug!} />}
-          {features.weddingGames && guestOn('photos') && <BestPhotoPublic slug={slug!} />}
           {features.weddingDedications && guestOn('dedications') && <DedicationsPublic slug={slug!} />}
           {features.guestPhotoAlbum && guestOn('live_booth') && <LiveBoothCard slug={slug!} session={session} />}
 
@@ -360,7 +358,6 @@ export default function PublicLivePage() {
             showBooth={features.guestPhotoAlbum && guestOn('live_booth')}
             showBattle={guestOn('music_battle')}
             showRoulette={guestOn('roulette')}
-            showPhotos={guestOn('photos')}
           />
         )}
 
@@ -696,20 +693,18 @@ function LiveBoothCard({ slug, session }: { slug: string; session: any }) {
 // ════════════════════════════════════════════════════════════════
 
 function PartyLiveSections({
-  slug, showBooth, showBattle, showRoulette, showPhotos,
+  slug, showBooth, showBattle, showRoulette,
 }: {
   slug: string
   showBooth: boolean
   showBattle: boolean
   showRoulette: boolean
-  showPhotos: boolean
 }) {
   return (
     <div className="mt-8 space-y-5">
       {showBooth && <PartyBoothCTA slug={slug} />}
       {showBattle && <PartyMusicBattle slug={slug} />}
       {showRoulette && <PartyRouletteResult slug={slug} />}
-      {showPhotos && <PartyApprovedPhotos slug={slug} />}
     </div>
   )
 }
