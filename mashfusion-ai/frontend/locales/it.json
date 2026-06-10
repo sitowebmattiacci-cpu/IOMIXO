@@ -89,7 +89,7 @@
     "errPriceMissing": "Price ID Stripe non configurato per questo piano.",
     "errCheckout": "Impossibile aprire il checkout",
     "errPortal": "Impossibile aprire il portale",
-    "errPassNotConfigured": "Wedding Pass non configurato. Contatta il supporto."
+    "errPassNotConfigured": "Event Pass non configurato. Contatta il supporto."
   },
   "events": {
     "title": "Prossime date",
