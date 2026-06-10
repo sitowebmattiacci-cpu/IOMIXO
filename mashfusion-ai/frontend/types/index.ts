@@ -297,7 +297,7 @@ export const PLAN_METADATA: Record<Plan, {
     ],
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID_EUR
       ?? process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID
-      ?? 'price_1TghhxK5K6YO4jBDSLcSF6Az',
+      ?? 'price_1TgkJMK5K6YO4jBDzrHodEhd',
   },
   wedding: {
     name: 'Advance',
@@ -317,7 +317,7 @@ export const PLAN_METADATA: Record<Plan, {
     ],
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_WEDDING_PRICE_ID_EUR
       ?? process.env.NEXT_PUBLIC_STRIPE_WEDDING_PRICE_ID
-      ?? 'price_1TghhyK5K6YO4jBDJfrAoceZ',
+      ?? 'price_1TgkJNK5K6YO4jBDSBmFIkLv',
   },
 }
 

@@ -39,14 +39,14 @@ export function formatPrice(amount: number, currency: Currency): string {
 }
 
 // ── Stripe Price ID selection ─────────────────────────────────
-// Active Stripe TEST price IDs (public identifiers, not secrets) used as the
+// Active Stripe LIVE price IDs (public identifiers, not secrets) used as the
 // guaranteed default so checkout always targets a purchasable, active price
 // even if a deployment's env vars are stale or missing. NEXT_PUBLIC_* env vars
 // (inlined by Next.js at build time) still take priority when present.
 const DEFAULT_PRICE_IDS = {
-  pro:     { eur: 'price_1TghhxK5K6YO4jBDSLcSF6Az', usd: 'price_1TghhxK5K6YO4jBD3e2E0q0D' },
-  wedding: { eur: 'price_1TghhyK5K6YO4jBDJfrAoceZ', usd: 'price_1TghhzK5K6YO4jBDnKol76T2' },
-  event:   { eur: 'price_1TghhzK5K6YO4jBDZT9Ob31A', usd: 'price_1Tghi0K5K6YO4jBDGWTdYmGS' },
+  pro:     { eur: 'price_1TgkJMK5K6YO4jBDzrHodEhd', usd: 'price_1TgkJMK5K6YO4jBDxOCt68Xo' },
+  wedding: { eur: 'price_1TgkJNK5K6YO4jBDSBmFIkLv', usd: 'price_1TgkJNK5K6YO4jBDGCCz09YA' },
+  event:   { eur: 'price_1TgkJOK5K6YO4jBDrQFDYrhl', usd: 'price_1TgkJOK5K6YO4jBDjhT7ngMK' },
 } as const
 
 export function planPriceId(plan: PaidPlan, currency: Currency): string {
