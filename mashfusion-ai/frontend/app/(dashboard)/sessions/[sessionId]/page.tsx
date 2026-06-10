@@ -11,7 +11,7 @@ import {
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import {
-  live, auth, liveDedications, liveGames, livePolls, livePhotos,
+  live, liveDedications, liveGames, livePolls, livePhotos,
   bestPhoto,
   type LiveRequestStatus, type LivePoll,
 } from '@/lib/api'
@@ -30,7 +30,6 @@ import {
 } from '@/components/party/PartyUI'
 import { useI18n } from '@/lib/i18n'
 import { useEffectiveAccess } from '@/lib/access'
-import type { User } from '@/types'
 
 export default function SessionDetailPage() {
   const { sessionId } = useParams<{ sessionId: string }>()
@@ -42,9 +41,7 @@ export default function SessionDetailPage() {
     () => live.getSession(sessionId!),
     { refreshInterval: 5_000 },
   )
-  const { data: me } = useSWR<User>('me', () => auth.me())
-  const isFree = !me || me.plan === 'free'
-  const { hasAdvanceAccess } = useEffectiveAccess()
+  const { hasAdvanceAccess, isFree } = useEffectiveAccess()
   const { data: requests } = useSWR(
     sessionId ? ['requests', sessionId] : null,
     () => live.listRequests(sessionId!),
