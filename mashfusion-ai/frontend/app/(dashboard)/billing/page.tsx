@@ -101,6 +101,10 @@ export default function BillingPage() {
   // Mostra Event Pass se: dati caricati E piano non è wedding/advance
   const showEventPass = !loadingMe && currentPlan !== 'wedding'
 
+  // Quando il piano DB è Free ma c'è un Event Pass attivo, il piano effettivo
+  // mostrato all'utente è "Event Pass".
+  const showEventPassAsPlan = hasActivePass && currentPlan === 'free'
+
   return (
     <div className="flex-1 overflow-y-auto px-6 py-8 max-w-5xl mx-auto w-full">
       <div className="mb-8">
@@ -112,14 +116,16 @@ export default function BillingPage() {
       <div className="glass rounded-2xl p-6 mb-8 border border-purple-500/20">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 ${PLAN_COLORS[currentPlan]}`}>
-              {PLAN_ICONS[currentPlan]}
+            <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 ${showEventPassAsPlan ? 'text-pink-400' : PLAN_COLORS[currentPlan]}`}>
+              {showEventPassAsPlan ? <Heart className="h-5 w-5" /> : PLAN_ICONS[currentPlan]}
             </div>
             <div>
-              <p className="font-semibold text-white">{t('billing.planPrefix')} {PLAN_METADATA[currentPlan].name}</p>
+              <p className="font-semibold text-white">{t('billing.planPrefix')} {showEventPassAsPlan ? t('billing.eventPass') : PLAN_METADATA[currentPlan].name}</p>
               <p className="text-xs text-white/40">
                 {subscription?.current_period_end ? (
                   <>{t('billing.renewing')}: {format(new Date(subscription.current_period_end), 'd MMM yyyy')}</>
+                ) : showEventPassAsPlan && activePass ? (
+                  <>{t('billing.expires')}: {format(new Date(activePass.valid_until), 'd MMM yyyy, HH:mm')}</>
                 ) : currentPlan === 'free' ? (
                   t('billing.usingFree')
                 ) : null}

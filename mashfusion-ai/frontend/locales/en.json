@@ -229,7 +229,9 @@
     "expand": "Expand",
     "collapse": "Collapse",
     "expandSidebar": "Expand sidebar",
-    "collapseSidebar": "Collapse sidebar"
+    "collapseSidebar": "Collapse sidebar",
+    "eventPassActive": "You're using Event Pass 24H",
+    "expires": "Expires"
   },
   "settings": {
     "title": "Settings",

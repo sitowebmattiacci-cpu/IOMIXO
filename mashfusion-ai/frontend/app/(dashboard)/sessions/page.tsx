@@ -4,14 +4,13 @@ import Link from 'next/link'
 import useSWR, { mutate } from 'swr'
 import { Plus, Radio, Heart, PartyPopper, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { auth, live } from '@/lib/api'
+import { live } from '@/lib/api'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { formatRelativeTime } from '@/lib/utils'
 import { useI18n } from '@/lib/i18n'
-import { isAdvancePlan } from '@/lib/plan'
-import type { User } from '@/types'
+import { useEffectiveAccess } from '@/lib/access'
 
 type SessionType = 'standard' | 'party' | 'wedding'
 
@@ -34,15 +33,13 @@ type CreateStep = 'idle' | 'choose' | 'form'
 
 export default function LiveSessionsPage() {
   const { t } = useI18n()
-  const { data: me } = useSWR<User>('me', () => auth.me())
   const { data: sessions } = useSWR('live-sessions', () => live.listSessions())
   const [step, setStep] = useState<CreateStep>('idle')
   const [form, setForm] = useState(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
 
-  const userPlan = me?.plan
-  // Tutti gli alias del tier Advance vengono accettati dal helper centralizzato.
-  const isAdvance = isAdvancePlan(userPlan)
+  // Accesso premium: piano Advance reale OPPURE Event Pass 24H attivo.
+  const { hasAdvanceAccess: isAdvance } = useEffectiveAccess()
 
   const startCreate = () => {
     setForm(EMPTY_FORM)

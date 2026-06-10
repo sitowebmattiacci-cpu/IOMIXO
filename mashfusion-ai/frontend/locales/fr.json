@@ -229,7 +229,9 @@
     "expand": "Développer",
     "collapse": "Réduire",
     "expandSidebar": "Développer la barre latérale",
-    "collapseSidebar": "Réduire la barre latérale"
+    "collapseSidebar": "Réduire la barre latérale",
+    "eventPassActive": "Vous utilisez l'Event Pass 24H",
+    "expires": "Expiration"
   },
   "settings": {
     "title": "Paramètres",

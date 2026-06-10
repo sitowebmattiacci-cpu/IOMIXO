@@ -229,7 +229,9 @@
     "expand": "Espandi",
     "collapse": "Riduci",
     "expandSidebar": "Espandi sidebar",
-    "collapseSidebar": "Riduci sidebar"
+    "collapseSidebar": "Riduci sidebar",
+    "eventPassActive": "Stai usando Event Pass 24H",
+    "expires": "Scadenza"
   },
   "settings": {
     "title": "Impostazioni",

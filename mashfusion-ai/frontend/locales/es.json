@@ -229,7 +229,9 @@
     "expand": "Expandir",
     "collapse": "Contraer",
     "expandSidebar": "Expandir barra lateral",
-    "collapseSidebar": "Contraer barra lateral"
+    "collapseSidebar": "Contraer barra lateral",
+    "eventPassActive": "Estás usando Event Pass 24H",
+    "expires": "Caduca"
   },
   "settings": {
     "title": "Ajustes",

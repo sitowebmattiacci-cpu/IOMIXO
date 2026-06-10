@@ -9,12 +9,12 @@ import {
   LayoutDashboard, Radio, UserCircle, CalendarDays, CreditCard,
   LogOut, Settings, PanelLeftClose, PanelLeftOpen, Lock,
 } from 'lucide-react'
+import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { auth, live } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
-import { planLabel, isFreePlan } from '@/lib/plan'
+import { useEffectiveAccess } from '@/lib/access'
 import toast from 'react-hot-toast'
-import type { User } from '@/types'
 import { Logo } from '@/components/Logo'
 
 const NAV_ITEMS = [
@@ -42,10 +42,7 @@ export function Sidebar() {
     } catch {}
   }, [])
 
-  const { data: user } = useSWR<User>('me', () => auth.me(), {
-    revalidateOnFocus: true,
-    dedupingInterval: 30_000,
-  })
+  const { user, effectiveLabel, isFree, hasActiveEventPass, activePass } = useEffectiveAccess()
 
   const sessionIdMatch = pathname?.match(/^\/sessions\/([^/]+)/)
   const sessionId = sessionIdMatch?.[1]
@@ -112,7 +109,7 @@ export function Sidebar() {
       <nav className={cn('flex-1 py-5 space-y-1', collapsed ? 'px-2' : 'px-3')}>
         {NAV_ITEMS.map(({ href, key, icon: Icon, proOnly }) => {
           const active = pathname === href || (href !== '/dashboard' && pathname?.startsWith(href))
-          const locked = proOnly && (!user || isFreePlan(user.plan))
+          const locked = proOnly && isFree
           const label = t(`sidebar.${key}`)
           return (
             <Link key={href} href={href}>
@@ -162,13 +159,21 @@ export function Sidebar() {
         )}>
           <p className={cn('text-[10px] uppercase tracking-wide mb-1', wedding ? 'text-[#6F6260]' : 'text-white/40')}>{t('sidebar.currentPlan')}</p>
           <div className="flex items-center justify-between">
-            <p className={cn('text-sm font-semibold', wedding ? 'text-[#2B2424]' : 'text-white')}>{planLabel(user.plan)}</p>
-            {isFreePlan(user.plan) && (
+            <p className={cn('text-sm font-semibold', wedding ? 'text-[#2B2424]' : 'text-white')}>{effectiveLabel}</p>
+            {isFree && (
               <Link href="/billing" className={cn('text-[11px]', wedding ? 'text-[#8F1D2C] hover:text-[#741625]' : 'text-purple-300 hover:text-purple-200')}>
                 {t('sidebar.upgradeToPro')}
               </Link>
             )}
           </div>
+          {hasActiveEventPass && activePass && (
+            <div className={cn('mt-2 pt-2 border-t', wedding ? 'border-[#E8B7C8]' : 'border-white/10')}>
+              <p className={cn('text-[11px] font-medium', wedding ? 'text-[#8F1D2C]' : 'text-pink-300')}>{t('sidebar.eventPassActive')}</p>
+              <p className={cn('text-[10px] mt-0.5', wedding ? 'text-[#6F6260]' : 'text-white/40')}>
+                {t('sidebar.expires')}: {format(new Date(activePass.valid_until), 'd MMM, HH:mm')}
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -196,7 +201,7 @@ export function Sidebar() {
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <p className={cn('text-xs font-medium truncate', wedding ? 'text-[#2B2424]' : 'text-white')}>{user?.full_name ?? user?.email ?? '...'}</p>
-              <p className={cn('text-[10px] capitalize', wedding ? 'text-[#6F6260]' : 'text-white/30')}>{planLabel(user?.plan)}</p>
+              <p className={cn('text-[10px] capitalize', wedding ? 'text-[#6F6260]' : 'text-white/30')}>{effectiveLabel}</p>
             </div>
           )}
           <button
