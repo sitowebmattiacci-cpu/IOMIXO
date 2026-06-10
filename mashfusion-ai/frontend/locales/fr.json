@@ -223,6 +223,24 @@
     "toggleFeatured": "Mettre/Retirer en vedette",
     "option": "Option"
   },
+  "guestVisibility": {
+    "tab": "Visibilité invités",
+    "title": "Visibilité invités",
+    "desc": "Choisissez ce que vos invités peuvent voir et utiliser depuis le QR Code.",
+    "saved": "Visibilité mise à jour",
+    "requests": "Demandes musicales",
+    "dedications": "Dédicaces",
+    "shoeGame": "Jeu de la chaussure",
+    "polls": "Sondages",
+    "photos": "Photos",
+    "liveBooth": "Live Booth",
+    "musicBattle": "Music Battle",
+    "roulette": "Roulette",
+    "emptyState": "L'expérience interactive sera bientôt disponible.",
+    "lockedTitle": "Visibilité invités verrouillée",
+    "lockedMsg": "Activez un Event Pass 24H ou passez au plan Advance pour choisir ce que voient les invités.",
+    "lockedCta": "Débloquer avec Advance"
+  },
   "sidebar": {
     "dashboard": "Tableau de bord",
     "sessionsLive": "Sessions Live",

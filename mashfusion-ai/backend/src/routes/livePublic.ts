@@ -5,7 +5,7 @@ import { canAcceptRequest } from '../services/liveLimits'
 import { hashClient, rateLimitOk } from '../utils/ipHash'
 import { markPresent } from '../services/livePresence'
 import { PLAN_LIMITS } from '../config/plans'
-import { getUserPlan } from '../services/plan'
+import { getEffectivePlan } from '../services/plan'
 import { createWeddingPhotoSignedUrl } from '../services/storage'
 
 export const livePublicRouter = Router()
@@ -16,7 +16,7 @@ livePublicRouter.get('/:slug', async (req, res, next) => {
   try {
     const { data: session, error } = await supabaseAdmin
       .from('live_sessions')
-      .select('id, dj_id, event_name, dj_name, description, is_active, public_slug, created_at, session_type, couple_names, wedding_date, venue_name, screen_mode_enabled')
+      .select('id, dj_id, event_name, dj_name, description, is_active, public_slug, created_at, session_type, couple_names, wedding_date, venue_name, screen_mode_enabled, guest_config')
       .eq('public_slug', req.params.slug).maybeSingle()
     if (error) throw new AppError(error.message, 500)
     if (!session) throw new AppError('Sessione non trovata', 404)
@@ -32,7 +32,7 @@ livePublicRouter.get('/:slug', async (req, res, next) => {
         .order('event_date', { ascending: true }).limit(10),
       supabaseAdmin.from('live_requests')
         .select('id', { count: 'exact', head: true }).eq('session_id', session.id),
-      getUserPlan(session.dj_id),
+      getEffectivePlan(session.dj_id, session.id),
     ])
 
     const limits = PLAN_LIMITS[planTier]
@@ -69,6 +69,7 @@ livePublicRouter.get('/:slug', async (req, res, next) => {
           wedding_date:         session.wedding_date ?? null,
           venue_name:           session.venue_name ?? null,
           screen_mode_enabled:  session.screen_mode_enabled ?? false,
+          guest_config:         session.guest_config ?? null,
         },
         profile,
         events,
@@ -329,7 +330,7 @@ livePublicRouter.post('/:slug/games/roulette/start', async (req, res, next) => {
       .eq('public_slug', req.params.slug).maybeSingle()
     if (!session) throw new AppError('Sessione non trovata', 404)
 
-    const plan = await getUserPlan(session.dj_id)
+    const plan = await getEffectivePlan(session.dj_id, session.id)
     if (!PLAN_LIMITS[plan].weddingGames) {
       throw new AppError('Giochi Wedding non disponibili', 402)
     }
@@ -480,7 +481,7 @@ livePublicRouter.post('/:slug/games/shoe/start', async (req, res, next) => {
       .eq('public_slug', req.params.slug).maybeSingle()
     if (!session) throw new AppError('Sessione non trovata', 404)
 
-    const plan = await getUserPlan(session.dj_id)
+    const plan = await getEffectivePlan(session.dj_id, session.id)
     if (!PLAN_LIMITS[plan].weddingGames) {
       throw new AppError('Giochi Wedding non disponibili', 402)
     }

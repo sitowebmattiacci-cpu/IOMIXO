@@ -29,6 +29,7 @@ import {
   PartyDivider, PartyEyebrow, PartyPaywall, PARTY,
 } from '@/components/party/PartyUI'
 import { useI18n } from '@/lib/i18n'
+import { useEffectiveAccess } from '@/lib/access'
 import type { User } from '@/types'
 
 export default function SessionDetailPage() {
@@ -43,6 +44,7 @@ export default function SessionDetailPage() {
   )
   const { data: me } = useSWR<User>('me', () => auth.me())
   const isFree = !me || me.plan === 'free'
+  const { hasAdvanceAccess } = useEffectiveAccess()
   const { data: requests } = useSWR(
     sessionId ? ['requests', sessionId] : null,
     () => live.listRequests(sessionId!),
@@ -51,7 +53,7 @@ export default function SessionDetailPage() {
 
   const [busyId, setBusyId] = useState<string | null>(null)
   const [togglingActive, setTogglingActive] = useState(false)
-  const [tab, setTab] = useState<'requests' | 'dedications' | 'games' | 'photos'>('requests')
+  const [tab, setTab] = useState<'requests' | 'dedications' | 'games' | 'photos' | 'guests'>('requests')
 
   if (sessionErr) {
     return (
@@ -114,6 +116,7 @@ export default function SessionDetailPage() {
       <PartyDashboard
         session={session}
         isFree={isFree}
+        hasAccess={hasAdvanceAccess}
         pending={pending}
         approved={approved}
         rejected={rejected}
@@ -230,6 +233,7 @@ export default function SessionDetailPage() {
           <WeddingTabBtn active={tab === 'dedications'} onClick={() => setTab('dedications')} icon={<Heart className="h-3.5 w-3.5" />}          label={t('wedding.tabDedications')} />
           <WeddingTabBtn active={tab === 'games'}       onClick={() => setTab('games')}       icon={<Sparkles className="h-3.5 w-3.5" />}       label={t('wedding.tabGames')} />
           <WeddingTabBtn active={tab === 'photos'}      onClick={() => setTab('photos')}      icon={<ImageIcon className="h-3.5 w-3.5" />}      label={t('wedding.tabPhotos')} />
+          <WeddingTabBtn active={tab === 'guests'}      onClick={() => setTab('guests')}      icon={<Users className="h-3.5 w-3.5" />}          label={t('guestVisibility.tab')} />
         </div>
 
         {/* Pannello attivo */}
@@ -245,6 +249,7 @@ export default function SessionDetailPage() {
           {tab === 'dedications' && <DedicationsPanel sessionId={session.id} />}
           {tab === 'games'       && <GamesPanel       sessionId={session.id} session={session} />}
           {tab === 'photos'      && <PhotosPanel      sessionId={session.id} />}
+          {tab === 'guests'      && <GuestVisibilityPanel sessionId={session.id} session={session} sessionType="wedding" hasAccess={hasAdvanceAccess} />}
         </div>
 
         <p className="text-center mt-10 text-[10px] uppercase tracking-[0.32em] text-[#B8A89A] font-medium">
@@ -853,8 +858,135 @@ function ScreenControlsPanel({ sessionId, session }: { sessionId: string; sessio
   )
 }
 
-function GamesPanel({ sessionId, session }: { sessionId: string; session: any }) {
+// ─────────────── GUEST VISIBILITY PANEL ───────────────
+// Controls which interactive functions guests see on the public live page
+// (QR Code). Independent from screen_config (TV view). Gated behind premium
+// access (Advance plan OR active Event Pass 24H).
+function GuestVisibilityPanel({
+  sessionId, session, sessionType, hasAccess,
+}: { sessionId: string; session: any; sessionType: 'wedding' | 'party'; hasAccess: boolean }) {
   const { t } = useI18n()
+  const [saving, setSaving] = useState(false)
+  const cfg: Record<string, boolean | undefined> = session?.guest_config ?? {}
+
+  // Song requests are visible by default; every other function is hidden until enabled.
+  const isOn = (key: string) => (key === 'requests' ? cfg.requests !== false : cfg[key] === true)
+
+  const toggle = async (key: string) => {
+    setSaving(true)
+    try {
+      const next = { ...cfg, [key]: !isOn(key) }
+      await live.updateSession(sessionId, { guest_config: next })
+      await mutate(['session', sessionId])
+      toast.success(t('guestVisibility.saved'))
+    } catch (e: any) {
+      toast.error(e?.message ?? t('common.errorGeneric'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const weddingItems = [
+    { key: 'requests',    icon: <Music2 className="h-4 w-4" />,     label: t('guestVisibility.requests') },
+    { key: 'dedications', icon: <Heart className="h-4 w-4" />,      label: t('guestVisibility.dedications') },
+    { key: 'shoe_game',   icon: <Footprints className="h-4 w-4" />, label: t('guestVisibility.shoeGame') },
+    { key: 'polls',       icon: <ListChecks className="h-4 w-4" />, label: t('guestVisibility.polls') },
+    { key: 'photos',      icon: <ImageIcon className="h-4 w-4" />,  label: t('guestVisibility.photos') },
+    { key: 'live_booth',  icon: <Camera className="h-4 w-4" />,     label: t('guestVisibility.liveBooth') },
+  ]
+  const partyItems = [
+    { key: 'requests',     icon: <Music2 className="h-4 w-4" />,     label: t('guestVisibility.requests') },
+    { key: 'live_booth',   icon: <Camera className="h-4 w-4" />,     label: t('guestVisibility.liveBooth') },
+    { key: 'music_battle', icon: <ListChecks className="h-4 w-4" />, label: t('guestVisibility.musicBattle') },
+    { key: 'roulette',     icon: <Sparkles className="h-4 w-4" />,   label: t('guestVisibility.roulette') },
+    { key: 'photos',       icon: <ImageIcon className="h-4 w-4" />,  label: t('guestVisibility.photos') },
+  ]
+  const items = sessionType === 'wedding' ? weddingItems : partyItems
+
+  // ── Party theme ──────────────────────────────────────────────
+  if (sessionType === 'party') {
+    if (!hasAccess) {
+      return (
+        <PartyPaywall
+          title={t('guestVisibility.lockedTitle')}
+          message={t('guestVisibility.lockedMsg')}
+        />
+      )
+    }
+    return (
+      <PartyCard>
+        <PartyEyebrow>{t('guestVisibility.tab')}</PartyEyebrow>
+        <h2 className="text-2xl font-black text-white mt-2">{t('guestVisibility.title')}</h2>
+        <p className="text-sm text-white/60 mt-1 mb-5">{t('guestVisibility.desc')}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {items.map((it) => (
+            <label
+              key={it.key}
+              className="flex items-center gap-2.5 cursor-pointer select-none rounded-xl bg-white/5 border border-white/10 px-4 py-3 hover:border-[#FF7AB6]/50 transition"
+            >
+              <input
+                type="checkbox"
+                checked={isOn(it.key)}
+                onChange={() => toggle(it.key)}
+                disabled={saving}
+                className="rounded border-white/20 bg-transparent text-[#FF3D8A] focus:ring-[#FF3D8A]"
+              />
+              <span className="text-sm text-white flex items-center gap-1.5">
+                <span className="text-[#FF7AB6]">{it.icon}</span>
+                {it.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </PartyCard>
+    )
+  }
+
+  // ── Wedding theme ────────────────────────────────────────────
+  if (!hasAccess) {
+    return (
+      <WeddingCard tone="cream">
+        <h2 className="font-wedding text-2xl text-wedding-ink mb-2 inline-flex items-center gap-2">
+          <Users className="h-5 w-5 text-wedding-gold" /> {t('guestVisibility.title')}
+        </h2>
+        <p className="text-sm text-wedding-ink/70 mb-4">{t('guestVisibility.lockedMsg')}</p>
+        <Link href="/billing">
+          <WeddingButton>{t('guestVisibility.lockedCta')}</WeddingButton>
+        </Link>
+      </WeddingCard>
+    )
+  }
+  return (
+    <WeddingCard tone="cream">
+      <h2 className="font-wedding text-2xl text-wedding-ink mb-2 inline-flex items-center gap-2">
+        <Users className="h-5 w-5 text-wedding-gold" /> {t('guestVisibility.title')}
+      </h2>
+      <p className="text-xs text-wedding-ink/60 mb-5">{t('guestVisibility.desc')}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {items.map((it) => (
+          <label
+            key={it.key}
+            className="flex items-center gap-2.5 cursor-pointer select-none rounded-xl bg-white border border-wedding-champagne px-4 py-3 hover:border-wedding-gold/50 transition"
+          >
+            <input
+              type="checkbox"
+              checked={isOn(it.key)}
+              onChange={() => toggle(it.key)}
+              disabled={saving}
+              className="rounded border-wedding-champagne text-wedding-gold focus:ring-wedding-gold"
+            />
+            <span className="text-sm text-wedding-ink flex items-center gap-1.5">
+              <span className="text-wedding-gold">{it.icon}</span>
+              {it.label}
+            </span>
+          </label>
+        ))}
+      </div>
+    </WeddingCard>
+  )
+}
+
+function GamesPanel({ sessionId, session }: { sessionId: string; session: any }) {  const { t } = useI18n()
   const [running, setRunning] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const [categories, setCategories] = useState<string[]>(['soft', 'party'])
@@ -1619,12 +1751,12 @@ const PARTY_PENITENZE_DEFAULT = [
 ]
 
 function PartyDashboard({
-  session, isFree, pending, approved, rejected, busyId,
+  session, isFree, hasAccess, pending, approved, rejected, busyId,
   togglingActive, onToggleActive, onDeleteSession,
   onUpdateRequest, onDeleteRequest,
 }: any) {
   const { t } = useI18n()
-  const [tab, setTab] = useState<'requests' | 'booth' | 'battle' | 'games' | 'screen'>('requests')
+  const [tab, setTab] = useState<'requests' | 'booth' | 'battle' | 'games' | 'screen' | 'guests'>('requests')
 
   const envBase = process.env.NEXT_PUBLIC_PUBLIC_BASE_URL
   const origin = envBase || (typeof window !== 'undefined' ? window.location.origin : 'https://www.iomixo.com')
@@ -1693,6 +1825,7 @@ function PartyDashboard({
           <PartyTabBtn active={tab === 'battle'} onClick={() => setTab('battle')} icon={<ListChecks className="h-3.5 w-3.5" />}>Music Battle</PartyTabBtn>
           <PartyTabBtn active={tab === 'games'} onClick={() => setTab('games')} icon={<Sparkles className="h-3.5 w-3.5" />}>Party Games</PartyTabBtn>
           <PartyTabBtn active={tab === 'screen'} onClick={() => setTab('screen')} icon={<Tv className="h-3.5 w-3.5" />}>Schermo</PartyTabBtn>
+          <PartyTabBtn active={tab === 'guests'} onClick={() => setTab('guests')} icon={<Users className="h-3.5 w-3.5" />}>{t('guestVisibility.tab')}</PartyTabBtn>
         </div>
 
         {/* QR card on the right (visible on requests tab only, to keep things focused) */}
@@ -1724,6 +1857,7 @@ function PartyDashboard({
         {tab === 'battle' && <PartyBattlePanel sessionId={session.id} isFree={isFree} />}
         {tab === 'games' && <PartyGamesPanel session={session} isFree={isFree} onJumpToBattle={() => setTab('battle')} />}
         {tab === 'screen' && <PartyScreenPanel session={session} screenUrl={screenUrl} />}
+        {tab === 'guests' && <GuestVisibilityPanel sessionId={session.id} session={session} sessionType="party" hasAccess={hasAccess} />}
       </div>
     </PartyShell>
   )

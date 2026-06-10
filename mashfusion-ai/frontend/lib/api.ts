@@ -167,6 +167,23 @@ export type LiveRequestStatus = 'pending' | 'approved' | 'rejected'
 export type SessionType = 'standard' | 'party' | 'wedding'
 export type PlanTier = 'free' | 'pro' | 'wedding'
 
+/**
+ * Guest Visibility — controls which interactive functions guests see/use on
+ * the public live page (QR Code). Independent from screen_config (TV view).
+ * Premium gating (Advance / Event Pass) still applies on top. When null or a
+ * key is undefined, only song requests are visible by default.
+ */
+export interface GuestConfig {
+  requests?: boolean
+  photos?: boolean
+  dedications?: boolean
+  shoe_game?: boolean
+  polls?: boolean
+  live_booth?: boolean
+  music_battle?: boolean
+  roulette?: boolean
+}
+
 export interface LiveSession {
   id: string
   dj_id: string
@@ -197,6 +214,7 @@ export interface LiveSession {
     show_polls?: boolean
     couple_font?: 'cormorant' | 'playfair' | 'great-vibes' | 'dancing' | 'cinzel' | 'tangerine'
   } | null
+  guest_config?: GuestConfig | null
 }
 
 export interface LiveRequest {
@@ -247,6 +265,7 @@ export interface PublicLivePayload {
     wedding_date: string | null
     venue_name: string | null
     screen_mode_enabled: boolean
+    guest_config: GuestConfig | null
   }
   profile: Omit<DjProfile, 'public_slug' | 'id' | 'user_id'> | null
   events: Array<Omit<DjEvent, 'is_public'>>
@@ -290,7 +309,7 @@ export const live = {
       return data.data
     } catch (e) { apiError(e) }
   },
-  async updateSession(id: string, patch: Partial<Pick<LiveSession, 'event_name' | 'dj_name' | 'description' | 'is_active' | 'couple_names' | 'wedding_date' | 'venue_name' | 'screen_mode_enabled' | 'screen_config' | 'roulette_penitenze' | 'shoe_game_questions'>>): Promise<LiveSession> {
+  async updateSession(id: string, patch: Partial<Pick<LiveSession, 'event_name' | 'dj_name' | 'description' | 'is_active' | 'couple_names' | 'wedding_date' | 'venue_name' | 'screen_mode_enabled' | 'screen_config' | 'guest_config' | 'roulette_penitenze' | 'shoe_game_questions'>>): Promise<LiveSession> {
     try {
       const { data } = await getClient().patch<{ data: LiveSession }>(`/api/live/sessions/${id}`, patch)
       return data.data

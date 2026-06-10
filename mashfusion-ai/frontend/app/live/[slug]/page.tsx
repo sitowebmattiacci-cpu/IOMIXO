@@ -107,6 +107,13 @@ export default function PublicLivePage() {
   const isWedding    = session.session_type === 'wedding'
   const isParty      = session.session_type === 'party'
 
+  // Guest Visibility: DJ-controlled flags from guest_config (independent from
+  // plan gating in `features`). Song requests are visible by default; every
+  // other function stays hidden until the DJ enables it. Standard sessions
+  // ignore guest_config entirely (always show the request form).
+  const gc = session.guest_config ?? {}
+  const guestOn = (key: string) => (key === 'requests' ? gc.requests !== false : (gc as Record<string, boolean | undefined>)[key] === true)
+
   if (isWedding) {
     return (
       <WeddingShell>
@@ -146,6 +153,7 @@ export default function PublicLivePage() {
           )}
 
           {/* Song request form (wedding-styled) */}
+          {guestOn('requests') && (
           <WeddingCard tone="ivory" className="mb-8">
             <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8F1D2C] mb-5 text-center">
               {t('live.title')}
@@ -184,12 +192,24 @@ export default function PublicLivePage() {
               </WeddingButton>
             </form>
           </WeddingCard>
+          )}
 
-          {features.weddingGames && <ShoeGamePublic slug={slug!} />}
-          {features.livePolls && <PollPublic slug={slug!} />}
-          {features.weddingGames && <BestPhotoPublic slug={slug!} />}
-          {features.weddingDedications && <DedicationsPublic slug={slug!} />}
-          {features.guestPhotoAlbum && <LiveBoothCard slug={slug!} session={session} />}
+          {!guestOn('requests')
+            && !(features.weddingGames && guestOn('shoe_game'))
+            && !(features.livePolls && guestOn('polls'))
+            && !(features.weddingGames && guestOn('photos'))
+            && !(features.weddingDedications && guestOn('dedications'))
+            && !(features.guestPhotoAlbum && guestOn('live_booth')) && (
+            <WeddingCard tone="cream" className="mb-8 text-center text-sm text-[#6F6260]">
+              {t('guestVisibility.emptyState')}
+            </WeddingCard>
+          )}
+
+          {features.weddingGames && guestOn('shoe_game') && <ShoeGamePublic slug={slug!} />}
+          {features.livePolls && guestOn('polls') && <PollPublic slug={slug!} />}
+          {features.weddingGames && guestOn('photos') && <BestPhotoPublic slug={slug!} />}
+          {features.weddingDedications && guestOn('dedications') && <DedicationsPublic slug={slug!} />}
+          {features.guestPhotoAlbum && guestOn('live_booth') && <LiveBoothCard slug={slug!} session={session} />}
 
           {myRequests && myRequests.length > 0 && (
             <WeddingSection
@@ -251,6 +271,7 @@ export default function PublicLivePage() {
           <Banner icon={<AlertTriangle className="h-4 w-4" />}>Limite richieste raggiunto per questa sessione.</Banner>
         )}
 
+        {(!isParty || guestOn('requests')) && (
         <form onSubmit={submit} className="glass rounded-2xl p-5 space-y-3">
           {profile?.avatar_url && (
             <div className="flex justify-center -mt-1 mb-1">
@@ -306,6 +327,7 @@ export default function PublicLivePage() {
             </p>
           )}
         </form>
+        )}
 
         {myRequests && myRequests.length > 0 && (
           <div className="mt-8">
@@ -332,7 +354,15 @@ export default function PublicLivePage() {
           </div>
         )}
 
-        {isParty && <PartyLiveSections slug={slug!} />}
+        {isParty && (
+          <PartyLiveSections
+            slug={slug!}
+            showBooth={features.guestPhotoAlbum && guestOn('live_booth')}
+            showBattle={guestOn('music_battle')}
+            showRoulette={guestOn('roulette')}
+            showPhotos={guestOn('photos')}
+          />
+        )}
 
         {isWedding && features.weddingGames && <ShoeGamePublic slug={slug!} />}
         {isWedding && features.livePolls && <PollPublic slug={slug!} />}
@@ -665,13 +695,21 @@ function LiveBoothCard({ slug, session }: { slug: string; session: any }) {
 // PARTY MODE — guest-facing live sections (mobile-first)
 // ════════════════════════════════════════════════════════════════
 
-function PartyLiveSections({ slug }: { slug: string }) {
+function PartyLiveSections({
+  slug, showBooth, showBattle, showRoulette, showPhotos,
+}: {
+  slug: string
+  showBooth: boolean
+  showBattle: boolean
+  showRoulette: boolean
+  showPhotos: boolean
+}) {
   return (
     <div className="mt-8 space-y-5">
-      <PartyBoothCTA slug={slug} />
-      <PartyMusicBattle slug={slug} />
-      <PartyRouletteResult slug={slug} />
-      <PartyApprovedPhotos slug={slug} />
+      {showBooth && <PartyBoothCTA slug={slug} />}
+      {showBattle && <PartyMusicBattle slug={slug} />}
+      {showRoulette && <PartyRouletteResult slug={slug} />}
+      {showPhotos && <PartyApprovedPhotos slug={slug} />}
     </div>
   )
 }

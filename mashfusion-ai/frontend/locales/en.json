@@ -223,6 +223,24 @@
     "toggleFeatured": "Toggle featured",
     "option": "Option"
   },
+  "guestVisibility": {
+    "tab": "Guest visibility",
+    "title": "Guest visibility",
+    "desc": "Choose what your guests can see and use from the QR Code.",
+    "saved": "Visibility updated",
+    "requests": "Song requests",
+    "dedications": "Dedications",
+    "shoeGame": "Shoe Game",
+    "polls": "Polls",
+    "photos": "Photos",
+    "liveBooth": "Live Booth",
+    "musicBattle": "Music Battle",
+    "roulette": "Roulette",
+    "emptyState": "The interactive experience will be available shortly.",
+    "lockedTitle": "Guest visibility locked",
+    "lockedMsg": "Activate a 24H Event Pass or upgrade to the Advance plan to choose what guests see.",
+    "lockedCta": "Unlock with Advance"
+  },
   "sidebar": {
     "dashboard": "Dashboard",
     "sessionsLive": "Live Sessions",

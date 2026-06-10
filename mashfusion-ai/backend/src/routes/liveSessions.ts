@@ -100,7 +100,7 @@ liveSessionsRouter.patch('/sessions/:id', requireAuth, async (req, res, next) =>
   try {
     const {
       event_name, dj_name, description, is_active,
-      couple_names, wedding_date, venue_name, screen_mode_enabled, screen_config, roulette_penitenze, shoe_game_questions,
+      couple_names, wedding_date, venue_name, screen_mode_enabled, screen_config, guest_config, roulette_penitenze, shoe_game_questions,
     } = req.body ?? {}
     const patch: Record<string, unknown> = {}
     if (typeof event_name  === 'string')  patch.event_name  = event_name
@@ -112,6 +112,7 @@ liveSessionsRouter.patch('/sessions/:id', requireAuth, async (req, res, next) =>
     if (typeof venue_name           === 'string')  patch.venue_name           = venue_name
     if (typeof screen_mode_enabled  === 'boolean') patch.screen_mode_enabled  = screen_mode_enabled
     if (typeof screen_config        === 'object')  patch.screen_config        = screen_config
+    if (typeof guest_config         === 'object')  patch.guest_config         = guest_config
     if (roulette_penitenze !== undefined)          patch.roulette_penitenze   = roulette_penitenze
     if (shoe_game_questions !== undefined)         patch.shoe_game_questions  = shoe_game_questions
 
