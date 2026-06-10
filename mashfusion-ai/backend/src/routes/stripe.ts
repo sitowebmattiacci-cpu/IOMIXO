@@ -184,8 +184,41 @@ stripeRouter.post('/webhook', async (req: Request, res: Response) => {
         if (session.mode === 'subscription') {
           await handleCheckoutComplete(session)
         } else if (session.mode === 'payment') {
+          // One-time Event Pass 24H. Only activates when payment_status === 'paid'.
           await handleEventPassPayment(session)
         }
+        break
+      }
+
+      // Delayed/async payment methods (e.g. bank debits) confirm later than the
+      // initial redirect. Activate the Event Pass only once the bank confirms.
+      case 'checkout.session.async_payment_succeeded': {
+        const session = event.data.object as Stripe.Checkout.Session
+        if (session.mode === 'payment') {
+          await handleEventPassPayment(session)
+        }
+        break
+      }
+
+      // Async payment ultimately failed → never grant access.
+      case 'checkout.session.async_payment_failed': {
+        const session = event.data.object as Stripe.Checkout.Session
+        logger.warn('Checkout async payment failed; no access granted', {
+          sessionId: session.id,
+          userId: session.metadata?.user_id,
+          paymentStatus: session.payment_status,
+        })
+        break
+      }
+
+      // Card/charge declined at the payment-intent level → no access.
+      case 'payment_intent.payment_failed': {
+        const pi = event.data.object as Stripe.PaymentIntent
+        logger.warn('Payment intent failed; no access granted', {
+          paymentIntentId: pi.id,
+          userId: pi.metadata?.user_id,
+          lastError: pi.last_payment_error?.message,
+        })
         break
       }
 
@@ -196,6 +229,7 @@ stripeRouter.post('/webhook', async (req: Request, res: Response) => {
         break
       }
 
+      case 'invoice.paid':
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice
         await handlePaymentSucceeded(invoice)
@@ -292,6 +326,17 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.user_id
   if (!userId) return
 
+  // Never grant the plan unless Stripe actually collected payment. For trials
+  // the first invoice may legitimately require no payment.
+  if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') {
+    logger.warn('Subscription checkout completed but payment not confirmed; skipping activation', {
+      sessionId: session.id,
+      userId,
+      paymentStatus: session.payment_status,
+    })
+    return
+  }
+
   const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
   const priceId      = subscription.items.data[0]?.price.id
   const plan         = normalizePlan(PLAN_PRICE_MAP[priceId] ?? 'pro')
@@ -385,6 +430,19 @@ async function handleEventPassPayment(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.user_id
   if (!userId) {
     logger.warn('Event Pass payment: missing user_id in metadata')
+    return
+  }
+
+  // SECURITY: only activate the pass once Stripe confirms the money was actually
+  // collected. A completed checkout session does NOT mean the payment succeeded
+  // (declined cards, async methods, etc.). Without this guard a failed payment
+  // would still unlock premium access.
+  if (session.payment_status !== 'paid') {
+    logger.warn('Event Pass checkout completed but payment not paid; skipping activation', {
+      sessionId: session.id,
+      userId,
+      paymentStatus: session.payment_status,
+    })
     return
   }
 
