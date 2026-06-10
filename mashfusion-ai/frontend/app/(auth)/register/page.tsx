@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, CheckCircle2, Send } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase'
@@ -10,6 +11,7 @@ import { useI18n } from '@/lib/i18n'
 import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
+  const router = useRouter()
   const { t } = useI18n()
   const [fullName, setFullName] = useState('')
   const [email,    setEmail]    = useState('')
@@ -34,7 +36,7 @@ export default function RegisterPage() {
     if (password.length < 8) { toast.error(t('auth.passwordMin8')); return }
     setLoading(true)
     try {
-      const { error } = await getSupabaseClient().auth.signUp({
+      const { data, error } = await getSupabaseClient().auth.signUp({
         email:    email.trim().toLowerCase(),
         password,
         options:  {
@@ -43,6 +45,14 @@ export default function RegisterPage() {
         },
       })
       if (error) throw error
+      // When "Confirm email" is OFF in Supabase, signUp returns an active
+      // session: log the user straight into the dashboard. Only fall back to
+      // the check-your-email screen when no session is returned (Confirm email ON).
+      if (data.session) {
+        toast.success(t('auth.loginSuccess'))
+        router.push('/dashboard')
+        return
+      }
       setDone(true)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t('auth.registrationFailed'))
