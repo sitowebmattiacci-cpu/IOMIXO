@@ -40,14 +40,21 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 
 const mask = (id) => (id ? `${id.slice(0, 8)}…${id.slice(-4)}` : '-')
 
-async function isPaid(paymentIntentId) {
-  if (!paymentIntentId) return false
+// Returns the real settlement state of a PaymentIntent:
+//   'paid'     → succeeded and not refunded → access stays active
+//   'refunded' → succeeded but fully/partially refunded → revoke access
+//   'unpaid'   → never succeeded, or does not exist in this environment
+async function settlementState(paymentIntentId) {
+  if (!paymentIntentId) return 'unpaid'
   try {
-    const pi = await stripe.paymentIntents.retrieve(paymentIntentId)
-    return pi.status === 'succeeded'
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId, { expand: ['latest_charge'] })
+    if (pi.status !== 'succeeded') return 'unpaid'
+    const charge = typeof pi.latest_charge === 'object' ? pi.latest_charge : null
+    if (charge && (charge.refunded || (charge.amount_refunded || 0) > 0)) return 'refunded'
+    return 'paid'
   } catch (err) {
     // resource_missing → PI does not exist in this Stripe environment → not paid.
-    if (err instanceof Stripe.errors.StripeError && err.code === 'resource_missing') return false
+    if (err instanceof Stripe.errors.StripeError && err.code === 'resource_missing') return 'unpaid'
     throw err
   }
 }
@@ -69,31 +76,36 @@ async function main() {
 
   console.log(`== Active event_passes: ${passes.length} ==\n`)
 
-  let toCancel = 0
+  let toFix = 0
   for (const p of passes) {
-    const paid = await isPaid(p.stripe_payment_intent_id)
+    const state = await settlementState(p.stripe_payment_intent_id)
     const amount = p.amount_cents != null ? `${p.amount_cents / 100} ${(p.currency || '').toUpperCase()}` : '?'
-    const tag = paid ? 'PAID ✅ keep' : 'NOT PAID ❌ cancel'
+    // Map the Stripe settlement state to the target DB status.
+    //   paid     → keep active
+    //   refunded → 'refunded'
+    //   unpaid   → 'expired' (phantom pass that should never have been granted)
+    const target = state === 'paid' ? null : state === 'refunded' ? 'refunded' : 'expired'
+    const tag = state === 'paid' ? 'PAID ✅ keep' : state === 'refunded' ? 'REFUNDED ↩︎ revoke' : 'NOT PAID ❌ revoke'
     console.log(`  [${tag}] pass=${mask(p.id)} user=${mask(p.user_id)} pi=${mask(p.stripe_payment_intent_id)} | ${amount} | valid_until=${p.valid_until}`)
 
-    if (!paid) {
-      toCancel++
+    if (target) {
+      toFix++
       if (APPLY) {
         const { error: upErr } = await supabase
           .from('event_passes')
-          .update({ status: 'expired' })
+          .update({ status: target })
           .eq('id', p.id)
-        if (upErr) console.error(`     ⚠️  failed to expire ${mask(p.id)}:`, upErr.message)
-        else console.log(`     → expired`)
+        if (upErr) console.error(`     ⚠️  failed to set ${target} on ${mask(p.id)}:`, upErr.message)
+        else console.log(`     → ${target}`)
       }
     }
   }
 
   console.log(`\n== Summary ==`)
   console.log(`  active passes checked : ${passes.length}`)
-  console.log(`  not paid (phantom)    : ${toCancel}`)
-  console.log(`  ${APPLY ? 'canceled' : 'would cancel'}              : ${toCancel}`)
-  if (!APPLY && toCancel > 0) console.log(`\nRe-run with --apply to cancel the phantom passes.`)
+  console.log(`  to revoke             : ${toFix}`)
+  console.log(`  ${APPLY ? 'revoked' : 'would revoke'}               : ${toFix}`)
+  if (!APPLY && toFix > 0) console.log(`\nRe-run with --apply to revoke these passes.`)
 }
 
 main().catch((err) => {
