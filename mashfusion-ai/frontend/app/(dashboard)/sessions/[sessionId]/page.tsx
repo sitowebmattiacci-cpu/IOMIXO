@@ -248,7 +248,7 @@ export default function SessionDetailPage() {
         </div>
 
         <p className="text-center mt-10 text-[10px] uppercase tracking-[0.32em] text-[#B8A89A] font-medium">
-          {t('weddingPanels.poweredBy')} <span className="text-[#8F1D2C] font-semibold">{t('weddingPanels.proWeddingEdition')}</span>
+          {t('weddingPanels.poweredBy')} <span className="text-[#8F1D2C] font-semibold">IOMIXO Live Hub</span>
         </p>
       </div>
     </div>
