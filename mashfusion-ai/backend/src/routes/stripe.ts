@@ -222,6 +222,13 @@ stripeRouter.post('/webhook', async (req: Request, res: Response) => {
         break
       }
 
+      // Refund (full or partial) on a one-time Event Pass charge → revoke access.
+      case 'charge.refunded': {
+        const charge = event.data.object as Stripe.Charge
+        await handleChargeRefunded(charge)
+        break
+      }
+
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription
@@ -487,3 +494,46 @@ async function handleEventPassPayment(session: Stripe.Checkout.Session) {
 
   logger.info(`Event Pass created for user ${userId}, valid until ${validUntil.toISOString()}`)
 }
+
+// ── Refund handler ───────────────────────────────────────────
+// When a one-time Event Pass charge is refunded (full or partial), revoke the
+// related active pass so it no longer grants premium access. Also mark the
+// payment row as refunded. Subscription invoice refunds are handled separately
+// by the subscription lifecycle events and are ignored here.
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  const paymentIntentId = typeof charge.payment_intent === 'string'
+    ? charge.payment_intent
+    : charge.payment_intent?.id
+  if (!paymentIntentId) {
+    logger.warn('charge.refunded without payment_intent; nothing to revoke')
+    return
+  }
+
+  const { data: passes, error } = await supabaseAdmin
+    .from('event_passes')
+    .select('id')
+    .eq('stripe_payment_intent_id', paymentIntentId)
+    .eq('status', 'active')
+
+  if (error) {
+    logger.error('charge.refunded: failed to query event_passes', { paymentIntentId, error })
+    return
+  }
+
+  if (passes && passes.length > 0) {
+    const { error: upErr } = await supabaseAdmin
+      .from('event_passes')
+      .update({ status: 'refunded' })
+      .eq('stripe_payment_intent_id', paymentIntentId)
+      .eq('status', 'active')
+    if (upErr) logger.error('charge.refunded: failed to revoke event pass', { paymentIntentId, error: upErr })
+    else logger.info(`charge.refunded: revoked ${passes.length} event pass(es)`, { paymentIntentId })
+  }
+
+  // Keep the payments ledger consistent (no-op if the row does not exist).
+  await supabaseAdmin
+    .from('payments')
+    .update({ status: 'refunded' })
+    .eq('stripe_payment_intent_id', paymentIntentId)
+}
+
