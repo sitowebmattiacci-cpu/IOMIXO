@@ -783,7 +783,7 @@ function ScreenControlsPanel({ sessionId, session }: { sessionId: string; sessio
         <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-xl bg-white border border-wedding-champagne px-4 py-3 hover:border-wedding-gold/50 transition">
           <input
             type="checkbox"
-            checked={screenConfig.show_photos ?? true}
+            checked={screenConfig.show_photos ?? false}
             onChange={() => toggle('show_photos')}
             disabled={saving}
             className="rounded border-wedding-champagne text-wedding-gold focus:ring-wedding-gold"
@@ -797,7 +797,7 @@ function ScreenControlsPanel({ sessionId, session }: { sessionId: string; sessio
         <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-xl bg-white border border-wedding-champagne px-4 py-3 hover:border-wedding-gold/50 transition">
           <input
             type="checkbox"
-            checked={screenConfig.show_dedications ?? true}
+            checked={screenConfig.show_dedications ?? false}
             onChange={() => toggle('show_dedications')}
             disabled={saving}
             className="rounded border-wedding-champagne text-wedding-gold focus:ring-wedding-gold"
@@ -811,7 +811,7 @@ function ScreenControlsPanel({ sessionId, session }: { sessionId: string; sessio
         <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-xl bg-white border border-wedding-champagne px-4 py-3 hover:border-wedding-gold/50 transition">
           <input
             type="checkbox"
-            checked={screenConfig.show_roulette ?? true}
+            checked={screenConfig.show_roulette ?? false}
             onChange={() => toggle('show_roulette')}
             disabled={saving}
             className="rounded border-wedding-champagne text-wedding-gold focus:ring-wedding-gold"
@@ -825,7 +825,7 @@ function ScreenControlsPanel({ sessionId, session }: { sessionId: string; sessio
         <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-xl bg-white border border-wedding-champagne px-4 py-3 hover:border-wedding-gold/50 transition">
           <input
             type="checkbox"
-            checked={screenConfig.show_shoe_game ?? true}
+            checked={screenConfig.show_shoe_game ?? false}
             onChange={() => toggle('show_shoe_game')}
             disabled={saving}
             className="rounded border-wedding-champagne text-wedding-gold focus:ring-wedding-gold"
@@ -839,7 +839,7 @@ function ScreenControlsPanel({ sessionId, session }: { sessionId: string; sessio
         <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-xl bg-white border border-wedding-champagne px-4 py-3 hover:border-wedding-gold/50 transition">
           <input
             type="checkbox"
-            checked={screenConfig.show_polls ?? true}
+            checked={screenConfig.show_polls ?? false}
             onChange={() => toggle('show_polls')}
             disabled={saving}
             className="rounded border-wedding-champagne text-wedding-gold focus:ring-wedding-gold"

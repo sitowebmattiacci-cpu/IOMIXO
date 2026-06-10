@@ -2,27 +2,35 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
+import { format } from 'date-fns'
 import { Plus, Radio, ArrowRight, UserCircle, CalendarDays, Crown } from 'lucide-react'
-import { auth, live } from '@/lib/api'
+import { live } from '@/lib/api'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { formatRelativeTime } from '@/lib/utils'
 import { useI18n } from '@/lib/i18n'
-import { planLabel, isFreePlan } from '@/lib/plan'
-import type { User } from '@/types'
+import { useEffectiveAccess } from '@/lib/access'
 
-function PlanLabel({ plan }: { plan: string }) {
-  return <span className="capitalize">{planLabel(plan)}</span>
+/** Tempo rimanente leggibile (es. "2h 30m") dato un timestamp ISO futuro. */
+function formatRemaining(validUntil: string | null): string | null {
+  if (!validUntil) return null
+  const ms = new Date(validUntil).getTime() - Date.now()
+  if (ms <= 0) return null
+  const totalMinutes = Math.floor(ms / 60_000)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`
 }
 
 function DashboardInner() {
   const { t } = useI18n()
-  const { data: me }       = useSWR<User>('me', () => auth.me())
+  const { user: me, isFree, effectiveLabel, hasActiveEventPass, passValidUntil } = useEffectiveAccess()
   const { data: sessions } = useSWR('live-sessions', () => live.listSessions())
 
-  const isFree = isFreePlan(me?.plan)
   const activeCount = sessions?.filter((s) => s.is_active).length ?? 0
+  const planDisplay = hasActiveEventPass ? t('dashboard.planEventPass') : effectiveLabel
+  const remaining = hasActiveEventPass ? formatRemaining(passValidUntil) : null
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-8 max-w-5xl mx-auto w-full">
@@ -47,10 +55,25 @@ function DashboardInner() {
           </div>
           <div>
             <p className="text-xs text-white/40">{t('dashboard.currentPlan')}</p>
-            <p className="font-semibold text-white"><PlanLabel plan={me?.plan ?? 'free'} /></p>
+            <p className="font-semibold text-white">{planDisplay}</p>
+            {hasActiveEventPass && (
+              <p className="text-[11px] text-pink-300 mt-0.5">
+                {t('dashboard.eventPassTempActive')}
+                {passValidUntil && (
+                  <span className="text-white/40">
+                    {' · '}{t('dashboard.eventPassExpires')}: {format(new Date(passValidUntil), 'd MMM, HH:mm')}
+                    {remaining && ` · ${t('dashboard.eventPassRemaining')}: ${remaining}`}
+                  </span>
+                )}
+              </p>
+            )}
           </div>
         </div>
-        {isFree ? (
+        {hasActiveEventPass ? (
+          <Link href="/billing">
+            <Button size="sm">{t('dashboard.subscribeCta')}</Button>
+          </Link>
+        ) : isFree ? (
           <Link href="/billing">
             <Button size="sm">{t('dashboard.upgradeToPro')}</Button>
           </Link>
@@ -72,10 +95,19 @@ function DashboardInner() {
           <p className="text-2xl font-black text-white mt-1">{activeCount}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-xs text-white/40">{t('dashboard.freeLimit')}</p>
-          <p className="text-2xl font-black text-white mt-1">
-            {isFree ? t('dashboard.freeLimitValue') : t('dashboard.unlimited')}
-          </p>
+          {hasActiveEventPass ? (
+            <>
+              <p className="text-xs text-white/40">{t('dashboard.eventPassAccessTitle')}</p>
+              <p className="text-sm font-bold text-white mt-1 leading-snug">{t('dashboard.eventPassAccessValue')}</p>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-white/40">{t('dashboard.freeLimit')}</p>
+              <p className="text-2xl font-black text-white mt-1">
+                {isFree ? t('dashboard.freeLimitValue') : t('dashboard.unlimited')}
+              </p>
+            </>
+          )}
         </Card>
       </div>
 

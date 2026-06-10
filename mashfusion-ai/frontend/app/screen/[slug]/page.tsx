@@ -119,14 +119,15 @@ export default function ScreenModePage() {
   const shoeIdx: number = shoe_game?.config?.current_index ?? 0
 
   // Sezioni abilitate dal DJ nel pannello "Visibilità Schermo".
-  // Se è ON il pannello viene mostrato anche se ancora non c'è contenuto
-  // (es. dediche o sondaggi in attesa) — così il DJ vede subito il layout.
+  // Default = TUTTO NASCOSTO: un blocco appare solo quando il DJ lo spunta
+  // esplicitamente (show_* === true). Senza configurazione salvata lo schermo
+  // parte pulito mostrando solo nomi sposi / data / titolo evento.
   const cfg = session.screen_config ?? {}
-  const enabledRoulette   = cfg.show_roulette   !== false
-  const enabledShoeGame   = cfg.show_shoe_game  !== false
-  const enabledPolls      = cfg.show_polls      !== false
-  const enabledDedications = cfg.show_dedications !== false
-  const enabledPhotos     = cfg.show_photos     !== false
+  const enabledRoulette   = cfg.show_roulette   === true
+  const enabledShoeGame   = cfg.show_shoe_game  === true
+  const enabledPolls      = cfg.show_polls      === true
+  const enabledDedications = cfg.show_dedications === true
+  const enabledPhotos     = cfg.show_photos     === true
 
   const activeSections = [
     enabledRoulette   ? 'roulette'    : null,
