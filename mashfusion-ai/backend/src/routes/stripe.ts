@@ -211,6 +211,53 @@ function buildPlanPriceMap(): Record<string, PlanTier> {
 }
 const PLAN_PRICE_MAP = buildPlanPriceMap()
 
+// Higher number = higher tier. Used to pick the best active plan a customer holds.
+const PLAN_RANK: Record<PlanTier, number> = { free: 0, pro: 1, wedding: 2 }
+
+// When a customer switches plan we keep only the newest subscription active and
+// cancel every other still-active one, so they are never billed for two plans.
+async function cancelOtherActiveSubscriptions(customerId: string, keepSubId: string) {
+  if (!customerId) return
+  const subs = await stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 100 })
+  for (const s of subs.data) {
+    if (s.id === keepSubId) continue
+    if (s.status !== 'active' && s.status !== 'trialing' && s.status !== 'past_due') continue
+    try {
+      await stripe.subscriptions.cancel(s.id)
+      await supabaseAdmin.from('subscriptions')
+        .update({ status: 'canceled', cancel_at_period_end: false })
+        .eq('stripe_subscription_id', s.id)
+    } catch (err) {
+      logger.warn('Failed to cancel superseded subscription', { sub: s.id, err })
+    }
+  }
+}
+
+// Recompute the user's effective plan from the subscriptions still active in Stripe.
+// This avoids a cancellation webhook wrongly downgrading a user who just switched plan.
+async function recomputeUserPlan(userId: string, customerId: string) {
+  let best: PlanTier = 'free'
+  let bestPeriodEnd: number | null = null
+  if (customerId) {
+    try {
+      const subs = await stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 100 })
+      for (const s of subs.data) {
+        if (s.status !== 'active' && s.status !== 'trialing') continue
+        const tier = normalizePlan(PLAN_PRICE_MAP[s.items.data[0]?.price.id] ?? 'pro')
+        if (PLAN_RANK[tier] >= PLAN_RANK[best]) {
+          best = tier
+          bestPeriodEnd = s.current_period_end
+        }
+      }
+    } catch (err) {
+      logger.warn('Failed to recompute user plan from Stripe', { userId, err })
+    }
+  }
+  const update: Record<string, unknown> = { plan: best, credits_remaining: PLAN_CREDITS[best] }
+  if (bestPeriodEnd) update.credits_reset_at = new Date(bestPeriodEnd * 1000).toISOString()
+  await supabaseAdmin.from('users').update(update).eq('id', userId)
+}
+
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.user_id
   if (!userId) return
@@ -218,11 +265,12 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
   const priceId      = subscription.items.data[0]?.price.id
   const plan         = normalizePlan(PLAN_PRICE_MAP[priceId] ?? 'pro')
+  const customerId   = session.customer as string
 
   await supabaseAdmin.from('subscriptions').upsert({
     user_id:                userId,
     stripe_subscription_id: subscription.id,
-    stripe_customer_id:     session.customer as string,
+    stripe_customer_id:     customerId,
     plan,
     status:                 subscription.status,
     current_period_start:   new Date(subscription.current_period_start * 1000).toISOString(),
@@ -232,9 +280,12 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   await supabaseAdmin.from('users').update({
     plan,
     credits_remaining:  PLAN_CREDITS[plan],
-    stripe_customer_id: session.customer as string,
+    stripe_customer_id: customerId,
     credits_reset_at:   new Date(subscription.current_period_end * 1000).toISOString(),
   }).eq('id', userId)
+
+  // Plan switch → cancel any previous subscription so only the new one stays active.
+  await cancelOtherActiveSubscriptions(customerId, subscription.id)
 }
 
 async function handleSubscriptionChange(sub: Stripe.Subscription) {
@@ -244,7 +295,7 @@ async function handleSubscriptionChange(sub: Stripe.Subscription) {
 
   const userId  = subRow.user_id
   const priceId = sub.items.data[0]?.price.id
-  const plan    = sub.status === 'active'
+  const plan    = (sub.status === 'active' || sub.status === 'trialing')
     ? normalizePlan(PLAN_PRICE_MAP[priceId] ?? 'pro')
     : 'free'
 
@@ -256,10 +307,10 @@ async function handleSubscriptionChange(sub: Stripe.Subscription) {
     cancel_at_period_end: sub.cancel_at_period_end,
   }).eq('stripe_subscription_id', sub.id)
 
-  await supabaseAdmin.from('users').update({
-    plan,
-    credits_remaining: PLAN_CREDITS[plan],
-  }).eq('id', userId)
+  // Derive the user's plan from whatever is still active, not just this one
+  // subscription — prevents a cancellation event from downgrading a user who
+  // still holds another active plan.
+  await recomputeUserPlan(userId, sub.customer as string)
 }
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
