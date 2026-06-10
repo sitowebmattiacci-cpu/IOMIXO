@@ -9,6 +9,18 @@ export async function getUserPlan(userId: string): Promise<PlanTier> {
   return normalizePlan(data?.plan)
 }
 
+/**
+ * Piano effettivo: il piano DB, ma promosso ad Advance ('wedding') quando
+ * l'utente ha un Event Pass 24H attivo. Così tutti i limiti/feature premium
+ * (sessioni illimitate, Party/Wedding, ecc.) valgono per la durata del pass.
+ * Alla scadenza del pass si torna automaticamente al piano reale.
+ */
+export async function getEffectivePlan(userId: string, sessionId?: string): Promise<PlanTier> {
+  const plan = await getUserPlan(userId)
+  if (plan !== 'free') return plan
+  return (await hasEventAccess(userId, sessionId)) ? 'wedding' : 'free'
+}
+
 export async function getUserPlanLimits(userId: string): Promise<{ plan: PlanTier; limits: PlanLimits }> {
   const plan = await getUserPlan(userId)
   return { plan, limits: PLAN_LIMITS[plan] }

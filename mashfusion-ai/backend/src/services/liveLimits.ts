@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '../config/supabase'
 import { PLAN_LIMITS, type PlanTier } from '../config/plans'
-import { getUserPlan } from './plan'
+import { getEffectivePlan } from './plan'
 
 export interface LimitCheckResult {
   ok: boolean
@@ -10,7 +10,9 @@ export interface LimitCheckResult {
 
 /** Can the user open a new active session? */
 export async function canCreateSession(userId: string): Promise<LimitCheckResult> {
-  const plan = await getUserPlan(userId)
+  // Considera il piano effettivo: un Event Pass 24H attivo sblocca i limiti
+  // premium (sessioni illimitate) anche se il piano DB resta 'free'.
+  const plan = await getEffectivePlan(userId)
   const limits = PLAN_LIMITS[plan]
   if (!isFinite(limits.maxActiveSessions)) return { ok: true, plan }
 
@@ -32,7 +34,9 @@ export async function canCreateSession(userId: string): Promise<LimitCheckResult
 
 /** Can the given session accept one more request right now? */
 export async function canAcceptRequest(sessionId: string, djId: string): Promise<LimitCheckResult> {
-  const plan = await getUserPlan(djId)
+  // Piano effettivo: un Event Pass 24H attivo sblocca i limiti premium
+  // (richieste illimitate) per la durata del pass.
+  const plan = await getEffectivePlan(djId, sessionId)
   const limits = PLAN_LIMITS[plan]
   if (!isFinite(limits.maxRequestsPerSession)) return { ok: true, plan }
 
