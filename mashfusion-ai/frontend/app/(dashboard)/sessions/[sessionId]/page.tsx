@@ -579,12 +579,11 @@ function WeddingQRCompact({ slug }: { slug: string }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold uppercase tracking-wider text-[#8F1D2C] mb-1">
-            {t('weddingPanels.qrGuests')}
+            {t('weddingPanels.djRemoteCtrl')}
           </p>
-          <p className="text-xs text-[#6F6260] mb-2">
-            {t('weddingPanels.qrGuestsHint')}
+          <p className="text-xs text-[#6F6260]">
+            {t('weddingPanels.qrRemoteHint')}
           </p>
-          <p className="text-[10px] text-[#6F6260] break-all leading-relaxed italic">{t('weddingPanels.djRemoteCtrl')}</p>
         </div>
       </div>
     </div>
