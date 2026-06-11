@@ -565,7 +565,73 @@
       "claim": "The DJ leads. The audience interacts.",
       "audiences": "Dinner shows · Private parties · Birthdays · Weddings · Corporate events · Clubs · Venues",
       "ctaPrimary": "Create your Live Hub",
-      "ctaSecondary": "See how it works"
+      "ctaSecondary": "See how it works",
+      "subline": "Guests join from their phone via QR Code — music requests, games, dedications, photos and Screen Mode in real time."
+    },
+    "modes": {
+      "party": {
+        "label": "Mode",
+        "for": "For birthdays, private parties, venues, aperitifs and corporate events.",
+        "f1": "Live Requests",
+        "f2": "Games",
+        "f3": "Live Booth",
+        "f4": "Screen Mode",
+        "cta": "Start a Party"
+      },
+      "wedding": {
+        "label": "Edition",
+        "premium": "Premium",
+        "for": "For weddings, anniversaries and romantic events.",
+        "f1": "Dedications to the couple",
+        "f2": "Photo album",
+        "f3": "Live Booth",
+        "f4": "Wedding games",
+        "f5": "Screen Mode",
+        "cta": "Start a Wedding"
+      }
+    },
+    "caps": {
+      "badge": "All in one platform",
+      "title": "Four tools, one unforgettable event",
+      "requests": { "title": "Live Requests", "body": "Your audience sends songs from their phone. You approve and manage the queue." },
+      "booth": { "title": "Live Booth", "body": "Guest photos that feed the album and Photo Moment in real time." },
+      "games": { "title": "Interactive Games", "body": "Roulette, quizzes and wedding games to get the whole room involved." },
+      "screen": { "title": "Screen Mode", "body": "QR, photos, dedications and games projected on a TV or big screen." }
+    },
+    "plans": {
+      "free": {
+        "tagline": "For starters",
+        "f1": "1 active live session",
+        "f2": "Up to 30 requests per session",
+        "f3": "Basic QR Code",
+        "f4": "Basic public page",
+        "f5": "Visible IOMIXO branding"
+      },
+      "pro": {
+        "tagline": "For professional DJs",
+        "f1": "Unlimited live sessions",
+        "f2": "Unlimited requests",
+        "f3": "QR Code for every live session",
+        "f4": "Real-time online presence",
+        "f5": "Social links (Instagram, TikTok, Spotify, SoundCloud)",
+        "f6": "Upcoming dates / events",
+        "f7": "Approve/reject requests",
+        "f8": "Reduced IOMIXO branding",
+        "f9": "Session statistics"
+      },
+      "wedding": {
+        "tagline": "For premium interactive events",
+        "f1": "Everything in Pro",
+        "f2": "Party Mode (birthdays, venues, graduations, DJ nights)",
+        "f3": "Wedding Edition (weddings, anniversaries)",
+        "f4": "Live Booth with guest photo QR",
+        "f5": "Screen Mode (TV / projector)",
+        "f6": "Event album with moderation",
+        "f7": "Live Polls",
+        "f8": "Party Games (Roulette, Music Battle, Top Fan, Guess the Song, Table Battle)",
+        "f9": "Wedding Games (Roulette, Shoe Game, Who Knows the Couple Best, Him or Her, Messages to the Couple)",
+        "f10": "Advanced analytics"
+      }
     },
     "sections": {
       "requests":  { "title": "Music requests without interruptions", "body": "Guests send requests from their phone. The DJ approves, rejects or manages everything from the dashboard." },

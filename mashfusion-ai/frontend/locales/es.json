@@ -565,7 +565,73 @@
       "claim": "El DJ manda. El público interactúa.",
       "audiences": "Cenas espectáculo · Fiestas privadas · Cumpleaños · Bodas · Eventos corporativos · Clubs · Locales",
       "ctaPrimary": "Crea tu Live Hub",
-      "ctaSecondary": "Descubre cómo funciona"
+      "ctaSecondary": "Descubre las modalidades",
+      "subline": "Los invitados participan desde el móvil vía QR — peticiones musicales, juegos, dedicatorias, fotos y Screen Mode en tiempo real."
+    },
+    "modes": {
+      "party": {
+        "label": "Modalidad",
+        "for": "Para cumpleaños, fiestas privadas, locales, aperitivos y eventos corporativos.",
+        "f1": "Peticiones en vivo",
+        "f2": "Juegos",
+        "f3": "Live Booth",
+        "f4": "Screen Mode",
+        "cta": "Inicia una Fiesta"
+      },
+      "wedding": {
+        "label": "Edición",
+        "premium": "Premium",
+        "for": "Para bodas, aniversarios y eventos románticos.",
+        "f1": "Dedicatorias a los novios",
+        "f2": "Álbum de fotos",
+        "f3": "Live Booth",
+        "f4": "Juegos de boda",
+        "f5": "Screen Mode",
+        "cta": "Inicia la Boda"
+      }
+    },
+    "caps": {
+      "badge": "Todo en una sola plataforma",
+      "title": "Cuatro herramientas, un evento inolvidable",
+      "requests": { "title": "Peticiones en vivo", "body": "El público envía canciones desde el móvil. Tú apruebas y gestionas la cola." },
+      "booth": { "title": "Live Booth", "body": "Fotos de los invitados que alimentan el álbum y el Photo Moment en tiempo real." },
+      "games": { "title": "Juegos interactivos", "body": "Ruleta, concursos y juegos de boda para implicar a toda la sala." },
+      "screen": { "title": "Screen Mode", "body": "QR, fotos, dedicatorias y juegos proyectados en TV o pantalla gigante." }
+    },
+    "plans": {
+      "free": {
+        "tagline": "Para empezar",
+        "f1": "1 sesión live activa",
+        "f2": "Hasta 30 peticiones por sesión",
+        "f3": "QR Code básico",
+        "f4": "Página pública básica",
+        "f5": "Marca IOMIXO visible"
+      },
+      "pro": {
+        "tagline": "Para DJs profesionales",
+        "f1": "Sesiones live ilimitadas",
+        "f2": "Peticiones ilimitadas",
+        "f3": "QR Code para cada sesión live",
+        "f4": "Personas en línea en tiempo real",
+        "f5": "Enlaces sociales (Instagram, TikTok, Spotify, SoundCloud)",
+        "f6": "Próximas fechas / eventos",
+        "f7": "Aprueba/rechaza peticiones",
+        "f8": "Marca IOMIXO reducida",
+        "f9": "Estadísticas de sesión"
+      },
+      "wedding": {
+        "tagline": "Para eventos interactivos premium",
+        "f1": "Todo lo del plan Pro",
+        "f2": "Party Mode (cumpleaños, locales, graduaciones, noches DJ)",
+        "f3": "Wedding Edition (bodas, aniversarios)",
+        "f4": "Live Booth con QR de fotos para invitados",
+        "f5": "Screen Mode (TV / proyector)",
+        "f6": "Álbum del evento con moderación",
+        "f7": "Encuestas en vivo (Live Polls)",
+        "f8": "Party Games (Ruleta, Music Battle, Top Fan, Adivina la Canción, Reto de Mesas)",
+        "f9": "Juegos de Boda (Ruleta, Juego del Zapato, Quién conoce mejor a los novios, Él o Ella, Mensajes a los Novios)",
+        "f10": "Analítica avanzada"
+      }
     },
     "sections": {
       "requests":  { "title": "Peticiones musicales sin interrupciones", "body": "Los invitados envían sus peticiones desde el móvil. El DJ aprueba, rechaza o lo gestiona todo desde el panel." },

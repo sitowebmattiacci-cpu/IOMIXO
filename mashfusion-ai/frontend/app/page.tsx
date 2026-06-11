@@ -121,7 +121,7 @@ function Hero() {
                 <PartyPopper className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-[#E8B7C8] font-semibold">Modalità</p>
+                <p className="text-[11px] uppercase tracking-wider text-[#E8B7C8] font-semibold">{t('landing.modes.party.label', 'Modalità')}</p>
                 <h3 className="text-xl font-bold text-[#F7F4F3]">Party Mode</h3>
               </div>
             </div>
@@ -156,7 +156,7 @@ function Hero() {
             className="relative rounded-2xl p-6 sm:p-7 bg-gradient-to-br from-[#241519] via-[#1E1417] to-[#1A0F12] border border-[#E8B7C8]/30 hover:border-[#E8B7C8]/60 transition group overflow-hidden"
           >
             <span className="absolute top-4 right-4 text-[10px] font-semibold bg-[#E8B7C8] text-[#3A1019] rounded-full px-2.5 py-0.5">
-              Premium
+              {t('landing.modes.wedding.premium', 'Premium')}
             </span>
             <div className="absolute -bottom-12 -left-10 w-44 h-44 rounded-full bg-[#E8B7C8]/15 blur-2xl" />
             <div className="flex items-center gap-3 mb-4">
@@ -164,7 +164,7 @@ function Hero() {
                 <Heart className="h-6 w-6 fill-[#E8B7C8]" />
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-[#E8B7C8] font-semibold">Edizione</p>
+                <p className="text-[11px] uppercase tracking-wider text-[#E8B7C8] font-semibold">{t('landing.modes.wedding.label', 'Edizione')}</p>
                 <h3 className="text-xl font-bold text-[#F7F4F3]">Wedding Edition</h3>
               </div>
             </div>
@@ -329,7 +329,7 @@ function PricingCard({ plan, highlight }: { plan: Plan; highlight?: boolean }) {
           {t('landing.pricing.premium')}
         </span>
       )}
-      <p className="text-xs uppercase tracking-wider text-[#E8B7C8] mb-1">{meta.tagline}</p>
+      <p className="text-xs uppercase tracking-wider text-[#E8B7C8] mb-1">{t(`landing.plans.${plan}.tagline`, meta.tagline)}</p>
       <h3 className="text-2xl font-bold text-[#F7F4F3]">{meta.name}</h3>
       <div className="my-4 flex items-baseline gap-1">
         <span className="text-4xl font-bold text-[#F7F4F3]">
@@ -338,12 +338,15 @@ function PricingCard({ plan, highlight }: { plan: Plan; highlight?: boolean }) {
         {amount > 0 && <span className="text-[#A89A98] text-sm">{t('landing.pricing.perMonth')}</span>}
       </div>
       <ul className="space-y-2 mb-6">
-        {meta.features.map((f) => (
-          <li key={f} className="flex items-start gap-2 text-sm text-[#F7F4F3]">
-            <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0 text-[#E8B7C8]" />
-            <span>{f}</span>
-          </li>
-        ))}
+        {meta.features.map((fallback, i) => {
+          const f = t(`landing.plans.${plan}.f${i + 1}`, fallback)
+          return (
+            <li key={i} className="flex items-start gap-2 text-sm text-[#F7F4F3]">
+              <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0 text-[#E8B7C8]" />
+              <span>{f}</span>
+            </li>
+          )
+        })}
       </ul>
       <Link href="/register" className="block">
         <Button

@@ -565,7 +565,73 @@
       "claim": "Le DJ dirige. Le public interagit.",
       "audiences": "Dîners-spectacles · Fêtes privées · Anniversaires · Mariages · Événements d'entreprise · Clubs · Salles",
       "ctaPrimary": "Créez votre Live Hub",
-      "ctaSecondary": "Découvrir le fonctionnement"
+      "ctaSecondary": "Découvrir les modes",
+      "subline": "Les invités participent depuis leur téléphone via QR Code — demandes musicales, jeux, dédicaces, photos et Screen Mode en temps réel."
+    },
+    "modes": {
+      "party": {
+        "label": "Mode",
+        "for": "Pour anniversaires, fêtes privées, salles, apéritifs et événements d'entreprise.",
+        "f1": "Demandes live",
+        "f2": "Jeux",
+        "f3": "Live Booth",
+        "f4": "Screen Mode",
+        "cta": "Lancer une Fête"
+      },
+      "wedding": {
+        "label": "Édition",
+        "premium": "Premium",
+        "for": "Pour mariages, anniversaires et événements romantiques.",
+        "f1": "Dédicaces aux mariés",
+        "f2": "Album photo",
+        "f3": "Live Booth",
+        "f4": "Jeux de mariage",
+        "f5": "Screen Mode",
+        "cta": "Lancer le Mariage"
+      }
+    },
+    "caps": {
+      "badge": "Tout sur une seule plateforme",
+      "title": "Quatre outils, un événement inoubliable",
+      "requests": { "title": "Demandes live", "body": "Le public envoie des morceaux depuis son téléphone. Vous approuvez et gérez la file." },
+      "booth": { "title": "Live Booth", "body": "Les photos des invités alimentent l'album et le Photo Moment en temps réel." },
+      "games": { "title": "Jeux interactifs", "body": "Roulette, quiz et jeux de mariage pour impliquer toute la salle." },
+      "screen": { "title": "Screen Mode", "body": "QR, photos, dédicaces et jeux projetés sur TV ou grand écran." }
+    },
+    "plans": {
+      "free": {
+        "tagline": "Pour débuter",
+        "f1": "1 session live active",
+        "f2": "Jusqu'à 30 demandes par session",
+        "f3": "QR Code de base",
+        "f4": "Page publique de base",
+        "f5": "Marque IOMIXO visible"
+      },
+      "pro": {
+        "tagline": "Pour les DJ professionnels",
+        "f1": "Sessions live illimitées",
+        "f2": "Demandes illimitées",
+        "f3": "QR Code pour chaque session live",
+        "f4": "Personnes en ligne en temps réel",
+        "f5": "Liens sociaux (Instagram, TikTok, Spotify, SoundCloud)",
+        "f6": "Prochaines dates / événements",
+        "f7": "Approuver/refuser les demandes",
+        "f8": "Marque IOMIXO réduite",
+        "f9": "Statistiques de session"
+      },
+      "wedding": {
+        "tagline": "Pour les événements interactifs premium",
+        "f1": "Tout du plan Pro",
+        "f2": "Party Mode (anniversaires, salles, remises de diplômes, soirées DJ)",
+        "f3": "Wedding Edition (mariages, anniversaires)",
+        "f4": "Live Booth avec QR photo invités",
+        "f5": "Screen Mode (TV / projecteur)",
+        "f6": "Album d'événement avec modération",
+        "f7": "Sondages live (Live Polls)",
+        "f8": "Party Games (Roulette, Music Battle, Top Fan, Devine la Chanson, Défi des Tables)",
+        "f9": "Jeux de Mariage (Roulette, Jeu de la Chaussure, Qui connaît le mieux les mariés, Lui ou Elle, Messages aux Mariés)",
+        "f10": "Analyses avancées"
+      }
     },
     "sections": {
       "requests":  { "title": "Demandes musicales sans interruption", "body": "Les invités envoient leurs demandes depuis leur téléphone. Le DJ approuve, refuse ou gère tout depuis le tableau de bord." },
