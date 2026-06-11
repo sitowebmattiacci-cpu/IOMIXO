@@ -51,7 +51,9 @@ app.use(morgan('combined'))
 app.use(requestId)
 
 // ── Health ─────────────────────────────────────────────────────
-app.get('/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
+// `build` is a static marker bumped on deploys so we can confirm which code is
+// actually live on Render via a simple GET /health.
+app.get('/health', (_, res) => res.json({ status: 'ok', build: 'stripe-pmt-2026-06-12', ts: new Date().toISOString() }))
 
 // ── Rate limiting ──────────────────────────────────────────────
 app.use('/api', apiRateLimit({ windowMs: 60_000, max: 120 }))
