@@ -271,6 +271,21 @@
     "lockedMsg": "Activate a 24H Event Pass or upgrade to the Advance plan to choose what guests see.",
     "lockedCta": "Unlock with Advance"
   },
+  "guestMenu": {
+    "heading": "What would you like to do?",
+    "subtitle": "Choose an action and join the event in real time.",
+    "back": "Back to actions",
+    "requests": "Request a song",
+    "requestsDesc": "Send your track to the DJ",
+    "photos": "Send a photo",
+    "photosDesc": "Take a photo for the Live Booth",
+    "dedications": "Leave a dedication",
+    "dedicationsDesc": "Write a message to the couple",
+    "games": "Join the games",
+    "gamesDesc": "Join the games of the night",
+    "polls": "Vote in the poll",
+    "pollsDesc": "Vote in real time"
+  },
   "sidebar": {
     "dashboard": "Dashboard",
     "sessionsLive": "Live Sessions",

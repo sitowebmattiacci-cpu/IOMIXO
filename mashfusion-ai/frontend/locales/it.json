@@ -271,6 +271,21 @@
     "lockedMsg": "Attiva un Event Pass 24H o passa al piano Advance per scegliere cosa vedono gli invitati.",
     "lockedCta": "Sblocca con Advance"
   },
+  "guestMenu": {
+    "heading": "Cosa vuoi fare?",
+    "subtitle": "Scegli una funzione e partecipa all'evento in tempo reale.",
+    "back": "Torna alle funzioni",
+    "requests": "Richiedi una canzone",
+    "requestsDesc": "Invia il tuo brano al DJ",
+    "photos": "Invia una foto",
+    "photosDesc": "Scatta una foto per il Live Booth",
+    "dedications": "Lascia una dedica",
+    "dedicationsDesc": "Scrivi un messaggio agli sposi",
+    "games": "Partecipa ai giochi",
+    "gamesDesc": "Partecipa ai giochi della serata",
+    "polls": "Vota il sondaggio",
+    "pollsDesc": "Vota in tempo reale"
+  },
   "sidebar": {
     "dashboard": "Dashboard",
     "sessionsLive": "Sessioni Live",

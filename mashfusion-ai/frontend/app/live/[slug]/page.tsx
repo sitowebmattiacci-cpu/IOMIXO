@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
 import toast from 'react-hot-toast'
-import { Music2, Send, Instagram, Globe, MapPin, CalendarDays, Lock, AlertTriangle, Check, X, Clock, Heart, Sparkles, Image as ImageIcon, Camera } from 'lucide-react'
+import { Music2, Send, Instagram, Globe, MapPin, CalendarDays, Lock, AlertTriangle, Check, X, Clock, Heart, Sparkles, Image as ImageIcon, Camera, Gamepad2, BarChart3, ChevronLeft } from 'lucide-react'
 import { publicLive, liveDedications, liveGames, livePolls, livePhotos, bestPhoto, type LiveRequestStatus, type LiveDedication, type LivePoll, type LivePhoto, type LiveGameRound } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -61,6 +61,7 @@ export default function PublicLivePage() {
 
   const [form, setForm] = useState({ track_title: '', artist: '', message: '' })
   const [sending, setSending] = useState(false)
+  const [activeGuestSection, setActiveGuestSection] = useState<string | null>(null)
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -111,6 +112,93 @@ export default function PublicLivePage() {
   const guestOn = (key: string) => (key === 'requests' ? gc.requests !== false : (gc as Record<string, boolean | undefined>)[key] === true)
 
   if (isWedding) {
+    const weddingSections: GuestSection[] = []
+    if (guestOn('requests')) {
+      weddingSections.push({
+        key: 'requests',
+        icon: <Music2 className="h-6 w-6" />,
+        title: t('guestMenu.requests'),
+        desc: t('guestMenu.requestsDesc'),
+        node: (
+          <WeddingCard tone="ivory">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8F1D2C] mb-5 text-center">
+              {t('live.title')}
+            </p>
+            <form onSubmit={submit} className="space-y-4">
+              <WeddingInput
+                value={form.track_title}
+                onChange={(e) => setForm({ ...form, track_title: e.target.value })}
+                placeholder={t('live.trackTitle')}
+                required
+                disabled={disabled}
+              />
+              <WeddingInput
+                value={form.artist}
+                onChange={(e) => setForm({ ...form, artist: e.target.value })}
+                placeholder={t('live.artist')}
+                disabled={disabled}
+              />
+              <WeddingTextarea
+                value={form.message}
+                onChange={(e) => setForm({ ...form, message: e.target.value })}
+                rows={2}
+                maxLength={200}
+                placeholder={t('live.messageForDj')}
+                disabled={disabled}
+              />
+              <WeddingButton
+                type="submit"
+                disabled={disabled || sending || !form.track_title.trim()}
+                loading={sending}
+                icon={<Send className="h-4 w-4" />}
+                className="w-full"
+                size="lg"
+              >
+                {t('live.submitRequest')}
+              </WeddingButton>
+            </form>
+          </WeddingCard>
+        ),
+      })
+    }
+    if (features.guestPhotoAlbum && guestOn('live_booth')) {
+      weddingSections.push({
+        key: 'photos',
+        icon: <Camera className="h-6 w-6" />,
+        title: t('guestMenu.photos'),
+        desc: t('guestMenu.photosDesc'),
+        node: <LiveBoothCard slug={slug!} session={session} />,
+      })
+    }
+    if (features.weddingDedications && guestOn('dedications')) {
+      weddingSections.push({
+        key: 'dedications',
+        icon: <Heart className="h-6 w-6" />,
+        title: t('guestMenu.dedications'),
+        desc: t('guestMenu.dedicationsDesc'),
+        node: <DedicationsPublic slug={slug!} />,
+      })
+    }
+    if (features.weddingGames && guestOn('shoe_game')) {
+      weddingSections.push({
+        key: 'games',
+        icon: <Gamepad2 className="h-6 w-6" />,
+        title: t('guestMenu.games'),
+        desc: t('guestMenu.gamesDesc'),
+        node: <ShoeGamePublic slug={slug!} />,
+      })
+    }
+    if (features.livePolls && guestOn('polls')) {
+      weddingSections.push({
+        key: 'polls',
+        icon: <BarChart3 className="h-6 w-6" />,
+        title: t('guestMenu.polls'),
+        desc: t('guestMenu.pollsDesc'),
+        node: <PollPublic slug={slug!} />,
+      })
+    }
+    const activeWedding = weddingSections.find((s) => s.key === activeGuestSection) ?? null
+
     return (
       <WeddingShell>
         <div className="max-w-lg mx-auto px-6 py-16">
@@ -151,64 +239,24 @@ export default function PublicLivePage() {
             </WeddingCard>
           )}
 
-          {/* Song request form (wedding-styled) */}
-          {guestOn('requests') && (
-          <WeddingCard tone="ivory" className="mb-8">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8F1D2C] mb-5 text-center">
-              {t('live.title')}
-            </p>
-            <form onSubmit={submit} className="space-y-4">
-              <WeddingInput
-                value={form.track_title}
-                onChange={(e) => setForm({ ...form, track_title: e.target.value })}
-                placeholder={t('live.trackTitle')}
-                required
-                disabled={disabled}
-              />
-              <WeddingInput
-                value={form.artist}
-                onChange={(e) => setForm({ ...form, artist: e.target.value })}
-                placeholder={t('live.artist')}
-                disabled={disabled}
-              />
-              <WeddingTextarea
-                value={form.message}
-                onChange={(e) => setForm({ ...form, message: e.target.value })}
-                rows={2}
-                maxLength={200}
-                placeholder={t('live.messageForDj')}
-                disabled={disabled}
-              />
-              <WeddingButton
-                type="submit"
-                disabled={disabled || sending || !form.track_title.trim()}
-                loading={sending}
-                icon={<Send className="h-4 w-4" />}
-                className="w-full"
-                size="lg"
-              >
-                {t('live.submitRequest')}
-              </WeddingButton>
-            </form>
-          </WeddingCard>
-          )}
-
-          {!guestOn('requests')
-            && !(features.weddingGames && guestOn('shoe_game'))
-            && !(features.livePolls && guestOn('polls'))
-            && !(features.weddingDedications && guestOn('dedications'))
-            && !(features.guestPhotoAlbum && guestOn('live_booth')) && (
+          {/* Compact guest menu — show only DJ-enabled functions */}
+          {weddingSections.length === 0 ? (
             <WeddingCard tone="cream" className="mb-8 text-center text-sm text-[#6F6260]">
               {t('guestVisibility.emptyState')}
             </WeddingCard>
+          ) : activeWedding ? (
+            <div className="mb-8">
+              <GuestBackButton tone="wedding" label={t('guestMenu.back')} onClick={() => setActiveGuestSection(null)} />
+              {activeWedding.node}
+            </div>
+          ) : (
+            <div className="mb-8">
+              <GuestMenuIntro tone="wedding" t={t} />
+              <GuestMenuGrid tone="wedding" sections={weddingSections} onSelect={setActiveGuestSection} />
+            </div>
           )}
 
-          {features.weddingGames && guestOn('shoe_game') && <ShoeGamePublic slug={slug!} />}
-          {features.livePolls && guestOn('polls') && <PollPublic slug={slug!} />}
-          {features.weddingDedications && guestOn('dedications') && <DedicationsPublic slug={slug!} />}
-          {features.guestPhotoAlbum && guestOn('live_booth') && <LiveBoothCard slug={slug!} session={session} />}
-
-          {myRequests && myRequests.length > 0 && (
+          {!activeWedding && myRequests && myRequests.length > 0 && (
             <WeddingSection
               eyebrow={t('live.myRequests')}
               className="mt-12"
@@ -237,6 +285,106 @@ export default function PublicLivePage() {
       </WeddingShell>
     )
   }
+
+  // Party Mode — compact guest menu (cards) with only DJ-enabled functions
+  const partyRequestForm = (
+    <form onSubmit={submit} className="glass rounded-2xl p-5 space-y-3">
+      {profile?.avatar_url && (
+        <div className="flex justify-center -mt-1 mb-1">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={profile.avatar_url}
+            alt=""
+            className="h-20 w-20 rounded-full object-cover border border-white/10 shadow-lg"
+          />
+        </div>
+      )}
+      <div>
+        <label className="text-xs text-white/60">{t('live.trackTitleRequired')}</label>
+        <input
+          value={form.track_title}
+          onChange={(e) => setForm({ ...form, track_title: e.target.value })}
+          required disabled={disabled}
+          className={inputCls}
+          placeholder={t('live.trackTitleExample')}
+        />
+      </div>
+      <div>
+        <label className="text-xs text-white/60">{t('live.artistLabel')}</label>
+        <input
+          value={form.artist}
+          onChange={(e) => setForm({ ...form, artist: e.target.value })}
+          disabled={disabled}
+          className={inputCls}
+          placeholder={t('live.artistExample')}
+        />
+      </div>
+      <div>
+        <label className="text-xs text-white/60">{t('live.messageLabel')}</label>
+        <textarea
+          value={form.message}
+          onChange={(e) => setForm({ ...form, message: e.target.value })}
+          disabled={disabled} rows={2} maxLength={200}
+          className={inputCls}
+          placeholder={t('live.messageExample')}
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={disabled || sending || !form.track_title.trim()}
+        className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white font-semibold py-3 disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <Send className="h-4 w-4" />
+        {sending ? t('live.sending') : t('live.submitRequest')}
+      </button>
+      {requestsRemaining !== null && !disabled && (
+        <p className="text-[11px] text-white/40 text-center">
+          {requestsRemaining} {t('live.requestsRemainingSuffix')}
+        </p>
+      )}
+    </form>
+  )
+
+  const partySections: GuestSection[] = []
+  if (isParty) {
+    if (guestOn('requests')) {
+      partySections.push({
+        key: 'requests',
+        icon: <Music2 className="h-6 w-6" />,
+        title: t('guestMenu.requests'),
+        desc: t('guestMenu.requestsDesc'),
+        node: partyRequestForm,
+      })
+    }
+    if (features.guestPhotoAlbum && guestOn('live_booth')) {
+      partySections.push({
+        key: 'photos',
+        icon: <Camera className="h-6 w-6" />,
+        title: t('guestMenu.photos'),
+        desc: t('guestMenu.photosDesc'),
+        node: <PartyBoothCTA slug={slug!} />,
+      })
+    }
+    if (guestOn('roulette')) {
+      partySections.push({
+        key: 'games',
+        icon: <Gamepad2 className="h-6 w-6" />,
+        title: t('guestMenu.games'),
+        desc: t('guestMenu.gamesDesc'),
+        node: <PartyRouletteResult slug={slug!} />,
+      })
+    }
+    if (guestOn('music_battle')) {
+      partySections.push({
+        key: 'polls',
+        icon: <BarChart3 className="h-6 w-6" />,
+        title: t('guestMenu.polls'),
+        desc: t('guestMenu.pollsDesc'),
+        node: <PartyMusicBattle slug={slug!} />,
+      })
+    }
+  }
+  const activeParty = partySections.find((s) => s.key === activeGuestSection) ?? null
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-purple-950/40 to-zinc-950 text-white">
@@ -271,65 +419,28 @@ export default function PublicLivePage() {
           <Banner icon={<AlertTriangle className="h-4 w-4" />}>{t('live.limitReachedFull')}</Banner>
         )}
 
-        {(!isParty || guestOn('requests')) && (
-        <form onSubmit={submit} className="glass rounded-2xl p-5 space-y-3">
-          {profile?.avatar_url && (
-            <div className="flex justify-center -mt-1 mb-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={profile.avatar_url}
-                alt=""
-                className="h-20 w-20 rounded-full object-cover border border-white/10 shadow-lg"
-              />
+        {/* Party Mode: compact card menu. Standard sessions: simple request form. */}
+        {isParty ? (
+          partySections.length === 0 ? (
+            <div className="glass rounded-2xl p-6 text-center text-sm text-white/60">
+              {t('guestVisibility.emptyState')}
             </div>
-          )}
-          <div>
-            <label className="text-xs text-white/60">{t('live.trackTitleRequired')}</label>
-            <input
-              value={form.track_title}
-              onChange={(e) => setForm({ ...form, track_title: e.target.value })}
-              required disabled={disabled}
-              className={inputCls}
-              placeholder={t('live.trackTitleExample')}
-            />
-          </div>
-          <div>
-            <label className="text-xs text-white/60">{t('live.artistLabel')}</label>
-            <input
-              value={form.artist}
-              onChange={(e) => setForm({ ...form, artist: e.target.value })}
-              disabled={disabled}
-              className={inputCls}
-              placeholder={t('live.artistExample')}
-            />
-          </div>
-          <div>
-            <label className="text-xs text-white/60">{t('live.messageLabel')}</label>
-            <textarea
-              value={form.message}
-              onChange={(e) => setForm({ ...form, message: e.target.value })}
-              disabled={disabled} rows={2} maxLength={200}
-              className={inputCls}
-              placeholder={t('live.messageExample')}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={disabled || sending || !form.track_title.trim()}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white font-semibold py-3 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Send className="h-4 w-4" />
-            {sending ? t('live.sending') : t('live.submitRequest')}
-          </button>
-          {requestsRemaining !== null && !disabled && (
-            <p className="text-[11px] text-white/40 text-center">
-              {requestsRemaining} {t('live.requestsRemainingSuffix')}
-            </p>
-          )}
-        </form>
+          ) : activeParty ? (
+            <div>
+              <GuestBackButton tone="party" label={t('guestMenu.back')} onClick={() => setActiveGuestSection(null)} />
+              {activeParty.node}
+            </div>
+          ) : (
+            <div>
+              <GuestMenuIntro tone="party" t={t} />
+              <GuestMenuGrid tone="party" sections={partySections} onSelect={setActiveGuestSection} />
+            </div>
+          )
+        ) : (
+          partyRequestForm
         )}
 
-        {myRequests && myRequests.length > 0 && (
+        {(!isParty || !activeParty) && myRequests && myRequests.length > 0 && (
           <div className="mt-8">
             <h2 className="font-bold mb-3">{t('live.myRequests')}</h2>
             <div className="space-y-2">
@@ -353,19 +464,6 @@ export default function PublicLivePage() {
             </p>
           </div>
         )}
-
-        {isParty && (
-          <PartyLiveSections
-            slug={slug!}
-            showBooth={features.guestPhotoAlbum && guestOn('live_booth')}
-            showBattle={guestOn('music_battle')}
-            showRoulette={guestOn('roulette')}
-          />
-        )}
-
-        {isWedding && features.weddingGames && <ShoeGamePublic slug={slug!} />}
-        {isWedding && features.livePolls && <PollPublic slug={slug!} />}
-        {isWedding && features.weddingDedications && <DedicationsPublic slug={slug!} />}
 
         {events.length > 0 && (
           <div className="mt-8">
@@ -425,6 +523,106 @@ function SocialLink({ href, icon, label }: { href: string; icon: React.ReactNode
     </a>
   )
 }
+
+// ════════════════════════════════════════════════════════════════
+// GUEST REMOTE — compact home menu (cards) + back navigation
+// ════════════════════════════════════════════════════════════════
+
+type GuestTone = 'wedding' | 'party'
+
+interface GuestSection {
+  key: string
+  icon: React.ReactNode
+  title: string
+  desc: string
+  node: React.ReactNode
+}
+
+function GuestMenuIntro({ tone, t }: { tone: GuestTone; t: (k: string) => string }) {
+  if (tone === 'party') {
+    return (
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-black text-white leading-tight">{t('guestMenu.heading')}</h2>
+        <p className="text-sm text-white/60 mt-1.5 max-w-xs mx-auto">{t('guestMenu.subtitle')}</p>
+      </div>
+    )
+  }
+  return (
+    <div className="text-center mb-8">
+      <h2 className="font-wedding text-3xl sm:text-4xl text-[#2B2424] leading-tight">{t('guestMenu.heading')}</h2>
+      <p className="text-sm text-[#6F6260] mt-2 max-w-xs mx-auto">{t('guestMenu.subtitle')}</p>
+    </div>
+  )
+}
+
+function GuestMenuCard({ tone, icon, title, desc, onClick }: {
+  tone: GuestTone
+  icon: React.ReactNode
+  title: string
+  desc: string
+  onClick: () => void
+}) {
+  if (tone === 'party') {
+    return (
+      <button
+        onClick={onClick}
+        className="group flex flex-col items-center text-center gap-2 rounded-2xl border border-[#FF3D8A]/30 bg-gradient-to-br from-[#8B0E2F]/40 to-[#B82E54]/20 p-5 backdrop-blur transition hover:border-[#FF7AB6]/60 hover:shadow-[0_10px_30px_rgba(255,61,138,0.25)] active:scale-[0.98]"
+      >
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-[#FF7AB6] group-hover:bg-white/25 transition">
+          {icon}
+        </span>
+        <span className="text-base font-black text-white leading-tight">{title}</span>
+        <span className="text-xs text-white/70 leading-snug">{desc}</span>
+      </button>
+    )
+  }
+  return (
+    <button
+      onClick={onClick}
+      className="group flex flex-col items-center text-center gap-2 rounded-2xl border border-[#E8B7C8] bg-white p-5 shadow-sm transition hover:border-wedding-gold hover:shadow-md active:scale-[0.98]"
+    >
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-wedding-champagne/40 text-[#8F1D2C] group-hover:bg-wedding-champagne/60 transition">
+        {icon}
+      </span>
+      <span className="font-wedding text-lg text-[#2B2424] leading-tight">{title}</span>
+      <span className="text-xs text-[#6F6260] leading-snug">{desc}</span>
+    </button>
+  )
+}
+
+function GuestBackButton({ tone, label, onClick }: { tone: GuestTone; label: string; onClick: () => void }) {
+  const cls = tone === 'party'
+    ? 'inline-flex items-center gap-1.5 text-sm font-medium text-[#FF7AB6] hover:text-white transition mb-4'
+    : 'inline-flex items-center gap-1.5 text-sm font-medium text-[#8F1D2C] hover:text-[#741625] transition mb-5'
+  return (
+    <button onClick={onClick} className={cls}>
+      <ChevronLeft className="h-4 w-4" />
+      {label}
+    </button>
+  )
+}
+
+function GuestMenuGrid({ tone, sections, onSelect }: {
+  tone: GuestTone
+  sections: GuestSection[]
+  onSelect: (key: string) => void
+}) {
+  return (
+    <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
+      {sections.map((s) => (
+        <GuestMenuCard
+          key={s.key}
+          tone={tone}
+          icon={s.icon}
+          title={s.title}
+          desc={s.desc}
+          onClick={() => onSelect(s.key)}
+        />
+      ))}
+    </div>
+  )
+}
+
 
 function LocalCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -695,23 +893,6 @@ function LiveBoothCard({ slug, session }: { slug: string; session: any }) {
 // ════════════════════════════════════════════════════════════════
 // PARTY MODE — guest-facing live sections (mobile-first)
 // ════════════════════════════════════════════════════════════════
-
-function PartyLiveSections({
-  slug, showBooth, showBattle, showRoulette,
-}: {
-  slug: string
-  showBooth: boolean
-  showBattle: boolean
-  showRoulette: boolean
-}) {
-  return (
-    <div className="mt-8 space-y-5">
-      {showBooth && <PartyBoothCTA slug={slug} />}
-      {showBattle && <PartyMusicBattle slug={slug} />}
-      {showRoulette && <PartyRouletteResult slug={slug} />}
-    </div>
-  )
-}
 
 function PartyBoothCTA({ slug }: { slug: string }) {
   const { t } = useI18n()
