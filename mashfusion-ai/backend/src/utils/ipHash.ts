@@ -32,3 +32,25 @@ export function rateLimitOk(key: string, hash: string, windowMs = 20_000): boole
   }
   return true
 }
+
+// ── Burst rate limit per (key, hash): allow up to `max` requests per window. ──
+// Used where a guest may legitimately send several items in a row (e.g. photos),
+// while still blocking abusive flooding.
+const counters = new Map<string, { count: number; resetAt: number }>()
+
+export function rateLimitBurst(key: string, hash: string, max: number, windowMs: number): boolean {
+  const k = `${key}:${hash}`
+  const now = Date.now()
+  const entry = counters.get(k)
+  if (!entry || now > entry.resetAt) {
+    counters.set(k, { count: 1, resetAt: now + windowMs })
+    // Opportunistic cleanup
+    if (counters.size > 5000) {
+      for (const [bk, e] of counters) if (now > e.resetAt) counters.delete(bk)
+    }
+    return true
+  }
+  if (entry.count >= max) return false
+  entry.count++
+  return true
+}

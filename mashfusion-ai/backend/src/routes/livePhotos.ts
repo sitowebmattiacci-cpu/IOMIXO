@@ -2,7 +2,7 @@ import { Router, Request } from 'express'
 import { supabaseAdmin } from '../config/supabase'
 import { requireAuth } from '../middleware/auth'
 import { AppError } from '../middleware/errorHandler'
-import { hashClient, rateLimitOk } from '../utils/ipHash'
+import { hashClient, rateLimitBurst } from '../utils/ipHash'
 import { hasEventAccess } from '../services/plan'
 import { isEventSession } from '../utils/sessionType'
 import {
@@ -56,8 +56,8 @@ livePhotosRouter.post('/public/:slug/booth-photo', async (req, res, next) => {
     if (!storage_path.startsWith(`${session.id}/`)) throw new AppError('storage_path non valido', 400)
 
     const ipHash = hashClient(req)
-    if (!rateLimitOk(`booth:${session.id}`, ipHash, 15_000)) {
-      throw new AppError('Riprova tra qualche secondo.', 429)
+    if (!rateLimitBurst(`booth:${session.id}`, ipHash, 20, 60_000)) {
+      throw new AppError('Hai inviato troppe foto, riprova tra poco.', 429)
     }
 
     const { data, error } = await supabaseAdmin.from('live_photos').insert({
@@ -96,8 +96,8 @@ livePhotosRouter.post('/public/:slug/photos/init', async (req, res, next) => {
     }
 
     const ipHash = hashClient(req)
-    if (!rateLimitOk(`photo:${session.id}`, ipHash, 30_000)) {
-      throw new AppError('Riprova tra qualche secondo.', 429)
+    if (!rateLimitBurst(`photo:${session.id}`, ipHash, 20, 60_000)) {
+      throw new AppError('Hai inviato troppe foto, riprova tra poco.', 429)
     }
 
     const { path, url } = await createWeddingPhotoUploadUrl(session.id, ext)
