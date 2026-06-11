@@ -134,37 +134,6 @@ export default function LiveBoothPage() {
     ctx.fillText('IOMIXO LIVE BOOTH', w / 2, h - pad - bandH * 0.2)
   }
 
-  const drawWeddingOverlay = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-    const padding = Math.min(w, h) * 0.05
-    const cornerLen = Math.min(w, h) * 0.08
-    const strokeWidth = Math.min(w, h) * 0.005
-    ctx.strokeStyle = 'rgba(232, 183, 200, 0.9)'
-    ctx.lineWidth = strokeWidth
-    ctx.strokeRect(padding, padding, w - padding * 2, h - padding * 2)
-    ctx.strokeStyle = 'rgba(143, 29, 44, 0.8)'
-    ctx.lineWidth = strokeWidth * 1.5
-    const corners = [
-      [padding, padding, padding + cornerLen, padding, padding, padding + cornerLen],
-      [w - padding, padding, w - padding - cornerLen, padding, w - padding, padding + cornerLen],
-      [padding, h - padding, padding + cornerLen, h - padding, padding, h - padding - cornerLen],
-      [w - padding, h - padding, w - padding - cornerLen, h - padding, w - padding, h - padding - cornerLen],
-    ]
-    corners.forEach(([x, y, x1, y1, x2, y2]) => {
-      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x, y); ctx.lineTo(x2, y2); ctx.stroke()
-    })
-    ctx.fillStyle = 'rgba(43, 36, 36, 0.9)'
-    ctx.font = `${Math.min(w, h) * 0.04}px "Cormorant Garamond", serif`
-    ctx.textAlign = 'center'
-    const names = session.couple_names ?? session.event_name
-    ctx.fillText(names, w / 2, h - padding * 2.5)
-    if (session.wedding_date) {
-      ctx.font = `italic ${Math.min(w, h) * 0.025}px "Cormorant Garamond", serif`
-      ctx.fillStyle = 'rgba(111, 98, 96, 0.9)'
-      const date = new Date(session.wedding_date).toLocaleDateString('it-IT', { dateStyle: 'long' })
-      ctx.fillText(date, w / 2, h - padding * 1.5)
-    }
-  }
-
   const capturePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return
     const video = videoRef.current
@@ -178,8 +147,10 @@ export default function LiveBoothPage() {
     ctx.scale(-1, 1)
     ctx.drawImage(video, 0, 0)
     ctx.restore()
-    if (isWedding) drawWeddingOverlay(ctx, canvas.width, canvas.height)
-    else           drawPartyOverlay(ctx, canvas.width, canvas.height)
+    // Wedding: nessun overlay "stampato" nella foto — la cornice elegante
+    // "Oggi Sposi" viene applicata in fase di visualizzazione (WeddingPhotoFrame),
+    // così la foto originale resta pulita.
+    if (!isWedding) drawPartyOverlay(ctx, canvas.width, canvas.height)
     setPhoto(canvas.toDataURL('image/jpeg', 0.9))
     stopCamera()
   }
