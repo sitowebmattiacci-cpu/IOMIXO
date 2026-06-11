@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/Badge'
 import { QRCard } from '@/components/live/QRCard'
 import { RequestItem } from '@/components/live/RequestItem'
 import { UpgradeGate } from '@/components/live/UpgradeGate'
+import { SessionLockScreen } from '@/components/live/SessionLockScreen'
 import {
   WeddingCard, WeddingButton, WeddingBadge, WeddingInput, WeddingTextarea, WeddingDivider,
 } from '@/components/wedding/WeddingUI'
@@ -30,8 +31,7 @@ import {
   PartyDivider, PartyEyebrow, PartyPaywall, PARTY,
 } from '@/components/party/PartyUI'
 import { useI18n } from '@/lib/i18n'
-import { useEffectiveAccess } from '@/lib/access'
-
+import { useEffectiveAccess, isPremiumSession } from '@/lib/access'
 export default function SessionDetailPage() {
   const { sessionId } = useParams<{ sessionId: string }>()
   const router = useRouter()
@@ -64,6 +64,13 @@ export default function SessionDetailPage() {
     )
   }
   if (!session) return <div className="flex-1 p-8 text-white/50">{t('common.loading')}</div>
+
+  // Sessione premium (Party/Wedding) senza accesso valido → schermata di blocco.
+  // La sessione resta salvata e visibile in lista, ma non apre la regia interna
+  // finché l'Event Pass 24H non viene riattivato o si passa ad Advance.
+  if (isPremiumSession(session) && !hasAdvanceAccess) {
+    return <SessionLockScreen sessionType={session.session_type} eventName={session.event_name} />
+  }
 
   const isWedding = session.session_type === 'wedding'
 

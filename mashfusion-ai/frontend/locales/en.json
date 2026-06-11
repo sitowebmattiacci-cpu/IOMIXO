@@ -450,7 +450,16 @@
     "venueName": "Venue (optional)",
     "screenModeEnabled": "Enable live screen (TV/projector)",
     "create": "Create session", "created": "Session created",
-    "active": "Active", "closed": "Closed"
+    "active": "Active", "closed": "Closed",
+    "locked": {
+      "title": "Premium session locked",
+      "text": "This session was created with a 24H Event Pass. The pass has expired. To reopen the session and keep using Party Mode or Wedding Edition, buy a new 24H Event Pass or switch to Advance.",
+      "reactivateEventPass": "Reactivate 24H Event Pass",
+      "switchToAdvance": "Switch to Advance",
+      "backToSessions": "Back to sessions",
+      "badge": "Locked",
+      "badgeHint": "Requires Event Pass or Advance"
+    }
   },
   "wedding": {
     "regia": "Wedding Control Room",

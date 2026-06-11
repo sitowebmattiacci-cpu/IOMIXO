@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import useSWR, { mutate } from 'swr'
-import { Plus, Radio, Heart, PartyPopper, Sparkles } from 'lucide-react'
+import { Plus, Radio, Heart, PartyPopper, Sparkles, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { live } from '@/lib/api'
 import { Button } from '@/components/ui/Button'
@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { formatRelativeTime } from '@/lib/utils'
 import { useI18n } from '@/lib/i18n'
-import { useEffectiveAccess } from '@/lib/access'
+import { useEffectiveAccess, isPremiumSession } from '@/lib/access'
 
 type SessionType = 'standard' | 'party' | 'wedding'
 
@@ -305,25 +305,39 @@ export default function LiveSessionsPage() {
         )
       ) : (
         <div className="space-y-2">
-          {sessions.map((s) => (
+          {sessions.map((s) => {
+            const locked = isPremiumSession(s) && !isAdvance
+            return (
             <Link key={s.id} href={`/sessions/${s.id}`}>
-              <Card className="px-5 py-4 flex items-center justify-between hover:bg-white/5 transition">
+              <Card className={`px-5 py-4 flex items-center justify-between hover:bg-white/5 transition ${locked ? 'opacity-70' : ''}`}>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    {s.session_type === 'wedding' && <Heart className="h-4 w-4 text-pink-400 shrink-0" />}
-                    {s.session_type === 'party'   && <PartyPopper className="h-4 w-4 text-purple-400 shrink-0" />}
+                    {locked
+                      ? <Lock className="h-4 w-4 text-white/40 shrink-0" />
+                      : <>
+                          {s.session_type === 'wedding' && <Heart className="h-4 w-4 text-pink-400 shrink-0" />}
+                          {s.session_type === 'party'   && <PartyPopper className="h-4 w-4 text-purple-400 shrink-0" />}
+                        </>}
                     <p className="font-semibold text-white truncate">{s.event_name}</p>
                   </div>
                   <p className="text-xs text-white/40">
                     {formatRelativeTime(s.created_at)} · /live/{s.public_slug}
                   </p>
                 </div>
-                <Badge variant={s.is_active ? 'processing' : 'complete'}>
-                  {s.is_active ? t('sessions.active') : t('sessions.closed')}
-                </Badge>
+                {locked ? (
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <Badge variant="failed">{t('sessions.locked.badge')}</Badge>
+                    <span className="text-[10px] text-white/40">{t('sessions.locked.badgeHint')}</span>
+                  </div>
+                ) : (
+                  <Badge variant={s.is_active ? 'processing' : 'complete'}>
+                    {s.is_active ? t('sessions.active') : t('sessions.closed')}
+                  </Badge>
+                )}
               </Card>
             </Link>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

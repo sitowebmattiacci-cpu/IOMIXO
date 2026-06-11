@@ -470,7 +470,16 @@
     "create": "Crea sessione",
     "created": "Sessione creata",
     "active": "Attiva",
-    "closed": "Chiusa"
+    "closed": "Chiusa",
+    "locked": {
+      "title": "Sessione premium bloccata",
+      "text": "Questa sessione è stata creata con Event Pass 24H. Il pass è scaduto. Per riaprire la sessione e continuare a usare Party Mode o Wedding Edition, acquista un nuovo Event Pass 24H oppure passa ad Advance.",
+      "reactivateEventPass": "Riattiva Event Pass 24H",
+      "switchToAdvance": "Passa ad Advance",
+      "backToSessions": "Torna alle sessioni",
+      "badge": "Bloccata",
+      "badgeHint": "Richiede Event Pass o Advance"
+    }
   },
   "wedding": {
     "regia": "Regia Wedding",

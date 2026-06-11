@@ -450,7 +450,16 @@
     "venueName": "Lugar (opcional)",
     "screenModeEnabled": "Activar pantalla live (TV/proyector)",
     "create": "Crear sesión", "created": "Sesión creada",
-    "active": "Activa", "closed": "Cerrada"
+    "active": "Activa", "closed": "Cerrada",
+    "locked": {
+      "title": "Sesión premium bloqueada",
+      "text": "Esta sesión se creó con un Event Pass 24H. El pase ha caducado. Para reabrir la sesión y seguir usando Party Mode o Wedding Edition, compra un nuevo Event Pass 24H o cambia a Advance.",
+      "reactivateEventPass": "Reactivar Event Pass 24H",
+      "switchToAdvance": "Cambiar a Advance",
+      "backToSessions": "Volver a las sesiones",
+      "badge": "Bloqueada",
+      "badgeHint": "Requiere Event Pass o Advance"
+    }
   },
   "wedding": {
     "regia": "Control Wedding",

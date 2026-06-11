@@ -57,6 +57,42 @@ export function effectivePlanLabel(effective: EffectivePlan): EffectivePlanLabel
   }
 }
 
+// ─── Accesso alle sessioni ─────────────────────────────────────
+/** Forma minima di una sessione necessaria per decidere l'accesso. */
+export interface SessionAccessShape {
+  session_type?: string | null
+}
+
+/**
+ * True se la sessione è una sessione "evento" premium (Party Mode o Wedding
+ * Edition), che richiede accesso Advance / Event Pass per essere aperta.
+ * Le sessioni Standard non sono premium.
+ */
+export function isPremiumSession(session: SessionAccessShape | null | undefined): boolean {
+  const type = session?.session_type ?? 'standard'
+  return type === 'party' || type === 'wedding'
+}
+
+/**
+ * Regola di accesso centralizzata alle sessioni.
+ *
+ * - Sessione Standard → sempre accessibile (Free, Pro, Advance, Event Pass).
+ * - Sessione Party Mode → solo con accesso Advance (piano 'wedding') o Event
+ *   Pass 24H attivo e non scaduto.
+ * - Sessione Wedding Edition → come Party Mode.
+ *
+ * `hasAdvanceAccess` viene calcolato da {@link useEffectiveAccess} ed è già
+ * `true` quando il piano DB è Advance ('wedding') OPPURE quando esiste un
+ * Event Pass attivo e non scaduto.
+ */
+export function canAccessSession(
+  session: SessionAccessShape | null | undefined,
+  hasAdvanceAccess: boolean,
+): boolean {
+  if (!isPremiumSession(session)) return true
+  return hasAdvanceAccess
+}
+
 export interface EffectiveAccess {
   user: User | undefined
   isLoading: boolean

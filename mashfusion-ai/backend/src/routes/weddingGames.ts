@@ -89,6 +89,7 @@ weddingGamesRouter.patch('/future-messages/:id', requireAuth, async (req, res, n
     if (!existing || (existing as any).live_sessions?.dj_id !== userId(req)) {
       throw new AppError('Messaggio non trovato', 404)
     }
+    await requireWeddingFeature(userId(req))
     const { data, error } = await supabaseAdmin.from('live_future_messages')
       .update({ is_selected: !!is_selected })
       .eq('id', req.params.id).select('*').single()
@@ -106,6 +107,7 @@ weddingGamesRouter.delete('/future-messages/:id', requireAuth, async (req, res, 
     if (!existing || (existing as any).live_sessions?.dj_id !== userId(req)) {
       throw new AppError('Messaggio non trovato', 404)
     }
+    await requireWeddingFeature(userId(req))
     const { error } = await supabaseAdmin.from('live_future_messages')
       .delete().eq('id', req.params.id)
     if (error) throw new AppError(error.message, 500)

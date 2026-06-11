@@ -88,11 +88,12 @@ livePollsRouter.patch('/polls/:id', requireAuth, async (req, res, next) => {
   try {
     const { is_active } = req.body ?? {}
     const { data: existing } = await supabaseAdmin
-      .from('live_polls').select('id, live_sessions!inner(dj_id)')
+      .from('live_polls').select('id, session_id, live_sessions!inner(dj_id)')
       .eq('id', req.params.id).maybeSingle()
     if (!existing || (existing as any).live_sessions?.dj_id !== userId(req)) {
       throw new AppError('Sondaggio non trovato', 404)
     }
+    await requireLivePolls(userId(req), (existing as any).session_id)
     const patch: Record<string, unknown> = {}
     if (typeof is_active === 'boolean') patch.is_active = is_active
     const { data, error } = await supabaseAdmin.from('live_polls')
