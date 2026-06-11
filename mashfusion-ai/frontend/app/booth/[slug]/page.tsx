@@ -3,7 +3,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import useSWR from 'swr'
 import { useState, useRef, useEffect } from 'react'
-import { Camera, X, RotateCw, Check, Sparkles, ArrowLeft } from 'lucide-react'
+import { Camera, X, RotateCw, Check, Sparkles, ArrowLeft, RefreshCw } from 'lucide-react'
 import { publicLive, livePhotos } from '@/lib/api'
 import { WeddingShell, WeddingButton } from '@/components/wedding/WeddingUI'
 import {
@@ -23,6 +23,7 @@ export default function LiveBoothPage() {
   const [photo, setPhoto] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -85,20 +86,41 @@ export default function LiveBoothPage() {
   }
 
   // ─── Camera helpers ──────────────────────────────────────────
-  const startCamera = async () => {
+  const startCamera = async (mode: 'user' | 'environment' = facingMode) => {
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
         toast.error('La fotocamera richiede HTTPS.')
         return
       }
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: mode, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       })
+      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop())
       streamRef.current = stream
+      setFacingMode(mode)
       setCameraActive(true)
     } catch {
       toast.error('Impossibile accedere alla fotocamera. Controlla i permessi del browser.')
+    }
+  }
+
+  const flipCamera = async () => {
+    const next = facingMode === 'user' ? 'environment' : 'user'
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: next, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      })
+      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop())
+      streamRef.current = stream
+      setFacingMode(next)
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        videoRef.current.play().catch(() => {})
+      }
+    } catch {
+      toast.error('Impossibile girare la fotocamera su questo dispositivo.')
     }
   }
 
@@ -144,8 +166,12 @@ export default function LiveBoothPage() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     ctx.save()
-    ctx.translate(canvas.width, 0)
-    ctx.scale(-1, 1)
+    if (facingMode === 'user') {
+      // La camera frontale è mostrata "a specchio": replichiamo il flip
+      // anche nello scatto così la foto corrisponde all'anteprima.
+      ctx.translate(canvas.width, 0)
+      ctx.scale(-1, 1)
+    }
     ctx.drawImage(video, 0, 0)
     ctx.restore()
     // Wedding: nessun overlay "stampato" nella foto — la cornice elegante
@@ -222,7 +248,7 @@ export default function LiveBoothPage() {
         <PartyShell>
           <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
             <div className="relative max-w-2xl w-full rounded-3xl overflow-hidden ring-2 ring-[#FF3D8A]/40 shadow-[0_25px_80px_rgba(255,61,138,0.35)]">
-              <video ref={videoRef} autoPlay playsInline muted className="w-full h-auto mirror" />
+              <video ref={videoRef} autoPlay playsInline muted className={`w-full h-auto ${facingMode === 'user' ? 'mirror' : ''}`} />
               {countdown !== null && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 backdrop-blur-sm">
                   <p className="text-[#FF7AB6] text-2xl font-black tracking-[0.5em] uppercase mb-6 animate-pulse">
@@ -238,6 +264,9 @@ export default function LiveBoothPage() {
             <div className="flex gap-3 mt-6 flex-wrap justify-center">
               <PartyButton variant="ghost" onClick={stopCamera} icon={<X className="h-5 w-5" />} size="lg">
                 Chiudi
+              </PartyButton>
+              <PartyButton variant="ghost" onClick={flipCamera} disabled={countdown !== null} icon={<RefreshCw className="h-5 w-5" />} size="lg">
+                Gira
               </PartyButton>
               <PartyButton
                 variant="fuchsia"
@@ -285,7 +314,7 @@ export default function LiveBoothPage() {
             </ol>
           </PartyCard>
 
-          <PartyButton onClick={startCamera} icon={<Camera className="h-5 w-5" />} size="lg" variant="fuchsia" className="w-full">
+          <PartyButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" variant="fuchsia" className="w-full">
             Partecipa al Live Booth
           </PartyButton>
 
@@ -328,11 +357,12 @@ export default function LiveBoothPage() {
       <WeddingShell>
         <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
           <div className="relative max-w-2xl w-full rounded-2xl overflow-hidden shadow-wedding-lg border-4 border-wedding-gold/30">
-            <video ref={videoRef} autoPlay playsInline muted className="w-full h-auto mirror" />
+            <video ref={videoRef} autoPlay playsInline muted className={`w-full h-auto ${facingMode === 'user' ? 'mirror' : ''}`} />
           </div>
           <canvas ref={canvasRef} className="hidden" />
           <div className="flex gap-4 mt-6">
             <WeddingButton onClick={stopCamera} icon={<X className="h-5 w-5" />} size="lg">Chiudi</WeddingButton>
+            <WeddingButton onClick={flipCamera} icon={<RefreshCw className="h-5 w-5" />} size="lg">Gira</WeddingButton>
             <WeddingButton onClick={capturePhoto} icon={<Camera className="h-5 w-5" />} size="lg">Scatta foto</WeddingButton>
           </div>
         </div>
@@ -362,7 +392,7 @@ export default function LiveBoothPage() {
             Scatta una foto e partecipa al Live Booth del matrimonio.
             La tua foto apparirà sullo schermo live!
           </p>
-          <WeddingButton onClick={startCamera} icon={<Camera className="h-5 w-5" />} size="lg" className="w-full">
+          <WeddingButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" className="w-full">
             Apri fotocamera
           </WeddingButton>
         </div>
