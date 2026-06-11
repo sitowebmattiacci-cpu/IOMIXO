@@ -361,9 +361,9 @@ export default function LiveBoothPage() {
           </div>
           <canvas ref={canvasRef} className="hidden" />
           <div className="flex gap-3 mt-6">
-            <WeddingButton onClick={stopCamera} icon={<X className="h-4 w-4" />} size="sm">Chiudi</WeddingButton>
-            <WeddingButton onClick={flipCamera} icon={<RefreshCw className="h-4 w-4" />} size="sm">Gira</WeddingButton>
-            <WeddingButton onClick={capturePhoto} icon={<Camera className="h-4 w-4" />} size="sm">Scatta foto</WeddingButton>
+            <WeddingButton onClick={stopCamera} icon={<X className="h-4 w-4" />} size="md">Chiudi</WeddingButton>
+            <WeddingButton onClick={flipCamera} icon={<RefreshCw className="h-4 w-4" />} size="md">Gira</WeddingButton>
+            <WeddingButton onClick={capturePhoto} icon={<Camera className="h-4 w-4" />} size="md">Scatta foto</WeddingButton>
           </div>
         </div>
         <style jsx global>{`.mirror { transform: scaleX(-1); }`}</style>
