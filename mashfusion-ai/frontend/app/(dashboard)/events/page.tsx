@@ -3,21 +3,20 @@ import { useState } from 'react'
 import useSWR, { mutate as globalMutate } from 'swr'
 import toast from 'react-hot-toast'
 import { CalendarDays, Plus, Trash2, MapPin, Ticket, Eye, EyeOff } from 'lucide-react'
-import { djEvents, auth, type DjEvent } from '@/lib/api'
+import { djEvents, type DjEvent } from '@/lib/api'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { UpgradeGate } from '@/components/live/UpgradeGate'
+import { useEffectiveAccess } from '@/lib/access'
 import { useI18n } from '@/lib/i18n'
-import type { User } from '@/types'
 
 const EMPTY = { title: '', event_date: '', venue_name: '', city: '', ticket_url: '', is_public: true }
 
 export default function EventsPage() {
   const { t } = useI18n()
-  const { data: me } = useSWR<User>('me', () => auth.me())
-  const isFree = !me || me.plan === 'free'
-  const { data: events } = useSWR(!isFree ? 'dj-events' : null, () => djEvents.list())
+  const { hasProAccess } = useEffectiveAccess()
+  const { data: events } = useSWR(hasProAccess ? 'dj-events' : null, () => djEvents.list())
   const [creating, setCreating] = useState(false)
   const [form, setForm] = useState(EMPTY)
   const [submitting, setSubmitting] = useState(false)
@@ -65,19 +64,19 @@ export default function EventsPage() {
           <h1 className="text-2xl font-black text-white">{t('events.title')}</h1>
           <p className="text-sm text-white/40 mt-1">{t('events.subtitle')}</p>
         </div>
-        {!creating && !isFree && (
+        {!creating && hasProAccess && (
           <Button icon={<Plus className="h-4 w-4" />} onClick={() => setCreating(true)}>{t('events.newEvent')}</Button>
         )}
       </div>
 
-      {isFree && (
+      {!hasProAccess && (
         <UpgradeGate
           title={t('events.calendarProOnly')}
           message={t('events.calendarProOnlyMsg')}
         />
       )}
 
-      {!isFree && creating && (
+      {hasProAccess && creating && (
         <Card className="mb-6">
           <form onSubmit={submit} className="space-y-3">
             <Input label={t('events.fieldTitle')} value={form.title} onChange={(v) => setForm({ ...form, title: v })} required />
@@ -99,7 +98,7 @@ export default function EventsPage() {
         </Card>
       )}
 
-      {!isFree && (!events || events.length === 0 ? (
+      {hasProAccess && (!events || events.length === 0 ? (
         !creating && (
           <Card className="text-center py-12">
             <CalendarDays className="h-10 w-10 text-white/20 mx-auto mb-4" />

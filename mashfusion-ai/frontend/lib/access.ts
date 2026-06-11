@@ -69,6 +69,11 @@ export interface EffectiveAccess {
   effectiveLabel: EffectivePlanLabel
   /** Accesso alle funzioni Advance (Party Mode + Wedding Edition). */
   hasAdvanceAccess: boolean
+  /**
+   * Accesso alle funzioni Pro (link social, prossime date / calendario eventi).
+   * Vero per piano Pro, piano Advance ('wedding') o Event Pass 24H attivo.
+   */
+  hasProAccess: boolean
   /** Piano effettivo === 'pro'. */
   isPro: boolean
   /** Nessun accesso premium (effettivo === 'free'). */
@@ -96,6 +101,7 @@ export function useEffectiveAccess(): EffectiveAccess {
   const hasActiveEventPass = !!activePass
   const effectivePlan = computeEffectivePlan(user?.plan, hasActiveEventPass)
   const hasAdvanceAccess = isAdvancePlan(user?.plan) || hasActiveEventPass
+  const hasProAccess = isProPlan(user?.plan) || isAdvancePlan(user?.plan) || hasActiveEventPass
 
   return {
     user,
@@ -105,6 +111,7 @@ export function useEffectiveAccess(): EffectiveAccess {
     effectivePlan,
     effectiveLabel: effectivePlanLabel(effectivePlan),
     hasAdvanceAccess,
+    hasProAccess,
     isPro: effectivePlan === 'pro',
     isFree: effectivePlan === 'free',
     passValidUntil: activePass?.valid_until ?? null,

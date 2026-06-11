@@ -3,12 +3,12 @@ import { useEffect, useRef, useState } from 'react'
 import useSWR from 'swr'
 import toast from 'react-hot-toast'
 import { UserCircle, Save, Upload } from 'lucide-react'
-import { djProfile, auth, type DjProfile } from '@/lib/api'
+import { djProfile, type DjProfile } from '@/lib/api'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { UpgradeGate } from '@/components/live/UpgradeGate'
+import { useEffectiveAccess } from '@/lib/access'
 import { useI18n } from '@/lib/i18n'
-import type { User } from '@/types'
 
 const EMPTY: DjProfile = {
   display_name: '',
@@ -25,8 +25,7 @@ const EMPTY: DjProfile = {
 export default function ProfilePage() {
   const { t } = useI18n()
   const { data, mutate } = useSWR('dj-profile', () => djProfile.get())
-  const { data: me } = useSWR<User>('me', () => auth.me())
-  const isFree = !me || me.plan === 'free'
+  const { hasProAccess } = useEffectiveAccess()
   const [form, setForm] = useState<DjProfile>(EMPTY)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -136,7 +135,7 @@ export default function ProfilePage() {
           </Field>
         </Card>
 
-        {isFree ? (
+        {!hasProAccess ? (
           <UpgradeGate
             compact
             title={t('profile.socialLocked')}
