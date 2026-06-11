@@ -221,7 +221,7 @@ export default function SessionDetailPage() {
             <WeddingQRCompact slug={session.public_slug} />
           </div>
           <div className="md:col-span-2">
-            <WeddingStats sessionId={session.id} pendingCount={pending.length} />
+            <WeddingStats sessionId={session.id} pendingCount={pending.length} activeTab={tab} />
           </div>
         </div>
 
@@ -593,25 +593,37 @@ function WeddingQRCompact({ slug }: { slug: string }) {
   )
 }
 
-function WeddingStats({ sessionId, pendingCount }: { sessionId: string; pendingCount: number }) {
+function WeddingStats({ sessionId, pendingCount, activeTab }: { sessionId: string; pendingCount: number; activeTab: string }) {
   const { t } = useI18n()
   const { data: dedications } = useSWR(['dedications', sessionId], () => liveDedications.listForDj(sessionId), { refreshInterval: 8_000 })
   const { data: photos }      = useSWR(['photos', sessionId],      () => livePhotos.listForDj(sessionId),      { refreshInterval: 8_000 })
   const { data: polls }       = useSWR(['polls', sessionId],       () => livePolls.list(sessionId),            { refreshInterval: 8_000 })
   const activeGames = (polls ?? []).filter((p: LivePoll) => p.is_active).length
+
+  // Notifiche live: pulsano solo se ci sono elementi realmente da gestire (pending)
+  // e il DJ non sta già guardando la tab corrispondente.
+  const pendingDedications = (dedications ?? []).filter((d) => d.status === 'pending').length
+  const pendingPhotos      = (photos ?? []).filter((p) => p.status === 'pending').length
   return (
     <div className="rounded-[18px] border border-[#E8B7C8] bg-[#F7F4F3] p-4 h-full grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <StatTile label={t('weddingPanels.statRequests')} value={pendingCount} icon={<MessageSquare className="h-4 w-4" />} />
-      <StatTile label={t('weddingPanels.statDedications')}   value={(dedications ?? []).length} icon={<Heart className="h-4 w-4" />} />
-      <StatTile label={t('weddingPanels.statPhotos')}      value={(photos ?? []).length}      icon={<ImageIcon className="h-4 w-4" />} />
+      <StatTile label={t('weddingPanels.statRequests')} value={pendingCount} icon={<MessageSquare className="h-4 w-4" />} pulse={pendingCount > 0 && activeTab !== 'requests'} />
+      <StatTile label={t('weddingPanels.statDedications')}   value={(dedications ?? []).length} icon={<Heart className="h-4 w-4" />} pulse={pendingDedications > 0 && activeTab !== 'dedications'} />
+      <StatTile label={t('weddingPanels.statPhotos')}      value={(photos ?? []).length}      icon={<ImageIcon className="h-4 w-4" />} pulse={pendingPhotos > 0 && activeTab !== 'photos'} />
+      {/* Giochi: nessuno stato "pending" da gestire → solo il numero, niente pulse */}
       <StatTile label={t('weddingPanels.statGames')}    value={activeGames}                icon={<Sparkles className="h-4 w-4" />} />
     </div>
   )
 }
 
-function StatTile({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
+function StatTile({ label, value, icon, pulse }: { label: string; value: number; icon: React.ReactNode; pulse?: boolean }) {
   return (
-    <div className="rounded-xl bg-white border border-[#E8B7C8] px-3 py-3 transition-all duration-150 hover:shadow-md hover:-translate-y-0.5">
+    <div className={`relative rounded-xl bg-white border px-3 py-3 transition-all duration-150 hover:shadow-md hover:-translate-y-0.5 ${pulse ? 'notify-pulse-wedding border-[#8F1D2C]' : 'border-[#E8B7C8]'}`}>
+      {pulse && (
+        <span className="absolute -top-1.5 -right-1.5 flex h-3 w-3">
+          <span className="absolute inline-flex h-full w-full rounded-full bg-[#8F1D2C] opacity-60 animate-ping" />
+          <span className="relative inline-flex h-3 w-3 rounded-full bg-[#8F1D2C]" />
+        </span>
+      )}
       <div className="flex items-center gap-1.5 text-[#8F1D2C] mb-1.5">
         {icon}
         <span className="text-[10px] uppercase tracking-[0.24em] font-semibold">{label}</span>
@@ -1806,9 +1818,9 @@ function PartyDashboard({
 
         {/* STATS */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-          <PartyStat icon={<Music2 className="h-4 w-4" />} label="Richieste" value={(pending.length + approved.length).toString()} />
+          <PartyStat icon={<Music2 className="h-4 w-4" />} label="Richieste" value={(pending.length + approved.length).toString()} pulse={pending.length > 0 && tab !== 'requests'} />
           <PartyStatLive sessionId={session.id} />
-          <PartyStatPhotos sessionId={session.id} />
+          <PartyStatPhotos sessionId={session.id} activeTab={tab} />
           <PartyStatPolls sessionId={session.id} />
         </div>
 
@@ -1888,9 +1900,15 @@ function PartyLinkRow({ label, url, onCopy, external }: { label: string; url: st
   )
 }
 
-function PartyStat({ icon, label, value, hint }: { icon: React.ReactNode; label: string; value: string; hint?: string }) {
+function PartyStat({ icon, label, value, hint, pulse }: { icon: React.ReactNode; label: string; value: string; hint?: string; pulse?: boolean }) {
   return (
-    <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-4 backdrop-blur">
+    <div className={`relative rounded-2xl bg-white/[0.04] border p-4 backdrop-blur ${pulse ? 'notify-pulse-party border-[#FF3D8A]' : 'border-white/10'}`}>
+      {pulse && (
+        <span className="absolute -top-1.5 -right-1.5 flex h-3 w-3">
+          <span className="absolute inline-flex h-full w-full rounded-full bg-[#FF3D8A] opacity-60 animate-ping" />
+          <span className="relative inline-flex h-3 w-3 rounded-full bg-[#FF3D8A]" />
+        </span>
+      )}
       <div className="flex items-center gap-2 text-[#FF7AB6]">{icon}<span className="text-[10px] font-bold uppercase tracking-wider">{label}</span></div>
       <p className="text-2xl font-black text-white mt-1">{value}</p>
       {hint && <p className="text-[10px] text-white/40 mt-0.5">{hint}</p>}
@@ -1903,9 +1921,10 @@ function PartyStatLive({ sessionId }: { sessionId: string }) {
   return <PartyStat icon={<Users className="h-4 w-4" />} label="Online" value={String(data?.online_count ?? 0)} />
 }
 
-function PartyStatPhotos({ sessionId }: { sessionId: string }) {
+function PartyStatPhotos({ sessionId, activeTab }: { sessionId: string; activeTab?: string }) {
   const { data } = useSWR(['booth-photos', sessionId], () => livePhotos.listBoothPhotos(sessionId).catch(() => []), { refreshInterval: 8_000 })
-  return <PartyStat icon={<Camera className="h-4 w-4" />} label="Foto Booth" value={String(data?.length ?? 0)} />
+  const pendingCount = (data ?? []).filter((p) => p.status === 'pending').length
+  return <PartyStat icon={<Camera className="h-4 w-4" />} label="Foto Booth" value={String(data?.length ?? 0)} pulse={pendingCount > 0 && activeTab !== 'booth'} />
 }
 
 function PartyStatPolls({ sessionId }: { sessionId: string }) {

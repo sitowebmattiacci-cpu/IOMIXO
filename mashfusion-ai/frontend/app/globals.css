@@ -464,3 +464,41 @@ body.iomixo-dragging .clip-block {
   box-shadow: 0 0 8px var(--knob-colour, #a855f7);
   cursor: ns-resize;
 }
+
+/* ── Live Hub: notifica "nuovo elemento da gestire" sulle card ──
+   Bordo che pulsa + glow leggero. Wedding usa rosso/rosa elegante,
+   Party usa magenta/fucsia coerente con la palette IOMIXO. */
+@keyframes notifyPulseWedding {
+  0%, 100% {
+    border-color: rgba(143, 29, 44, 0.30);
+    box-shadow: 0 0 0 rgba(143, 29, 44, 0);
+  }
+  50% {
+    border-color: rgba(143, 29, 44, 0.95);
+    box-shadow: 0 0 18px rgba(143, 29, 44, 0.32);
+  }
+}
+.notify-pulse-wedding {
+  animation: notifyPulseWedding 1.4s ease-in-out infinite;
+}
+
+@keyframes notifyPulseParty {
+  0%, 100% {
+    border-color: rgba(255, 61, 138, 0.25);
+    box-shadow: 0 0 0 rgba(255, 61, 138, 0);
+  }
+  50% {
+    border-color: rgba(255, 61, 138, 0.95);
+    box-shadow: 0 0 20px rgba(255, 61, 138, 0.42);
+  }
+}
+.notify-pulse-party {
+  animation: notifyPulseParty 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notify-pulse-wedding,
+  .notify-pulse-party {
+    animation: none;
+  }
+}
