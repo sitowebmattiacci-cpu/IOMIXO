@@ -9,9 +9,12 @@ import { WeddingShell, WeddingButton } from '@/components/wedding/WeddingUI'
 import {
   PartyShell, PartyButton, PartyCard, PartyEyebrow, PartyDivider,
 } from '@/components/party/PartyUI'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { useI18n } from '@/lib/i18n'
 import toast from 'react-hot-toast'
 
 export default function LiveBoothPage() {
+  const { t } = useI18n()
   const { slug } = useParams<{ slug: string }>()
   const { data, error } = useSWR(
     slug ? ['public-live', slug] : null,
@@ -47,7 +50,7 @@ export default function LiveBoothPage() {
     return (
       <PartyShell>
         <div className="min-h-screen flex items-center justify-center px-6">
-          <p className="text-white/60 text-center">Sessione non trovata.</p>
+          <p className="text-white/60 text-center">{t('booth.sessionNotFound')}</p>
         </div>
       </PartyShell>
     )
@@ -62,7 +65,7 @@ export default function LiveBoothPage() {
       <PartyShell>
         <div className="min-h-screen flex items-center justify-center px-6">
           <p className="text-white/70 text-center">
-            Live Booth disponibile solo per le sessioni Party Mode o Wedding Edition.
+            {t('booth.onlyEventModes')}
           </p>
         </div>
       </PartyShell>
@@ -73,13 +76,13 @@ export default function LiveBoothPage() {
     return isWedding ? (
       <WeddingShell>
         <div className="min-h-screen flex items-center justify-center px-6">
-          <p className="text-wedding-taupe text-center">La sessione è terminata.</p>
+          <p className="text-wedding-taupe text-center">{t('booth.sessionEnded')}</p>
         </div>
       </WeddingShell>
     ) : (
       <PartyShell>
         <div className="min-h-screen flex items-center justify-center px-6">
-          <p className="text-white/60 text-center">La sessione è terminata.</p>
+          <p className="text-white/60 text-center">{t('booth.sessionEnded')}</p>
         </div>
       </PartyShell>
     )
@@ -89,7 +92,7 @@ export default function LiveBoothPage() {
   const startCamera = async (mode: 'user' | 'environment' = facingMode) => {
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
-        toast.error('La fotocamera richiede HTTPS.')
+        toast.error(t('booth.cameraHttps'))
         return
       }
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -101,7 +104,7 @@ export default function LiveBoothPage() {
       setFacingMode(mode)
       setCameraActive(true)
     } catch {
-      toast.error('Impossibile accedere alla fotocamera. Controlla i permessi del browser.')
+      toast.error(t('booth.cameraDenied'))
     }
   }
 
@@ -120,7 +123,7 @@ export default function LiveBoothPage() {
         videoRef.current.play().catch(() => {})
       }
     } catch {
-      toast.error('Impossibile girare la fotocamera su questo dispositivo.')
+      toast.error(t('booth.flipError'))
     }
   }
 
@@ -207,13 +210,13 @@ export default function LiveBoothPage() {
       const file = new File([blob], 'booth-photo.jpg', { type: 'image/jpeg' })
       await livePhotos.boothUpload(slug!, file, {})
       toast.success(isWedding
-        ? 'La tua foto apparirà sul Live Booth ❤️'
-        : 'Foto inviata! Potrebbe apparire sullo schermo live.')
+        ? t('booth.uploadedWedding')
+        : t('booth.uploadedParty'))
       setPhoto(null)
     } catch (err: any) {
-      const msg = err?.message ?? 'Errore durante l\'invio.'
+      const msg = err?.message ?? t('booth.uploadError')
       if (msg.includes('Advance') || msg.includes('Pass') || msg.includes('sospese')) {
-        toast.error('Live Booth disponibile con Advance o Event Pass 24H.')
+        toast.error(t('booth.uploadAccessError'))
       } else {
         toast.error(msg)
       }
@@ -232,10 +235,10 @@ export default function LiveBoothPage() {
             </div>
             <div className="flex gap-3 flex-wrap justify-center">
               <PartyButton variant="ghost" onClick={retakePhoto} disabled={uploading} icon={<RotateCw className="h-5 w-5" />} size="lg">
-                Rifai
+                {t('booth.retake')}
               </PartyButton>
               <PartyButton variant="fuchsia" onClick={uploadPhoto} disabled={uploading} loading={uploading} icon={<Check className="h-5 w-5" />} size="lg">
-                Usa questa foto
+                {t('booth.useThisPhoto')}
               </PartyButton>
             </div>
           </div>
@@ -252,7 +255,7 @@ export default function LiveBoothPage() {
               {countdown !== null && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 backdrop-blur-sm">
                   <p className="text-[#FF7AB6] text-2xl font-black tracking-[0.5em] uppercase mb-6 animate-pulse">
-                    Photo Moment
+                    {t('booth.photoMoment')}
                   </p>
                   <p key={countdown} className="text-white text-[12rem] sm:text-[16rem] font-black leading-none drop-shadow-[0_0_40px_rgba(255,61,138,0.7)]">
                     {countdown}
@@ -263,10 +266,10 @@ export default function LiveBoothPage() {
             <canvas ref={canvasRef} className="hidden" />
             <div className="flex gap-3 mt-6 flex-wrap justify-center">
               <PartyButton variant="ghost" onClick={stopCamera} icon={<X className="h-5 w-5" />} size="lg">
-                Chiudi
+                {t('booth.close')}
               </PartyButton>
               <PartyButton variant="ghost" onClick={flipCamera} disabled={countdown !== null} icon={<RefreshCw className="h-5 w-5" />} size="lg">
-                Gira
+                {t('booth.flip')}
               </PartyButton>
               <PartyButton
                 variant="fuchsia"
@@ -275,7 +278,7 @@ export default function LiveBoothPage() {
                 icon={<Camera className="h-5 w-5" />}
                 size="lg"
               >
-                {countdown !== null ? `${countdown}…` : 'Photo Moment'}
+                {countdown !== null ? `${countdown}…` : t('booth.photoMoment')}
               </PartyButton>
             </div>
           </div>
@@ -287,6 +290,9 @@ export default function LiveBoothPage() {
     return (
       <PartyShell>
         <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center space-y-8 max-w-lg mx-auto py-12">
+          <div className="flex justify-center">
+            <LanguageSwitcher />
+          </div>
           <div>
             <PartyEyebrow>✦ Live Booth ✦</PartyEyebrow>
             <h1 className="text-5xl sm:text-6xl font-black text-white mt-3 leading-tight">
@@ -294,28 +300,28 @@ export default function LiveBoothPage() {
             </h1>
             <PartyDivider className="my-6" />
             <p className="text-base text-white/70">
-              Partecipa al Photo Moment.
+              {t('booth.partyIntro1')}
               <br />
-              La tua foto può apparire live sullo schermo della serata.
+              {t('booth.partyIntro2')}
             </p>
           </div>
 
           <PartyCard tone="fuchsia" className="w-full">
             <div className="flex items-center justify-center gap-2 text-[#FF7AB6] mb-3">
               <Sparkles className="h-4 w-4" />
-              <p className="text-[11px] uppercase tracking-[0.3em] font-semibold">Come funziona</p>
+              <p className="text-[11px] uppercase tracking-[0.3em] font-semibold">{t('booth.howItWorks')}</p>
               <Sparkles className="h-4 w-4" />
             </div>
             <ol className="text-sm text-white/80 space-y-1.5 text-left list-decimal list-inside">
-              <li>Apri la fotocamera</li>
-              <li>Posa per il countdown <span className="text-[#FF7AB6] font-bold">3… 2… 1</span></li>
-              <li>Conferma o rifai lo scatto</li>
-              <li>Invia: il DJ potrà mostrarla sullo schermo</li>
+              <li>{t('booth.step1')}</li>
+              <li>{t('booth.step2')} <span className="text-[#FF7AB6] font-bold">3… 2… 1</span></li>
+              <li>{t('booth.step3')}</li>
+              <li>{t('booth.step4')}</li>
             </ol>
           </PartyCard>
 
           <PartyButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" variant="fuchsia" className="w-full">
-            Partecipa al Live Booth
+            {t('booth.joinParty')}
           </PartyButton>
 
           <Link
@@ -323,7 +329,7 @@ export default function LiveBoothPage() {
             className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.25em] text-white/50 hover:text-[#FF7AB6] transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Torna alla pagina principale
+            {t('booth.backToMain')}
           </Link>
 
           <p className="text-[10px] uppercase tracking-[0.32em] text-white/30">
@@ -344,8 +350,8 @@ export default function LiveBoothPage() {
             <img src={photo} alt="Preview" className="w-full h-auto" />
           </div>
           <div className="flex gap-4">
-            <WeddingButton onClick={retakePhoto} disabled={uploading} icon={<RotateCw className="h-5 w-5" />} size="lg">Rifai</WeddingButton>
-            <WeddingButton onClick={uploadPhoto} disabled={uploading} loading={uploading} icon={<Check className="h-5 w-5" />} size="lg">Invia</WeddingButton>
+            <WeddingButton onClick={retakePhoto} disabled={uploading} icon={<RotateCw className="h-5 w-5" />} size="lg">{t('booth.retake')}</WeddingButton>
+            <WeddingButton onClick={uploadPhoto} disabled={uploading} loading={uploading} icon={<Check className="h-5 w-5" />} size="lg">{t('booth.send')}</WeddingButton>
           </div>
         </div>
       </WeddingShell>
@@ -361,9 +367,9 @@ export default function LiveBoothPage() {
           </div>
           <canvas ref={canvasRef} className="hidden" />
           <div className="flex gap-3 mt-6">
-            <WeddingButton onClick={stopCamera} icon={<X className="h-4 w-4" />} size="md">Chiudi</WeddingButton>
-            <WeddingButton onClick={flipCamera} icon={<RefreshCw className="h-4 w-4" />} size="md">Gira</WeddingButton>
-            <WeddingButton onClick={capturePhoto} icon={<Camera className="h-4 w-4" />} size="md">Scatta foto</WeddingButton>
+            <WeddingButton onClick={stopCamera} icon={<X className="h-4 w-4" />} size="md">{t('booth.close')}</WeddingButton>
+            <WeddingButton onClick={flipCamera} icon={<RefreshCw className="h-4 w-4" />} size="md">{t('booth.flip')}</WeddingButton>
+            <WeddingButton onClick={capturePhoto} icon={<Camera className="h-4 w-4" />} size="md">{t('booth.takePhoto')}</WeddingButton>
           </div>
         </div>
         <style jsx global>{`.mirror { transform: scaleX(-1); }`}</style>
@@ -374,6 +380,9 @@ export default function LiveBoothPage() {
   return (
     <WeddingShell>
       <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center space-y-8">
+        <div className="flex justify-center">
+          <LanguageSwitcher variant="light" />
+        </div>
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.4em] text-wedding-burgundy mb-4">
             ✦ Live Booth ✦
@@ -389,11 +398,10 @@ export default function LiveBoothPage() {
         </div>
         <div className="max-w-md">
           <p className="text-wedding-ink/70 mb-6">
-            Scatta una foto e partecipa al Live Booth del matrimonio.
-            La tua foto apparirà sullo schermo live!
+            {t('booth.weddingIntro')}
           </p>
           <WeddingButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" className="w-full">
-            Apri fotocamera
+            {t('booth.openCamera')}
           </WeddingButton>
         </div>
         <Link
@@ -401,7 +409,7 @@ export default function LiveBoothPage() {
           className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.25em] text-wedding-taupe hover:text-wedding-burgundy transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          Torna alla pagina principale
+          {t('booth.backToMain')}
         </Link>
       </div>
     </WeddingShell>

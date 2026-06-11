@@ -13,6 +13,7 @@ import {
   WeddingShell, WeddingCard, WeddingButton, WeddingBadge,
 } from '@/components/wedding/WeddingUI'
 import { useI18n } from '@/lib/i18n'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 // ── Public API client (no auth) ────────────────────────────────
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
@@ -155,6 +156,9 @@ export default function RemoteControlPage() {
   return (
     <WeddingShell className="pb-20">
       <div className="max-w-2xl mx-auto px-4 py-6">
+        <div className="flex justify-center mb-4">
+          <LanguageSwitcher variant="light" />
+        </div>
         {/* Header compatto */}
         <div className="mb-6 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-wedding-gold/10 border border-wedding-gold/30 mb-3">

@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { Music2, Send, Instagram, Globe, MapPin, CalendarDays, Lock, AlertTriangle, Check, X, Clock, Heart, Sparkles, Image as ImageIcon, Camera } from 'lucide-react'
 import { publicLive, liveDedications, liveGames, livePolls, livePhotos, bestPhoto, type LiveRequestStatus, type LiveDedication, type LivePoll, type LivePhoto, type LiveGameRound } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import {
   WeddingShell, WeddingCard, WeddingButton, WeddingSection, WeddingBadge,
   WeddingDivider, WeddingInput, WeddingTextarea,
@@ -118,6 +119,9 @@ export default function PublicLivePage() {
     return (
       <WeddingShell>
         <div className="max-w-lg mx-auto px-6 py-16">
+          <div className="flex justify-center mb-6">
+            <LanguageSwitcher variant="light" />
+          </div>
           {/* Wedding header */}
           <div className="text-center mb-12">
             <p className="text-[11px] font-semibold uppercase tracking-[0.4em] text-[#8F1D2C] mb-4">
@@ -242,6 +246,9 @@ export default function PublicLivePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-purple-950/40 to-zinc-950 text-white">
       <div className="max-w-md mx-auto px-5 py-8">
+        <div className="flex justify-center mb-5">
+          <LanguageSwitcher />
+        </div>
         <div className="text-center mb-6">
           <p className="text-xs uppercase tracking-wider text-purple-300/80 mb-2">Richiesta musicale</p>
           <h1 className="text-2xl font-black">{session.event_name}</h1>
