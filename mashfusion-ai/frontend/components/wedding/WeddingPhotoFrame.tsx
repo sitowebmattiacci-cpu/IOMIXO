@@ -109,10 +109,10 @@ export function WeddingPhotoFrame({
           <img
             src={url}
             alt={caption ?? ''}
-            className={`w-full object-cover ${isScreen ? 'aspect-[4/5]' : 'aspect-square'}`}
+            className={`w-full object-cover ${isScreen ? 'aspect-[4/3]' : 'aspect-square'}`}
           />
         ) : (
-          <div className={`w-full ${isScreen ? 'aspect-[4/5]' : 'aspect-square'} flex items-center justify-center text-[#B8A89A]`}>
+          <div className={`w-full ${isScreen ? 'aspect-[4/3]' : 'aspect-square'} flex items-center justify-center text-[#B8A89A]`}>
             ◌
           </div>
         )}
@@ -218,7 +218,7 @@ export function WeddingPhotoSlideshow({
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 1.04 }}
           transition={{ duration: 1.1, ease: 'easeInOut' }}
-          className="w-full max-w-[34rem] sm:max-w-[40rem]"
+          className="w-full max-w-[20rem] sm:max-w-[26rem]"
         >
           <WeddingPhotoFrame
             url={photo.url}
