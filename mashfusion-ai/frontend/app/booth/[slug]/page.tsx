@@ -1,8 +1,9 @@
 'use client'
 import { useParams } from 'next/navigation'
+import Link from 'next/link'
 import useSWR from 'swr'
 import { useState, useRef, useEffect } from 'react'
-import { Camera, X, RotateCw, Check, Sparkles } from 'lucide-react'
+import { Camera, X, RotateCw, Check, Sparkles, ArrowLeft } from 'lucide-react'
 import { publicLive, livePhotos } from '@/lib/api'
 import { WeddingShell, WeddingButton } from '@/components/wedding/WeddingUI'
 import {
@@ -288,6 +289,14 @@ export default function LiveBoothPage() {
             Partecipa al Live Booth
           </PartyButton>
 
+          <Link
+            href={`/live/${slug}`}
+            className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.25em] text-white/50 hover:text-[#FF7AB6] transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Torna alla pagina principale
+          </Link>
+
           <p className="text-[10px] uppercase tracking-[0.32em] text-white/30">
             Powered by <span className="text-[#FF7AB6]">IOMIXO Live Hub</span>
           </p>
@@ -357,6 +366,13 @@ export default function LiveBoothPage() {
             Apri fotocamera
           </WeddingButton>
         </div>
+        <Link
+          href={`/live/${slug}`}
+          className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.25em] text-wedding-taupe hover:text-wedding-burgundy transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Torna alla pagina principale
+        </Link>
       </div>
     </WeddingShell>
   )
