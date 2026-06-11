@@ -1595,7 +1595,7 @@ function PhotosPanel({ sessionId, session }: { sessionId: string; session: any }
 
   const envBase = process.env.NEXT_PUBLIC_PUBLIC_BASE_URL
   const origin = envBase || (typeof window !== 'undefined' ? window.location.origin : 'https://www.iomixo.com')
-  const boothUrl = `${origin}/booth/${sessionId}`
+  const boothUrl = `${origin}/booth/${session?.public_slug ?? sessionId}`
   const [copiedBooth, setCopiedBooth] = useState(false)
   const copyBoothUrl = async () => {
     try { await navigator.clipboard.writeText(boothUrl); setCopiedBooth(true); setTimeout(() => setCopiedBooth(false), 1500) } catch {}
