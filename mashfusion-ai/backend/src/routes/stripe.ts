@@ -73,9 +73,18 @@ stripeRouter.post('/create-checkout', requireAuth, async (req: Request, res: Res
     const metadata: Record<string, string> = { user_id: userId }
     if (session_id) metadata.session_id = session_id
 
+    // Restrict payment methods to card + PayPal for every checkout (one-time and
+    // subscription). Apple Pay and Google Pay are offered automatically via 'card'
+    // on compatible devices/browsers (they are NOT separate payment_method_types).
+    // Setting this explicitly excludes Link, Klarna, Amazon Pay, MB WAY,
+    // Bancontact, EPS, etc. — even though they are enabled at the account level.
+    const paymentMethodTypes: Stripe.Checkout.SessionCreateParams.PaymentMethodType[] = ['card', 'paypal']
+
     const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       customer:    customerId,
       mode:        mode as 'subscription' | 'payment',
+      payment_method_types: paymentMethodTypes,
+      allow_promotion_codes: true,
       line_items:  [{ price: price_id, quantity: 1 }],
       success_url: `${success_url}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url,
