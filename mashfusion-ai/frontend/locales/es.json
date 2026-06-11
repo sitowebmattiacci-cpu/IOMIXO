@@ -443,7 +443,8 @@
       "recentDedications": "Últimas dedicatorias",
       "recentPhotos": "Últimas fotos"
     },
-    "photoFrameTitle": "Recién Casados"
+    "photoFrameTitle": "Recién Casados",
+    "photoSlideshowEmpty": "Haz una foto desde el código QR y verla aparecer en pantalla"
   },
   "live": {
     "title": "Peticiones live",

@@ -1,4 +1,6 @@
 'use client'
+import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useI18n } from '@/lib/i18n'
 
 // ════════════════════════════════════════════════════════════════
@@ -136,3 +138,99 @@ export function WeddingPhotoFrame({
     </figure>
   )
 }
+
+// ════════════════════════════════════════════════════════════════
+// WeddingPhotoSlideshow — Screen Mode (TV / LED Wall / proiettore)
+// Mostra UNA foto approvata alla volta, grande e centrale, dentro la
+// cornice "Oggi Sposi", con rotazione automatica random e crossfade
+// elegante. Nessuna UI tecnica, nessun titolo "Ultime foto".
+// ════════════════════════════════════════════════════════════════
+
+export interface SlideshowPhoto {
+  id: string
+  url?: string | null
+  caption?: string | null
+  is_featured?: boolean
+}
+
+export interface WeddingPhotoSlideshowProps {
+  photos: SlideshowPhoto[]
+  coupleNames?: string | null
+  weddingDate?: string | null
+  /** Intervallo di rotazione in ms (default 8000). */
+  intervalMs?: number
+  className?: string
+}
+
+export function WeddingPhotoSlideshow({
+  photos,
+  coupleNames,
+  weddingDate,
+  intervalMs = 8000,
+  className = '',
+}: WeddingPhotoSlideshowProps) {
+  const { t } = useI18n()
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const count = photos.length
+
+  // Se l'elenco si accorcia (foto rimossa), mantieni l'indice valido.
+  useEffect(() => {
+    if (currentIndex >= count && count > 0) setCurrentIndex(0)
+  }, [count, currentIndex])
+
+  // Rotazione automatica: random senza ripetere subito la stessa foto.
+  useEffect(() => {
+    if (count <= 1) return
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => {
+        let next = prev
+        while (next === prev) {
+          next = Math.floor(Math.random() * count)
+        }
+        return next
+      })
+    }, intervalMs)
+    return () => clearInterval(timer)
+  }, [count, intervalMs])
+
+  // Placeholder elegante quando non ci sono foto approvate.
+  if (count === 0) {
+    return (
+      <div className={`flex flex-col items-center justify-center text-center px-8 ${className}`}>
+        <div className="rounded-full border border-wedding-gold/30 px-10 py-12 bg-black/20 backdrop-blur-sm">
+          <p className="font-wedding text-3xl sm:text-4xl italic text-wedding-ivory/70 leading-snug max-w-xl">
+            {t('wedding.photoSlideshowEmpty')}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const safeIndex = Math.min(currentIndex, count - 1)
+  const photo = photos[safeIndex]
+
+  return (
+    <div className={`relative flex items-center justify-center w-full ${className}`}>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={photo.id}
+          initial={{ opacity: 0, scale: 0.94 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 1.04 }}
+          transition={{ duration: 1.1, ease: 'easeInOut' }}
+          className="w-full max-w-[34rem] sm:max-w-[40rem]"
+        >
+          <WeddingPhotoFrame
+            url={photo.url}
+            caption={photo.caption}
+            coupleNames={coupleNames}
+            weddingDate={weddingDate}
+            featured={photo.is_featured}
+            variant="screen"
+          />
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  )
+}
+

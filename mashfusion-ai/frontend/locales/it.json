@@ -475,7 +475,8 @@
       "recentDedications": "Ultime dediche",
       "recentPhotos": "Ultime foto"
     },
-    "photoFrameTitle": "Oggi Sposi"
+    "photoFrameTitle": "Oggi Sposi",
+    "photoSlideshowEmpty": "Scatta una foto dal QR Code e falla apparire sullo schermo"
   },
   "live": {
     "title": "Richieste live",

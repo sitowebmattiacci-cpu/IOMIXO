@@ -443,7 +443,8 @@
       "recentDedications": "Recent dedications",
       "recentPhotos": "Recent photos"
     },
-    "photoFrameTitle": "Just Married"
+    "photoFrameTitle": "Just Married",
+    "photoSlideshowEmpty": "Take a photo from the QR code and see it appear on screen"
   },
   "live": {
     "title": "Live requests",

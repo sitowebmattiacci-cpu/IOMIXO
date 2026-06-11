@@ -6,7 +6,7 @@ import { Heart, Sparkles, ListChecks, Camera, Footprints, Music2, Star } from 'l
 import { liveScreen } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
-import { WeddingPhotoFrame } from '@/components/wedding/WeddingPhotoFrame'
+import { WeddingPhotoSlideshow } from '@/components/wedding/WeddingPhotoFrame'
 import { RouletteWheel } from '@/components/wedding/RouletteWheel'
 import { PartyShell, PartyDivider, PARTY } from '@/components/party/PartyUI'
 import { useEffect, useRef, useState } from 'react'
@@ -303,25 +303,13 @@ export default function ScreenModePage() {
                 </div>
               )}
 
-              {photos.length > 0 && (
-                <div className="rounded-2xl border border-wedding-gold/20 bg-black/30 backdrop-blur-md p-12">
-                  <div className="flex items-center gap-3 mb-6 pb-4 border-b border-wedding-gold/20">
-                    <Camera className="h-8 w-8 text-wedding-gold" />
-                    <h2 className="text-2xl font-semibold uppercase tracking-[0.25em] text-wedding-champagne/90">{t('wedding.screen.recentPhotos')}</h2>
-                  </div>
-                  <div className="grid grid-cols-3 gap-6 max-h-[600px] overflow-y-auto">
-                    {photos.slice(0, 12).map((p) => (
-                      <WeddingPhotoFrame
-                        key={p.id}
-                        url={p.url}
-                        caption={(p as any).caption}
-                        coupleNames={session.couple_names ?? session.event_name}
-                        weddingDate={session.wedding_date}
-                        featured={(p as any).is_featured}
-                        variant="screen"
-                      />
-                    ))}
-                  </div>
+              {enabledPhotos && (
+                <div className="flex items-center justify-center py-4">
+                  <WeddingPhotoSlideshow
+                    photos={photos as any}
+                    coupleNames={session.couple_names ?? session.event_name}
+                    weddingDate={session.wedding_date}
+                  />
                 </div>
               )}
             </div>
@@ -492,25 +480,13 @@ export default function ScreenModePage() {
             )}
 
             {enabledPhotos && (
-              <StagePanel icon={<Camera className="h-6 w-6" />} title={t('wedding.screen.recentPhotos')}>
-                {photos.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-3 overflow-y-auto max-h-[520px] pr-1">
-                    {photos.slice(0, 60).map((p) => (
-                      <WeddingPhotoFrame
-                        key={p.id}
-                        url={p.url}
-                        caption={(p as any).caption}
-                        coupleNames={session.couple_names ?? session.event_name}
-                        weddingDate={session.wedding_date}
-                        featured={(p as any).is_featured}
-                        variant="screen"
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyPanel text="Le foto degli invitati appariranno qui 📸" />
-                )}
-              </StagePanel>
+              <section className="rounded-2xl border border-wedding-gold/20 bg-black/30 backdrop-blur-md p-6 flex items-center justify-center min-h-0 shadow-wedding-lg">
+                <WeddingPhotoSlideshow
+                  photos={photos as any}
+                  coupleNames={session.couple_names ?? session.event_name}
+                  weddingDate={session.wedding_date}
+                />
+              </section>
             )}
           </div>
 
