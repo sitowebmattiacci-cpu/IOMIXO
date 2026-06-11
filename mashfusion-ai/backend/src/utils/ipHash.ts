@@ -9,8 +9,15 @@ function clientIp(req: Request): string {
   return xff || req.ip || req.socket?.remoteAddress || 'unknown'
 }
 
-/** Stable, anonymised hash of (ip + UA + salt). Used for anti-spam rate-limit only. */
+/** Stable, anonymised hash of the client. Used for anti-spam rate-limit only.
+ *  Prefers a per-device id sent by the client (X-IOMIXO-Device): this isolates
+ *  each guest even when many share the same venue WiFi (same IP) and the same
+ *  phone model/browser (same User-Agent). Falls back to (ip + UA) otherwise. */
 export function hashClient(req: Request): string {
+  const device = (req.headers['x-iomixo-device'] as string | undefined)?.trim()
+  if (device) {
+    return crypto.createHash('sha256').update(`${SALT}|device|${device}`).digest('hex')
+  }
   const ip = clientIp(req)
   const ua = (req.headers['user-agent'] as string | undefined) ?? ''
   return crypto.createHash('sha256').update(`${SALT}|${ip}|${ua}`).digest('hex')

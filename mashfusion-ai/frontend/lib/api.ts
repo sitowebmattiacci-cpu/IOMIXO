@@ -481,6 +481,22 @@ export interface LiveFutureMessage {
 
 const API_BASE = () => process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
+/** Stable per-device id (anti-spam only): isolates each guest even when many
+ *  share the same venue WiFi / same phone model. Stored in localStorage. */
+function deviceId(): string {
+  if (typeof window === 'undefined') return ''
+  try {
+    let id = window.localStorage.getItem('iomixo_device_id')
+    if (!id) {
+      id = (crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`)
+      window.localStorage.setItem('iomixo_device_id', id)
+    }
+    return id
+  } catch {
+    return ''
+  }
+}
+
 async function publicGet<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE()}${path}`, { cache: 'no-store' })
   if (!res.ok) {
@@ -491,7 +507,8 @@ async function publicGet<T>(path: string): Promise<T> {
 }
 async function publicPost<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_BASE()}${path}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-IOMIXO-Device': deviceId() },
     body: JSON.stringify(body),
   })
   if (!res.ok) {
