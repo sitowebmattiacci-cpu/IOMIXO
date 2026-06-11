@@ -100,7 +100,7 @@ export function WeddingPhotoFrame({
 
       {/* Foto al centro con bordo interno leggero */}
       <div
-        className="w-full overflow-hidden rounded-lg border bg-[#F3DCE3]/40"
+        className="w-full overflow-hidden rounded-lg border"
         style={{ borderColor: '#E8DED6' }}
       >
         {url ? (
