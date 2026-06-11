@@ -145,7 +145,7 @@ export default function RemoteControlPage() {
         <div className="flex items-center justify-center min-h-screen p-6">
           <WeddingCard className="text-center max-w-md">
             <p className="text-wedding-ink/70 mb-4">
-              {error ? 'Sessione non trovata.' : 'Caricamento...'}
+              {error ? t('remote.notFound') : t('remote.loading')}
             </p>
           </WeddingCard>
         </div>
@@ -164,7 +164,7 @@ export default function RemoteControlPage() {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-wedding-gold/10 border border-wedding-gold/30 mb-3">
             <Wifi className="h-4 w-4 text-wedding-gold animate-pulse" />
             <span className="text-xs uppercase tracking-wider text-wedding-gold font-semibold">
-              Telecomando DJ
+              {t('remote.djRemote')}
             </span>
           </div>
           <h1 className="font-wedding text-2xl text-wedding-ink mb-1">{session.event_name}</h1>
@@ -179,25 +179,25 @@ export default function RemoteControlPage() {
             active={tab === 'games'}
             onClick={() => setTab('games')}
             icon={<Sparkles className="h-4 w-4" />}
-            label="Giochi"
+            label={t('remote.tabGames')}
           />
           <TabButton
             active={tab === 'requests'}
             onClick={() => setTab('requests')}
             icon={<MessageSquare className="h-4 w-4" />}
-            label={`Richieste ${pending.length > 0 ? `(${pending.length})` : ''}`}
+            label={`${t('remote.tabRequests')} ${pending.length > 0 ? `(${pending.length})` : ''}`}
           />
           <TabButton
             active={tab === 'dedications'}
             onClick={() => setTab('dedications')}
             icon={<Heart className="h-4 w-4" />}
-            label="Dediche"
+            label={t('remote.tabDedications')}
           />
           <TabButton
             active={tab === 'photos'}
             onClick={() => setTab('photos')}
             icon={<ImageIcon className="h-4 w-4" />}
-            label="Foto"
+            label={t('remote.tabPhotos')}
           />
         </div>
 
@@ -242,7 +242,7 @@ function RemoteGamesPanel({ slug }: { slug: string }) {
         >
           <div className="flex items-center gap-3">
             <Sparkles className="h-5 w-5 text-wedding-gold" />
-            <span className="font-wedding text-xl text-wedding-ink">Roulette Penitenze</span>
+            <span className="font-wedding text-xl text-wedding-ink">{t('remote.roulettePenalties')}</span>
           </div>
           <span className="text-wedding-gold">
             {activeGame === 'roulette' ? '−' : '+'}
@@ -262,7 +262,7 @@ function RemoteGamesPanel({ slug }: { slug: string }) {
         >
           <div className="flex items-center gap-3">
             <Footprints className="h-5 w-5 text-wedding-gold" />
-            <span className="font-wedding text-xl text-wedding-ink">Gioco della Scarpa</span>
+            <span className="font-wedding text-xl text-wedding-ink">{t('remote.shoeGame')}</span>
           </div>
           <span className="text-wedding-gold">
             {activeGame === 'shoe' ? '−' : '+'}
@@ -290,7 +290,7 @@ function RemoteRouletteControls({ slug }: { slug: string }) {
     try {
       await remoteApi.startRoulette(slug, categories)
       const r: any = await remoteApi.spinRoulette(slug)
-      toast.success('Roulette avviata!')
+      toast.success(t('remote.rouletteStarted'))
       setTimeout(() => {
         if (r?.result?.slot_label) setResult(r.result.slot_label)
       }, 17000)
@@ -305,7 +305,7 @@ function RemoteRouletteControls({ slug }: { slug: string }) {
     try {
       await remoteApi.resetRoulette(slug)
       setResult(null)
-      toast.success('Reset completato')
+      toast.success(t('remote.resetDone'))
     } catch (e: any) {
       toast.error(e?.message ?? t('common.errorGeneric'))
     }
@@ -315,7 +315,7 @@ function RemoteRouletteControls({ slug }: { slug: string }) {
     <div className="space-y-3">
       {result && (
         <div className="rounded-xl bg-wedding-gold/10 border border-wedding-gold/30 p-4 text-center">
-          <p className="text-xs uppercase tracking-wider text-wedding-gold mb-1">Penitenza</p>
+          <p className="text-xs uppercase tracking-wider text-wedding-gold mb-1">{t('remote.penalty')}</p>
           <p className="font-wedding text-2xl text-wedding-ink">{result}</p>
         </div>
       )}
@@ -327,10 +327,10 @@ function RemoteRouletteControls({ slug }: { slug: string }) {
           icon={<Play className="h-4 w-4" />}
           className="flex-1"
         >
-          Gira
+          {t('remote.spin')}
         </WeddingButton>
         <WeddingButton onClick={reset} variant="outline" icon={<RotateCw className="h-4 w-4" />}>
-          Reset
+          {t('remote.reset')}
         </WeddingButton>
       </div>
     </div>
@@ -354,7 +354,7 @@ function RemoteShoeControls({ slug }: { slug: string }) {
     setBusy(true)
     try {
       await remoteApi.startShoe(slug)
-      toast.success('Gioco avviato')
+      toast.success(t('remote.gameStarted'))
       refresh()
     } catch (e: any) {
       toast.error(e?.message ?? t('common.errorGeneric'))
@@ -380,7 +380,7 @@ function RemoteShoeControls({ slug }: { slug: string }) {
     try {
       await remoteApi.resetShoe(slug)
       refresh()
-      toast.success('Reset completato')
+      toast.success(t('remote.resetDone'))
     } catch (e: any) {
       toast.error(e?.message ?? t('common.errorGeneric'))
     } finally {
@@ -393,7 +393,7 @@ function RemoteShoeControls({ slug }: { slug: string }) {
       {isActive && questions.length > 0 && (
         <div className="rounded-xl bg-wedding-gold/10 border border-wedding-gold/30 p-4 text-center">
           <p className="text-xs uppercase tracking-wider text-wedding-gold mb-1">
-            Domanda {currentIndex + 1}/{questions.length}
+            {t('remote.question')} {currentIndex + 1}/{questions.length}
           </p>
           <p className="font-wedding text-xl text-wedding-ink">{questions[currentIndex]}</p>
         </div>
@@ -406,7 +406,7 @@ function RemoteShoeControls({ slug }: { slug: string }) {
           icon={<Play className="h-4 w-4" />}
           className="flex-1"
         >
-          {isActive ? 'Riavvia' : 'Avvia'}
+          {isActive ? t('remote.restart') : t('remote.start')}
         </WeddingButton>
         <WeddingButton
           onClick={next}
@@ -416,11 +416,11 @@ function RemoteShoeControls({ slug }: { slug: string }) {
           icon={<SkipForward className="h-4 w-4" />}
           className="flex-1"
         >
-          Prossima
+          {t('remote.next')}
         </WeddingButton>
       </div>
       <WeddingButton onClick={reset} variant="ghost" icon={<RotateCw className="h-4 w-4" />} className="w-full">
-        Reset
+        {t('remote.reset')}
       </WeddingButton>
     </div>
   )
@@ -434,7 +434,7 @@ function RemoteRequestsPanel({ slug, requests }: { slug: string; requests: any[]
     setBusy(id)
     try {
       await remoteApi.updateRequest(slug, id, status)
-      toast.success('Aggiornato')
+      toast.success(t('remote.updated'))
     } catch (e: any) {
       toast.error(e?.message ?? t('common.errorGeneric'))
     } finally {
@@ -447,7 +447,7 @@ function RemoteRequestsPanel({ slug, requests }: { slug: string; requests: any[]
   if (pending.length === 0) {
     return (
       <WeddingCard className="text-center py-8">
-        <p className="text-wedding-muted">Nessuna richiesta in attesa</p>
+        <p className="text-wedding-muted">{t('remote.noRequests')}</p>
       </WeddingCard>
     )
   }
@@ -498,7 +498,7 @@ function RemoteDedicationsPanel({ slug, dedications }: { slug: string; dedicatio
     setBusy(id)
     try {
       await remoteApi.updateDedication(slug, id, status)
-      toast.success('Aggiornato')
+      toast.success(t('remote.updated'))
     } catch (e: any) {
       toast.error(e?.message ?? t('common.errorGeneric'))
     } finally {
@@ -511,7 +511,7 @@ function RemoteDedicationsPanel({ slug, dedications }: { slug: string; dedicatio
   if (pending.length === 0) {
     return (
       <WeddingCard className="text-center py-8">
-        <p className="text-wedding-muted">Nessuna dedica in attesa</p>
+        <p className="text-wedding-muted">{t('remote.noDedications')}</p>
       </WeddingCard>
     )
   }
@@ -524,7 +524,7 @@ function RemoteDedicationsPanel({ slug, dedications }: { slug: string; dedicatio
             <Heart className="h-4 w-4 text-wedding-gold mt-1 shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="font-wedding text-base italic text-wedding-ink leading-snug">"{ded.message}"</p>
-              <p className="text-xs text-wedding-gold mt-2">— {ded.guest_name ?? 'Anonimo'}</p>
+              <p className="text-xs text-wedding-gold mt-2">— {ded.guest_name ?? t('common.anonymous')}</p>
             </div>
             <div className="flex gap-1 shrink-0">
               <button
@@ -557,7 +557,7 @@ function RemotePhotosPanel({ slug, photos }: { slug: string; photos: any[] }) {
     setBusy(id)
     try {
       await remoteApi.updatePhoto(slug, id, status)
-      toast.success('Aggiornato')
+      toast.success(t('remote.updated'))
     } catch (e: any) {
       toast.error(e?.message ?? t('common.errorGeneric'))
     } finally {
@@ -570,7 +570,7 @@ function RemotePhotosPanel({ slug, photos }: { slug: string; photos: any[] }) {
   if (pending.length === 0) {
     return (
       <WeddingCard className="text-center py-8">
-        <p className="text-wedding-muted">Nessuna foto in attesa</p>
+        <p className="text-wedding-muted">{t('remote.noPhotos')}</p>
       </WeddingCard>
     )
   }

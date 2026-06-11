@@ -23,11 +23,6 @@ function saveIds(slug: string, ids: string[]) {
   localStorage.setItem(STORAGE_PREFIX + slug, JSON.stringify(ids.slice(-10)))
 }
 
-const STATUS_LABEL: Record<LiveRequestStatus, string> = {
-  pending:  'In attesa',
-  approved: 'Approvata',
-  rejected: 'Rifiutata',
-}
 const STATUS_STYLE: Record<LiveRequestStatus, string> = {
   pending:  'bg-amber-500/15 text-amber-300 border-amber-500/30',
   approved: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
@@ -79,23 +74,23 @@ export default function PublicLivePage() {
       })
       const newIds = [...myIds.filter((i) => i !== created.id), created.id]
       saveIds(slug!, newIds); setMyIds(newIds)
-      toast.success('Richiesta inviata al DJ')
+      toast.success(t('live.requestSent'))
       setForm({ track_title: '', artist: '', message: '' })
       await mutate(['public-live', slug])
     } catch (err: any) {
-      toast.error(err?.message ?? 'Errore')
+      toast.error(err?.message ?? t('common.errorGeneric'))
     } finally { setSending(false) }
   }
 
   if (isLoading) {
-    return <Center><p className="text-white/50">Caricamento…</p></Center>
+    return <Center><p className="text-white/50">{t('live.loading')}</p></Center>
   }
   if (error || !data) {
     return (
       <Center>
         <div className="text-center">
           <AlertTriangle className="h-10 w-10 text-white/30 mx-auto mb-3" />
-          <p className="text-white/70">Sessione non trovata.</p>
+          <p className="text-white/70">{t('live.notFound')}</p>
         </div>
       </Center>
     )
@@ -152,7 +147,7 @@ export default function PublicLivePage() {
           {!closed && limitReached && (
             <WeddingCard tone="cream" className="mb-6 flex items-center gap-3 text-sm">
               <AlertTriangle className="h-4 w-4 text-wedding-gold" />
-              <span>Limite richieste raggiunto.</span>
+              <span>{t('live.limitReached')}</span>
             </WeddingCard>
           )}
 
@@ -215,7 +210,7 @@ export default function PublicLivePage() {
 
           {myRequests && myRequests.length > 0 && (
             <WeddingSection
-              eyebrow="Le tue richieste"
+              eyebrow={t('live.myRequests')}
               className="mt-12"
             >
               <div className="space-y-3">
@@ -250,7 +245,7 @@ export default function PublicLivePage() {
           <LanguageSwitcher />
         </div>
         <div className="text-center mb-6">
-          <p className="text-xs uppercase tracking-wider text-purple-300/80 mb-2">Richiesta musicale</p>
+          <p className="text-xs uppercase tracking-wider text-purple-300/80 mb-2">{t('live.musicRequest')}</p>
           <h1 className="text-2xl font-black">{session.event_name}</h1>
           {session.dj_name && <p className="text-sm text-white/60 mt-1">DJ {session.dj_name}</p>}
           {session.description && <p className="text-sm text-white/50 mt-3">{session.description}</p>}
@@ -270,10 +265,10 @@ export default function PublicLivePage() {
         )}
 
         {closed && (
-          <Banner icon={<Lock className="h-4 w-4" />}>La sessione è chiusa. Le richieste sono disabilitate.</Banner>
+          <Banner icon={<Lock className="h-4 w-4" />}>{t('live.closedNotice')}</Banner>
         )}
         {!closed && limitReached && (
-          <Banner icon={<AlertTriangle className="h-4 w-4" />}>Limite richieste raggiunto per questa sessione.</Banner>
+          <Banner icon={<AlertTriangle className="h-4 w-4" />}>{t('live.limitReachedFull')}</Banner>
         )}
 
         {(!isParty || guestOn('requests')) && (
@@ -289,33 +284,33 @@ export default function PublicLivePage() {
             </div>
           )}
           <div>
-            <label className="text-xs text-white/60">Titolo brano *</label>
+            <label className="text-xs text-white/60">{t('live.trackTitleRequired')}</label>
             <input
               value={form.track_title}
               onChange={(e) => setForm({ ...form, track_title: e.target.value })}
               required disabled={disabled}
               className={inputCls}
-              placeholder="Es. Blinding Lights"
+              placeholder={t('live.trackTitleExample')}
             />
           </div>
           <div>
-            <label className="text-xs text-white/60">Artista</label>
+            <label className="text-xs text-white/60">{t('live.artistLabel')}</label>
             <input
               value={form.artist}
               onChange={(e) => setForm({ ...form, artist: e.target.value })}
               disabled={disabled}
               className={inputCls}
-              placeholder="The Weeknd"
+              placeholder={t('live.artistExample')}
             />
           </div>
           <div>
-            <label className="text-xs text-white/60">Messaggio per il DJ (opzionale)</label>
+            <label className="text-xs text-white/60">{t('live.messageLabel')}</label>
             <textarea
               value={form.message}
               onChange={(e) => setForm({ ...form, message: e.target.value })}
               disabled={disabled} rows={2} maxLength={200}
               className={inputCls}
-              placeholder="È il compleanno di Sara!"
+              placeholder={t('live.messageExample')}
             />
           </div>
           <button
@@ -324,11 +319,11 @@ export default function PublicLivePage() {
             className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white font-semibold py-3 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Send className="h-4 w-4" />
-            {sending ? 'Invio…' : 'Invia richiesta'}
+            {sending ? t('live.sending') : t('live.submitRequest')}
           </button>
           {requestsRemaining !== null && !disabled && (
             <p className="text-[11px] text-white/40 text-center">
-              {requestsRemaining} richieste rimanenti su questa sessione.
+              {requestsRemaining} {t('live.requestsRemainingSuffix')}
             </p>
           )}
         </form>
@@ -336,7 +331,7 @@ export default function PublicLivePage() {
 
         {myRequests && myRequests.length > 0 && (
           <div className="mt-8">
-            <h2 className="font-bold mb-3">Le tue richieste</h2>
+            <h2 className="font-bold mb-3">{t('live.myRequests')}</h2>
             <div className="space-y-2">
               {myRequests.map((r) => (
                 <div key={r.id} className="glass rounded-xl p-3 flex items-start gap-3">
@@ -348,13 +343,13 @@ export default function PublicLivePage() {
                     {r.artist && <p className="text-xs text-white/50 truncate">{r.artist}</p>}
                   </div>
                   <span className={`inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border ${STATUS_STYLE[r.status]}`}>
-                    {STATUS_ICON[r.status]}{STATUS_LABEL[r.status]}
+                    {STATUS_ICON[r.status]}{r.status === 'approved' ? t('common.approved') : r.status === 'rejected' ? t('common.rejected') : t('common.pending')}
                   </span>
                 </div>
               ))}
             </div>
             <p className="text-[11px] text-white/30 text-center mt-3">
-              Lo stato si aggiorna automaticamente.
+              {t('live.statusAutoUpdate')}
             </p>
           </div>
         )}
@@ -376,7 +371,7 @@ export default function PublicLivePage() {
           <div className="mt-8">
             <div className="flex items-center gap-2 mb-3">
               <CalendarDays className="h-4 w-4 text-purple-300" />
-              <h2 className="font-bold">Prossime date</h2>
+              <h2 className="font-bold">{t('live.upcomingDates')}</h2>
             </div>
             <div className="space-y-2">
               {events.map((ev) => (
@@ -444,6 +439,7 @@ function LocalCard({ title, icon, children }: { title: string; icon: React.React
 }
 
 function ShoeGamePublic({ slug }: { slug: string }) {
+  const { t } = useI18n()
   const { data } = useSWR(['public-shoe', slug], () => liveGames.publicLatest(slug), { refreshInterval: 4_000 })
   const r: LiveGameRound | null = data?.shoeGame ?? null
   if (!r || r.status !== 'running' || !r.config?.is_active) return null
@@ -452,10 +448,10 @@ function ShoeGamePublic({ slug }: { slug: string }) {
   const q = questions[idx]
   if (!q) return null
   return (
-    <LocalCard title="Gioco della Scarpa" icon={<Sparkles className="h-5 w-5" />}>
+    <LocalCard title={t('live.shoeGameTitle')} icon={<Sparkles className="h-5 w-5" />}>
       <div className="rounded-xl bg-gradient-to-br from-wedding-champagne/40 to-wedding-blush/30 border border-wedding-gold/30 p-6 text-center">
         <p className="text-[11px] uppercase tracking-[0.22em] text-[#8F1D2C] mb-3">
-          Domanda {idx + 1}/{questions.length}
+          {t('live.question')} {idx + 1}/{questions.length}
         </p>
         <p className="font-wedding text-2xl text-[#2B2424] leading-snug">{q}</p>
       </div>
@@ -549,7 +545,7 @@ function DedicationsPublic({ slug }: { slug: string }) {
                 "{d.message}"
               </p>
               <p className="text-[11px] uppercase tracking-[0.25em] text-wedding-gold mt-2.5">
-                — {d.guest_name ?? 'Anonimo'}
+                — {d.guest_name ?? t('common.anonymous')}
               </p>
             </div>
           ))}
@@ -614,6 +610,7 @@ function PhotosPublic({ slug }: { slug: string }) {
 }
 
 function BestPhotoPublic({ slug }: { slug: string }) {
+  const { t } = useI18n()
   const { data: photos, mutate: refresh } = useSWR(
     ['photo-votes-public', slug],
     () => bestPhoto.getVotesPublic(slug),
@@ -625,23 +622,23 @@ function BestPhotoPublic({ slug }: { slug: string }) {
     try {
       await bestPhoto.votePublic(slug, photoId)
       setVoted((prev) => new Set([...Array.from(prev), photoId]))
-      toast.success('Voto registrato')
+      toast.success(t('live.voteRegistered'))
       refresh()
-    } catch (e: any) { toast.error(e?.message ?? 'Errore') }
+    } catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric')) }
   }
   if (!photos || photos.length === 0) return null
   const sorted = [...photos].sort((a, b) => (b.votes ?? 0) - (a.votes ?? 0))
   return (
-    <LocalCard title="Concorso Foto" icon={<Camera className="h-5 w-5" />}>
+    <LocalCard title={t('live.photoContest')} icon={<Camera className="h-5 w-5" />}>
       <p className="text-sm text-[#6F6260] mb-4">
-        Vota la tua foto preferita (un voto per foto).
+        {t('live.photoContestDesc')}
       </p>
       <div className="grid grid-cols-2 gap-3">
         {sorted.map((p) => (
           <div key={p.id} className="relative aspect-square rounded-xl overflow-hidden border border-[#E8B7C8] bg-white">
             {p.url && <img src={p.url} alt={p.caption ?? ''} className="w-full h-full object-cover" />}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-3">
-              <p className="text-white text-sm font-semibold">{p.votes ?? 0} voti</p>
+              <p className="text-white text-sm font-semibold">{p.votes ?? 0} {t('live.votesSuffix')}</p>
               <button
                 onClick={() => vote(p.id)}
                 disabled={voted.has(p.id)}
@@ -651,7 +648,7 @@ function BestPhotoPublic({ slug }: { slug: string }) {
                     : 'bg-[#8F1D2C] text-white hover:bg-[#741625]'
                 }`}
               >
-                {voted.has(p.id) ? '✓ Votato' : 'Vota'}
+                {voted.has(p.id) ? t('live.voted') : t('live.vote')}
               </button>
             </div>
           </div>
@@ -662,13 +659,13 @@ function BestPhotoPublic({ slug }: { slug: string }) {
 }
 
 function LiveBoothCard({ slug, session }: { slug: string; session: any }) {
+  const { t } = useI18n()
   const boothUrl = `/booth/${slug}`
   return (
-    <LocalCard title="📸 Live Booth" icon={<Camera className="h-5 w-5" />}>
+    <LocalCard title={t('live.booth.title')} icon={<Camera className="h-5 w-5" />}>
       <div className="text-center space-y-4">
         <p className="text-sm text-[#6F6260]">
-          Scatta una foto elegante con cornice personalizzata.
-          La tua foto apparirà sullo schermo live!
+          {t('live.booth.intro')}
         </p>
         <div className="bg-gradient-to-br from-wedding-champagne/40 to-wedding-blush/30 rounded-2xl border-2 border-[#E8B7C8] p-6">
           <div className="flex items-center justify-center gap-2 mb-3">
@@ -678,7 +675,7 @@ function LiveBoothCard({ slug, session }: { slug: string; session: any }) {
             </p>
           </div>
           <p className="text-xs text-[#6F6260] mb-4 italic">
-            Con cornice decorativa e nomi degli sposi
+            {t('live.booth.withFrame')}
           </p>
           <a href={boothUrl}>
             <WeddingButton
@@ -686,7 +683,7 @@ function LiveBoothCard({ slug, session }: { slug: string; session: any }) {
               size="lg"
               className="w-full"
             >
-              Apri Live Booth
+              {t('live.booth.open')}
             </WeddingButton>
           </a>
         </div>
@@ -717,6 +714,7 @@ function PartyLiveSections({
 }
 
 function PartyBoothCTA({ slug }: { slug: string }) {
+  const { t } = useI18n()
   return (
     <a
       href={`/booth/${slug}`}
@@ -728,8 +726,8 @@ function PartyBoothCTA({ slug }: { slug: string }) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">Live Booth</p>
-          <p className="text-lg font-black text-white leading-tight">Photo Moment!</p>
-          <p className="text-xs text-white/85 mt-0.5">Scatta una foto e finisci sullo schermo</p>
+          <p className="text-lg font-black text-white leading-tight">{t('live.photoMoment')}</p>
+          <p className="text-xs text-white/85 mt-0.5">{t('live.boothCtaSubtitle')}</p>
         </div>
         <span className="text-white text-xl">→</span>
       </div>
@@ -738,6 +736,7 @@ function PartyBoothCTA({ slug }: { slug: string }) {
 }
 
 function PartyMusicBattle({ slug }: { slug: string }) {
+  const { t } = useI18n()
   const { data } = useSWR(['public-poll', slug], () => livePolls.publicActive(slug), { refreshInterval: 5_000 })
   const poll: LivePoll | null = (data as any) ?? null
   const [voted, setVoted] = useState<number | null>(null)
@@ -763,15 +762,15 @@ function PartyMusicBattle({ slug }: { slug: string }) {
       setVoted(idx)
       await mutate(['public-poll', slug])
     } catch (e: any) {
-      toast.error(e?.message ?? 'Errore voto')
+      toast.error(e?.message ?? t('live.errorVote'))
     } finally { setVoting(false) }
   }
 
   return (
     <div className="rounded-2xl bg-gradient-to-br from-black/60 to-[#8B0E2F]/30 border border-[#FF3D8A]/30 backdrop-blur p-5">
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#FF7AB6]">Music Battle</span>
-        <span className="text-[10px] text-white/40">· {total} {total === 1 ? 'voto' : 'voti'}</span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#FF7AB6]">{t('live.musicBattle')}</span>
+        <span className="text-[10px] text-white/40">· {total} {total === 1 ? t('live.voteSingular') : t('live.votePlural')}</span>
       </div>
       <p className="text-lg font-bold text-white mb-4 leading-snug">{poll.question}</p>
       <div className="space-y-2.5">
@@ -810,20 +809,21 @@ function PartyMusicBattle({ slug }: { slug: string }) {
         })}
       </div>
       {voted === null && (
-        <p className="text-[11px] text-white/40 mt-3 text-center">Tocca un'opzione per votare</p>
+        <p className="text-[11px] text-white/40 mt-3 text-center">{t('live.tapToVote')}</p>
       )}
     </div>
   )
 }
 
 function PartyRouletteResult({ slug }: { slug: string }) {
+  const { t } = useI18n()
   const { data } = useSWR(['public-roulette', slug], () => liveGames.publicLatest(slug), { refreshInterval: 5_000 })
   const r: LiveGameRound | null = data?.roulette ?? null
   if (!r || r.status !== 'completed' || !r.result?.slot_label) return null
   return (
     <div className="rounded-2xl p-6 bg-gradient-to-br from-[#FF3D8A]/30 via-[#8B0E2F]/40 to-black/60 border border-[#FF3D8A]/40 text-center shadow-[0_10px_40px_rgba(255,61,138,0.25)]">
       <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-[#FF7AB6] mb-3">
-        🎲 Party Roulette
+        {t('live.partyRoulette')}
       </p>
       <p className="text-2xl font-black text-white leading-tight">{r.result.slot_label}</p>
     </div>
@@ -831,6 +831,7 @@ function PartyRouletteResult({ slug }: { slug: string }) {
 }
 
 function PartyApprovedPhotos({ slug }: { slug: string }) {
+  const { t } = useI18n()
   const { data } = useSWR(['public-photos', slug], () => livePhotos.publicListApproved(slug), { refreshInterval: 8_000 })
   const photos = (data ?? []).slice(0, 6)
   if (photos.length === 0) return null
@@ -838,7 +839,7 @@ function PartyApprovedPhotos({ slug }: { slug: string }) {
     <div className="rounded-2xl bg-black/40 border border-white/10 backdrop-blur p-4">
       <div className="flex items-center gap-2 mb-3">
         <Camera className="h-4 w-4 text-[#FF7AB6]" />
-        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#FF7AB6]">Live Booth — Pubbliche</span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#FF7AB6]">{t('live.publicBooth')}</span>
       </div>
       <div className="grid grid-cols-3 gap-2">
         {photos.map((p: any) => (
