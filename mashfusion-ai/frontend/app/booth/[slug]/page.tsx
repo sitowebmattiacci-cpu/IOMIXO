@@ -360,10 +360,10 @@ export default function LiveBoothPage() {
             <video ref={videoRef} autoPlay playsInline muted className={`w-full h-auto ${facingMode === 'user' ? 'mirror' : ''}`} />
           </div>
           <canvas ref={canvasRef} className="hidden" />
-          <div className="flex gap-4 mt-6">
-            <WeddingButton onClick={stopCamera} icon={<X className="h-5 w-5" />} size="lg">Chiudi</WeddingButton>
-            <WeddingButton onClick={flipCamera} icon={<RefreshCw className="h-5 w-5" />} size="lg">Gira</WeddingButton>
-            <WeddingButton onClick={capturePhoto} icon={<Camera className="h-5 w-5" />} size="lg">Scatta foto</WeddingButton>
+          <div className="flex gap-3 mt-6">
+            <WeddingButton onClick={stopCamera} icon={<X className="h-4 w-4" />} size="sm">Chiudi</WeddingButton>
+            <WeddingButton onClick={flipCamera} icon={<RefreshCw className="h-4 w-4" />} size="sm">Gira</WeddingButton>
+            <WeddingButton onClick={capturePhoto} icon={<Camera className="h-4 w-4" />} size="sm">Scatta foto</WeddingButton>
           </div>
         </div>
         <style jsx global>{`.mirror { transform: scaleX(-1); }`}</style>
