@@ -100,14 +100,14 @@ export default function ProfilePage() {
           </Field>
           <Field label={t('profile.avatar')} hint={t('profile.avatarHint')}>
             <div className="flex items-center gap-3 mt-1">
-              {form.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={form.avatar_url} alt="" className="h-16 w-16 rounded-full object-cover border border-white/10" />
-              ) : (
-                <div className="h-16 w-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/30">
+              <div className="h-16 w-16 shrink-0 rounded-full overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center text-white/30">
+                {form.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={form.avatar_url} alt="" className="h-full w-full object-cover" />
+                ) : (
                   <UserCircle className="h-8 w-8" />
-                </div>
-              )}
+                )}
+              </div>
               <input
                 ref={fileRef}
                 type="file"
