@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
 import toast from 'react-hot-toast'
-import { Music2, Send, Instagram, Globe, MapPin, CalendarDays, Lock, AlertTriangle, Check, X, Clock, Heart, Sparkles, Image as ImageIcon, Camera, Gamepad2, BarChart3, ChevronLeft } from 'lucide-react'
+import { Music2, Send, Instagram, Facebook, Globe, MapPin, CalendarDays, Lock, AlertTriangle, Check, X, Clock, Heart, Sparkles, Image as ImageIcon, Camera, Gamepad2, BarChart3, ChevronLeft } from 'lucide-react'
 import { publicLive, liveDedications, liveGames, livePolls, livePhotos, bestPhoto, type LiveRequestStatus, type LiveDedication, type LivePoll, type LivePhoto, type LiveGameRound } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -491,6 +491,7 @@ type FollowProfile = {
   bio?: string | null
   instagram_url?: string | null
   tiktok_url?: string | null
+  facebook_url?: string | null
   spotify_url?: string | null
   soundcloud_url?: string | null
   website_url?: string | null
@@ -506,27 +507,74 @@ type FollowEvent = {
 }
 
 function hasAnySocial(p: FollowProfile): boolean {
-  return !!(p && (p.instagram_url || p.tiktok_url || p.spotify_url || p.soundcloud_url || p.website_url))
+  return !!(p && (p.instagram_url || p.tiktok_url || p.facebook_url || p.spotify_url || p.soundcloud_url || p.website_url))
+}
+
+/** Rimuove protocollo e slash finale da un URL → "www.nomesito.it/path". */
+function cleanWebUrl(url: string): string {
+  return url.replace(/^https?:\/\//i, '').replace(/\/+$/, '')
+}
+
+/** Estrae lo username dal primo segmento del path → "@username". */
+function socialHandle(url: string): string {
+  try {
+    const u = new URL(url.startsWith('http') ? url : `https://${url}`)
+    const seg = u.pathname.split('/').filter(Boolean)[0] ?? ''
+    const handle = seg.replace(/^@/, '')
+    return handle ? `@${handle}` : cleanWebUrl(url)
+  } catch {
+    return cleanWebUrl(url)
+  }
+}
+
+interface SocialItem {
+  href: string
+  icon: React.ReactNode
+  label: string
+  sub: string
+}
+
+function buildSocialItems(profile: FollowProfile): SocialItem[] {
+  if (!profile) return []
+  const items: SocialItem[] = []
+  if (profile.instagram_url)  items.push({ href: profile.instagram_url,  icon: <Instagram className="h-5 w-5" />, label: 'Instagram',  sub: socialHandle(profile.instagram_url) })
+  if (profile.tiktok_url)     items.push({ href: profile.tiktok_url,     icon: <Music2 className="h-5 w-5" />,    label: 'TikTok',     sub: socialHandle(profile.tiktok_url) })
+  if (profile.facebook_url)   items.push({ href: profile.facebook_url,   icon: <Facebook className="h-5 w-5" />,  label: 'Facebook',   sub: cleanWebUrl(profile.facebook_url) })
+  if (profile.spotify_url)    items.push({ href: profile.spotify_url,    icon: <Music2 className="h-5 w-5" />,    label: 'Spotify',    sub: cleanWebUrl(profile.spotify_url) })
+  if (profile.soundcloud_url) items.push({ href: profile.soundcloud_url, icon: <Music2 className="h-5 w-5" />,    label: 'SoundCloud', sub: socialHandle(profile.soundcloud_url) })
+  if (profile.website_url)    items.push({ href: profile.website_url,    icon: <Globe className="h-5 w-5" />,     label: 'Sito web',   sub: cleanWebUrl(profile.website_url) })
+  return items
 }
 
 function SocialLinks({ profile, tone }: { profile: FollowProfile; tone: GuestTone }) {
-  if (!profile) return null
-  const items = ([
-    profile.instagram_url  && { href: profile.instagram_url,  icon: <Instagram className="h-3.5 w-3.5" />, label: 'Instagram' },
-    profile.tiktok_url     && { href: profile.tiktok_url,     icon: <Music2 className="h-3.5 w-3.5" />,    label: 'TikTok' },
-    profile.spotify_url    && { href: profile.spotify_url,    icon: <Music2 className="h-3.5 w-3.5" />,    label: 'Spotify' },
-    profile.soundcloud_url && { href: profile.soundcloud_url, icon: <Music2 className="h-3.5 w-3.5" />,    label: 'SoundCloud' },
-    profile.website_url    && { href: profile.website_url,    icon: <Globe className="h-3.5 w-3.5" />,     label: 'Sito' },
-  ].filter(Boolean)) as { href: string; icon: React.ReactNode; label: string }[]
+  const items = buildSocialItems(profile)
   if (items.length === 0) return null
-  const chipCls = tone === 'party'
-    ? 'inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-full bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10 transition'
-    : 'inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-full bg-white border border-[#E8B7C8] text-[#8F1D2C] hover:border-wedding-gold hover:shadow-sm transition'
+
+  const cardCls = tone === 'party'
+    ? 'group flex items-center gap-3 rounded-2xl border border-[#7C3AED]/30 bg-white/[0.04] p-3.5 transition hover:border-[#A855F7]/70 hover:bg-white/[0.08] active:scale-[0.99]'
+    : 'group flex items-center gap-3 rounded-2xl border border-[#E2C4C9] bg-white/80 p-3.5 transition hover:border-wedding-gold hover:shadow-sm active:scale-[0.99]'
+  const iconWrapCls = tone === 'party'
+    ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#7C3AED]/30 to-[#A855F7]/20 text-[#C9A6FF]'
+    : 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-wedding-champagne/50 text-[#8F1D2C]'
+  const labelCls = tone === 'party' ? 'text-sm font-semibold text-white' : 'text-sm font-semibold text-[#2B2424]'
+  const subCls   = tone === 'party' ? 'text-xs text-white/50 truncate' : 'text-xs text-[#6F6260] truncate'
+
   return (
-    <div className="flex flex-wrap justify-center gap-2">
+    <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2.5">
       {items.map((it) => (
-        <a key={it.label} href={it.href} target="_blank" rel="noreferrer" className={chipCls}>
-          {it.icon}{it.label}
+        <a
+          key={it.label}
+          href={it.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${it.label} — ${it.sub}`}
+          className={cardCls}
+        >
+          <span className={iconWrapCls}>{it.icon}</span>
+          <span className="min-w-0 flex flex-col text-left">
+            <span className={labelCls}>{it.label}</span>
+            <span className={subCls}>{it.sub}</span>
+          </span>
         </a>
       ))}
     </div>
