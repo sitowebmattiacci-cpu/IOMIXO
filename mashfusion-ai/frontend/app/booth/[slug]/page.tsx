@@ -365,11 +365,11 @@ export default function LiveBoothPage() {
           <div className="relative max-w-2xl w-full rounded-2xl overflow-hidden shadow-wedding-lg border-4 border-wedding-gold/30">
             <video ref={videoRef} autoPlay playsInline muted className={`w-full h-auto ${facingMode === 'user' ? 'mirror' : ''}`} />
             {countdown !== null && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-wedding-ink/45 backdrop-blur-sm">
-                <p className="font-wedding italic text-wedding-gold text-3xl sm:text-4xl mb-4 animate-pulse drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]">
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-wedding-ink/55 backdrop-blur-sm">
+                <p className="font-wedding-great-vibes text-white text-5xl sm:text-6xl mb-2 animate-pulse drop-shadow-[0_2px_16px_rgba(0,0,0,0.85)]">
                   {t('booth.weddingPhotoMoment')}
                 </p>
-                <p key={countdown} className="font-wedding text-white text-[11rem] sm:text-[15rem] font-semibold leading-none drop-shadow-[0_0_40px_rgba(212,175,120,0.7)]">
+                <p key={countdown} className="font-wedding-cinzel text-white text-[10rem] sm:text-[14rem] font-normal leading-none drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
                   {countdown}
                 </p>
               </div>
