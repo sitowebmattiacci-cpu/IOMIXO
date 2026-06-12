@@ -364,12 +364,24 @@ export default function LiveBoothPage() {
         <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
           <div className="relative max-w-2xl w-full rounded-2xl overflow-hidden shadow-wedding-lg border-4 border-wedding-gold/30">
             <video ref={videoRef} autoPlay playsInline muted className={`w-full h-auto ${facingMode === 'user' ? 'mirror' : ''}`} />
+            {countdown !== null && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-wedding-ink/45 backdrop-blur-sm">
+                <p className="font-wedding italic text-wedding-gold text-3xl sm:text-4xl mb-4 animate-pulse drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]">
+                  {t('booth.weddingPhotoMoment')}
+                </p>
+                <p key={countdown} className="font-wedding text-white text-[11rem] sm:text-[15rem] font-semibold leading-none drop-shadow-[0_0_40px_rgba(212,175,120,0.7)]">
+                  {countdown}
+                </p>
+              </div>
+            )}
           </div>
           <canvas ref={canvasRef} className="hidden" />
           <div className="flex gap-3 mt-6">
-            <WeddingButton onClick={stopCamera} icon={<X className="h-4 w-4" />} size="md">{t('booth.close')}</WeddingButton>
-            <WeddingButton onClick={flipCamera} icon={<RefreshCw className="h-4 w-4" />} size="md">{t('booth.flip')}</WeddingButton>
-            <WeddingButton onClick={capturePhoto} icon={<Camera className="h-4 w-4" />} size="md">{t('booth.takePhoto')}</WeddingButton>
+            <WeddingButton onClick={stopCamera} disabled={countdown !== null} icon={<X className="h-4 w-4" />} size="md">{t('booth.close')}</WeddingButton>
+            <WeddingButton onClick={flipCamera} disabled={countdown !== null} icon={<RefreshCw className="h-4 w-4" />} size="md">{t('booth.flip')}</WeddingButton>
+            <WeddingButton onClick={startPhotoMoment} disabled={countdown !== null} icon={<Camera className="h-4 w-4" />} size="md">
+              {countdown !== null ? `${countdown}…` : t('booth.takePhoto')}
+            </WeddingButton>
           </div>
         </div>
         <style jsx global>{`.mirror { transform: scaleX(-1); }`}</style>
