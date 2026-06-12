@@ -278,6 +278,8 @@ export default function PublicLivePage() {
             </WeddingSection>
           )}
 
+          <FollowDjSection tone="wedding" profile={profile} events={events} t={t} />
+
           <p className="text-center mt-14 text-[10px] uppercase tracking-[0.32em] text-[#6F6260]">
             Powered by <span className="text-[#8F1D2C]">IOMIXO Live Hub</span>
           </p>
@@ -399,16 +401,9 @@ export default function PublicLivePage() {
           {session.description && <p className="text-sm text-white/50 mt-3">{session.description}</p>}
         </div>
 
-        {profile && (profile.bio || profile.instagram_url || profile.tiktok_url || profile.spotify_url || profile.soundcloud_url || profile.website_url) && (
+        {profile?.bio && (
           <div className="glass rounded-2xl p-4 mb-5">
-            {profile.bio && <p className="text-sm text-white/70 mb-3">{profile.bio}</p>}
-            <div className="flex flex-wrap gap-2">
-              {profile.instagram_url && <SocialLink href={profile.instagram_url} icon={<Instagram className="h-3.5 w-3.5" />} label="Instagram" />}
-              {profile.tiktok_url    && <SocialLink href={profile.tiktok_url}    icon={<Music2 className="h-3.5 w-3.5" />}    label="TikTok" />}
-              {profile.spotify_url   && <SocialLink href={profile.spotify_url}   icon={<Music2 className="h-3.5 w-3.5" />}    label="Spotify" />}
-              {profile.soundcloud_url && <SocialLink href={profile.soundcloud_url} icon={<Music2 className="h-3.5 w-3.5" />}  label="SoundCloud" />}
-              {profile.website_url   && <SocialLink href={profile.website_url}   icon={<Globe className="h-3.5 w-3.5" />}     label="Sito" />}
-            </div>
+            <p className="text-sm text-white/70">{profile.bio}</p>
           </div>
         )}
 
@@ -465,32 +460,7 @@ export default function PublicLivePage() {
           </div>
         )}
 
-        {events.length > 0 && (
-          <div className="mt-8">
-            <div className="flex items-center gap-2 mb-3">
-              <CalendarDays className="h-4 w-4 text-purple-300" />
-              <h2 className="font-bold">{t('live.upcomingDates')}</h2>
-            </div>
-            <div className="space-y-2">
-              {events.map((ev) => (
-                <a key={ev.id} href={ev.ticket_url ?? '#'} target="_blank" rel="noreferrer"
-                  className="glass rounded-xl p-3 flex items-center justify-between hover:bg-white/5 transition">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-sm truncate">{ev.title}</p>
-                    <p className="text-xs text-white/40 mt-0.5">
-                      {ev.event_date && new Date(ev.event_date).toLocaleDateString('it-IT')}
-                      {(ev.venue_name || ev.city) && (
-                        <span className="ml-2 inline-flex items-center gap-1">
-                          <MapPin className="h-3 w-3" /> {[ev.venue_name, ev.city].filter(Boolean).join(' · ')}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
+        <FollowDjSection tone="party" profile={profile} events={events} t={t} />
 
         {branding !== 'full' && (
           <p className={`text-center mt-10 ${branding === 'reduced' ? 'text-[10px] text-white/20' : 'text-[11px] text-white/30'}`}>
@@ -515,12 +485,139 @@ function Banner({ icon, children }: { icon: React.ReactNode; children: React.Rea
     </div>
   )
 }
-function SocialLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+// ── "Segui il DJ" — social + (Party only) prossime date ──────────
+
+type FollowProfile = {
+  bio?: string | null
+  instagram_url?: string | null
+  tiktok_url?: string | null
+  spotify_url?: string | null
+  soundcloud_url?: string | null
+  website_url?: string | null
+} | null | undefined
+
+type FollowEvent = {
+  id: string
+  title: string
+  event_date?: string | null
+  venue_name?: string | null
+  city?: string | null
+  ticket_url?: string | null
+}
+
+function hasAnySocial(p: FollowProfile): boolean {
+  return !!(p && (p.instagram_url || p.tiktok_url || p.spotify_url || p.soundcloud_url || p.website_url))
+}
+
+function SocialLinks({ profile, tone }: { profile: FollowProfile; tone: GuestTone }) {
+  if (!profile) return null
+  const items = ([
+    profile.instagram_url  && { href: profile.instagram_url,  icon: <Instagram className="h-3.5 w-3.5" />, label: 'Instagram' },
+    profile.tiktok_url     && { href: profile.tiktok_url,     icon: <Music2 className="h-3.5 w-3.5" />,    label: 'TikTok' },
+    profile.spotify_url    && { href: profile.spotify_url,    icon: <Music2 className="h-3.5 w-3.5" />,    label: 'Spotify' },
+    profile.soundcloud_url && { href: profile.soundcloud_url, icon: <Music2 className="h-3.5 w-3.5" />,    label: 'SoundCloud' },
+    profile.website_url    && { href: profile.website_url,    icon: <Globe className="h-3.5 w-3.5" />,     label: 'Sito' },
+  ].filter(Boolean)) as { href: string; icon: React.ReactNode; label: string }[]
+  if (items.length === 0) return null
+  const chipCls = tone === 'party'
+    ? 'inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-full bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10 transition'
+    : 'inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-full bg-white border border-[#E8B7C8] text-[#8F1D2C] hover:border-wedding-gold hover:shadow-sm transition'
   return (
-    <a href={href} target="_blank" rel="noreferrer"
-      className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10">
-      {icon}{label}
-    </a>
+    <div className="flex flex-wrap justify-center gap-2">
+      {items.map((it) => (
+        <a key={it.label} href={it.href} target="_blank" rel="noreferrer" className={chipCls}>
+          {it.icon}{it.label}
+        </a>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * Sezione "Segui il DJ" mostrata nel telecomando ospiti.
+ * - tone="party"   → social + prossime date (più visibile)
+ * - tone="wedding" → solo social, raffinata, vicino al footer (nessun evento)
+ *
+ * Social ed eventi sono già filtrati lato backend in base al piano effettivo
+ * (Pro / Advance / Event Pass attivo): qui mostriamo solo ciò che è presente.
+ */
+function FollowDjSection({ tone, profile, events, t }: {
+  tone: GuestTone
+  profile: FollowProfile
+  events: FollowEvent[]
+  t: (k: string) => string
+}) {
+  const social = hasAnySocial(profile)
+  const showEvents = tone === 'party'
+  const evs = showEvents ? (events ?? []) : []
+  if (!social && evs.length === 0) return null
+
+  if (tone === 'wedding') {
+    return (
+      <div className="mt-12">
+        <WeddingDivider className="mb-7" />
+        <div className="text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8F1D2C] mb-1.5">
+            {t('live.followDjTitle')}
+          </p>
+          <p className="font-wedding text-base italic text-[#6F6260] mb-5">
+            {t('live.followDjSubtitleWedding')}
+          </p>
+          <SocialLinks profile={profile} tone="wedding" />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-8">
+      <div className="rounded-2xl border border-[#7C3AED]/30 bg-gradient-to-br from-[#1A0B2E]/70 to-[#2D1B4E]/40 p-5 backdrop-blur">
+        <div className="text-center mb-4">
+          <h2 className="text-lg font-black text-white">{t('live.followDjTitle')}</h2>
+          <p className="text-xs text-white/60 mt-1">{t('live.followDjSubtitleParty')}</p>
+        </div>
+        {social && (
+          <div className={evs.length > 0 ? 'mb-5' : ''}>
+            <SocialLinks profile={profile} tone="party" />
+          </div>
+        )}
+        {evs.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <CalendarDays className="h-4 w-4 text-[#A855F7]" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#A855F7]">{t('live.upcomingDates')}</span>
+            </div>
+            {evs.map((ev) => {
+              const inner = (
+                <>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm truncate">{ev.title}</p>
+                    <p className="text-xs text-white/40 mt-0.5">
+                      {ev.event_date && new Date(ev.event_date).toLocaleDateString('it-IT')}
+                      {(ev.venue_name || ev.city) && (
+                        <span className="ml-2 inline-flex items-center gap-1">
+                          <MapPin className="h-3 w-3" /> {[ev.venue_name, ev.city].filter(Boolean).join(' · ')}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </>
+              )
+              return ev.ticket_url ? (
+                <a key={ev.id} href={ev.ticket_url} target="_blank" rel="noreferrer"
+                  className="rounded-xl bg-white/5 border border-white/10 p-3 flex items-center justify-between hover:bg-white/10 transition">
+                  {inner}
+                </a>
+              ) : (
+                <div key={ev.id} className="rounded-xl bg-white/5 border border-white/10 p-3 flex items-center justify-between">
+                  {inner}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
