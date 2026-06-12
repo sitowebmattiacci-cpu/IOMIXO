@@ -193,7 +193,8 @@ stripeRouter.post('/webhook', async (req: Request, res: Response) => {
         if (session.mode === 'subscription') {
           await handleCheckoutComplete(session)
         } else if (session.mode === 'payment') {
-          // One-time Event Pass 24H. Only activates when payment_status === 'paid'.
+          // One-time Event Pass 24H. Activates when the checkout is complete and
+          // payment_status is 'paid' OR 'no_payment_required' (100% coupon → 0€).
           await handleEventPassPayment(session)
         }
         break
@@ -443,36 +444,53 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 
 // ── Event Pass 24H handler (Party Mode + Wedding Edition) ─────
 async function handleEventPassPayment(session: Stripe.Checkout.Session) {
+  // TEMP debug log for 0€/coupon checkouts. Remove once verified in production.
+  console.log('[stripe checkout completed]', {
+    id: session.id,
+    status: session.status,
+    payment_status: session.payment_status,
+    amount_total: session.amount_total,
+    amount_discount: session.total_details?.amount_discount,
+    metadata: session.metadata,
+  })
+
   const userId = session.metadata?.user_id
   if (!userId) {
     logger.warn('Event Pass payment: missing user_id in metadata')
     return
   }
 
-  // SECURITY: only activate the pass once Stripe confirms the money was actually
-  // collected. A completed checkout session does NOT mean the payment succeeded
-  // (declined cards, async methods, etc.). Without this guard a failed payment
-  // would still unlock premium access.
-  if (session.payment_status !== 'paid') {
-    logger.warn('Event Pass checkout completed but payment not paid; skipping activation', {
+  // SECURITY: activate the pass only once Stripe confirms the checkout is complete
+  // AND the payment is settled. A 100% coupon makes the total 0€ → Stripe reports
+  // payment_status='no_payment_required' (and creates NO payment_intent); that is
+  // a VALID completed purchase and must still grant the pass. Declined cards or
+  // unpaid/async-pending checkouts are excluded so they never unlock access.
+  const isCompleted = session.status === 'complete'
+  const isValidCheckoutPayment =
+    session.payment_status === 'paid' ||
+    session.payment_status === 'no_payment_required'
+
+  if (!isCompleted || !isValidCheckoutPayment) {
+    logger.warn('Event Pass checkout not eligible for activation; skipping', {
       sessionId: session.id,
       userId,
+      status: session.status,
       paymentStatus: session.payment_status,
     })
     return
   }
 
-  const paymentIntentId = session.payment_intent as string
-  if (!paymentIntentId) {
-    logger.warn('Event Pass payment: missing payment_intent')
-    return
-  }
+  // A 0€ (100% coupon) checkout has no payment_intent. Fall back to the checkout
+  // session id as the dedup key: it keeps the UNIQUE constraint working (so webhook
+  // retries don't create duplicate passes) and never collides with a real charge's
+  // payment_intent, so the refund handler won't touch coupon-only passes.
+  const paymentIntentId = (session.payment_intent as string | null) ?? session.id
 
   const sessionId = session.metadata?.session_id || null
-  const amountTotal = session.amount_total || 0
+  const amountTotal = session.amount_total ?? 0
   const currency = session.currency || 'eur'
 
-  // Crea event pass valido 24h
+  // Crea event pass valido 24h da adesso
   const validUntil = new Date()
   validUntil.setHours(validUntil.getHours() + 24)
 
@@ -491,7 +509,7 @@ async function handleEventPassPayment(session: Stripe.Checkout.Session) {
     return
   }
 
-  // Registra pagamento
+  // Registra pagamento (amount 0 per coupon 100% è valido)
   await supabaseAdmin.from('payments').upsert({
     user_id: userId,
     stripe_payment_intent_id: paymentIntentId,
@@ -501,7 +519,10 @@ async function handleEventPassPayment(session: Stripe.Checkout.Session) {
     description: `Event Pass 24H — valido fino al ${validUntil.toISOString()}`,
   }, { ignoreDuplicates: true, onConflict: 'stripe_payment_intent_id' })
 
-  logger.info(`Event Pass created for user ${userId}, valid until ${validUntil.toISOString()}`)
+  logger.info(`Event Pass created for user ${userId}, valid until ${validUntil.toISOString()}`, {
+    paymentStatus: session.payment_status,
+    amountTotal,
+  })
 }
 
 // ── Refund handler ───────────────────────────────────────────
