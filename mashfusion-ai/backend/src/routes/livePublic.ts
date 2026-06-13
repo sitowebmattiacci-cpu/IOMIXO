@@ -7,6 +7,7 @@ import { markPresent } from '../services/livePresence'
 import { PLAN_LIMITS } from '../config/plans'
 import { getEffectivePlan } from '../services/plan'
 import { createWeddingPhotoSignedUrl } from '../services/storage'
+import { getSmartRandomOption } from '../utils/smartRandom'
 
 export const livePublicRouter = Router()
 
@@ -398,10 +399,28 @@ livePublicRouter.post('/:slug/games/roulette/spin', async (req, res, next) => {
       .maybeSingle()
     if (!round) throw new AppError('Nessuna roulette attiva', 404)
 
-    const slots = (round.config as any)?.slots ?? []
+    const slots: string[] = (round.config as any)?.slots ?? []
     if (slots.length === 0) throw new AppError('Nessuna penitenza configurata', 400)
 
-    const slotIndex = Math.floor(Math.random() * slots.length)
+    // Smart random: avoid repeating the penalties picked in the most recent spins.
+    const recentRounds = await supabaseAdmin
+      .from('live_game_rounds')
+      .select('result, created_at')
+      .eq('session_id', session.id)
+      .eq('game_type', 'wedding_roulette')
+      .neq('id', round.id)
+      .order('created_at', { ascending: false })
+      .limit(3)
+    const recentIds: string[] = (recentRounds.data ?? [])
+      .map((r: any) => r?.result?.slot_label)
+      .filter((l: any): l is string => typeof l === 'string')
+      .reverse()
+    const currentLabel = (round.result as any)?.slot_label
+    if (typeof currentLabel === 'string') recentIds.push(currentLabel)
+
+    const candidates = slots.map((label, idx) => ({ id: label, idx }))
+    const picked = getSmartRandomOption(candidates, recentIds, 3)
+    const slotIndex = picked ? picked.idx : 0
     const slotLabel = slots[slotIndex]
     const pickedAt = new Date().toISOString()
 

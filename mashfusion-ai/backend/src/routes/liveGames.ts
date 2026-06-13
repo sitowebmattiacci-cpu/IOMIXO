@@ -5,6 +5,7 @@ import { AppError } from '../middleware/errorHandler'
 import { getUserPlan, hasEventAccess } from '../services/plan'
 import { PLAN_LIMITS } from '../config/plans'
 import { isEventSession } from '../utils/sessionType'
+import { getSmartRandomOption } from '../utils/smartRandom'
 
 export const liveGamesRouter = Router()
 
@@ -66,6 +67,37 @@ async function requireEventAccess(djId: string, sessionId?: string) {
   }
 }
 const requireWeddingFeature = requireEventAccess
+
+// Collect the penalty labels picked in the most recent roulette spins for a
+// session, ordered oldest → newest, so smart-random can avoid close repeats.
+// Includes the current round's existing result (when re-spinning the same
+// round, as in the public remote flow) as the most-recent entry.
+async function recentRouletteLabels(
+  sessionId: string,
+  currentRoundId: string,
+  currentResult: any,
+  limit = 3,
+): Promise<string[]> {
+  const { data } = await supabaseAdmin
+    .from('live_game_rounds')
+    .select('result, created_at')
+    .eq('session_id', sessionId)
+    .eq('game_type', 'wedding_roulette')
+    .neq('id', currentRoundId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  // Newest-first from query → reverse to oldest-first.
+  const labels = (data ?? [])
+    .map((r: any) => r?.result?.slot_label)
+    .filter((l: any): l is string => typeof l === 'string')
+    .reverse()
+
+  const currentLabel = currentResult?.slot_label
+  if (typeof currentLabel === 'string') labels.push(currentLabel)
+
+  return labels
+}
 
 // ── DJ: start a roulette round ─────────────────────────────────
 liveGamesRouter.post('/sessions/:id/games/roulette/start', requireAuth, async (req, res, next) => {
@@ -147,7 +179,15 @@ liveGamesRouter.post('/sessions/:id/games/roulette/spin', requireAuth, async (re
       ? round.config.penitenze
       : DEFAULT_ROULETTE_PENITENZE.filter((p) => p.enabled)
 
-    const pickedIndex = Math.floor(Math.random() * penitenze.length)
+    // Smart random: avoid repeating the penalties picked in the most recent spins.
+    const recentIds = await recentRouletteLabels(req.params.id, round.id, round.result)
+
+    const candidates = penitenze.map((p, idx) => ({
+      id: typeof p === 'string' ? p : p.label,
+      idx,
+    }))
+    const pickedCandidate = getSmartRandomOption(candidates, recentIds, 3)
+    const pickedIndex = pickedCandidate ? pickedCandidate.idx : 0
     const picked = penitenze[pickedIndex]
     const result = {
       slot_index: pickedIndex,
