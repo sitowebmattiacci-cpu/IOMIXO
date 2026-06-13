@@ -33,19 +33,49 @@ export default function LiveBoothPage() {
   const streamRef = useRef<MediaStream | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const countdownTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const watchdogTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     return () => {
       if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop())
       if (countdownTimer.current) clearTimeout(countdownTimer.current)
+      if (watchdogTimer.current) clearTimeout(watchdogTimer.current)
     }
   }, [])
 
+  // iOS Safari / in-app browser: attach the stream and force playback once the
+  // video element is mounted. A watchdog detects the "black screen" case (stream
+  // running but no frames) and falls back to the file-upload flow.
   useEffect(() => {
-    if (cameraActive && videoRef.current && streamRef.current) {
-      videoRef.current.srcObject = streamRef.current
-      videoRef.current.play().catch((err) => console.error('Video play failed:', err))
+    if (!cameraActive) return
+    const video = videoRef.current
+    const stream = streamRef.current
+    if (!video || !stream) return
+
+    video.setAttribute('playsinline', 'true')
+    video.setAttribute('webkit-playsinline', 'true')
+    video.muted = true
+    video.srcObject = stream
+
+    const tryPlay = () => { video.play().catch((err) => console.error('Video play failed:', err)) }
+    video.onloadedmetadata = tryPlay
+    tryPlay()
+
+    if (watchdogTimer.current) clearTimeout(watchdogTimer.current)
+    watchdogTimer.current = setTimeout(() => {
+      // Still no frames after the grace period → camera is effectively black.
+      if (videoRef.current && videoRef.current.videoWidth === 0) {
+        stopCamera()
+        setCameraError(true)
+        toast.error(t('booth.cameraDenied'))
+      }
+    }, 3500)
+
+    return () => {
+      video.onloadedmetadata = null
+      if (watchdogTimer.current) clearTimeout(watchdogTimer.current)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraActive])
 
   if (error || !data) {
@@ -292,6 +322,13 @@ export default function LiveBoothPage() {
               )}
             </div>
             <canvas ref={canvasRef} className="hidden" />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelected}
+              className="hidden"
+            />
             <div className="flex gap-3 mt-6 flex-wrap justify-center">
               <PartyButton variant="ghost" onClick={stopCamera} icon={<X className="h-5 w-5" />} size="lg">
                 {t('booth.close')}
@@ -309,6 +346,13 @@ export default function LiveBoothPage() {
                 {countdown !== null ? `${countdown}…` : t('booth.photoMoment')}
               </PartyButton>
             </div>
+            <button
+              onClick={openFilePicker}
+              className="mt-4 inline-flex items-center gap-2 text-sm text-white/55 hover:text-[#FF7AB6] transition-colors"
+            >
+              <ImagePlus className="h-4 w-4" />
+              {t('booth.uploadPhoto')}
+            </button>
           </div>
           <style jsx global>{`.mirror { transform: scaleX(-1); }`}</style>
         </PartyShell>
@@ -432,6 +476,13 @@ export default function LiveBoothPage() {
             )}
           </div>
           <canvas ref={canvasRef} className="hidden" />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileSelected}
+            className="hidden"
+          />
           <div className="flex gap-3 mt-6">
             <WeddingButton onClick={stopCamera} disabled={countdown !== null} icon={<X className="h-4 w-4" />} size="md">{t('booth.close')}</WeddingButton>
             <WeddingButton onClick={flipCamera} disabled={countdown !== null} icon={<RefreshCw className="h-4 w-4" />} size="md">{t('booth.flip')}</WeddingButton>
@@ -439,6 +490,13 @@ export default function LiveBoothPage() {
               {countdown !== null ? `${countdown}…` : t('booth.takePhoto')}
             </WeddingButton>
           </div>
+          <button
+            onClick={openFilePicker}
+            className="mt-4 inline-flex items-center gap-2 text-sm text-wedding-taupe hover:text-wedding-burgundy transition-colors"
+          >
+            <ImagePlus className="h-4 w-4" />
+            {t('booth.uploadPhoto')}
+          </button>
         </div>
         <style jsx global>{`.mirror { transform: scaleX(-1); }`}</style>
       </WeddingShell>
