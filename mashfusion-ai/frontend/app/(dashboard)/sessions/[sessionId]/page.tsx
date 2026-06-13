@@ -81,6 +81,12 @@ function VideoLiveController({ session, theme }: { session: any; theme: 'wedding
   const sendCommand = (command: VideoLiveCommand, extraConfig: Record<string, any> = {}) =>
     writeVideoLive({ command, command_id: newCommandId() }, extraConfig)
 
+  // Transport buttons also persist the DJ's intended playback_state so the
+  // dashboard highlight reflects the real state (not just box visibility).
+  const play    = () => writeVideoLive({ command: 'play',    command_id: newCommandId(), playback_state: 'playing' })
+  const pause   = () => writeVideoLive({ command: 'pause',   command_id: newCommandId(), playback_state: 'paused'  })
+  const restart = () => writeVideoLive({ command: 'restart', command_id: newCommandId(), playback_state: 'playing' })
+
   const toggleMute = () => {
     const next = !muted
     setMuted(next)
@@ -93,18 +99,26 @@ function VideoLiveController({ session, theme }: { session: any; theme: 'wedding
 
   const hideVideo = () => {
     // Removes the box from the screen and stops playback.
-    sendCommand('stop', { show_video_live: false })
+    writeVideoLive(
+      { command: 'stop', command_id: newCommandId(), playback_state: 'stopped' },
+      { show_video_live: false },
+    )
   }
 
   if (!enabled) return null
+
+  // Real playback state chosen by the DJ — drives the Play/Pause highlight.
+  const playbackState = cfg.video_live?.playback_state
+  const isPlaying = playbackState === 'playing'
+  const isPaused  = playbackState === 'paused'
 
   const isWedding = theme === 'wedding'
   const btn = isWedding
     ? 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-white text-[#8F1D2C] border border-[#E8B7C8] hover:bg-[#FBEAF0] disabled:opacity-50 transition'
     : 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-black/30 text-white border border-white/15 hover:border-[#FF3D8A] disabled:opacity-50 transition'
-  const primaryBtn = isWedding
-    ? 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-[#8F1D2C] text-white border border-[#8F1D2C] hover:bg-[#7a1726] disabled:opacity-50 transition'
-    : 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-[#FF3D8A] text-white border border-[#FF3D8A] hover:bg-[#e8327b] disabled:opacity-50 transition'
+  const activeBtn = isWedding
+    ? 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-[#8F1D2C] text-white border border-[#8F1D2C] ring-2 ring-[#8F1D2C]/30 hover:bg-[#7a1726] disabled:opacity-50 transition'
+    : 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-[#FF3D8A] text-white border border-[#FF3D8A] ring-2 ring-[#FF3D8A]/40 hover:bg-[#e8327b] disabled:opacity-50 transition'
   const dangerBtn = isWedding
     ? 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-white text-[#8F1D2C] border border-[#E8B7C8] hover:bg-[#FBEAF0] disabled:opacity-50 transition'
     : 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-black/30 text-white border border-white/15 hover:border-white/40 disabled:opacity-50 transition'
@@ -121,13 +135,13 @@ function VideoLiveController({ session, theme }: { session: any; theme: 'wedding
       </p>
       <p className={`text-[11px] ${subText} mb-3`}>{t('weddingPanels.videoControlsHint')}</p>
       <div className="flex flex-wrap gap-2">
-        <button type="button" disabled={busy} onClick={() => sendCommand('play')} className={primaryBtn}>
+        <button type="button" disabled={busy} onClick={play} className={isPlaying ? activeBtn : btn} aria-pressed={isPlaying}>
           <Play className="h-3.5 w-3.5" /> {t('weddingPanels.videoPlay')}
         </button>
-        <button type="button" disabled={busy} onClick={() => sendCommand('pause')} className={btn}>
+        <button type="button" disabled={busy} onClick={pause} className={isPaused ? activeBtn : btn} aria-pressed={isPaused}>
           <Pause className="h-3.5 w-3.5" /> {t('weddingPanels.videoPause')}
         </button>
-        <button type="button" disabled={busy} onClick={() => sendCommand('restart')} className={btn}>
+        <button type="button" disabled={busy} onClick={restart} className={btn}>
           <RotateCw className="h-3.5 w-3.5" /> {t('weddingPanels.videoRestart')}
         </button>
         <button type="button" disabled={busy} onClick={toggleMute} className={btn}>

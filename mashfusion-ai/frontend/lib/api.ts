@@ -185,17 +185,22 @@ export interface GuestConfig {
 }
 
 export type VideoLiveCommand = 'play' | 'pause' | 'mute' | 'unmute' | 'restart' | 'stop'
+export type VideoLivePlaybackState = 'playing' | 'paused' | 'stopped'
 
 /**
  * Remote-control state for Video Live. The DJ dashboard is the director: every
  * transport action writes a new `command_id` so the Screen Mode player executes
  * the command exactly once. `volume` (0-100) is applied reactively and does NOT
  * bump `command_id` to avoid replaying the last transport command.
+ * `playback_state` reflects the DJ's intended state (playing/paused/stopped) and
+ * drives the dashboard Play/Pause button highlight — independent of
+ * `show_video_live` (which only controls box visibility).
  */
 export interface VideoLiveControl {
   command?: VideoLiveCommand
   command_id?: string
   volume?: number
+  playback_state?: VideoLivePlaybackState
   updated_at?: string
 }
 
