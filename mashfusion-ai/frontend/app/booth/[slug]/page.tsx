@@ -32,8 +32,17 @@ export default function LiveBoothPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const pendingFileRef = useRef<File | null>(null)
   const countdownTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const watchdogTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // iPhone/iPad: Safari & in-app browsers spesso danno "schermo nero" con
+  // getUserMedia. Su iOS mettiamo sempre in evidenza il fallback nativo.
+  const isIOS =
+    typeof navigator !== 'undefined' &&
+    (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      // iPadOS 13+ si maschera da Mac: rileviamo il touch.
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
 
   useEffect(() => {
     return () => {
@@ -64,12 +73,13 @@ export default function LiveBoothPage() {
     if (watchdogTimer.current) clearTimeout(watchdogTimer.current)
     watchdogTimer.current = setTimeout(() => {
       // Still no frames after the grace period → camera is effectively black.
-      if (videoRef.current && videoRef.current.videoWidth === 0) {
+      const v = videoRef.current
+      if (v && (v.videoWidth === 0 || v.videoHeight === 0)) {
         stopCamera()
         setCameraError(true)
         toast.error(t('booth.cameraDenied'))
       }
-    }, 3500)
+    }, 2000)
 
     return () => {
       video.onloadedmetadata = null
@@ -234,15 +244,25 @@ export default function LiveBoothPage() {
     tick(3)
   }
 
-  const retakePhoto = () => { setPhoto(null); startCamera() }
+  const retakePhoto = () => {
+    const wasUpload = !!pendingFileRef.current
+    if (photo && photo.startsWith('blob:')) URL.revokeObjectURL(photo)
+    setPhoto(null)
+    pendingFileRef.current = null
+    // Se la foto veniva dal fallback nativo, riapri il selettore file (su iPhone
+    // la camera live potrebbe dare schermo nero): niente getUserMedia.
+    if (wasUpload) openFilePicker()
+    else startCamera()
+  }
 
-  // ─── File fallback (no getUserMedia) ─────────────────────────
-  // Stesso flusso di moderazione/storage della camera live: il file
-  // selezionato diventa la "foto" in anteprima e viene poi caricato in
-  // stato pending tramite uploadPhoto -> boothUpload.
+  // ─── File fallback (NO getUserMedia / video / canvas / stream) ───────
+  // Usa esclusivamente <input type="file" accept="image/*">. Il file ORIGINALE
+  // viene tenuto in pendingFileRef e caricato direttamente (boothUpload) nello
+  // stesso flusso di moderazione/storage della camera live. L'anteprima è solo
+  // estetica (objectURL) e NON è richiesta per l'upload.
   const openFilePicker = () => fileInputRef.current?.click()
 
-  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNativePhotoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = '' // consente di riselezionare lo stesso file
     if (!file) return
@@ -250,26 +270,39 @@ export default function LiveBoothPage() {
       toast.error(t('booth.notImage'))
       return
     }
-    const reader = new FileReader()
-    reader.onload = () => {
-      stopCamera()
-      setCameraError(false)
-      setPhoto(reader.result as string)
+    // Ferma qualsiasi stream/anteprima live: nessuna dipendenza da video/canvas.
+    stopCamera()
+    setCameraError(false)
+    pendingFileRef.current = file
+    try {
+      setPhoto(URL.createObjectURL(file))
+    } catch {
+      // Anteprima non disponibile: l'upload funziona comunque.
+      setPhoto('pending')
     }
-    reader.onerror = () => toast.error(t('booth.uploadError'))
-    reader.readAsDataURL(file)
   }
 
   const uploadPhoto = async () => {
-    if (!photo) return
     setUploading(true)
     try {
-      const blob = await (await fetch(photo)).blob()
-      const file = new File([blob], 'booth-photo.jpg', { type: 'image/jpeg' })
+      // Fallback nativo: carica direttamente il File originale (no canvas).
+      // Camera live: ricava il file dalla data-URL del canvas.
+      let file: File
+      if (pendingFileRef.current) {
+        file = pendingFileRef.current
+      } else if (photo && photo.startsWith('data:')) {
+        const blob = await (await fetch(photo)).blob()
+        file = new File([blob], 'booth-photo.jpg', { type: 'image/jpeg' })
+      } else {
+        setUploading(false)
+        return
+      }
       await livePhotos.boothUpload(slug!, file, {})
       toast.success(isWedding
         ? t('booth.uploadedWedding')
         : t('booth.uploadedParty'))
+      if (photo && photo.startsWith('blob:')) URL.revokeObjectURL(photo)
+      pendingFileRef.current = null
       setPhoto(null)
     } catch (err: any) {
       const msg = err?.message ?? t('booth.uploadError')
@@ -288,8 +321,14 @@ export default function LiveBoothPage() {
         <PartyShell>
           <div className="min-h-screen flex flex-col items-center justify-center p-6 space-y-6">
             <div className="relative max-w-2xl w-full rounded-3xl overflow-hidden ring-2 ring-[#FF3D8A]/40 shadow-[0_25px_80px_rgba(255,61,138,0.35)]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photo} alt="Preview" className="w-full h-auto" />
+              {photo === 'pending' ? (
+                <div className="w-full aspect-square flex items-center justify-center bg-black/40 text-white/70 text-sm">
+                  {t('booth.uploadPhoto')}
+                </div>
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={photo} alt="Preview" className="w-full h-auto" />
+              )}
             </div>
             <div className="flex gap-3 flex-wrap justify-center">
               <PartyButton variant="ghost" onClick={retakePhoto} disabled={uploading} icon={<RotateCw className="h-5 w-5" />} size="lg">
@@ -326,7 +365,7 @@ export default function LiveBoothPage() {
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              onChange={handleFileSelected}
+              onChange={handleNativePhotoSelected}
               className="hidden"
             />
             <div className="flex gap-3 mt-6 flex-wrap justify-center">
@@ -396,7 +435,7 @@ export default function LiveBoothPage() {
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            onChange={handleFileSelected}
+            onChange={handleNativePhotoSelected}
             className="hidden"
           />
 
@@ -414,12 +453,25 @@ export default function LiveBoothPage() {
           )}
 
           <div className="w-full space-y-3">
-            <PartyButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" variant="fuchsia" className="w-full">
-              {t('booth.openCamera')}
-            </PartyButton>
-            <PartyButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />} size="lg" variant="outline" className="w-full">
-              {t('booth.uploadPhoto')}
-            </PartyButton>
+            {isIOS ? (
+              <>
+                <PartyButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />} size="lg" variant="fuchsia" className="w-full">
+                  {t('booth.uploadPhoto')}
+                </PartyButton>
+                <PartyButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" variant="outline" className="w-full">
+                  {t('booth.openCamera')}
+                </PartyButton>
+              </>
+            ) : (
+              <>
+                <PartyButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" variant="fuchsia" className="w-full">
+                  {t('booth.openCamera')}
+                </PartyButton>
+                <PartyButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />} size="lg" variant="outline" className="w-full">
+                  {t('booth.uploadPhoto')}
+                </PartyButton>
+              </>
+            )}
             <p className="text-xs text-white/45">{t('booth.cameraHint')}</p>
             <p className="text-xs text-[#FF7AB6]/80">{t('booth.partyApprovalNote')}</p>
           </div>
@@ -446,8 +498,14 @@ export default function LiveBoothPage() {
       <WeddingShell>
         <div className="min-h-screen flex flex-col items-center justify-center p-6 space-y-6">
           <div className="relative max-w-2xl w-full rounded-2xl overflow-hidden shadow-wedding-lg border-4 border-wedding-gold/30">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={photo} alt="Preview" className="w-full h-auto" />
+            {photo === 'pending' ? (
+              <div className="w-full aspect-square flex items-center justify-center bg-wedding-ink/10 text-wedding-taupe text-sm">
+                {t('booth.uploadPhoto')}
+              </div>
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={photo} alt="Preview" className="w-full h-auto" />
+            )}
           </div>
           <div className="flex gap-4">
             <WeddingButton onClick={retakePhoto} disabled={uploading} icon={<RotateCw className="h-5 w-5" />} size="lg">{t('booth.retake')}</WeddingButton>
@@ -480,7 +538,7 @@ export default function LiveBoothPage() {
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            onChange={handleFileSelected}
+            onChange={handleNativePhotoSelected}
             className="hidden"
           />
           <div className="flex gap-3 mt-6">
@@ -531,7 +589,7 @@ export default function LiveBoothPage() {
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            onChange={handleFileSelected}
+            onChange={handleNativePhotoSelected}
             className="hidden"
           />
 
@@ -549,12 +607,25 @@ export default function LiveBoothPage() {
           )}
 
           <div className="space-y-3">
-            <WeddingButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" className="w-full">
-              {t('booth.openCamera')}
-            </WeddingButton>
-            <WeddingButton onClick={openFilePicker} variant="outline" icon={<ImagePlus className="h-5 w-5" />} size="lg" className="w-full">
-              {t('booth.uploadPhoto')}
-            </WeddingButton>
+            {isIOS ? (
+              <>
+                <WeddingButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />} size="lg" className="w-full">
+                  {t('booth.uploadPhoto')}
+                </WeddingButton>
+                <WeddingButton onClick={() => startCamera()} variant="outline" icon={<Camera className="h-5 w-5" />} size="lg" className="w-full">
+                  {t('booth.openCamera')}
+                </WeddingButton>
+              </>
+            ) : (
+              <>
+                <WeddingButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" className="w-full">
+                  {t('booth.openCamera')}
+                </WeddingButton>
+                <WeddingButton onClick={openFilePicker} variant="outline" icon={<ImagePlus className="h-5 w-5" />} size="lg" className="w-full">
+                  {t('booth.uploadPhoto')}
+                </WeddingButton>
+              </>
+            )}
             <p className="text-xs text-wedding-taupe">{t('booth.cameraHint')}</p>
             <p className="text-xs text-wedding-burgundy/80">{t('booth.weddingApprovalNote')}</p>
           </div>
