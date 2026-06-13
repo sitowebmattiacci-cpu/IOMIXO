@@ -2,7 +2,7 @@
 import { useParams } from 'next/navigation'
 import useSWR from 'swr'
 import { QRCodeSVG } from 'qrcode.react'
-import { Heart, Sparkles, ListChecks, Camera, Footprints, Music2, Star } from 'lucide-react'
+import { Heart, Sparkles, ListChecks, Camera, Footprints, Star } from 'lucide-react'
 import { liveScreen } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
@@ -544,6 +544,16 @@ function PartyScreen({
   const featured = photos?.find((p: any) => p.is_featured) ?? null
   const rest = (photos ?? []).filter((p: any) => p.id !== featured?.id)
 
+  // Visibilità schermo Party Mode — guidata ESCLUSIVAMENTE da screen_config.
+  // Un widget appare solo se il rispettivo toggle è esplicitamente true.
+  // (Foto Live Booth → show_photos, Music Battle → show_polls, Party Roulette → show_roulette)
+  const cfg = session.screen_config ?? {}
+  const showLiveBooth     = cfg.show_photos   === true
+  const showMusicBattle   = cfg.show_polls    === true
+  const showPartyRoulette = cfg.show_roulette === true
+  const showGames = showMusicBattle || showPartyRoulette
+  const anyActive = showLiveBooth || showGames
+
   // simple photo carousel
   const [carouselIdx, setCarouselIdx] = useState(0)
   useEffect(() => {
@@ -581,95 +591,114 @@ function PartyScreen({
           </div>
         </header>
 
-        {/* MAIN GRID */}
-        <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
-          {/* LEFT — Roulette + Music Battle */}
-          <div className="col-span-5 flex flex-col gap-6 min-h-0">
-            {roulette?.result && (
-              <PartyScreenPanel icon={<Sparkles />} title="Party Roulette">
-                <div className="rounded-2xl bg-gradient-to-br from-[#8B0E2F]/40 to-[#FF3D8A]/30 border border-[#FF3D8A]/40 py-10 px-6 text-center">
-                  <p className="text-5xl xl:text-6xl font-black text-white leading-tight">
-                    {roulette.result.slot_label}
-                  </p>
-                </div>
-              </PartyScreenPanel>
+        {/* MAIN GRID — solo le sezioni abilitate in screen_config */}
+        {anyActive ? (
+          <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
+            {/* LEFT — Party Roulette + Music Battle */}
+            {showGames && (
+              <div className={`flex flex-col gap-6 min-h-0 ${showLiveBooth ? 'col-span-5' : 'col-span-12'}`}>
+                {showPartyRoulette && (
+                  <PartyScreenPanel icon={<Sparkles />} title="Party Roulette">
+                    {roulette?.result ? (
+                      <div className="rounded-2xl bg-gradient-to-br from-[#8B0E2F]/40 to-[#FF3D8A]/30 border border-[#FF3D8A]/40 py-10 px-6 text-center">
+                        <p className="text-5xl xl:text-6xl font-black text-white leading-tight">
+                          {roulette.result.slot_label}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="text-center py-10">
+                        <p className="text-xl text-white/50 italic">
+                          Il DJ avvierà presto la Party Roulette…
+                        </p>
+                      </div>
+                    )}
+                  </PartyScreenPanel>
+                )}
+
+                {showMusicBattle && (
+                  <PartyScreenPanel icon={<ListChecks />} title="Music Battle" subtitle="Vota dal telefono">
+                    {active_poll ? (
+                      <>
+                        <p className="text-3xl font-bold text-white mb-5 leading-snug">{active_poll.question}</p>
+                        <div className="space-y-3">
+                          {active_poll.options.map((opt: string, i: number) => {
+                            const tally = active_poll.tally?.[i] ?? 0
+                            const pct = total > 0 ? Math.round((tally / total) * 100) : 0
+                            const max = Math.max(...(active_poll.tally ?? [0]))
+                            const winning = total > 0 && tally === max && tally > 0
+                            return (
+                              <div key={i} className={`relative rounded-2xl overflow-hidden border h-16 ${winning ? 'border-[#FF3D8A]/70 shadow-[0_0_20px_rgba(255,61,138,0.4)]' : 'border-white/15'} bg-white/[0.05]`}>
+                                <div
+                                  className={`absolute inset-y-0 left-0 transition-all duration-700 ${winning ? 'bg-gradient-to-r from-[#FF3D8A] to-[#8B0E2F]' : 'bg-gradient-to-r from-[#8B0E2F]/50 to-[#B82E54]/40'}`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                                <div className="relative flex items-center justify-between h-full px-6">
+                                  <span className={`text-xl font-bold ${winning ? 'text-white' : 'text-white/90'}`}>{opt}</span>
+                                  <span className="text-xl font-black tabular-nums text-white">{pct}%</span>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                        <p className="text-[11px] uppercase tracking-[0.3em] text-white/40 mt-4 text-center">
+                          {total} {total === 1 ? 'voto' : 'voti'}
+                        </p>
+                      </>
+                    ) : (
+                      <div className="text-center py-10">
+                        <p className="text-xl text-white/50 italic">
+                          Il DJ avvierà presto una Music Battle…
+                        </p>
+                      </div>
+                    )}
+                  </PartyScreenPanel>
+                )}
+              </div>
             )}
 
-            {active_poll ? (
-              <PartyScreenPanel icon={<ListChecks />} title="Music Battle" subtitle="Vota dal telefono">
-                <p className="text-3xl font-bold text-white mb-5 leading-snug">{active_poll.question}</p>
-                <div className="space-y-3">
-                  {active_poll.options.map((opt: string, i: number) => {
-                    const tally = active_poll.tally?.[i] ?? 0
-                    const pct = total > 0 ? Math.round((tally / total) * 100) : 0
-                    const max = Math.max(...(active_poll.tally ?? [0]))
-                    const winning = total > 0 && tally === max && tally > 0
-                    return (
-                      <div key={i} className={`relative rounded-2xl overflow-hidden border h-16 ${winning ? 'border-[#FF3D8A]/70 shadow-[0_0_20px_rgba(255,61,138,0.4)]' : 'border-white/15'} bg-white/[0.05]`}>
-                        <div
-                          className={`absolute inset-y-0 left-0 transition-all duration-700 ${winning ? 'bg-gradient-to-r from-[#FF3D8A] to-[#8B0E2F]' : 'bg-gradient-to-r from-[#8B0E2F]/50 to-[#B82E54]/40'}`}
-                          style={{ width: `${pct}%` }}
-                        />
-                        <div className="relative flex items-center justify-between h-full px-6">
-                          <span className={`text-xl font-bold ${winning ? 'text-white' : 'text-white/90'}`}>{opt}</span>
-                          <span className="text-xl font-black tabular-nums text-white">{pct}%</span>
-                        </div>
+            {/* RIGHT — Live Booth photos */}
+            {showLiveBooth && (
+              <div className={`flex flex-col min-h-0 ${showGames ? 'col-span-7' : 'col-span-12'}`}>
+                <PartyScreenPanel icon={<Camera />} title="Live Booth" subtitle="Foto del pubblico" className="flex-1">
+                  {featured && (
+                    <div className="mb-4 relative rounded-2xl overflow-hidden border-2 border-[#FF3D8A]/70 ring-4 ring-[#FF3D8A]/20 shadow-[0_0_50px_rgba(255,61,138,0.35)] max-h-[420px]">
+                      <img src={featured.url} alt="" className="w-full h-full object-cover" />
+                      <div className="absolute top-3 right-3 bg-[#FF3D8A] text-white px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
+                        <Star className="h-3 w-3 fill-current" /> In evidenza
                       </div>
-                    )
-                  })}
-                </div>
-                <p className="text-[11px] uppercase tracking-[0.3em] text-white/40 mt-4 text-center">
-                  {total} {total === 1 ? 'voto' : 'voti'}
-                </p>
-              </PartyScreenPanel>
-            ) : !roulette?.result ? (
-              <PartyScreenPanel icon={<Music2 />} title="In attesa">
-                <div className="text-center py-10">
-                  <p className="text-xl text-white/50 italic">
-                    Il DJ avvierà presto una Music Battle o la Party Roulette…
-                  </p>
-                </div>
-              </PartyScreenPanel>
-            ) : null}
-          </div>
-
-          {/* RIGHT — Live Booth photos */}
-          <div className="col-span-7 flex flex-col min-h-0">
-            <PartyScreenPanel icon={<Camera />} title="Live Booth" subtitle="Foto del pubblico" className="flex-1">
-              {featured && (
-                <div className="mb-4 relative rounded-2xl overflow-hidden border-2 border-[#FF3D8A]/70 ring-4 ring-[#FF3D8A]/20 shadow-[0_0_50px_rgba(255,61,138,0.35)] max-h-[420px]">
-                  <img src={featured.url} alt="" className="w-full h-full object-cover" />
-                  <div className="absolute top-3 right-3 bg-[#FF3D8A] text-white px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
-                    <Star className="h-3 w-3 fill-current" /> In evidenza
-                  </div>
-                </div>
-              )}
-
-              {rest.length > 0 ? (
-                <div className="grid grid-cols-4 gap-3">
-                  {rest.slice(0, 8).map((p: any, i: number) => (
-                    <div
-                      key={p.id}
-                      className={`aspect-square rounded-xl overflow-hidden border bg-white/[0.04] transition-all duration-500 ${
-                        i === carouselIdx % Math.max(rest.length, 1) ? 'border-[#FF3D8A]/60 ring-2 ring-[#FF3D8A]/30 scale-[1.04]' : 'border-white/10'
-                      }`}
-                    >
-                      {p.url && <img src={p.url} alt="" className="w-full h-full object-cover" />}
                     </div>
-                  ))}
-                </div>
-              ) : !featured ? (
-                <div className="rounded-2xl border-2 border-dashed border-[#FF3D8A]/30 bg-white/[0.02] py-20 text-center">
-                  <Camera className="h-14 w-14 text-[#FF3D8A]/40 mx-auto mb-4" />
-                  <p className="text-2xl font-bold text-white mb-2">Photo Moment in arrivo!</p>
-                  <p className="text-sm text-white/50">
-                    Scansiona il QR e scatta la prima foto della serata
-                  </p>
-                </div>
-              ) : null}
-            </PartyScreenPanel>
+                  )}
+
+                  {rest.length > 0 ? (
+                    <div className="grid grid-cols-4 gap-3">
+                      {rest.slice(0, 8).map((p: any, i: number) => (
+                        <div
+                          key={p.id}
+                          className={`aspect-square rounded-xl overflow-hidden border bg-white/[0.04] transition-all duration-500 ${
+                            i === carouselIdx % Math.max(rest.length, 1) ? 'border-[#FF3D8A]/60 ring-2 ring-[#FF3D8A]/30 scale-[1.04]' : 'border-white/10'
+                          }`}
+                        >
+                          {p.url && <img src={p.url} alt="" className="w-full h-full object-cover" />}
+                        </div>
+                      ))}
+                    </div>
+                  ) : !featured ? (
+                    <div className="rounded-2xl border-2 border-dashed border-[#FF3D8A]/30 bg-white/[0.02] py-20 text-center">
+                      <Camera className="h-14 w-14 text-[#FF3D8A]/40 mx-auto mb-4" />
+                      <p className="text-2xl font-bold text-white mb-2">Photo Moment in arrivo!</p>
+                      <p className="text-sm text-white/50">
+                        Scansiona il QR e scatta la prima foto della serata
+                      </p>
+                    </div>
+                  ) : null}
+                </PartyScreenPanel>
+              </div>
+            )}
           </div>
-        </div>
+        ) : (
+          /* Nessun toggle attivo → schermo Party pulito: solo header + QR + branding */
+          <div className="flex-1" />
+        )}
 
         <footer className="mt-8">
           <PartyDivider />
