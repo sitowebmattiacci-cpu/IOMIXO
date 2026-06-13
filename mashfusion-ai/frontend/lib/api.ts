@@ -184,6 +184,21 @@ export interface GuestConfig {
   roulette?: boolean
 }
 
+export type VideoLiveCommand = 'play' | 'pause' | 'mute' | 'unmute' | 'restart' | 'stop'
+
+/**
+ * Remote-control state for Video Live. The DJ dashboard is the director: every
+ * transport action writes a new `command_id` so the Screen Mode player executes
+ * the command exactly once. `volume` (0-100) is applied reactively and does NOT
+ * bump `command_id` to avoid replaying the last transport command.
+ */
+export interface VideoLiveControl {
+  command?: VideoLiveCommand
+  command_id?: string
+  volume?: number
+  updated_at?: string
+}
+
 export interface LiveSession {
   id: string
   dj_id: string
@@ -212,6 +227,10 @@ export interface LiveSession {
     show_roulette?: boolean
     show_shoe_game?: boolean
     show_polls?: boolean
+    show_video_live?: boolean
+    video_url?: string
+    video_title?: string
+    video_live?: VideoLiveControl | null
     couple_font?: 'cormorant' | 'playfair' | 'great-vibes' | 'dancing' | 'cinzel' | 'tangerine'
   } | null
   guest_config?: GuestConfig | null
@@ -699,6 +718,10 @@ export interface ScreenPayload {
       show_roulette?: boolean
       show_shoe_game?: boolean
       show_polls?: boolean
+      show_video_live?: boolean
+      video_url?: string
+      video_title?: string
+      video_live?: VideoLiveControl | null
       couple_font?: 'cormorant' | 'playfair' | 'great-vibes' | 'dancing' | 'cinzel' | 'tangerine'
     } | null
   }

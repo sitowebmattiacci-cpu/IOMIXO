@@ -6,7 +6,8 @@ import { QRCodeSVG } from 'qrcode.react'
 import {
   ArrowLeft, Trash2, Power, Heart, MessageSquare,
   Sparkles, Image as ImageIcon, ListChecks, Play, RotateCw, Tv,
-  Check, X, Plus, Copy, Download, MapPin, CalendarDays, Footprints, SkipForward, Users, Camera, Star, Music2,
+  Check, X, Plus, Copy, Download, MapPin, CalendarDays, Footprints, SkipForward, Users, Camera, Star, Music2, Youtube,
+  Pause, Volume2, VolumeX, Square,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -32,6 +33,131 @@ import {
 } from '@/components/party/PartyUI'
 import { useI18n } from '@/lib/i18n'
 import { useEffectiveAccess, isPremiumSession } from '@/lib/access'
+import { resolveVideoSource } from '@/lib/utils'
+import type { VideoLiveCommand } from '@/lib/api'
+
+const newCommandId = () =>
+  (typeof crypto !== 'undefined' && crypto.randomUUID?.()) ||
+  `${Date.now()}-${Math.random().toString(36).slice(2)}`
+
+// ─────────────── VIDEO LIVE — REGIA (dashboard → Screen Mode) ───────────────
+// Remote control for the public Screen Mode video. Each transport action writes
+// a fresh command_id into screen_config.video_live so the live player executes
+// it once; volume is applied reactively (no new command_id). Self-gating: shows
+// only when Video Live is ON and the saved link is valid.
+function VideoLiveController({ session, theme }: { session: any; theme: 'wedding' | 'party' }) {
+  const { t } = useI18n()
+  const cfg = session?.screen_config ?? {}
+  const enabled = cfg.show_video_live === true && !!resolveVideoSource(cfg.video_url)
+  const [volume, setVolume] = useState<number>(
+    typeof cfg.video_live?.volume === 'number' ? cfg.video_live.volume : 100,
+  )
+  const [muted, setMuted] = useState<boolean>(cfg.video_live?.command === 'mute')
+  const [busy, setBusy] = useState(false)
+
+  const writeVideoLive = async (patch: Record<string, any>, extraConfig: Record<string, any> = {}) => {
+    const current = session?.screen_config ?? {}
+    const newConfig = {
+      ...current,
+      ...extraConfig,
+      video_live: {
+        ...(current.video_live ?? {}),
+        volume,
+        ...patch,
+        updated_at: new Date().toISOString(),
+      },
+    }
+    setBusy(true)
+    try {
+      await live.updateSession(session.id, { screen_config: newConfig })
+      await mutate(['session', session.id])
+    } catch (e: any) {
+      toast.error(e?.message ?? t('common.errorGeneric'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const sendCommand = (command: VideoLiveCommand, extraConfig: Record<string, any> = {}) =>
+    writeVideoLive({ command, command_id: newCommandId() }, extraConfig)
+
+  const toggleMute = () => {
+    const next = !muted
+    setMuted(next)
+    sendCommand(next ? 'mute' : 'unmute')
+  }
+
+  const commitVolume = (vol: number) =>
+    // Volume change keeps the previous command_id (does not re-trigger transport).
+    writeVideoLive({ volume: vol })
+
+  const hideVideo = () => {
+    // Removes the box from the screen and stops playback.
+    sendCommand('stop', { show_video_live: false })
+  }
+
+  if (!enabled) return null
+
+  const isWedding = theme === 'wedding'
+  const btn = isWedding
+    ? 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-white text-[#8F1D2C] border border-[#E8B7C8] hover:bg-[#FBEAF0] disabled:opacity-50 transition'
+    : 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-black/30 text-white border border-white/15 hover:border-[#FF3D8A] disabled:opacity-50 transition'
+  const primaryBtn = isWedding
+    ? 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-[#8F1D2C] text-white border border-[#8F1D2C] hover:bg-[#7a1726] disabled:opacity-50 transition'
+    : 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-[#FF3D8A] text-white border border-[#FF3D8A] hover:bg-[#e8327b] disabled:opacity-50 transition'
+  const dangerBtn = isWedding
+    ? 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-white text-[#8F1D2C] border border-[#E8B7C8] hover:bg-[#FBEAF0] disabled:opacity-50 transition'
+    : 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-black/30 text-white border border-white/15 hover:border-white/40 disabled:opacity-50 transition'
+  const wrap = isWedding
+    ? 'mt-3 rounded-lg border border-[#E8B7C8] bg-[#FBEAF0]/40 p-3'
+    : 'mt-3 rounded-xl border border-white/10 bg-black/20 p-3'
+  const subText = isWedding ? 'text-[#6F6260]' : 'text-white/60'
+  const accent = isWedding ? 'text-[#8F1D2C]' : 'text-[#FF3D8A]'
+
+  return (
+    <div className={wrap}>
+      <p className={`text-[11px] font-semibold uppercase tracking-wider ${accent} mb-2`}>
+        {t('weddingPanels.videoControlsTitle')}
+      </p>
+      <p className={`text-[11px] ${subText} mb-3`}>{t('weddingPanels.videoControlsHint')}</p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" disabled={busy} onClick={() => sendCommand('play')} className={primaryBtn}>
+          <Play className="h-3.5 w-3.5" /> {t('weddingPanels.videoPlay')}
+        </button>
+        <button type="button" disabled={busy} onClick={() => sendCommand('pause')} className={btn}>
+          <Pause className="h-3.5 w-3.5" /> {t('weddingPanels.videoPause')}
+        </button>
+        <button type="button" disabled={busy} onClick={() => sendCommand('restart')} className={btn}>
+          <RotateCw className="h-3.5 w-3.5" /> {t('weddingPanels.videoRestart')}
+        </button>
+        <button type="button" disabled={busy} onClick={toggleMute} className={btn}>
+          {muted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+          {muted ? t('weddingPanels.videoUnmute') : t('weddingPanels.videoMute')}
+        </button>
+        <button type="button" disabled={busy} onClick={hideVideo} className={dangerBtn}>
+          <Square className="h-3.5 w-3.5" /> {t('weddingPanels.videoHide')}
+        </button>
+      </div>
+      <div className="flex items-center gap-3 mt-3">
+        <Volume2 className={`h-4 w-4 ${accent}`} />
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={volume}
+          disabled={busy}
+          onChange={(e) => setVolume(Number(e.target.value))}
+          onPointerUp={() => commitVolume(volume)}
+          onKeyUp={() => commitVolume(volume)}
+          className="flex-1 accent-[#FF3D8A]"
+          aria-label={t('weddingPanels.videoVolume')}
+        />
+        <span className={`text-xs tabular-nums w-9 text-right ${subText}`}>{volume}</span>
+      </div>
+    </div>
+  )
+}
+
 export default function SessionDetailPage() {
   const { sessionId } = useParams<{ sessionId: string }>()
   const router = useRouter()
@@ -284,24 +410,53 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
     show_polls: false,
   }
 
+  const [videoUrlDraft, setVideoUrlDraft] = useState<string>(session?.screen_config?.video_url ?? '')
+  const [videoTitleDraft, setVideoTitleDraft] = useState<string>(session?.screen_config?.video_title ?? '')
+  const videoPreview = resolveVideoSource(videoUrlDraft)
+  const videoLinkInvalid = videoUrlDraft.trim().length > 0 && !videoPreview
+
+  // Costruisce sempre un config completo per non perdere campi (font, video…)
+  const buildFullConfig = (overrides: Record<string, any> = {}) => ({
+    show_photos: screenConfig.show_photos ?? false,
+    show_dedications: screenConfig.show_dedications ?? false,
+    show_roulette: screenConfig.show_roulette ?? false,
+    show_shoe_game: screenConfig.show_shoe_game ?? false,
+    show_polls: screenConfig.show_polls ?? false,
+    show_video_live: (screenConfig as any).show_video_live ?? false,
+    video_url: (screenConfig as any).video_url ?? '',
+    video_title: (screenConfig as any).video_title ?? '',
+    couple_font: screenConfig.couple_font ?? 'cormorant',
+    ...overrides,
+  })
+
   const toggleScreenSection = async (key: keyof typeof screenConfig) => {
     setSaving(true)
     try {
       // Crea config completo con TUTTI i valori espliciti (incluso il font!)
-      const newConfig: any = {
-        show_photos: screenConfig.show_photos ?? false,
-        show_dedications: screenConfig.show_dedications ?? false,
-        show_roulette: screenConfig.show_roulette ?? false,
-        show_shoe_game: screenConfig.show_shoe_game ?? false,
-        show_polls: screenConfig.show_polls ?? false,
-        couple_font: screenConfig.couple_font ?? 'cormorant', // Preserva il font!
-      }
+      const newConfig: any = buildFullConfig()
       // Toggle solo il valore selezionato (solo per campi boolean)
       if (typeof newConfig[key] === 'boolean') {
         newConfig[key] = !newConfig[key]
       }
 
       console.log('📝 Saving config:', JSON.stringify(newConfig))
+      await live.updateSession(session.id, { screen_config: newConfig })
+      await mutate(['session', session.id])
+      toast.success(t('weddingPanels.updated'))
+    } catch (e: any) {
+      toast.error(e?.message ?? t('common.errorGeneric'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const saveVideoFields = async () => {
+    setSaving(true)
+    try {
+      const newConfig = buildFullConfig({
+        video_url: videoUrlDraft.trim(),
+        video_title: videoTitleDraft.trim(),
+      })
       await live.updateSession(session.id, { screen_config: newConfig })
       await mutate(['session', session.id])
       toast.success(t('weddingPanels.updated'))
@@ -428,7 +583,7 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                     className="fixed inset-0 z-10"
                     onClick={() => setShowScreenConfig(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-72 rounded-xl border border-[#E8B7C8] bg-white shadow-lg z-20 p-4">
+                  <div className="absolute right-0 mt-2 w-80 rounded-xl border border-[#E8B7C8] bg-white shadow-lg z-20 p-4">
                     <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#E8B7C8]">
                       <h3 className="text-xs font-semibold uppercase tracking-wider text-[#8F1D2C]">
                         {t('weddingPanels.screenVisibility')}
@@ -438,14 +593,14 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                           onClick={async () => {
                             setSaving(true)
                             try {
-                              const resetConfig = {
+                              const resetConfig = buildFullConfig({
                                 show_photos: false,
                                 show_dedications: false,
                                 show_roulette: false,
                                 show_shoe_game: false,
                                 show_polls: false,
-                                couple_font: screenConfig.couple_font ?? 'cormorant', // Preserva il font
-                              }
+                                show_video_live: false,
+                              })
                               await live.updateSession(session.id, { screen_config: resetConfig })
                               await mutate(['session', session.id])
                               toast.success(t('weddingPanels.resetDone'))
@@ -524,6 +679,72 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                         <ListChecks className="h-3.5 w-3.5 text-[#8F1D2C]" />
                         <span className="text-sm text-[#2B2424]">{t('weddingPanels.polls')}</span>
                       </label>
+                    </div>
+
+                    {/* Video Live */}
+                    <div className="mt-4 pt-3 border-t border-[#E8B7C8]">
+                      <label className="flex items-center gap-2 cursor-pointer select-none p-2 rounded-lg hover:bg-[#FBEAF0] transition">
+                        <input
+                          type="checkbox"
+                          checked={(screenConfig as any).show_video_live ?? false}
+                          onChange={() => toggleScreenSection('show_video_live' as any)}
+                          disabled={saving}
+                          className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
+                        />
+                        <Youtube className="h-3.5 w-3.5 text-[#8F1D2C]" />
+                        <span className="text-sm text-[#2B2424]">{t('weddingPanels.videoLive')}</span>
+                      </label>
+                      <p className="text-[11px] text-[#6F6260] px-2 mb-2">{t('weddingPanels.videoLiveHint')}</p>
+                      <input
+                        type="url"
+                        value={videoUrlDraft}
+                        onChange={(e) => setVideoUrlDraft(e.target.value)}
+                        onBlur={saveVideoFields}
+                        placeholder={t('weddingPanels.videoUrlPlaceholder')}
+                        disabled={saving}
+                        className="w-full rounded-lg border border-[#E8B7C8] bg-white px-3 py-2 text-sm text-[#2B2424] focus:border-[#8F1D2C] focus:ring-1 focus:ring-[#8F1D2C]"
+                      />
+                      <input
+                        type="text"
+                        value={videoTitleDraft}
+                        onChange={(e) => setVideoTitleDraft(e.target.value)}
+                        onBlur={saveVideoFields}
+                        placeholder={t('weddingPanels.videoTitlePlaceholder')}
+                        disabled={saving}
+                        className="mt-2 w-full rounded-lg border border-[#E8B7C8] bg-white px-3 py-2 text-sm text-[#2B2424] focus:border-[#8F1D2C] focus:ring-1 focus:ring-[#8F1D2C]"
+                      />
+                      {videoLinkInvalid && (
+                        <p className="text-[11px] text-[#8F1D2C] mt-1.5 px-1">{t('weddingPanels.videoInvalid')}</p>
+                      )}
+                      {videoPreview ? (
+                        <div className="mt-2 relative w-full aspect-video rounded-lg overflow-hidden border border-[#E8B7C8] bg-black">
+                          {videoPreview.kind === 'youtube' ? (
+                            <iframe
+                              src={videoPreview.embedUrl}
+                              title="preview"
+                              className="absolute inset-0 w-full h-full"
+                              allow="encrypted-media; picture-in-picture"
+                              referrerPolicy="strict-origin-when-cross-origin"
+                            />
+                          ) : (
+                            // eslint-disable-next-line jsx-a11y/media-has-caption
+                            <video
+                              src={videoPreview.url}
+                              className="absolute inset-0 w-full h-full object-contain"
+                              muted
+                              loop
+                              playsInline
+                              controls
+                            />
+                          )}
+                        </div>
+                      ) : (screenConfig as any).show_video_live && !videoUrlDraft.trim() ? (
+                        <div className="mt-2 rounded-lg border border-dashed border-[#E8B7C8] bg-[#FBEAF0]/40 py-4 text-center">
+                          <p className="text-[11px] text-[#6F6260]">{t('weddingPanels.videoNoLink')}</p>
+                        </div>
+                      ) : null}
+
+                      <VideoLiveController session={session} theme="wedding" />
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-[#E8B7C8]">
@@ -2289,13 +2510,26 @@ function PartyScreenPanel({ session, screenUrl }: any) {
     show_photos: cfg.show_photos !== false,
     show_polls: cfg.show_polls !== false,
     show_roulette: cfg.show_roulette !== false,
+    show_video_live: cfg.show_video_live === true,
+    video_url: cfg.video_url ?? '',
+    video_title: cfg.video_title ?? '',
   })
   const [saving, setSaving] = useState(false)
+
+  const videoPreview = resolveVideoSource(draft.video_url)
+  const videoLinkInvalid = String(draft.video_url).trim().length > 0 && !videoPreview
 
   const save = async () => {
     setSaving(true)
     try {
-      await live.updateSession(session.id, { screen_config: { ...cfg, ...draft } })
+      await live.updateSession(session.id, {
+        screen_config: {
+          ...cfg,
+          ...draft,
+          video_url: String(draft.video_url).trim(),
+          video_title: String(draft.video_title).trim(),
+        },
+      })
       toast.success('Schermo aggiornato')
       await mutate(['session', session.id])
     } catch (e: any) { toast.error(e?.message ?? 'Errore') }
@@ -2324,7 +2558,63 @@ function PartyScreenPanel({ session, screenUrl }: any) {
           <ScreenToggle label="Foto Live Booth" value={draft.show_photos} onChange={(v) => setDraft({ ...draft, show_photos: v })} />
           <ScreenToggle label="Music Battle" value={draft.show_polls} onChange={(v) => setDraft({ ...draft, show_polls: v })} />
           <ScreenToggle label="Party Roulette" value={draft.show_roulette} onChange={(v) => setDraft({ ...draft, show_roulette: v })} />
+          <ScreenToggle label="Video Live" value={draft.show_video_live} onChange={(v) => setDraft({ ...draft, show_video_live: v })} />
         </div>
+
+        {draft.show_video_live && (
+          <div className="mt-3 space-y-2.5 rounded-xl bg-black/20 border border-white/10 p-3">
+            <p className="text-[11px] text-white/50 inline-flex items-center gap-1.5">
+              <Youtube className="h-3.5 w-3.5 text-[#FF3D8A]" /> Mostra un video YouTube o un file (mp4) nella schermata live
+            </p>
+            <input
+              type="url"
+              value={draft.video_url}
+              onChange={(e) => setDraft({ ...draft, video_url: e.target.value })}
+              placeholder="https://youtube.com/watch?v=...  oppure  https://.../video.mp4"
+              className="w-full rounded-lg bg-black/30 border border-white/15 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#FF3D8A]"
+            />
+            <input
+              type="text"
+              value={draft.video_title}
+              onChange={(e) => setDraft({ ...draft, video_title: e.target.value })}
+              placeholder="Titolo video (opzionale)"
+              className="w-full rounded-lg bg-black/30 border border-white/15 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#FF3D8A]"
+            />
+            {videoLinkInvalid && (
+              <p className="text-[11px] text-[#FF7AB6]">Link non valido (usa YouTube o un file .mp4/.webm)</p>
+            )}
+            {videoPreview ? (
+              <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-white/15 bg-black">
+                {videoPreview.kind === 'youtube' ? (
+                  <iframe
+                    src={videoPreview.embedUrl}
+                    title="preview"
+                    className="absolute inset-0 w-full h-full"
+                    allow="encrypted-media; picture-in-picture"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                  />
+                ) : (
+                  // eslint-disable-next-line jsx-a11y/media-has-caption
+                  <video
+                    src={videoPreview.url}
+                    className="absolute inset-0 w-full h-full object-contain"
+                    muted
+                    loop
+                    playsInline
+                    controls
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-white/15 bg-white/[0.02] py-5 text-center">
+                <p className="text-[11px] text-white/40">Inserisci un link per mostrare l'anteprima</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        <VideoLiveController session={session} theme="party" />
+
         <PartyButton variant="fuchsia" size="sm" className="mt-4" onClick={save} loading={saving}>Salva preferenze</PartyButton>
       </PartyCard>
     </div>

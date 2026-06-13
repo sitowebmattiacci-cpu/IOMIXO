@@ -2,14 +2,19 @@
 import { useParams } from 'next/navigation'
 import useSWR from 'swr'
 import { QRCodeSVG } from 'qrcode.react'
-import { Heart, Sparkles, ListChecks, Camera, Footprints, Star } from 'lucide-react'
-import { liveScreen } from '@/lib/api'
+import { Heart, Sparkles, ListChecks, Camera, Footprints, Star, Youtube } from 'lucide-react'
+import { liveScreen, type VideoLiveCommand } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
 import { WeddingPhotoSlideshow } from '@/components/wedding/WeddingPhotoFrame'
 import { RouletteWheel } from '@/components/wedding/RouletteWheel'
 import { PartyShell, PartyDivider, PARTY } from '@/components/party/PartyUI'
+import { resolveVideoSource, type VideoLiveSource } from '@/lib/utils'
 import { useEffect, useRef, useState } from 'react'
+
+/** Remote-control state read from screen_config.video_live and applied by the
+ *  Screen Mode players. The dashboard is the director. */
+type VideoControl = { command?: VideoLiveCommand; commandId?: string; volume?: number }
 
 export default function ScreenModePage() {
   const { slug } = useParams<{ slug: string }>()
@@ -130,12 +135,30 @@ export default function ScreenModePage() {
   const enabledDedications = cfg.show_dedications === true
   const enabledPhotos     = cfg.show_photos     === true
 
+  // Video Live — appare solo se il DJ ha attivato lo switch E ha inserito un
+  // link valido (YouTube o file video diretto: mp4, webm, ogg, mov, m4v).
+  // Niente switch ON + link mancante = nessun riquadro sullo schermo pubblico.
+  const weddingVideo = cfg.show_video_live === true
+    ? resolveVideoSource(cfg.video_url, { autoplay: true })
+    : null
+  const enabledVideo = !!weddingVideo
+  // Remote-control state written by the DJ dashboard (regia video live).
+  const videoControl: VideoControl = {
+    command: cfg.video_live?.command,
+    commandId: cfg.video_live?.command_id,
+    volume: cfg.video_live?.volume,
+  }
+  // Show the one-time audio-unlock overlay when Video Live is active or a
+  // video link is configured, so the first click unlocks autoplay-with-sound.
+  const videoConfigured = cfg.show_video_live === true || !!resolveVideoSource(cfg.video_url)
+
   const activeSections = [
     enabledRoulette   ? 'roulette'    : null,
     enabledShoeGame   ? 'shoe'        : null,
     enabledPolls      ? 'poll'        : null,
     enabledDedications ? 'dedications' : null,
     enabledPhotos     ? 'photos'      : null,
+    enabledVideo      ? 'video'       : null,
   ].filter(Boolean)
 
   const hasContent = activeSections.length > 0
@@ -169,6 +192,7 @@ export default function ScreenModePage() {
 
   return (
     <WeddingShell variant="stage">
+      {videoConfigured && <VideoLiveAudioUnlock theme="wedding" />}
       {showRouletteWheel && wheelPenitenze.length > 0 && (
         <RouletteWheel
           penitenze={wheelPenitenze}
@@ -311,6 +335,14 @@ export default function ScreenModePage() {
                     weddingDate={session.wedding_date}
                   />
                 </div>
+              )}
+
+              {weddingVideo && (
+                <WeddingVideoLiveBox
+                  source={weddingVideo}
+                  title={cfg.video_title}
+                  control={videoControl}
+                />
               )}
             </div>
 
@@ -488,6 +520,12 @@ export default function ScreenModePage() {
                 />
               </section>
             )}
+
+            {weddingVideo && (
+              <StagePanel icon={<Youtube className="h-6 w-6" />} title={cfg.video_title || t('wedding.screen.videoLive')}>
+                <VideoEmbed source={weddingVideo} title={cfg.video_title} control={videoControl} frameClass="border border-wedding-gold/30" />
+              </StagePanel>
+            )}
           </div>
 
           <footer className="mt-8 text-center text-xs uppercase tracking-[0.3em] text-wedding-taupe">
@@ -522,6 +560,233 @@ function EmptyPanel({ text }: { text: string }) {
   )
 }
 
+// Discreet one-time overlay shown on the public Screen Mode when a Video Live
+// is configured. The first click/touch counts as a user gesture so the browser
+// treats the page as "interacted", letting the dashboard's Play / unmute /
+// volume commands work with sound. Elegant, non-invasive, theme-aware; never
+// rendered when no video is configured. After the gesture it disappears.
+function VideoLiveAudioUnlock({ theme }: { theme: 'wedding' | 'party' }) {
+  const { t } = useI18n()
+  const [dismissed, setDismissed] = useState(false)
+  if (dismissed) return null
+
+  const unlock = () => {
+    // The click itself satisfies the browser autoplay-with-sound policy.
+    // Nudge a silent WebAudio context too, which some browsers require.
+    try {
+      const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext
+      if (Ctx) {
+        const ac = new Ctx()
+        ac.resume?.().catch(() => {})
+        setTimeout(() => ac.close?.().catch(() => {}), 300)
+      }
+    } catch {}
+    setDismissed(true)
+  }
+
+  const isWedding = theme === 'wedding'
+  const card = isWedding
+    ? 'rounded-2xl border border-wedding-gold/30 bg-black/70 backdrop-blur-md px-6 py-4 shadow-wedding-lg'
+    : 'rounded-2xl border border-[#FF3D8A]/40 bg-black/70 backdrop-blur-md px-6 py-4 shadow-[0_0_50px_rgba(255,61,138,0.25)]'
+  const iconColor = isWedding ? 'text-wedding-gold' : 'text-[#FF3D8A]'
+  const textColor = isWedding ? 'text-wedding-ivory' : 'text-white'
+
+  return (
+    <button
+      type="button"
+      onClick={unlock}
+      onTouchStart={unlock}
+      aria-label={t('wedding.screen.tapToEnable')}
+      className="fixed inset-0 z-[60] flex items-end justify-center p-8 bg-transparent cursor-pointer"
+    >
+      <div className={`flex items-center gap-3 ${card} animate-pulse`}>
+        <Youtube className={`h-5 w-5 shrink-0 ${iconColor}`} />
+        <span className={`text-sm font-medium tracking-wide ${textColor}`}>
+          {t('wedding.screen.tapToEnable')}
+        </span>
+      </div>
+    </button>
+  )
+}
+
+// Shared media renderer for Video Live — YouTube embed (controllable via the
+// IFrame Player API) or a direct video file (<video>). Both accept a remote
+// `control` driven by the DJ dashboard so play/pause/mute/volume/restart/stop
+// are applied to THIS public player without touching the screen physically.
+function VideoEmbed({ source, title, frameClass, control }: { source: VideoLiveSource; title?: string; frameClass?: string; control?: VideoControl }) {
+  return (
+    <div className={`relative w-full aspect-video rounded-xl overflow-hidden bg-black ${frameClass ?? ''}`}>
+      {source.kind === 'youtube' ? (
+        <YouTubeLivePlayer videoId={source.videoId} title={title} control={control} />
+      ) : (
+        <VideoFileLivePlayer url={source.url} control={control} />
+      )}
+    </div>
+  )
+}
+
+// ── YouTube IFrame Player API loader (singleton) ──────────────────
+let ytApiPromise: Promise<void> | null = null
+function loadYouTubeIframeApi(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve()
+  const w = window as any
+  if (w.YT && w.YT.Player) return Promise.resolve()
+  if (ytApiPromise) return ytApiPromise
+  ytApiPromise = new Promise<void>((resolve) => {
+    const prev = w.onYouTubeIframeAPIReady
+    w.onYouTubeIframeAPIReady = () => {
+      try { prev?.() } catch {}
+      resolve()
+    }
+    const tag = document.createElement('script')
+    tag.src = 'https://www.youtube.com/iframe_api'
+    document.head.appendChild(tag)
+  })
+  return ytApiPromise
+}
+
+// Controllable YouTube player. Autoplays muted (the only autoplay browsers
+// allow without a gesture) and then obeys remote commands from the dashboard.
+function YouTubeLivePlayer({ videoId, title, control }: { videoId: string; title?: string; control?: VideoControl }) {
+  const hostRef = useRef<HTMLDivElement>(null)
+  const playerRef = useRef<any>(null)
+  const [ready, setReady] = useState(false)
+  const lastCommandId = useRef<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setReady(false)
+    loadYouTubeIframeApi().then(() => {
+      if (cancelled || !hostRef.current) return
+      const w = window as any
+      playerRef.current = new w.YT.Player(hostRef.current, {
+        width: '100%',
+        height: '100%',
+        videoId,
+        playerVars: {
+          autoplay: 1, mute: 1, playsinline: 1, rel: 0,
+          modestbranding: 1, controls: 0, fs: 0, disablekb: 1,
+        },
+        events: {
+          onReady: () => { if (!cancelled) setReady(true) },
+        },
+      })
+    })
+    return () => {
+      cancelled = true
+      try { playerRef.current?.destroy?.() } catch {}
+      playerRef.current = null
+    }
+  }, [videoId])
+
+  // Apply volume reactively (does not depend on command_id).
+  useEffect(() => {
+    const p = playerRef.current
+    if (!ready || !p || typeof control?.volume !== 'number') return
+    try { p.setVolume(Math.min(100, Math.max(0, control.volume))) } catch {}
+  }, [ready, control?.volume])
+
+  // Execute each transport command exactly once (keyed by command_id).
+  useEffect(() => {
+    const p = playerRef.current
+    if (!ready || !p || !control?.commandId) return
+    if (control.commandId === lastCommandId.current) return
+    lastCommandId.current = control.commandId
+    try {
+      switch (control.command) {
+        case 'play':
+          if (typeof control.volume === 'number') p.setVolume(Math.min(100, Math.max(0, control.volume)))
+          p.unMute?.()
+          p.playVideo?.()
+          break
+        case 'pause':  p.pauseVideo?.(); break
+        case 'mute':   p.mute?.(); break
+        case 'unmute': p.unMute?.(); break
+        case 'restart':
+          p.seekTo?.(0, true)
+          p.playVideo?.()
+          break
+        case 'stop':   p.stopVideo?.(); break
+      }
+    } catch {}
+  }, [ready, control?.commandId, control?.command, control?.volume])
+
+  return (
+    <div className="absolute inset-0 w-full h-full" aria-label={title || 'Video Live'}>
+      <div ref={hostRef} className="w-full h-full" />
+    </div>
+  )
+}
+
+// Controllable direct-file player (mp4/webm/…). Same remote command contract.
+function VideoFileLivePlayer({ url, control }: { url: string; control?: VideoControl }) {
+  const ref = useRef<HTMLVideoElement>(null)
+  const lastCommandId = useRef<string | null>(null)
+
+  useEffect(() => {
+    const v = ref.current
+    if (!v || typeof control?.volume !== 'number') return
+    v.volume = Math.min(1, Math.max(0, control.volume / 100))
+  }, [control?.volume])
+
+  useEffect(() => {
+    const v = ref.current
+    if (!v || !control?.commandId) return
+    if (control.commandId === lastCommandId.current) return
+    lastCommandId.current = control.commandId
+    try {
+      switch (control.command) {
+        case 'play':
+          if (typeof control.volume === 'number') v.volume = Math.min(1, Math.max(0, control.volume / 100))
+          v.muted = false
+          void v.play().catch(() => {})
+          break
+        case 'pause':  v.pause(); break
+        case 'mute':   v.muted = true; break
+        case 'unmute': v.muted = false; break
+        case 'restart':
+          v.currentTime = 0
+          void v.play().catch(() => {})
+          break
+        case 'stop':
+          v.pause()
+          v.currentTime = 0
+          break
+      }
+    } catch {}
+  }, [control?.commandId, control?.command, control?.volume])
+
+  return (
+    // eslint-disable-next-line jsx-a11y/media-has-caption
+    <video
+      ref={ref}
+      src={url}
+      className="absolute inset-0 w-full h-full object-contain"
+      autoPlay
+      muted
+      loop
+      playsInline
+    />
+  )
+}
+
+// Video Live — wedding styled box (used when Video Live is the only / centered
+// section). Stays inside the elegant gold frame and never covers the names,
+// which live in the centered header above.
+function WeddingVideoLiveBox({ source, title, control }: { source: VideoLiveSource; title?: string; control?: VideoControl }) {
+  return (
+    <div className="rounded-2xl border border-wedding-gold/20 bg-black/30 backdrop-blur-md p-6 sm:p-8 shadow-wedding-lg">
+      <div className="flex items-center gap-3 mb-5 pb-4 border-b border-wedding-gold/20">
+        <Youtube className="h-7 w-7 text-wedding-gold" />
+        <h2 className="text-xl font-semibold uppercase tracking-[0.22em] text-wedding-champagne/90 truncate">
+          {title || 'Video Live'}
+        </h2>
+      </div>
+      <VideoEmbed source={source} title={title} control={control} frameClass="border border-wedding-gold/30" />
+    </div>
+  )
+}
+
 // ════════════════════════════════════════════════════════════════
 // PARTY MODE SCREEN — dark premium with red wine & fuchsia accents
 // Designed for TV/projector at clubs / private parties / events.
@@ -552,7 +817,20 @@ function PartyScreen({
   const showMusicBattle   = cfg.show_polls    === true
   const showPartyRoulette = cfg.show_roulette === true
   const showGames = showMusicBattle || showPartyRoulette
-  const anyActive = showLiveBooth || showGames
+  // Video Live — solo con switch attivo E link valido (YouTube o file video).
+  const partyVideo = cfg.show_video_live === true
+    ? resolveVideoSource(cfg.video_url, { autoplay: true })
+    : null
+  const showVideoLive = !!partyVideo
+  // Remote-control state written by the DJ dashboard (regia video live).
+  const videoControl: VideoControl = {
+    command: cfg.video_live?.command,
+    commandId: cfg.video_live?.command_id,
+    volume: cfg.video_live?.volume,
+  }
+  // One-time audio-unlock overlay when Video Live is active or a link exists.
+  const videoConfigured = cfg.show_video_live === true || !!resolveVideoSource(cfg.video_url)
+  const anyActive = showLiveBooth || showGames || showVideoLive
 
   // simple photo carousel
   const [carouselIdx, setCarouselIdx] = useState(0)
@@ -564,6 +842,7 @@ function PartyScreen({
 
   return (
     <PartyShell>
+      {videoConfigured && <VideoLiveAudioUnlock theme="party" />}
       <div className="min-h-screen w-screen overflow-hidden flex flex-col p-10 relative">
         {/* HEADER */}
         <header className="flex items-start justify-between gap-6 mb-8">
@@ -591,9 +870,11 @@ function PartyScreen({
           </div>
         </header>
 
-        {/* MAIN GRID — solo le sezioni abilitate in screen_config */}
+        {/* MAIN — solo le sezioni abilitate in screen_config */}
         {anyActive ? (
-          <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
+          <div className="flex flex-col gap-6 flex-1 min-h-0">
+            {(showGames || showLiveBooth) && (
+            <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
             {/* LEFT — Party Roulette + Music Battle */}
             {showGames && (
               <div className={`flex flex-col gap-6 min-h-0 ${showLiveBooth ? 'col-span-5' : 'col-span-12'}`}>
@@ -695,6 +976,25 @@ function PartyScreen({
                   ) : null}
                 </PartyScreenPanel>
               </div>
+            )}
+          </div>
+            )}
+
+            {/* Video Live — riquadro scenografico, full width sotto i widget */}
+            {partyVideo && (
+              <PartyScreenPanel
+                icon={<Youtube />}
+                title={(cfg.video_title as string) || 'Video Live'}
+                subtitle={partyVideo.kind === 'youtube' ? 'YouTube' : 'Video'}
+                className={showGames || showLiveBooth ? '' : 'flex-1'}
+              >
+                <VideoEmbed
+                  source={partyVideo}
+                  title={(cfg.video_title as string) || 'Video Live'}
+                  control={videoControl}
+                  frameClass="rounded-2xl border border-[#FF3D8A]/40 shadow-[0_0_50px_rgba(255,61,138,0.25)]"
+                />
+              </PartyScreenPanel>
             )}
           </div>
         ) : (

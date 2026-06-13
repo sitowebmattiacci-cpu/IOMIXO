@@ -60,6 +60,71 @@ export function stripExtension(name: string): string {
   return name.replace(/\.[^/.]+$/, '')
 }
 
+/**
+ * Extract the 11-char YouTube video id from any common URL shape
+ * (watch?v=, youtu.be/, /embed/, /shorts/, /live/) or a bare id.
+ * Returns null when no valid id can be found.
+ */
+export function youtubeVideoId(raw?: string | null): string | null {
+  if (!raw) return null
+  const url = raw.trim()
+  if (!url) return null
+  const patterns = [
+    /youtube\.com\/watch\?[^#]*\bv=([A-Za-z0-9_-]{11})/,
+    /youtu\.be\/([A-Za-z0-9_-]{11})/,
+    /youtube\.com\/embed\/([A-Za-z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/,
+    /youtube\.com\/live\/([A-Za-z0-9_-]{11})/,
+  ]
+  for (const p of patterns) {
+    const m = url.match(p)
+    if (m?.[1]) return m[1]
+  }
+  if (/^[A-Za-z0-9_-]{11}$/.test(url)) return url
+  return null
+}
+
+/**
+ * Convert any supported YouTube URL into a clean privacy-friendly embed URL.
+ * Optionally requests muted autoplay (the only autoplay browsers allow without
+ * a user gesture). Returns null when the input is not a valid YouTube link.
+ */
+export function youtubeEmbedUrl(raw?: string | null, opts?: { autoplay?: boolean }): string | null {
+  const id = youtubeVideoId(raw)
+  if (!id) return null
+  const base = `https://www.youtube-nocookie.com/embed/${id}`
+  if (opts?.autoplay) {
+    return `${base}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1`
+  }
+  return `${base}?rel=0&modestbranding=1`
+}
+
+/** True when the URL points to a direct video file we can play in <video>. */
+export function isDirectVideoUrl(raw?: string | null): boolean {
+  if (!raw) return false
+  const url = raw.trim()
+  return /^https?:\/\//i.test(url) && /\.(mp4|webm|ogg|ogv|mov|m4v)(\?.*)?$/i.test(url)
+}
+
+export type VideoLiveSource =
+  | { kind: 'youtube'; embedUrl: string; videoId: string }
+  | { kind: 'file'; url: string }
+
+/**
+ * Resolve a DJ-provided link into a playable Video Live source.
+ * Supports YouTube (any shape → privacy-friendly embed) and direct video
+ * files (mp4, webm, ogg, mov, m4v). Returns null when the link is unusable.
+ */
+export function resolveVideoSource(raw?: string | null, opts?: { autoplay?: boolean }): VideoLiveSource | null {
+  const videoId = youtubeVideoId(raw)
+  if (videoId) {
+    const embedUrl = youtubeEmbedUrl(raw, opts)!
+    return { kind: 'youtube', embedUrl, videoId }
+  }
+  if (isDirectVideoUrl(raw)) return { kind: 'file', url: raw!.trim() }
+  return null
+}
+
 /** Validate audio file type */
 export function isValidAudioFile(file: File): boolean {
   const valid = ['audio/mpeg', 'audio/wav', 'audio/flac', 'audio/aiff', 'audio/ogg', 'audio/mp4']
