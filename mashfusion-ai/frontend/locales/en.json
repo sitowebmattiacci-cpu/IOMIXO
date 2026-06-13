@@ -28,7 +28,14 @@
     "joinParty": "Join the Live Booth",
     "backToMain": "Back to main page",
     "weddingIntro": "Take a photo and join the wedding Live Booth. Your photo will appear on the live screen!",
-    "openCamera": "Open camera"
+    "openCamera": "Open camera",
+    "uploadPhoto": "Take or upload a photo",
+    "cameraHint": "If the camera won't open, use \"Take or upload a photo\".",
+    "cameraUnavailableTitle": "Camera not available",
+    "cameraUnavailableText": "The browser didn't allow direct camera access. You can still join by taking or uploading a photo.",
+    "notImage": "Please select a valid image file.",
+    "weddingApprovalNote": "Your photo will be sent to the control desk and appear on screen after approval.",
+    "partyApprovalNote": "Send your photo and join the Live Booth."
   },
   "dashboard": {
     "hello": "Hi",

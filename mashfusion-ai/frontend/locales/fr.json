@@ -28,7 +28,14 @@
     "joinParty": "Participe au Live Booth",
     "backToMain": "Retour à la page principale",
     "weddingIntro": "Prends une photo et participe au Live Booth du mariage. Ta photo apparaîtra sur l'écran live !",
-    "openCamera": "Ouvrir la caméra"
+    "openCamera": "Ouvrir la caméra",
+    "uploadPhoto": "Prendre ou importer une photo",
+    "cameraHint": "Si la caméra ne s'ouvre pas, utilise \"Prendre ou importer une photo\".",
+    "cameraUnavailableTitle": "Caméra non disponible",
+    "cameraUnavailableText": "Le navigateur n'a pas autorisé l'accès direct à la caméra. Tu peux quand même participer en prenant ou en important une photo.",
+    "notImage": "Sélectionne un fichier image valide.",
+    "weddingApprovalNote": "Ta photo sera envoyée à la régie et apparaîtra à l'écran après approbation.",
+    "partyApprovalNote": "Envoie ta photo et participe au Live Booth."
   },
   "dashboard": {
     "hello": "Salut",

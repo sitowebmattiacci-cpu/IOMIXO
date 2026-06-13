@@ -3,7 +3,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import useSWR from 'swr'
 import { useState, useRef, useEffect } from 'react'
-import { Camera, X, RotateCw, Check, Sparkles, ArrowLeft, RefreshCw } from 'lucide-react'
+import { Camera, X, RotateCw, Check, Sparkles, ArrowLeft, RefreshCw, ImagePlus, AlertTriangle } from 'lucide-react'
 import { publicLive, livePhotos } from '@/lib/api'
 import { WeddingShell, WeddingButton } from '@/components/wedding/WeddingUI'
 import {
@@ -23,6 +23,7 @@ export default function LiveBoothPage() {
   )
 
   const [cameraActive, setCameraActive] = useState(false)
+  const [cameraError, setCameraError] = useState(false)
   const [photo, setPhoto] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
@@ -30,6 +31,7 @@ export default function LiveBoothPage() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const countdownTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -102,8 +104,10 @@ export default function LiveBoothPage() {
       if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop())
       streamRef.current = stream
       setFacingMode(mode)
+      setCameraError(false)
       setCameraActive(true)
     } catch {
+      setCameraError(true)
       toast.error(t('booth.cameraDenied'))
     }
   }
@@ -201,6 +205,30 @@ export default function LiveBoothPage() {
   }
 
   const retakePhoto = () => { setPhoto(null); startCamera() }
+
+  // ─── File fallback (no getUserMedia) ─────────────────────────
+  // Stesso flusso di moderazione/storage della camera live: il file
+  // selezionato diventa la "foto" in anteprima e viene poi caricato in
+  // stato pending tramite uploadPhoto -> boothUpload.
+  const openFilePicker = () => fileInputRef.current?.click()
+
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // consente di riselezionare lo stesso file
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('booth.notImage'))
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      stopCamera()
+      setCameraError(false)
+      setPhoto(reader.result as string)
+    }
+    reader.onerror = () => toast.error(t('booth.uploadError'))
+    reader.readAsDataURL(file)
+  }
 
   const uploadPhoto = async () => {
     if (!photo) return
@@ -320,9 +348,37 @@ export default function LiveBoothPage() {
             </ol>
           </PartyCard>
 
-          <PartyButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" variant="fuchsia" className="w-full">
-            {t('booth.joinParty')}
-          </PartyButton>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileSelected}
+            className="hidden"
+          />
+
+          {cameraError && (
+            <PartyCard tone="wine" className="w-full text-left">
+              <div className="flex items-center gap-2 text-[#FF7AB6] mb-2">
+                <AlertTriangle className="h-4 w-4" />
+                <p className="text-sm font-bold">{t('booth.cameraUnavailableTitle')}</p>
+              </div>
+              <p className="text-sm text-white/75 mb-4">{t('booth.cameraUnavailableText')}</p>
+              <PartyButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />} size="lg" variant="fuchsia" className="w-full">
+                {t('booth.uploadPhoto')}
+              </PartyButton>
+            </PartyCard>
+          )}
+
+          <div className="w-full space-y-3">
+            <PartyButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" variant="fuchsia" className="w-full">
+              {t('booth.openCamera')}
+            </PartyButton>
+            <PartyButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />} size="lg" variant="outline" className="w-full">
+              {t('booth.uploadPhoto')}
+            </PartyButton>
+            <p className="text-xs text-white/45">{t('booth.cameraHint')}</p>
+            <p className="text-xs text-[#FF7AB6]/80">{t('booth.partyApprovalNote')}</p>
+          </div>
 
           <Link
             href={`/live/${slug}`}
@@ -408,13 +464,42 @@ export default function LiveBoothPage() {
             </p>
           )}
         </div>
-        <div className="max-w-md">
+        <div className="max-w-md w-full">
           <p className="text-wedding-ink/70 mb-6">
             {t('booth.weddingIntro')}
           </p>
-          <WeddingButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" className="w-full">
-            {t('booth.openCamera')}
-          </WeddingButton>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileSelected}
+            className="hidden"
+          />
+
+          {cameraError && (
+            <div className="mb-6 rounded-2xl border border-wedding-gold/30 bg-[#FBEAF0] p-5 text-left shadow-wedding">
+              <div className="flex items-center gap-2 text-wedding-burgundy mb-2">
+                <AlertTriangle className="h-4 w-4" />
+                <p className="text-sm font-semibold">{t('booth.cameraUnavailableTitle')}</p>
+              </div>
+              <p className="text-sm text-wedding-ink/70 mb-4">{t('booth.cameraUnavailableText')}</p>
+              <WeddingButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />} size="lg" className="w-full">
+                {t('booth.uploadPhoto')}
+              </WeddingButton>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <WeddingButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" className="w-full">
+              {t('booth.openCamera')}
+            </WeddingButton>
+            <WeddingButton onClick={openFilePicker} variant="outline" icon={<ImagePlus className="h-5 w-5" />} size="lg" className="w-full">
+              {t('booth.uploadPhoto')}
+            </WeddingButton>
+            <p className="text-xs text-wedding-taupe">{t('booth.cameraHint')}</p>
+            <p className="text-xs text-wedding-burgundy/80">{t('booth.weddingApprovalNote')}</p>
+          </div>
         </div>
         <Link
           href={`/live/${slug}`}
