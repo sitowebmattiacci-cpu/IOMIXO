@@ -1080,7 +1080,7 @@ function PartyMusicBattle({ slug }: { slug: string }) {
   const total = (poll.tally ?? []).reduce((a, b) => a + b, 0)
 
   const vote = async (idx: number) => {
-    if (voted !== null || voting) return
+    if (voting || voted === idx) return
     setVoting(true)
     try {
       await livePolls.publicVote(slug, poll.id, idx)
@@ -1110,11 +1110,11 @@ function PartyMusicBattle({ slug }: { slug: string }) {
             <button
               key={i}
               onClick={() => vote(i)}
-              disabled={voted !== null || voting}
+              disabled={voting || voted === i}
               className={`relative w-full rounded-xl overflow-hidden border h-14 transition ${
                 isMine ? 'border-[#FF3D8A] ring-2 ring-[#FF3D8A]/40' :
                 winning ? 'border-[#FF3D8A]/50' : 'border-white/15'
-              } ${voted === null ? 'hover:border-[#FF7AB6]/60 active:scale-[0.99]' : 'cursor-default'} bg-white/[0.04]`}
+              } ${voting ? 'cursor-default opacity-90' : 'hover:border-[#FF7AB6]/60 active:scale-[0.99]'} bg-white/[0.04]`}
             >
               <div
                 className={`absolute inset-y-0 left-0 transition-all duration-700 ${
@@ -1127,16 +1127,18 @@ function PartyMusicBattle({ slug }: { slug: string }) {
               <div className="relative flex items-center justify-between h-full px-4">
                 <span className="font-bold text-white text-sm">{opt}{isMine && ' ✓'}</span>
                 {(voted !== null || total > 0) && (
-                  <span className="text-sm font-black text-white tabular-nums">{pct}%</span>
+                  <span className="text-sm font-black text-white tabular-nums">
+                    {pct}% <span className="text-white/50 font-medium">({tally})</span>
+                  </span>
                 )}
               </div>
             </button>
           )
         })}
       </div>
-      {voted === null && (
-        <p className="text-[11px] text-white/40 mt-3 text-center">{t('live.tapToVote')}</p>
-      )}
+      <p className="text-[11px] text-white/40 mt-3 text-center">
+        {voted === null ? t('live.tapToVote') : t('live.tapToChangeVote')}
+      </p>
     </div>
   )
 }

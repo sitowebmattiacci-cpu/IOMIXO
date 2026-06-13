@@ -144,14 +144,15 @@ livePollsRouter.post('/public/:slug/polls/:pollId/vote', async (req, res, next) 
     if (idx >= (poll.options as unknown[]).length) throw new AppError('Opzione non valida', 400)
 
     const ipHash = hashClient(req)
-    if (!rateLimitOk(`poll:${poll.id}`, ipHash, 5_000)) {
+    if (!rateLimitOk(`poll:${poll.id}`, ipHash, 1_500)) {
       throw new AppError('Riprova tra qualche secondo.', 429)
     }
 
-    const { error } = await supabaseAdmin.from('live_poll_votes').insert({
+    // Upsert: un voto per ospite (poll_id, ip_hash). Rivotare cambia la scelta.
+    const { error } = await supabaseAdmin.from('live_poll_votes').upsert({
       poll_id: poll.id, option_index: idx, ip_hash: ipHash,
-    })
-    if (error && !/duplicate|unique/i.test(error.message)) throw new AppError(error.message, 500)
+    }, { onConflict: 'poll_id,ip_hash' })
+    if (error) throw new AppError(error.message, 500)
     res.status(201).json({ ok: true })
   } catch (e) { next(e) }
 })

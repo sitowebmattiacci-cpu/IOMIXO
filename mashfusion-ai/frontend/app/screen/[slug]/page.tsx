@@ -634,7 +634,9 @@ function PartyScreen({
                                 />
                                 <div className="relative flex items-center justify-between h-full px-6">
                                   <span className={`text-xl font-bold ${winning ? 'text-white' : 'text-white/90'}`}>{opt}</span>
-                                  <span className="text-xl font-black tabular-nums text-white">{pct}%</span>
+                                  <span className="text-xl font-black tabular-nums text-white">
+                                    {pct}% <span className="text-white/50 font-medium text-base">({tally})</span>
+                                  </span>
                                 </div>
                               </div>
                             )
