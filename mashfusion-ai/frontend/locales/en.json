@@ -35,7 +35,8 @@
     "cameraUnavailableText": "The browser didn't allow direct camera access. You can still join by taking or uploading a photo.",
     "notImage": "Please select a valid image file.",
     "weddingApprovalNote": "Your photo will be sent to the control desk and appear on screen after approval.",
-    "partyApprovalNote": "Send your photo and join the Live Booth."
+    "partyApprovalNote": "Send your photo and join the Live Booth.",
+    "iosIntro": "Take or pick a photo from your iPhone. It will be sent to the control desk and appear on screen after approval."
   },
   "dashboard": {
     "hello": "Hi",

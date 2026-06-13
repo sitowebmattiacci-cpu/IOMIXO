@@ -35,7 +35,8 @@
     "cameraUnavailableText": "Il browser non ha permesso l'accesso diretto alla fotocamera. Puoi comunque partecipare scattando o caricando una foto.",
     "notImage": "Seleziona un file immagine valido.",
     "weddingApprovalNote": "La tua foto sarà inviata alla regia e apparirà sullo schermo dopo l'approvazione.",
-    "partyApprovalNote": "Invia la tua foto e partecipa al Live Booth."
+    "partyApprovalNote": "Invia la tua foto e partecipa al Live Booth.",
+    "iosIntro": "Scatta o scegli una foto dal tuo iPhone. La foto sarà inviata alla regia e apparirà sullo schermo dopo l'approvazione."
   },
   "dashboard": {
     "hello": "Ciao",

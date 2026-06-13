@@ -132,6 +132,13 @@ export default function LiveBoothPage() {
 
   // ─── Camera helpers ──────────────────────────────────────────
   const startCamera = async (mode: 'user' | 'environment' = facingMode) => {
+    // iOS/iPadOS: la camera live del browser dà "schermo nero" / errore permessi.
+    // Non chiamiamo MAI getUserMedia su iOS: andiamo direttamente al file picker
+    // nativo (Scatta foto / Libreria / Scegli file). Nessun messaggio tecnico.
+    if (isIOS) {
+      fileInputRef.current?.click()
+      return
+    }
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
         toast.error(t('booth.cameraHttps'))
@@ -411,9 +418,15 @@ export default function LiveBoothPage() {
             </h1>
             <PartyDivider className="my-6" />
             <p className="text-base text-white/70">
-              {t('booth.partyIntro1')}
-              <br />
-              {t('booth.partyIntro2')}
+              {isIOS ? (
+                t('booth.iosIntro')
+              ) : (
+                <>
+                  {t('booth.partyIntro1')}
+                  <br />
+                  {t('booth.partyIntro2')}
+                </>
+              )}
             </p>
           </div>
 
@@ -454,14 +467,9 @@ export default function LiveBoothPage() {
 
           <div className="w-full space-y-3">
             {isIOS ? (
-              <>
-                <PartyButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />} size="lg" variant="fuchsia" className="w-full">
-                  {t('booth.uploadPhoto')}
-                </PartyButton>
-                <PartyButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" variant="outline" className="w-full">
-                  {t('booth.openCamera')}
-                </PartyButton>
-              </>
+              <PartyButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />} size="lg" variant="fuchsia" className="w-full">
+                {t('booth.uploadPhoto')}
+              </PartyButton>
             ) : (
               <>
                 <PartyButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" variant="fuchsia" className="w-full">
@@ -470,9 +478,9 @@ export default function LiveBoothPage() {
                 <PartyButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />} size="lg" variant="outline" className="w-full">
                   {t('booth.uploadPhoto')}
                 </PartyButton>
+                <p className="text-xs text-white/45">{t('booth.cameraHint')}</p>
               </>
             )}
-            <p className="text-xs text-white/45">{t('booth.cameraHint')}</p>
             <p className="text-xs text-[#FF7AB6]/80">{t('booth.partyApprovalNote')}</p>
           </div>
 
@@ -582,7 +590,7 @@ export default function LiveBoothPage() {
         </div>
         <div className="max-w-md w-full">
           <p className="text-wedding-ink/70 mb-6">
-            {t('booth.weddingIntro')}
+            {isIOS ? t('booth.iosIntro') : t('booth.weddingIntro')}
           </p>
 
           <input
@@ -608,14 +616,9 @@ export default function LiveBoothPage() {
 
           <div className="space-y-3">
             {isIOS ? (
-              <>
-                <WeddingButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />} size="lg" className="w-full">
-                  {t('booth.uploadPhoto')}
-                </WeddingButton>
-                <WeddingButton onClick={() => startCamera()} variant="outline" icon={<Camera className="h-5 w-5" />} size="lg" className="w-full">
-                  {t('booth.openCamera')}
-                </WeddingButton>
-              </>
+              <WeddingButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />} size="lg" className="w-full">
+                {t('booth.uploadPhoto')}
+              </WeddingButton>
             ) : (
               <>
                 <WeddingButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" className="w-full">
@@ -624,9 +627,9 @@ export default function LiveBoothPage() {
                 <WeddingButton onClick={openFilePicker} variant="outline" icon={<ImagePlus className="h-5 w-5" />} size="lg" className="w-full">
                   {t('booth.uploadPhoto')}
                 </WeddingButton>
+                <p className="text-xs text-wedding-taupe">{t('booth.cameraHint')}</p>
               </>
             )}
-            <p className="text-xs text-wedding-taupe">{t('booth.cameraHint')}</p>
             <p className="text-xs text-wedding-burgundy/80">{t('booth.weddingApprovalNote')}</p>
           </div>
         </div>
