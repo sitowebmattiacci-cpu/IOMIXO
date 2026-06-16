@@ -1,18 +1,14 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, CheckCircle2, Send } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { Logo } from '@/components/Logo'
-import { useI18n } from '@/lib/i18n'
 import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
-  const router = useRouter()
-  const { t } = useI18n()
   const [fullName, setFullName] = useState('')
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
@@ -32,11 +28,11 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!fullName || !email || !password) { toast.error(t('auth.fillAllFields')); return }
-    if (password.length < 8) { toast.error(t('auth.passwordMin8')); return }
+    if (!fullName || !email || !password) { toast.error('Please fill in all fields'); return }
+    if (password.length < 8) { toast.error('Password must be at least 8 characters'); return }
     setLoading(true)
     try {
-      const { data, error } = await getSupabaseClient().auth.signUp({
+      const { error } = await getSupabaseClient().auth.signUp({
         email:    email.trim().toLowerCase(),
         password,
         options:  {
@@ -45,17 +41,9 @@ export default function RegisterPage() {
         },
       })
       if (error) throw error
-      // When "Confirm email" is OFF in Supabase, signUp returns an active
-      // session: log the user straight into the dashboard. Only fall back to
-      // the check-your-email screen when no session is returned (Confirm email ON).
-      if (data.session) {
-        toast.success(t('auth.loginSuccess'))
-        router.push('/dashboard')
-        return
-      }
       setDone(true)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : t('auth.registrationFailed'))
+      toast.error(err instanceof Error ? err.message : 'Registration failed')
     } finally {
       setLoading(false)
     }
@@ -70,19 +58,19 @@ export default function RegisterPage() {
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       })
       if (error) throw error
-      toast.success(t('auth.newVerificationSent'))
+      toast.success('New verification email sent!')
     } catch {
-      toast.error(t('auth.resendFailed'))
+      toast.error('Failed to resend. Try again in a moment.')
     } finally {
       setResending(false)
     }
   }
 
   const perks = [
-    t('auth.perk1'),
-    t('auth.perk2'),
-    t('auth.perk3'),
-    t('auth.perk4'),
+    'AI stem separation (Demucs + MDX-Net)',
+    'BPM & key auto-detection',
+    'Professional mashup composer',
+    '1 free mashup included',
   ]
 
   return (
@@ -100,10 +88,11 @@ export default function RegisterPage() {
               <Mail className="h-8 w-8 text-purple-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-white">{t('auth.checkInbox')}</h2>
+              <h2 className="text-2xl font-black text-white">Check your inbox</h2>
               <p className="text-sm text-white/40 mt-2 leading-relaxed">
-                {t('auth.sentVerification')}{' '}
-                <span className="text-purple-400 font-medium">{email}</span>{t('auth.clickActivate')}
+                We&apos;ve sent a verification link to{' '}
+                <span className="text-purple-400 font-medium">{email}</span>.
+                Click it to activate your account.
               </p>
             </div>
             <div className="pt-2 space-y-3">
@@ -114,13 +103,13 @@ export default function RegisterPage() {
                 onClick={handleResend}
                 icon={<Send className="h-4 w-4" />}
               >
-                {t('auth.resendVerification')}
+                Resend verification email
               </Button>
               <Link href="/login">
-                <Button variant="ghost" className="w-full">{t('auth.backToSignIn')}</Button>
+                <Button variant="ghost" className="w-full">Back to sign in</Button>
               </Link>
             </div>
-            <p className="text-xs text-white/20">{t('auth.linkExpires24h')}</p>
+            <p className="text-xs text-white/20">Link expires in 24 hours</p>
           </div>
         </div>
       ) : (
@@ -133,10 +122,11 @@ export default function RegisterPage() {
               <span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">Live Hub</span></span>
             </div>
             <h1 className="text-4xl font-black text-white leading-tight mb-4">
-              {t('auth.heroTitle1')} <span className="text-gradient">{t('auth.heroTitle2')}</span>
+              Create <span className="text-gradient">professional</span> mashups with AI
             </h1>
             <p className="text-white/40 mb-8 leading-relaxed">
-              {t('auth.heroSubtitle')}
+              Join thousands of DJs and producers who are already using IOMIXO to create
+              studio-quality mashups in minutes.
             </p>
             <ul className="space-y-3">
               {perks.map((p) => (
@@ -157,78 +147,78 @@ export default function RegisterPage() {
               </Link>
             </div>
 
-            <div className="glass rounded-2xl p-8 space-y-8">
+            <div className="glass rounded-2xl p-8 space-y-5">
               <div>
-                <h2 className="text-2xl font-bold text-white tracking-tight">{t('auth.createAccount')}</h2>
-                <p className="text-sm text-white/40 mt-1">{t('auth.freeForever')}</p>
+                <h2 className="text-xl font-bold text-white">Create your account</h2>
+                <p className="text-sm text-white/40 mt-1">Free forever — no credit card needed</p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6" data-gramm="false">
+              <form onSubmit={handleSubmit} className="space-y-4" data-gramm="false">
                 {/* Full name */}
-                <div className="space-y-2.5">
-                  <label className="text-sm font-medium text-white/60 ml-1">{t('auth.fullName')}</label>
-                  <div className="relative group">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors pointer-events-none z-10" />
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-white/50">Full name</label>
+                  <div className="relative">
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
                     <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)}
-                      placeholder={t('auth.fullNamePh')} className="input-field h-12" style={{ paddingLeft: '3rem', paddingRight: '1rem' }} autoComplete="name" required spellCheck={false} />
+                      placeholder="DJ Example" className="input-field pl-10" autoComplete="name" required spellCheck={false} />
                   </div>
                 </div>
 
                 {/* Email */}
-                <div className="space-y-2.5">
-                  <label className="text-sm font-medium text-white/60 ml-1">{t('auth.email')}</label>
-                  <div className="relative group">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors pointer-events-none z-10" />
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-white/50">Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                      placeholder={t('auth.emailPh')} className="input-field h-12" style={{ paddingLeft: '3rem', paddingRight: '1rem' }} autoComplete="email" required spellCheck={false} />
+                      placeholder="you@example.com" className="input-field pl-10" autoComplete="email" required spellCheck={false} />
                   </div>
                 </div>
 
                 {/* Password */}
-                <div className="space-y-2.5">
-                  <label className="text-sm font-medium text-white/60 ml-1">{t('auth.password')}</label>
-                  <div className="relative group">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-purple-400 transition-colors pointer-events-none z-10" />
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-white/50">Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
                     <input
                       type={showPw ? 'text' : 'password'} value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder={t('auth.passwordPhMin8')} className="input-field h-12"
-                      style={{ paddingLeft: '3rem', paddingRight: '3rem' }}
+                      placeholder="Min. 8 characters" className="input-field pl-10 pr-10"
                       autoComplete="new-password" required minLength={8}
                     />
                     <button type="button" onClick={() => setShowPw(!showPw)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors">
-                      {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors">
+                      {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                   {password.length > 0 && (
-                    <div className="flex gap-1.5 px-1 pt-1">
+                    <div className="flex gap-1 mt-1.5">
                       {[1, 2, 3, 4].map((n) => (
-                        <div key={n} className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                        <div key={n} className={`h-1 flex-1 rounded-full transition-all ${
                           n <= pwStrength
-                            ? pwStrength <= 1 ? 'bg-red-500/80' : pwStrength === 2 ? 'bg-yellow-500/80' : pwStrength === 3 ? 'bg-blue-500/80' : 'bg-green-500/80'
-                            : 'bg-white/5'
+                            ? pwStrength <= 1 ? 'bg-red-500' : pwStrength === 2 ? 'bg-yellow-500' : pwStrength === 3 ? 'bg-blue-500' : 'bg-green-500'
+                            : 'bg-white/10'
                         }`} />
                       ))}
                     </div>
                   )}
                 </div>
 
-                <div className="pt-2">
-                  <Button type="submit" loading={loading} className="w-full h-12 text-base shadow-lg shadow-purple-500/20" icon={<ArrowRight className="h-5 w-5" />}>
-                    {t('auth.createAccountBtn')}
-                  </Button>
-                </div>
+                <Button type="submit" loading={loading} className="w-full" icon={<ArrowRight className="h-4 w-4" />}>
+                  Create account
+                </Button>
               </form>
 
-              <div className="flex items-center gap-4">
-                <div className="h-px flex-1 bg-white/[0.06]" />
-                <span className="text-xs font-medium text-white/20 whitespace-nowrap">{t('auth.alreadyHaveAccount')}</span>
-                <div className="h-px flex-1 bg-white/[0.06]" />
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/6" />
+                </div>
+                <div className="relative flex justify-center text-xs text-white/25">
+                  <span className="px-2 bg-transparent">Already have an account?</span>
+                </div>
               </div>
 
-              <Link href="/login" className="block">
-                <Button variant="secondary" className="w-full h-12 text-base">{t('auth.signIn')}</Button>
+              <Link href="/login">
+                <Button variant="secondary" className="w-full">Sign in</Button>
               </Link>
             </div>
           </motion.div>

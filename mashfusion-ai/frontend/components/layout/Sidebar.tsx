@@ -82,7 +82,7 @@ export function Sidebar() {
         wedding ? 'border-b border-[#E8B7C8]' : 'border-b border-white/6',
         collapsed ? 'px-3' : 'px-6',
       )}>
-        <Logo size={36} className="shrink-0" />
+        <Logo size={36} variant={wedding ? 'wedding' : 'default'} className="shrink-0" />
         {!collapsed && (
           <div className="min-w-0">
             <p className={cn('text-sm font-bold tracking-tight', wedding ? 'text-[#2B2424]' : 'text-white')}>IOMIXO</p>
