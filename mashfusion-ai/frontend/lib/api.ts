@@ -108,7 +108,7 @@ export const user = {
 // BILLING — Stripe
 // ══════════════════════════════════════════════════════════════
 export const billing = {
-  async createCheckoutSession(priceId: string, mode: 'subscription' | 'payment' = 'subscription', sessionId?: string): Promise<{ url: string }> {
+  async createCheckoutSession(priceId: string, mode: 'subscription' | 'payment' = 'subscription', sessionId?: string, opts?: { trial?: boolean; plan?: string }): Promise<{ url: string }> {
     try {
       const payload: any = {
         price_id: priceId,
@@ -117,6 +117,8 @@ export const billing = {
         mode,
       }
       if (sessionId) payload.session_id = sessionId
+      if (opts?.trial) payload.trial = true
+      if (opts?.plan) payload.plan = opts.plan
       const { data } = await getClient().post<{ url: string }>('/stripe/create-checkout', payload)
       return data
     } catch (e) { apiError(e) }

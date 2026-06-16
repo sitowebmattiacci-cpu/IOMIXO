@@ -58,11 +58,15 @@ async function ensureCustomer(
 stripeRouter.post('/create-checkout', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.sub
-    const { price_id: rawPriceId, success_url, cancel_url, mode = 'subscription', session_id } = req.body
+    const { price_id: rawPriceId, success_url, cancel_url, mode = 'subscription', session_id, trial = false, plan } = req.body
     const price_id = STALE_PRICE_REMAP[rawPriceId] ?? rawPriceId
 
     if (!rawPriceId || !success_url || !cancel_url) throw new AppError('Missing required fields', 400)
     if (!['subscription', 'payment'].includes(mode)) throw new AppError('Invalid mode', 400)
+
+    // A 7-day free trial only applies to recurring subscription checkouts
+    // (Pro / Advance). One-time Event Pass 24H is never trialed.
+    const isTrial = trial === true && mode === 'subscription'
 
     const { data: userRow, error: userErr } = await supabaseAdmin
       .from('users').select('email, stripe_customer_id').eq('id', userId).single()
@@ -72,6 +76,8 @@ stripeRouter.post('/create-checkout', requireAuth, async (req: Request, res: Res
 
     const metadata: Record<string, string> = { user_id: userId }
     if (session_id) metadata.session_id = session_id
+    if (typeof plan === 'string' && plan) metadata.plan = plan
+    if (isTrial) metadata.checkout_type = 'trial'
 
     // Restrict payment methods to card + PayPal for every checkout (one-time and
     // subscription). Apple Pay and Google Pay are offered automatically via 'card'
@@ -92,7 +98,22 @@ stripeRouter.post('/create-checkout', requireAuth, async (req: Request, res: Res
     }
 
     if (mode === 'subscription') {
-      sessionConfig.subscription_data = { metadata }
+      const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = { metadata }
+      if (isTrial) {
+        // 7-day free trial. Do not require a card up front; if no payment method
+        // is added by the end of the trial, Stripe cancels the subscription
+        // (→ webhook downgrades the user back to Free).
+        subscriptionData.trial_period_days = 7
+        subscriptionData.trial_settings = {
+          end_behavior: { missing_payment_method: 'cancel' },
+        }
+      }
+      sessionConfig.subscription_data = subscriptionData
+
+      // Skip card collection during a trial when Stripe deems it unnecessary.
+      if (isTrial) {
+        sessionConfig.payment_method_collection = 'if_required'
+      }
     }
 
     let session: Stripe.Checkout.Session

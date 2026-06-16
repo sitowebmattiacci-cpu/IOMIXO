@@ -55,7 +55,11 @@ export default function BillingPage() {
     }
     setLoading(plan)
     try {
-      const { url } = await billing.createCheckoutSession(priceId)
+      // Pro / Advance start as a 7-day free trial (no card required).
+      const { url } = await billing.createCheckoutSession(priceId, 'subscription', undefined, {
+        trial: true,
+        plan,
+      })
       window.location.href = url
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t('billing.errCheckout'))
@@ -92,6 +96,10 @@ export default function BillingPage() {
 
   const currentPlan = normalisePlan(me?.plan)
 
+  // Active 7-day trial → show a dedicated badge + CTA instead of a renewal date.
+  const isTrialing = subscription?.status === 'trialing'
+  const trialPlanName = currentPlan === 'pro' ? PLAN_METADATA.pro.name : PLAN_METADATA.wedding.name
+
   // Event Pass attivo
   const activePass = eventPasses?.find((p: any) =>
     p.status === 'active' && new Date(p.valid_until) > new Date()
@@ -122,7 +130,11 @@ export default function BillingPage() {
             <div>
               <p className="font-semibold text-white">{t('billing.planPrefix')} {showEventPassAsPlan ? t('billing.eventPass') : PLAN_METADATA[currentPlan].name}</p>
               <p className="text-xs text-white/40">
-                {subscription?.current_period_end ? (
+                {isTrialing && subscription?.current_period_end ? (
+                  <span className="text-purple-300">
+                    {t('billing.trialActive').replace('{plan}', trialPlanName)} — {t('billing.trialExpires')}: {format(new Date(subscription.current_period_end), 'd MMM yyyy')}
+                  </span>
+                ) : subscription?.current_period_end ? (
                   <>{t('billing.renewing')}: {format(new Date(subscription.current_period_end), 'd MMM yyyy')}</>
                 ) : showEventPassAsPlan && activePass ? (
                   <>{t('billing.expires')}: {format(new Date(activePass.valid_until), 'd MMM yyyy, HH:mm')}</>
@@ -141,10 +153,17 @@ export default function BillingPage() {
               onClick={handlePortal}
               icon={<ExternalLink className="h-3.5 w-3.5" />}
             >
-              {t('billing.manageSubscription')}
+              {isTrialing ? t('billing.addPaymentMethod') : t('billing.manageSubscription')}
             </Button>
           )}
         </div>
+
+        {isTrialing && (
+          <div className="mt-4 flex items-center gap-2 text-sm text-purple-300">
+            <Clock className="h-4 w-4" />
+            {t('billing.trialNoCardHint')}
+          </div>
+        )}
 
         {subscription?.cancel_at_period_end && (
           <div className="mt-4 flex items-center gap-2 text-sm text-amber-400">
@@ -344,14 +363,19 @@ export default function BillingPage() {
               </ul>
 
               {canUpgrade && (
-                <Button
-                  variant={plan === 'pro' ? 'primary' : 'secondary'}
-                  className="w-full"
-                  loading={loading === plan}
-                  onClick={() => handleUpgrade(plan)}
-                >
-                  {t('billing.switchTo')} {meta.name}
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    variant={plan === 'pro' ? 'primary' : 'secondary'}
+                    className="w-full"
+                    loading={loading === plan}
+                    onClick={() => handleUpgrade(plan)}
+                  >
+                    {t('billing.startFreeTrial')}
+                  </Button>
+                  <p className="text-[11px] leading-snug text-white/40 text-center">
+                    {t('billing.trialDisclaimer')}
+                  </p>
+                </div>
               )}
               {isCurrent && (
                 <div className="text-center text-xs text-white/25">{t('billing.currentPlan')}</div>
