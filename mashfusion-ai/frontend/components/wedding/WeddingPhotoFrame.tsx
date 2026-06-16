@@ -1,7 +1,7 @@
 'use client'
-import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useI18n } from '@/lib/i18n'
+import { useSlideshow } from '@/lib/useSlideshow'
 
 // ════════════════════════════════════════════════════════════════
 // IOMIXO — Wedding Edition · "Oggi Sposi" photo frame
@@ -170,31 +170,10 @@ export function WeddingPhotoSlideshow({
   className = '',
 }: WeddingPhotoSlideshowProps) {
   const { t } = useI18n()
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const count = photos.length
-
-  // Se l'elenco si accorcia (foto rimossa), mantieni l'indice valido.
-  useEffect(() => {
-    if (currentIndex >= count && count > 0) setCurrentIndex(0)
-  }, [count, currentIndex])
-
-  // Rotazione automatica: random senza ripetere subito la stessa foto.
-  useEffect(() => {
-    if (count <= 1) return
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => {
-        let next = prev
-        while (next === prev) {
-          next = Math.floor(Math.random() * count)
-        }
-        return next
-      })
-    }, intervalMs)
-    return () => clearInterval(timer)
-  }, [count, intervalMs])
+  const { photo, hasPhotos } = useSlideshow(photos, intervalMs)
 
   // Placeholder elegante quando non ci sono foto approvate.
-  if (count === 0) {
+  if (!hasPhotos) {
     return (
       <div className={`flex flex-col items-center justify-center text-center px-8 ${className}`}>
         <div className="rounded-full border border-wedding-gold/30 px-10 py-12 bg-black/20 backdrop-blur-sm">
@@ -206,29 +185,32 @@ export function WeddingPhotoSlideshow({
     )
   }
 
-  const safeIndex = Math.min(currentIndex, count - 1)
-  const photo = photos[safeIndex]
-
+  // Foto presenti: mostra SEMPRE una foto già caricata. Le due cornici sono
+  // impilate nella stessa cella grid → crossfade morbido senza riquadro bianco
+  // (la cornice entrante è già decodificata grazie al preload del motore).
   return (
-    <div className={`relative flex items-center justify-center w-full ${className}`}>
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={photo.id}
-          initial={{ opacity: 0, scale: 0.94 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.04 }}
-          transition={{ duration: 1.1, ease: 'easeInOut' }}
-          className="w-full max-w-[20rem] sm:max-w-[26rem]"
-        >
-          <WeddingPhotoFrame
-            url={photo.url}
-            caption={photo.caption}
-            coupleNames={coupleNames}
-            weddingDate={weddingDate}
-            featured={photo.is_featured}
-            variant="screen"
-          />
-        </motion.div>
+    <div className={`relative grid place-items-center w-full ${className}`}>
+      <AnimatePresence>
+        {photo && (
+          <motion.div
+            key={photo.id}
+            style={{ gridArea: '1 / 1' }}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            transition={{ duration: 1.1, ease: 'easeInOut' }}
+            className="w-full max-w-[20rem] sm:max-w-[26rem]"
+          >
+            <WeddingPhotoFrame
+              url={photo.url}
+              caption={photo.caption}
+              coupleNames={coupleNames}
+              weddingDate={weddingDate}
+              featured={photo.is_featured}
+              variant="screen"
+            />
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   )

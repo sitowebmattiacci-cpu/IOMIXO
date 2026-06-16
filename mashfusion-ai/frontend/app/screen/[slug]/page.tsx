@@ -2,13 +2,14 @@
 import { useParams } from 'next/navigation'
 import useSWR from 'swr'
 import { QRCodeSVG } from 'qrcode.react'
-import { Heart, Sparkles, ListChecks, Camera, Footprints, Star, Youtube } from 'lucide-react'
+import { Heart, Sparkles, ListChecks, Camera, Footprints, Youtube } from 'lucide-react'
 import { liveScreen, type VideoLiveCommand } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
 import { WeddingPhotoSlideshow } from '@/components/wedding/WeddingPhotoFrame'
 import { RouletteWheel } from '@/components/wedding/RouletteWheel'
 import { PartyShell, PartyDivider, PARTY } from '@/components/party/PartyUI'
+import { PartyPhotoSlideshow } from '@/components/party/PartyPhotoSlideshow'
 import { resolveVideoSource, type VideoLiveSource } from '@/lib/utils'
 import { useEffect, useRef, useState } from 'react'
 
@@ -806,8 +807,6 @@ function PartyScreen({
   const liveUrl = `${origin}/live/${slug}`
 
   const total = (active_poll?.tally ?? []).reduce((a: number, b: number) => a + b, 0) || 0
-  const featured = photos?.find((p: any) => p.is_featured) ?? null
-  const rest = (photos ?? []).filter((p: any) => p.id !== featured?.id)
 
   // Visibilità schermo Party Mode — guidata ESCLUSIVAMENTE da screen_config.
   // Un widget appare solo se il rispettivo toggle è esplicitamente true.
@@ -831,14 +830,6 @@ function PartyScreen({
   // One-time audio-unlock overlay when Video Live is active or a link exists.
   const videoConfigured = cfg.show_video_live === true || !!resolveVideoSource(cfg.video_url)
   const anyActive = showLiveBooth || showGames || showVideoLive
-
-  // simple photo carousel
-  const [carouselIdx, setCarouselIdx] = useState(0)
-  useEffect(() => {
-    if (rest.length <= 1) return
-    const id = setInterval(() => setCarouselIdx((i) => (i + 1) % rest.length), 4500)
-    return () => clearInterval(id)
-  }, [rest.length])
 
   return (
     <PartyShell>
@@ -943,37 +934,7 @@ function PartyScreen({
             {showLiveBooth && (
               <div className={`flex flex-col min-h-0 ${showGames ? 'col-span-7' : 'col-span-12'}`}>
                 <PartyScreenPanel icon={<Camera />} title="Live Booth" subtitle="Foto del pubblico" className="flex-1">
-                  {featured && (
-                    <div className="mb-4 relative rounded-2xl overflow-hidden border-2 border-[#FF3D8A]/70 ring-4 ring-[#FF3D8A]/20 shadow-[0_0_50px_rgba(255,61,138,0.35)] max-h-[420px]">
-                      <img src={featured.url} alt="" className="w-full h-full object-cover" />
-                      <div className="absolute top-3 right-3 bg-[#FF3D8A] text-white px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
-                        <Star className="h-3 w-3 fill-current" /> In evidenza
-                      </div>
-                    </div>
-                  )}
-
-                  {rest.length > 0 ? (
-                    <div className="grid grid-cols-4 gap-3">
-                      {rest.slice(0, 8).map((p: any, i: number) => (
-                        <div
-                          key={p.id}
-                          className={`aspect-square rounded-xl overflow-hidden border bg-white/[0.04] transition-all duration-500 ${
-                            i === carouselIdx % Math.max(rest.length, 1) ? 'border-[#FF3D8A]/60 ring-2 ring-[#FF3D8A]/30 scale-[1.04]' : 'border-white/10'
-                          }`}
-                        >
-                          {p.url && <img src={p.url} alt="" className="w-full h-full object-cover" />}
-                        </div>
-                      ))}
-                    </div>
-                  ) : !featured ? (
-                    <div className="rounded-2xl border-2 border-dashed border-[#FF3D8A]/30 bg-white/[0.02] py-20 text-center">
-                      <Camera className="h-14 w-14 text-[#FF3D8A]/40 mx-auto mb-4" />
-                      <p className="text-2xl font-bold text-white mb-2">Photo Moment in arrivo!</p>
-                      <p className="text-sm text-white/50">
-                        Scansiona il QR e scatta la prima foto della serata
-                      </p>
-                    </div>
-                  ) : null}
+                  <PartyPhotoSlideshow photos={photos as any} />
                 </PartyScreenPanel>
               </div>
             )}

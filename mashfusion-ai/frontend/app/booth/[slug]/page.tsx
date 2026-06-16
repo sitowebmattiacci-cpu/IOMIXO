@@ -5,6 +5,7 @@ import useSWR from 'swr'
 import { useState, useRef, useEffect } from 'react'
 import { Camera, X, RotateCw, Check, Sparkles, ArrowLeft, RefreshCw, ImagePlus, AlertTriangle } from 'lucide-react'
 import { publicLive, livePhotos } from '@/lib/api'
+import { compressImage } from '@/lib/imageCompress'
 import { WeddingShell, WeddingButton } from '@/components/wedding/WeddingUI'
 import {
   PartyShell, PartyButton, PartyCard, PartyEyebrow, PartyDivider,
@@ -304,7 +305,11 @@ export default function LiveBoothPage() {
         setUploading(false)
         return
       }
-      await livePhotos.boothUpload(slug!, file, {})
+      // Ottimizza per la Live Screen: ridimensiona/comprime lato client così
+      // non carichiamo file enormi (8/12 MB) sullo schermo TV. Difensivo: se la
+      // compressione fallisce, usa il file originale.
+      const optimized = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.82 })
+      await livePhotos.boothUpload(slug!, optimized, {})
       toast.success(isWedding
         ? t('booth.uploadedWedding')
         : t('booth.uploadedParty'))
