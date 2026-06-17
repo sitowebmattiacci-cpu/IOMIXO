@@ -3,16 +3,13 @@ import { useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Lock, Eye, EyeOff, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react'
+import { Sparkles, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
-import { Logo } from '@/components/Logo'
-import { useI18n } from '@/lib/i18n'
 import toast from 'react-hot-toast'
 
 function ResetPasswordContent() {
   const router = useRouter()
-  const { t } = useI18n()
 
   const [password,  setPassword]  = useState('')
   const [confirm,   setConfirm]   = useState('')
@@ -32,8 +29,8 @@ function ResetPasswordContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (password.length < 8) { toast.error(t('auth.passwordMin8')); return }
-    if (password !== confirm)  { toast.error(t('auth.passwordsDoNotMatch')); return }
+    if (password.length < 8) { toast.error('Password must be at least 8 characters'); return }
+    if (password !== confirm)  { toast.error('Passwords do not match'); return }
 
     setLoading(true)
     try {
@@ -43,7 +40,7 @@ function ResetPasswordContent() {
       setDone(true)
       setTimeout(() => router.push('/login'), 2500)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : t('auth.resetFailed'))
+      toast.error(err instanceof Error ? err.message : 'Reset failed. The link may have expired.')
     } finally {
       setLoading(false)
     }
@@ -64,30 +61,32 @@ function ResetPasswordContent() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <Logo size={40} />
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-white" />
+            </div>
             <span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">AI</span></span>
           </Link>
           <h1 className="text-2xl font-bold text-white">
-            {done ? t('auth.passwordUpdated') : t('auth.setNewPassword')}
+            {done ? 'Password updated!' : 'Set new password'}
           </h1>
           <p className="mt-1 text-sm text-white/40">
-            {done ? t('auth.redirecting') : t('auth.chooseStrong')}
+            {done ? 'Redirecting to sign in…' : 'Choose a strong password for your account'}
           </p>
         </div>
 
         <div className="glass rounded-2xl p-8">
           {!done ? (
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {/* New password */}
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-white/50">{t('auth.newPassword')}</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-white/50">New password</label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
                   <input
                     type={showPw ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t('auth.passwordPhMin8')}
+                    placeholder="Min. 8 characters"
                     className="input-field pl-10 pr-10"
                     autoComplete="new-password"
                     required
@@ -99,7 +98,7 @@ function ResetPasswordContent() {
                   </button>
                 </div>
                 {password.length > 0 && (
-                  <div className="flex gap-1 pt-1">
+                  <div className="flex gap-1 mt-1.5">
                     {[1, 2, 3, 4].map((n) => (
                       <div key={n} className={`h-1 flex-1 rounded-full transition-all ${
                         n <= pwStrength
@@ -112,15 +111,15 @@ function ResetPasswordContent() {
               </div>
 
               {/* Confirm password */}
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-white/50">{t('auth.confirmPassword')}</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-white/50">Confirm password</label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
                   <input
                     type={showCf ? 'text' : 'password'}
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
-                    placeholder={t('auth.repeatPassword')}
+                    placeholder="Repeat your password"
                     className={`input-field pl-10 pr-10 ${
                       confirm && confirm !== password ? 'border-red-500/50' : ''
                     }`}
@@ -133,25 +132,23 @@ function ResetPasswordContent() {
                   </button>
                 </div>
                 {confirm && confirm !== password && (
-                  <p className="text-xs text-red-400 mt-1">{t('auth.passwordsDoNotMatch')}</p>
+                  <p className="text-xs text-red-400 mt-1">Passwords do not match</p>
                 )}
               </div>
 
-              <div className="space-y-3 pt-2">
-                <Button
-                  type="submit"
-                  loading={loading}
-                  disabled={!password || !confirm || password !== confirm}
-                  className="w-full"
-                  icon={<ArrowRight className="h-4 w-4" />}
-                >
-                  {t('auth.updatePassword')}
-                </Button>
+              <Button
+                type="submit"
+                loading={loading}
+                disabled={!password || !confirm || password !== confirm}
+                className="w-full"
+                icon={<ArrowRight className="h-4 w-4" />}
+              >
+                Update password
+              </Button>
 
-                <Link href="/login">
-                  <Button variant="ghost" className="w-full">{t('auth.backToSignIn')}</Button>
-                </Link>
-              </div>
+              <Link href="/login">
+                <Button variant="ghost" className="w-full mt-1">Back to sign in</Button>
+              </Link>
             </form>
           ) : (
             <motion.div
@@ -162,7 +159,7 @@ function ResetPasswordContent() {
               <div className="h-14 w-14 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto">
                 <CheckCircle2 className="h-7 w-7 text-green-400" />
               </div>
-              <p className="text-white/60 text-sm">{t('auth.takingBack')}</p>
+              <p className="text-white/60 text-sm">Taking you back to sign in…</p>
               <div className="flex gap-1 justify-center">
                 {[0, 1, 2].map((i) => (
                   <div key={i} className="h-1.5 w-1.5 rounded-full bg-purple-400 animate-bounce"

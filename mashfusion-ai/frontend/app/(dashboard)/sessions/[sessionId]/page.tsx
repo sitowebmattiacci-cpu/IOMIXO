@@ -2046,9 +2046,9 @@ function PartyDashboard({
           <PartyDivider className="my-5" />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <PartyLinkRow label="Pagina Live" url={liveUrl} onCopy={() => copy(liveUrl)} />
-            <PartyLinkRow label="Live Booth" url={boothUrl} onCopy={() => copy(boothUrl)} />
-            <PartyLinkRow label="Schermo TV" url={screenUrl} onCopy={() => copy(screenUrl)} external />
+            <PartyLinkRow label="Pagina Live" desc="Link ospiti per partecipare" url={liveUrl} onCopy={() => copy(liveUrl)} />
+            <PartyLinkRow label="Live Booth" desc="Foto live dagli ospiti" url={boothUrl} onCopy={() => copy(boothUrl)} />
+            <PartyLinkRow label="Schermo TV" desc="Apri sul TV o proiettore" url={screenUrl} onCopy={() => copy(screenUrl)} external />
           </div>
         </PartyCard>
 
@@ -2079,7 +2079,7 @@ function PartyDashboard({
                 <div className="bg-white p-3 rounded-2xl mt-3 mx-auto w-fit">
                   <QRCodeSVG value={liveUrl} size={170} level="M" />
                 </div>
-                <p className="mt-3 text-xs text-center text-white/60 break-all">{liveUrl}</p>
+                <p className="mt-3 text-xs text-center text-white/60">Link ospiti per partecipare</p>
                 <PartyButton variant="outline" size="sm" className="w-full mt-3" onClick={() => copy(liveUrl)} icon={<Copy className="h-3.5 w-3.5" />}>
                   Copia link
                 </PartyButton>
@@ -2117,11 +2117,11 @@ function PartyTabBtn({ active, onClick, icon, children }: any) {
   )
 }
 
-function PartyLinkRow({ label, url, onCopy, external }: { label: string; url: string; onCopy: () => void; external?: boolean }) {
+function PartyLinkRow({ label, desc, url, onCopy, external }: { label: string; desc: string; url: string; onCopy: () => void; external?: boolean }) {
   return (
     <div className="rounded-xl bg-black/30 border border-white/10 p-3">
       <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#FF7AB6]">{label}</p>
-      <p className="text-xs text-white/70 font-mono mt-1 truncate" title={url}>{url.replace(/^https?:\/\//, '')}</p>
+      <p className="text-xs text-white/60 mt-1">{desc}</p>
       <div className="flex gap-1.5 mt-2">
         <button onClick={onCopy} className="text-[10px] px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 inline-flex items-center gap-1">
           <Copy className="h-3 w-3" /> Copia
@@ -2193,8 +2193,8 @@ function PartyBoothPanel({ session, boothUrl, onCopy, isFree }: any) {
         <div className="flex items-center gap-4 flex-wrap">
           <div className="h-16 w-16 rounded-2xl bg-white/20 flex items-center justify-center"><Camera className="h-8 w-8 text-white" /></div>
           <div className="flex-1 min-w-[200px]">
-            <PartyEyebrow>Link Live Booth</PartyEyebrow>
-            <p className="text-sm text-white/80 font-mono mt-1 break-all">{boothUrl}</p>
+            <PartyEyebrow>Live Booth</PartyEyebrow>
+            <p className="text-sm text-white/70 mt-1">Foto live dagli ospiti</p>
           </div>
           <div className="flex gap-2">
             <PartyButton variant="outline" size="sm" onClick={onCopy} icon={<Copy className="h-3.5 w-3.5" />}>Copia</PartyButton>
@@ -2554,8 +2554,7 @@ function PartyScreenPanel({ session, screenUrl }: any) {
     <div className="space-y-5">
       <PartyCard tone="hi">
         <PartyEyebrow>Schermo TV / Proiettore</PartyEyebrow>
-        <p className="text-sm text-white/70 mt-2">Apri questo link sulla TV o proiettore della serata.</p>
-        <p className="text-xs text-white/60 font-mono mt-3 break-all">{screenUrl}</p>
+        <p className="text-sm text-white/70 mt-2">Apri sul TV o proiettore della serata.</p>
         <div className="flex gap-2 mt-3 flex-wrap">
           <a href={screenUrl} target="_blank" rel="noreferrer">
             <PartyButton variant="fuchsia" size="sm" icon={<Tv className="h-3.5 w-3.5" />}>Apri Schermo</PartyButton>

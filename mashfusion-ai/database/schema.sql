@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
   full_name                       TEXT,
   avatar_url                      TEXT,
   plan                            TEXT          NOT NULL DEFAULT 'free'
-                                                CHECK (plan IN ('free', 'pro', 'wedding')),
+                                                CHECK (plan IN ('free', 'pro', 'studio')),
   credits_remaining               INTEGER       NOT NULL DEFAULT 1,
   credits_reset_at                TIMESTAMPTZ,
   stripe_customer_id              TEXT          UNIQUE,
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   user_id                  UUID         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   stripe_subscription_id   TEXT         UNIQUE NOT NULL,
   stripe_customer_id       TEXT         NOT NULL,
-  plan                     TEXT         NOT NULL CHECK (plan IN ('free', 'pro', 'wedding')),
+  plan                     TEXT         NOT NULL CHECK (plan IN ('free', 'pro', 'studio')),
   status                   TEXT         NOT NULL,   -- active, canceled, past_due, etc.
   current_period_start     TIMESTAMPTZ,
   current_period_end       TIMESTAMPTZ,

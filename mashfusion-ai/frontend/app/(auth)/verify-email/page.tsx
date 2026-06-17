@@ -1,17 +1,14 @@
 'use client'
 import { motion } from 'framer-motion'
-import { Mail } from 'lucide-react'
+import { Sparkles, Mail } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
-import { Logo } from '@/components/Logo'
-import { useI18n } from '@/lib/i18n'
 
 /**
  * This page is shown after register when Supabase sends the confirmation email.
  * Actual verification happens automatically via /auth/callback when the user clicks the link.
  */
 export default function VerifyEmailPage() {
-  const { t } = useI18n()
   return (
     <div className="min-h-screen bg-surface-400 flex items-center justify-center p-4">
       <div className="pointer-events-none" aria-hidden>
@@ -26,7 +23,9 @@ export default function VerifyEmailPage() {
       >
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
-            <Logo size={40} />
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-white" />
+            </div>
             <span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">AI</span></span>
           </Link>
         </div>
@@ -36,15 +35,15 @@ export default function VerifyEmailPage() {
             <Mail className="h-8 w-8 text-purple-400" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-white">{t('auth.verifyCheckInbox')}</h2>
+            <h2 className="text-2xl font-black text-white">Check your inbox</h2>
             <p className="text-sm text-white/40 mt-2 leading-relaxed">
-              {t('auth.verifySent')}
+              We&apos;ve sent you a confirmation link. Click it to activate your account and access your studio.
             </p>
           </div>
           <Link href="/login">
-            <Button variant="secondary" className="w-full">{t('auth.backToSignIn')}</Button>
+            <Button variant="secondary" className="w-full">Back to sign in</Button>
           </Link>
-          <p className="text-xs text-white/20">{t('auth.linkExpires24h')}</p>
+          <p className="text-xs text-white/20">Link expires in 24 hours</p>
         </div>
       </motion.div>
     </div>

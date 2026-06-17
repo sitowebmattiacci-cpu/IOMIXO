@@ -855,9 +855,6 @@ function PartyScreen({
             <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.3em] text-white">
               Scansiona & partecipa
             </p>
-            <p className="text-[10px] text-[#FF7AB6] mt-1 font-mono">
-              {liveUrl.replace(/^https?:\/\//, '')}
-            </p>
           </div>
         </header>
 
