@@ -58,8 +58,8 @@ export function PartyPhotoGridWall({
 
   return (
     <div className={`flex flex-col h-full min-h-0 items-center justify-center ${className}`}>
-      {/* Cornice evento: card scura con accento neon controllato + nome evento */}
-      <div className={`rounded-3xl bg-black/40 border border-white/10 p-5 sm:p-6 shadow-[0_0_50px_rgba(255,61,138,0.18)] w-full ${maxWidthClass} mx-auto`}>
+      {/* Cornice evento: card scura neutra + nome evento */}
+      <div className={`rounded-3xl bg-black/40 border border-white/10 p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)] w-full ${maxWidthClass} mx-auto`}>
         <div className="flex flex-col items-center gap-1.5 mb-5">
           <div className="flex items-center gap-2">
             <Camera className="h-4 w-4 text-[#FF3D8A]" />

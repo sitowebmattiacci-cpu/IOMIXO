@@ -63,8 +63,8 @@ export function PartyPhotoSlideshow({
             transition={{ duration: 1.0, ease: 'easeInOut' }}
             className="relative w-full h-full flex items-center justify-center"
           >
-            {/* Cornice evento: card scura con accento neon controllato + nome evento */}
-            <div className="relative rounded-3xl bg-black/40 border border-white/10 p-3 sm:p-4 shadow-[0_0_40px_rgba(255,61,138,0.2)] flex flex-col items-center">
+            {/* Cornice evento: card scura neutra + nome evento */}
+            <div className="relative rounded-3xl bg-black/40 border border-white/10 p-3 sm:p-4 shadow-[0_20px_60px_rgba(0,0,0,0.5)] flex flex-col items-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={photo.url as string}
