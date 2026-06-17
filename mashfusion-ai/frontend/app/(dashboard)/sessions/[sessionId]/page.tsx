@@ -2280,7 +2280,7 @@ function PartyBoothPanel({ session, boothUrl, onCopy, isFree }: any) {
 
 function PartyPhotoTile({ photo, onApprove, onReject, onRemove, onFeature, approved }: any) {
   return (
-    <div className={`relative rounded-xl overflow-hidden border ${photo.is_featured ? 'border-[#FF3D8A] ring-2 ring-[#FF3D8A]/40' : 'border-white/10'} bg-black/30 group`}>
+    <div className={`relative rounded-xl overflow-hidden border ${photo.is_featured ? 'border-white/20' : 'border-white/10'} bg-black/30 group`}>
       <div className="aspect-[4/5]">
         {photo.url && <img src={photo.url} alt="" className="w-full h-full object-cover [object-position:center_35%]" />}
       </div>

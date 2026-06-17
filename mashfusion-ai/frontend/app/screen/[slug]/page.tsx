@@ -939,7 +939,7 @@ function PartyScreen({
             {showLiveBooth && (
               <div className={`flex flex-col min-h-0 ${showGames ? 'col-span-7' : 'col-span-12'}`}>
                 <PartyScreenPanel icon={<Camera />} title="Live Booth" subtitle="Foto del pubblico" className="flex-1">
-                  <PartyPhotoDisplay photos={photos as any} layout={liveBoothLayout} />
+                  <PartyPhotoDisplay photos={photos as any} layout={liveBoothLayout} eventName={session.event_name} />
                 </PartyScreenPanel>
               </div>
             )}

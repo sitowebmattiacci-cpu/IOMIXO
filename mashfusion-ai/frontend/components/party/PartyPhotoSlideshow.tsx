@@ -20,12 +20,15 @@ export interface PartyPhotoSlideshowProps {
   photos: PartySlidePhoto[]
   /** Intervallo di rotazione in ms (default 6000). */
   intervalMs?: number
+  /** Nome evento mostrato nella cornice (solo Party Mode). */
+  eventName?: string | null
   className?: string
 }
 
 export function PartyPhotoSlideshow({
   photos,
   intervalMs = 6000,
+  eventName,
   className = '',
 }: PartyPhotoSlideshowProps) {
   const { photo, hasPhotos } = useSlideshow(photos, intervalMs)
@@ -60,17 +63,25 @@ export function PartyPhotoSlideshow({
             transition={{ duration: 1.0, ease: 'easeInOut' }}
             className="relative w-full h-full flex items-center justify-center"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={photo.url as string}
-              alt={photo.caption ?? ''}
-              className="w-auto h-auto max-w-[68vw] max-h-[46vh] sm:max-w-[40vw] md:max-w-[30vw] lg:max-h-[44vh] object-contain rounded-2xl border-2 border-[#FF3D8A]/50 shadow-[0_0_32px_rgba(255,61,138,0.26)]"
-            />
-            {photo.is_featured && (
-              <div className="absolute top-3 right-3 bg-[#FF3D8A] text-white px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
-                <Star className="h-3 w-3 fill-current" /> In evidenza
-              </div>
-            )}
+            {/* Cornice evento: card scura con accento neon controllato + nome evento */}
+            <div className="relative rounded-3xl bg-black/40 border border-white/10 p-3 sm:p-4 shadow-[0_0_40px_rgba(255,61,138,0.2)] flex flex-col items-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photo.url as string}
+                alt={photo.caption ?? ''}
+                className="w-auto h-auto max-w-[62vw] max-h-[40vh] sm:max-w-[36vw] md:max-w-[26vw] lg:max-h-[38vh] object-contain rounded-2xl"
+              />
+              {eventName && (
+                <p className="mt-3 text-center text-sm sm:text-base font-black uppercase tracking-[0.3em] text-[#FF7AB6]">
+                  {eventName}
+                </p>
+              )}
+              {photo.is_featured && (
+                <div className="absolute top-3 right-3 bg-[#FF3D8A] text-white px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
+                  <Star className="h-3 w-3 fill-current" /> In evidenza
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
