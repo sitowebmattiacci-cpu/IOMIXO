@@ -208,14 +208,7 @@ export default function RegisterPage() {
                 </Button>
               </form>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/6" />
-                </div>
-                <div className="relative flex justify-center text-xs text-white/25">
-                  <span className="px-2 bg-transparent">Already have an account?</span>
-                </div>
-              </div>
+              <div className="border-t border-white/6" />
 
               <Link href="/login">
                 <Button variant="secondary" className="w-full">Sign in</Button>
