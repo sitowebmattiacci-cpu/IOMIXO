@@ -64,7 +64,7 @@ export function PartyPhotoSlideshow({
             <img
               src={photo.url as string}
               alt={photo.caption ?? ''}
-              className="max-w-full max-h-full object-contain rounded-2xl border-2 border-[#FF3D8A]/50 shadow-[0_0_50px_rgba(255,61,138,0.3)]"
+              className="w-auto h-auto max-w-[70vw] max-h-[54vh] md:max-w-[36vw] object-contain rounded-2xl border-2 border-[#FF3D8A]/50 shadow-[0_0_36px_rgba(255,61,138,0.28)]"
             />
             {photo.is_featured && (
               <div className="absolute top-3 right-3 bg-[#FF3D8A] text-white px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
