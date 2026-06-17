@@ -48,19 +48,24 @@ export function PartyPhotoGridWall({
     )
   }
 
+  // Colonne adattive: poche foto restano portrait senza deformarsi né allargarsi.
+  const cols = grid.length <= 1 ? 1 : grid.length === 2 ? 2 : 3
+  const gridColsClass = cols === 1 ? 'grid-cols-1' : cols === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'
+  const maxWidthClass = cols === 1 ? 'max-w-[300px]' : cols === 2 ? 'max-w-[660px]' : 'max-w-[1000px]'
+
   return (
-    <div className={`flex flex-col h-full min-h-0 ${className}`}>
-      <div className="flex items-center justify-center gap-2 mb-4 shrink-0">
+    <div className={`flex flex-col h-full min-h-0 items-center justify-center ${className}`}>
+      <div className="flex items-center justify-center gap-2 mb-5 shrink-0">
         <Camera className="h-4 w-4 text-[#FF3D8A]" />
         <span className="text-[11px] font-black uppercase tracking-[0.4em] text-[#FF7AB6]">
           Live Booth
         </span>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-3 flex-1 min-h-0">
+      <div className={`grid ${gridColsClass} gap-4 w-full ${maxWidthClass} mx-auto px-2`}>
         {grid.map((photo, i) => (
           <div
             key={i}
-            className="relative overflow-hidden rounded-2xl border-2 border-[#FF3D8A]/50 bg-black/40 shadow-[0_0_24px_rgba(255,61,138,0.22)]"
+            className="relative aspect-[4/5] overflow-hidden rounded-2xl border-2 border-[#FF3D8A]/50 bg-black/40 shadow-[0_0_24px_rgba(255,61,138,0.22)]"
           >
             <AnimatePresence>
               <motion.img
@@ -71,7 +76,7 @@ export function PartyPhotoGridWall({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.02 }}
                 transition={{ duration: 0.7, ease: 'easeInOut' }}
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover [object-position:center_35%]"
               />
             </AnimatePresence>
           </div>

@@ -2254,7 +2254,7 @@ function PartyBoothPanel({ session, boothUrl, onCopy, isFree }: any) {
       {pending.length > 0 && (
         <PartyCard>
           <PartyEyebrow>In attesa di approvazione ({pending.length})</PartyEyebrow>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2.5 mt-4">
             {pending.map((p: any) => (
               <PartyPhotoTile key={p.id} photo={p} onApprove={() => setStatus(p.id, 'approved')} onReject={() => setStatus(p.id, 'rejected')} onRemove={() => remove(p.id)} onFeature={() => setFeatured(p.id, !p.is_featured)} />
             ))}
@@ -2267,7 +2267,7 @@ function PartyBoothPanel({ session, boothUrl, onCopy, isFree }: any) {
         {approved.length === 0 ? (
           <p className="text-sm text-white/40 italic mt-3">Nessuna foto approvata ancora.</p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2.5 mt-4">
             {approved.map((p: any) => (
               <PartyPhotoTile key={p.id} photo={p} onReject={() => setStatus(p.id, 'rejected')} onRemove={() => remove(p.id)} onFeature={() => setFeatured(p.id, !p.is_featured)} approved />
             ))}
@@ -2281,8 +2281,8 @@ function PartyBoothPanel({ session, boothUrl, onCopy, isFree }: any) {
 function PartyPhotoTile({ photo, onApprove, onReject, onRemove, onFeature, approved }: any) {
   return (
     <div className={`relative rounded-xl overflow-hidden border ${photo.is_featured ? 'border-[#FF3D8A] ring-2 ring-[#FF3D8A]/40' : 'border-white/10'} bg-black/30 group`}>
-      <div className="aspect-square">
-        {photo.url && <img src={photo.url} alt="" className="w-full h-full object-cover" />}
+      <div className="aspect-[4/5]">
+        {photo.url && <img src={photo.url} alt="" className="w-full h-full object-cover [object-position:center_35%]" />}
       </div>
       {photo.is_featured && (
         <span className="absolute top-1.5 left-1.5 bg-[#FF3D8A] text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
