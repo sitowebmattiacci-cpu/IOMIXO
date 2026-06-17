@@ -6,10 +6,10 @@ import { Heart, Sparkles, ListChecks, Camera, Footprints, Youtube } from 'lucide
 import { liveScreen, type VideoLiveCommand } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
-import { WeddingPhotoSlideshow } from '@/components/wedding/WeddingPhotoFrame'
+import { WeddingPhotoDisplay } from '@/components/wedding/WeddingPhotoGridWall'
 import { RouletteWheel } from '@/components/wedding/RouletteWheel'
 import { PartyShell, PartyDivider, PARTY } from '@/components/party/PartyUI'
-import { PartyPhotoSlideshow } from '@/components/party/PartyPhotoSlideshow'
+import { PartyPhotoDisplay, type LiveBoothLayout } from '@/components/party/PartyPhotoGridWall'
 import { resolveVideoSource, type VideoLiveSource } from '@/lib/utils'
 import { useEffect, useRef, useState } from 'react'
 
@@ -135,6 +135,10 @@ export default function ScreenModePage() {
   const enabledPolls      = cfg.show_polls      === true
   const enabledDedications = cfg.show_dedications === true
   const enabledPhotos     = cfg.show_photos     === true
+
+  // Layout Live Booth sullo schermo (single | grid | auto). Default 'single'
+  // per retrocompatibilità con le sessioni esistenti.
+  const liveBoothLayout: LiveBoothLayout = (cfg.live_booth_layout as LiveBoothLayout) ?? 'single'
 
   // Video Live — appare solo se il DJ ha attivato lo switch E ha inserito un
   // link valido (YouTube o file video diretto: mp4, webm, ogg, mov, m4v).
@@ -330,10 +334,11 @@ export default function ScreenModePage() {
 
               {enabledPhotos && (
                 <div className="flex items-center justify-center py-4">
-                  <WeddingPhotoSlideshow
+                  <WeddingPhotoDisplay
                     photos={photos as any}
                     coupleNames={session.couple_names ?? session.event_name}
                     weddingDate={session.wedding_date}
+                    layout={liveBoothLayout}
                   />
                 </div>
               )}
@@ -514,10 +519,11 @@ export default function ScreenModePage() {
 
             {enabledPhotos && (
               <section className="rounded-2xl border border-wedding-gold/20 bg-black/30 backdrop-blur-md p-6 flex items-center justify-center min-h-0 shadow-wedding-lg">
-                <WeddingPhotoSlideshow
+                <WeddingPhotoDisplay
                   photos={photos as any}
                   coupleNames={session.couple_names ?? session.event_name}
                   weddingDate={session.wedding_date}
+                  layout={liveBoothLayout}
                 />
               </section>
             )}
@@ -816,6 +822,8 @@ function PartyScreen({
   const showMusicBattle   = cfg.show_polls    === true
   const showPartyRoulette = cfg.show_roulette === true
   const showGames = showMusicBattle || showPartyRoulette
+  // Layout Live Booth (single | grid | auto). Default 'single' (retrocompat).
+  const liveBoothLayout: LiveBoothLayout = (cfg.live_booth_layout as LiveBoothLayout) ?? 'single'
   // Video Live — solo con switch attivo E link valido (YouTube o file video).
   const partyVideo = cfg.show_video_live === true
     ? resolveVideoSource(cfg.video_url, { autoplay: true })
@@ -931,7 +939,7 @@ function PartyScreen({
             {showLiveBooth && (
               <div className={`flex flex-col min-h-0 ${showGames ? 'col-span-7' : 'col-span-12'}`}>
                 <PartyScreenPanel icon={<Camera />} title="Live Booth" subtitle="Foto del pubblico" className="flex-1">
-                  <PartyPhotoSlideshow photos={photos as any} />
+                  <PartyPhotoDisplay photos={photos as any} layout={liveBoothLayout} />
                 </PartyScreenPanel>
               </div>
             )}

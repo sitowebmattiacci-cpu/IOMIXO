@@ -196,6 +196,10 @@
     "polls": "Sondages",
     "latestPhotos": "Dernières Photos",
     "latestDedications": "Dernières Dédicaces",
+    "boothLayout": "Comment afficher les photos",
+    "boothSingle": "Photo unique",
+    "boothGrid": "Grille",
+    "boothAuto": "Mix automatique",
     "videoLive": "Vidéo en direct",
     "videoLiveHint": "Affichez une vidéo YouTube ou un fichier (mp4) sur l'écran live",
     "videoUrlPlaceholder": "Lien YouTube ou fichier .mp4 / .webm",
@@ -531,6 +535,7 @@
       "tapToEnable": "Touchez une fois pour activer l'audio et la vidéo en direct"
     },
     "photoFrameTitle": "Jeunes Mariés",
+    "photoGridTitle": "Vos moments",
     "photoSlideshowEmpty": "Prenez une photo via le QR code et voyez-la apparaître à l'écran"
   },
   "live": {

@@ -196,6 +196,10 @@
     "polls": "Sondaggi",
     "latestPhotos": "Ultime Foto",
     "latestDedications": "Ultime Dediche",
+    "boothLayout": "Come mostrare le foto",
+    "boothSingle": "Foto singola",
+    "boothGrid": "Griglia",
+    "boothAuto": "Mix automatico",
     "videoLive": "Video Live",
     "videoLiveHint": "Mostra un video YouTube o un file (mp4) nella schermata live",
     "videoUrlPlaceholder": "Link YouTube o file .mp4 / .webm",
@@ -563,6 +567,7 @@
       "tapToEnable": "Clicca una volta per abilitare audio e video live"
     },
     "photoFrameTitle": "Oggi Sposi",
+    "photoGridTitle": "I vostri momenti",
     "photoSlideshowEmpty": "Scatta una foto dal QR Code e falla apparire sullo schermo"
   },
   "live": {

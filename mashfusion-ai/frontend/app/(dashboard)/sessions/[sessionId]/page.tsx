@@ -439,6 +439,7 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
     show_video_live: (screenConfig as any).show_video_live ?? false,
     video_url: (screenConfig as any).video_url ?? '',
     video_title: (screenConfig as any).video_title ?? '',
+    live_booth_layout: (screenConfig as any).live_booth_layout ?? 'single',
     couple_font: screenConfig.couple_font ?? 'cormorant',
     ...overrides,
   })
@@ -471,6 +472,20 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
         video_url: videoUrlDraft.trim(),
         video_title: videoTitleDraft.trim(),
       })
+      await live.updateSession(session.id, { screen_config: newConfig })
+      await mutate(['session', session.id])
+      toast.success(t('weddingPanels.updated'))
+    } catch (e: any) {
+      toast.error(e?.message ?? t('common.errorGeneric'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const saveBoothLayout = async (layout: 'single' | 'grid' | 'auto') => {
+    setSaving(true)
+    try {
+      const newConfig = buildFullConfig({ live_booth_layout: layout })
       await live.updateSession(session.id, { screen_config: newConfig })
       await mutate(['session', session.id])
       toast.success(t('weddingPanels.updated'))
@@ -649,6 +664,37 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                         <ImageIcon className="h-3.5 w-3.5 text-[#8F1D2C]" />
                         <span className="text-sm text-[#2B2424]">{t('weddingPanels.photos')}</span>
                       </label>
+                      {(screenConfig.show_photos ?? false) && (
+                        <div className="ml-1 pl-3 border-l-2 border-[#E8B7C8] py-1">
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8F1D2C] mb-1.5">
+                            {t('weddingPanels.boothLayout')}
+                          </p>
+                          <div className="grid grid-cols-3 gap-1.5">
+                            {([
+                              ['single', t('weddingPanels.boothSingle')],
+                              ['grid', t('weddingPanels.boothGrid')],
+                              ['auto', t('weddingPanels.boothAuto')],
+                            ] as const).map(([val, label]) => {
+                              const active = ((screenConfig as any).live_booth_layout ?? 'single') === val
+                              return (
+                                <button
+                                  key={val}
+                                  type="button"
+                                  onClick={() => saveBoothLayout(val)}
+                                  disabled={saving}
+                                  className={`rounded-lg px-2 py-1.5 text-[11px] font-semibold transition border ${
+                                    active
+                                      ? 'bg-[#8F1D2C] text-white border-[#8F1D2C]'
+                                      : 'bg-white text-[#6F6260] border-[#E8B7C8] hover:border-[#8F1D2C]/50'
+                                  }`}
+                                >
+                                  {label}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
                       <label className="flex items-center gap-2 cursor-pointer select-none p-2 rounded-lg hover:bg-[#FBEAF0] transition">
                         <input
                           type="checkbox"
@@ -2527,6 +2573,7 @@ function PartyScreenPanel({ session, screenUrl }: any) {
     show_video_live: cfg.show_video_live === true,
     video_url: cfg.video_url ?? '',
     video_title: cfg.video_title ?? '',
+    live_booth_layout: (cfg.live_booth_layout as 'single' | 'grid' | 'auto') ?? 'single',
   })
   const [saving, setSaving] = useState(false)
 
@@ -2573,6 +2620,34 @@ function PartyScreenPanel({ session, screenUrl }: any) {
           <ScreenToggle label="Party Roulette" value={draft.show_roulette} onChange={(v) => setDraft({ ...draft, show_roulette: v })} />
           <ScreenToggle label="Video Live" value={draft.show_video_live} onChange={(v) => setDraft({ ...draft, show_video_live: v })} />
         </div>
+
+        {draft.show_photos && (
+          <div className="mt-3 rounded-xl bg-black/20 border border-white/10 p-3">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#FF7AB6] mb-2.5">
+              Come mostrare le foto
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                ['single', 'Foto singola'],
+                ['grid', 'Griglia'],
+                ['auto', 'Mix automatico'],
+              ] as const).map(([val, label]) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setDraft({ ...draft, live_booth_layout: val })}
+                  className={`rounded-lg px-2 py-2 text-xs font-semibold transition border ${
+                    draft.live_booth_layout === val
+                      ? 'bg-[#FF3D8A] text-white border-[#FF3D8A] shadow-[0_0_16px_rgba(255,61,138,0.4)]'
+                      : 'bg-black/30 text-white/70 border-white/10 hover:border-[#FF3D8A]/40'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {draft.show_video_live && (
           <div className="mt-3 space-y-2.5 rounded-xl bg-black/20 border border-white/10 p-3">

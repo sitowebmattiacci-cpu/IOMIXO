@@ -196,6 +196,10 @@
     "polls": "Encuestas",
     "latestPhotos": "Últimas Fotos",
     "latestDedications": "Últimas Dedicatorias",
+    "boothLayout": "Cómo mostrar las fotos",
+    "boothSingle": "Foto única",
+    "boothGrid": "Cuadrícula",
+    "boothAuto": "Mix automático",
     "videoLive": "Vídeo en vivo",
     "videoLiveHint": "Muestra un vídeo de YouTube o un archivo (mp4) en la pantalla en vivo",
     "videoUrlPlaceholder": "Enlace de YouTube o archivo .mp4 / .webm",
@@ -531,6 +535,7 @@
       "tapToEnable": "Toca una vez para habilitar el audio y el vídeo en vivo"
     },
     "photoFrameTitle": "Recién Casados",
+    "photoGridTitle": "Vuestros momentos",
     "photoSlideshowEmpty": "Haz una foto desde el código QR y verla aparecer en pantalla"
   },
   "live": {

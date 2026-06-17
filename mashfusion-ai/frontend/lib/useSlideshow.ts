@@ -30,7 +30,7 @@ export interface SlideItem {
 const decodedUrls = new Set<string>()
 
 /** Precarica e decodifica un'immagine. Risolve solo quando è pronta a dipingere. */
-function preloadImage(url: string): Promise<void> {
+export function preloadImage(url: string): Promise<void> {
   if (decodedUrls.has(url)) return Promise.resolve()
   return new Promise<void>((resolve, reject) => {
     const img = new Image()
@@ -49,7 +49,7 @@ function preloadImage(url: string): Promise<void> {
   })
 }
 
-function shuffle<T>(input: T[]): T[] {
+export function shuffle<T>(input: T[]): T[] {
   const a = input.slice()
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))

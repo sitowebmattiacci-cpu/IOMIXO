@@ -729,6 +729,7 @@ export interface ScreenPayload {
       video_url?: string
       video_title?: string
       video_live?: VideoLiveControl | null
+      live_booth_layout?: 'single' | 'grid' | 'auto'
       couple_font?: 'cormorant' | 'playfair' | 'great-vibes' | 'dancing' | 'cinzel' | 'tangerine'
     } | null
   }

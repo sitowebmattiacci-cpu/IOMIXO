@@ -196,6 +196,10 @@
     "polls": "Polls",
     "latestPhotos": "Latest Photos",
     "latestDedications": "Latest Dedications",
+    "boothLayout": "How to show photos",
+    "boothSingle": "Single photo",
+    "boothGrid": "Grid",
+    "boothAuto": "Auto mix",
     "videoLive": "Live Video",
     "videoLiveHint": "Show a YouTube video or a file (mp4) on the live screen",
     "videoUrlPlaceholder": "YouTube link or .mp4 / .webm file",
@@ -529,6 +533,7 @@
       "tapToEnable": "Tap once to enable live audio and video"
     },
     "photoFrameTitle": "Just Married",
+    "photoGridTitle": "Your moments",
     "photoSlideshowEmpty": "Take a photo from the QR code and see it appear on screen"
   },
   "live": {
