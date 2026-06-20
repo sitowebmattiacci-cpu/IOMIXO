@@ -2,8 +2,8 @@
 import { useParams } from 'next/navigation'
 import useSWR from 'swr'
 import { QRCodeSVG } from 'qrcode.react'
-import { Heart, Sparkles, ListChecks, Camera, Footprints, Youtube } from 'lucide-react'
-import { liveScreen, type VideoLiveCommand } from '@/lib/api'
+import { Heart, Sparkles, ListChecks, Camera, Footprints, Youtube, Users } from 'lucide-react'
+import { liveScreen, type VideoLiveCommand, type StandUpGuessConfig, type StandUpGuessRound } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
 import { WeddingPhotoDisplay } from '@/components/wedding/WeddingPhotoGridWall'
@@ -16,6 +16,47 @@ import { useEffect, useRef, useState } from 'react'
 /** Remote-control state read from screen_config.video_live and applied by the
  *  Screen Mode players. The dashboard is the director. */
 type VideoControl = { command?: VideoLiveCommand; commandId?: string; volume?: number }
+
+const STAND_UP_GUESS_STATUSES = ['idle', 'instruction', 'guessing', 'reveal', 'finished'] as const
+
+function normalizeStandUpGuess(raw: any): StandUpGuessConfig {
+  const rounds: StandUpGuessRound[] = Array.isArray(raw?.rounds)
+    ? raw.rounds
+      .map((round: any, index: number) => {
+        if (!round || typeof round !== 'object') return null
+        return {
+          id: typeof round.id === 'string' ? round.id : `sug-${index}`,
+          guest_instruction: String(round.guest_instruction ?? '').trim(),
+          answer: String(round.answer ?? '').trim(),
+          hint: round.hint == null ? undefined : String(round.hint),
+          enabled: round.enabled !== false,
+          order: typeof round.order === 'number' ? round.order : index,
+        } satisfies StandUpGuessRound
+      })
+      .filter((round: StandUpGuessRound | null): round is StandUpGuessRound => !!round)
+      .sort((a: StandUpGuessRound, b: StandUpGuessRound) => a.order - b.order)
+      .map((round: StandUpGuessRound, index: number) => ({ ...round, order: index }))
+      .filter((round: StandUpGuessRound) => round.guest_instruction.length > 0 && round.answer.length > 0)
+    : []
+
+  const safeIndex = Math.min(Math.max(Number(raw?.current_index ?? 0), 0), Math.max(rounds.length - 1, 0))
+  const fallbackRound = rounds[safeIndex] ?? rounds[0]
+  const roundById = rounds.find((round) => round.id === raw?.current_round_id)
+  const parsedStatus = STAND_UP_GUESS_STATUSES.includes(raw?.status) ? raw.status : 'idle'
+
+  return {
+    enabled: raw?.enabled === true,
+    status: parsedStatus,
+    current_round_id: roundById?.id ?? fallbackRound?.id ?? null,
+    current_index: safeIndex,
+    rounds,
+    score: {
+      guessed: Math.max(0, Number(raw?.score?.guessed ?? 0) || 0),
+      missed: Math.max(0, Number(raw?.score?.missed ?? 0) || 0),
+    },
+    updated_at: typeof raw?.updated_at === 'string' ? raw.updated_at : '',
+  }
+}
 
 export default function ScreenModePage() {
   const { slug } = useParams<{ slug: string }>()
@@ -135,6 +176,11 @@ export default function ScreenModePage() {
   const enabledPolls      = cfg.show_polls      === true
   const enabledDedications = cfg.show_dedications === true
   const enabledPhotos     = cfg.show_photos     === true
+  const standUpGuess = normalizeStandUpGuess(cfg.stand_up_guess)
+  const enabledStandUpGuess = standUpGuess.enabled === true
+  const standUpRound = standUpGuess.rounds.find((round) => round.id === standUpGuess.current_round_id)
+    ?? standUpGuess.rounds[standUpGuess.current_index]
+    ?? standUpGuess.rounds[0]
 
   // Layout Live Booth sullo schermo (single | grid | auto). Default 'single'
   // per retrocompatibilità con le sessioni esistenti.
@@ -163,6 +209,7 @@ export default function ScreenModePage() {
     enabledPolls      ? 'poll'        : null,
     enabledDedications ? 'dedications' : null,
     enabledPhotos     ? 'photos'      : null,
+    enabledStandUpGuess ? 'standup'   : null,
     enabledVideo      ? 'video'       : null,
   ].filter(Boolean)
 
@@ -171,8 +218,8 @@ export default function ScreenModePage() {
 
   // Solo giochi attivi (no foto/dediche/sondaggi)
   const onlyGames = hasContent &&
-    activeSections.every(s => s === 'roulette' || s === 'shoe') &&
-    (activeSections.includes('roulette') || activeSections.includes('shoe'))
+    activeSections.every(s => s === 'roulette' || s === 'shoe' || s === 'standup') &&
+    (activeSections.includes('roulette') || activeSections.includes('shoe') || activeSections.includes('standup'))
 
   // Get font family based on screen_config
   const getFontFamily = () => {
@@ -279,6 +326,10 @@ export default function ScreenModePage() {
                     </p>
                   </div>
                 </div>
+              )}
+
+              {enabledStandUpGuess && (
+                <StandUpGuessStage round={standUpRound ?? null} state={standUpGuess} />
               )}
 
               {active_poll && (
@@ -403,6 +454,10 @@ export default function ScreenModePage() {
                   </div>
                 </div>
               )}
+
+              {enabledStandUpGuess && (
+                <StandUpGuessStage round={standUpRound ?? null} state={standUpGuess} compact />
+              )}
             </div>
 
             <footer className="absolute bottom-8 text-xs uppercase tracking-[0.3em] text-wedding-taupe">
@@ -461,6 +516,11 @@ export default function ScreenModePage() {
                   ) : (
                     <EmptyPanel text="In attesa della prossima domanda…" />
                   )}
+                </StagePanel>
+              )}
+              {enabledStandUpGuess && (
+                <StagePanel icon={<Users className="h-6 w-6" />} title={t('weddingPanels.standUpGuessName')}>
+                  <StandUpGuessStage round={standUpRound ?? null} state={standUpGuess} inline />
                 </StagePanel>
               )}
               {enabledPolls && (
@@ -554,6 +614,78 @@ function StagePanel({ icon, title, children }: { icon: React.ReactNode; title: s
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
     </section>
+  )
+}
+
+function StandUpGuessStage({
+  round,
+  state,
+  compact,
+  inline,
+}: {
+  round: StandUpGuessRound | null
+  state: StandUpGuessConfig
+  compact?: boolean
+  inline?: boolean
+}) {
+  const { t } = useI18n()
+  const wrapper = inline
+    ? 'rounded-xl border border-wedding-gold/30 bg-gradient-to-br from-wedding-gold/10 to-wedding-blush/10 p-5'
+    : 'rounded-2xl border border-wedding-gold/20 bg-black/30 backdrop-blur-md p-12'
+  const questionSize = compact ? 'text-4xl' : 'text-5xl'
+
+  return (
+    <div className={wrapper}>
+      {!inline && (
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-wedding-gold/20">
+          <Users className="h-8 w-8 text-wedding-gold" />
+          <h2 className="text-2xl font-semibold uppercase tracking-[0.25em] text-wedding-champagne/90">
+            {t('weddingPanels.standUpGuessName')}
+          </h2>
+        </div>
+      )}
+
+      {state.status === 'idle' && (
+        <div className="text-center py-6">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-wedding-gold mb-3">{t('weddingPanels.standUpGuessModeLabel')}</p>
+          <p className={`font-wedding ${questionSize} text-wedding-ivory leading-tight`}>{t('weddingPanels.standUpGuessIdleTitle')}</p>
+          <p className="text-xl text-wedding-champagne/85 mt-4">{t('weddingPanels.standUpGuessIdleSubtitle')}</p>
+        </div>
+      )}
+
+      {state.status === 'instruction' && (
+        <div className="text-center py-6">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-wedding-gold mb-3">{t('weddingPanels.standUpGuessModeLabel')}</p>
+          <p className={`font-wedding ${questionSize} text-wedding-ivory leading-tight`}>{round?.guest_instruction ?? t('weddingPanels.standUpGuessNoRounds')}</p>
+          <p className="text-xl text-wedding-champagne/85 mt-4">{t('weddingPanels.standUpGuessInstructionFooter')}</p>
+        </div>
+      )}
+
+      {state.status === 'guessing' && (
+        <div className="text-center py-6">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-wedding-gold mb-3">{t('weddingPanels.standUpGuessModeLabel')}</p>
+          <p className={`font-wedding ${questionSize} text-wedding-ivory leading-tight`}>{t('weddingPanels.standUpGuessGuessingPrompt')}</p>
+          <p className="text-xl text-wedding-champagne/85 mt-4">{t('weddingPanels.standUpGuessGuessingSubtitle')}</p>
+        </div>
+      )}
+
+      {state.status === 'reveal' && (
+        <div className="text-center py-6 animate-[fadeIn_450ms_ease-out]">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-wedding-gold mb-3">{t('weddingPanels.standUpGuessAnswerLabel')}</p>
+          <p className={`font-wedding ${questionSize} text-wedding-ivory leading-tight`}>{round?.answer ?? '-'}</p>
+          {round?.hint && <p className="text-lg text-wedding-champagne/80 mt-4">{round.hint}</p>}
+        </div>
+      )}
+
+      {state.status === 'finished' && (
+        <div className="text-center py-6">
+          <p className={`font-wedding ${questionSize} text-wedding-ivory leading-tight`}>{t('weddingPanels.standUpGuessFinished')}</p>
+          <p className="text-xl text-wedding-champagne/85 mt-4">
+            {t('weddingPanels.standUpGuessScore')}: {state.score.guessed} / {state.score.guessed + state.score.missed}
+          </p>
+        </div>
+      )}
+    </div>
   )
 }
 

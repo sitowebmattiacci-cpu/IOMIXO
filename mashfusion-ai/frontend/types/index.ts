@@ -312,7 +312,7 @@ export const PLAN_METADATA: Record<Plan, {
       'Album evento con moderazione',
       'Sondaggi live (Live Polls)',
       'Party Games (Roulette, Music Battle, Top Fan, Indovina la Canzone, Sfida Tavoli)',
-      'Giochi Wedding (Roulette, Gioco della Scarpa, Chi conosce meglio gli sposi, Lui o Lei, Messaggi agli Sposi)',
+      'Giochi Wedding (Roulette, Gioco della Scarpa, Chi conosce meglio gli sposi, Lui o Lei, Messaggi agli Sposi, Chi si alza?)',
       'Analytics avanzate',
     ],
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_WEDDING_PRICE_ID_EUR

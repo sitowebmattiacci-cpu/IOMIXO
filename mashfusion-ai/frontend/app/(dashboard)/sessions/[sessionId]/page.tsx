@@ -15,6 +15,9 @@ import {
   live, liveDedications, liveGames, livePolls, livePhotos,
   bestPhoto,
   type LiveRequestStatus, type LivePoll,
+  type StandUpGuessConfig,
+  type StandUpGuessRound,
+  type StandUpGuessStatus,
 } from '@/lib/api'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -39,6 +42,99 @@ import type { VideoLiveCommand } from '@/lib/api'
 const newCommandId = () =>
   (typeof crypto !== 'undefined' && crypto.randomUUID?.()) ||
   `${Date.now()}-${Math.random().toString(36).slice(2)}`
+
+const STAND_UP_GUESS_PRESETS: Array<{ guest_instruction: string; answer: string; hint?: string }> = [
+  {
+    guest_instruction: 'Si alzino tutti quelli che conoscono gli sposi da piu di 10 anni',
+    answer: 'Conoscono gli sposi da piu di 10 anni',
+  },
+  {
+    guest_instruction: 'Si alzino tutti gli amici dello sposo',
+    answer: 'Sono amici dello sposo',
+  },
+  {
+    guest_instruction: 'Si alzino tutti gli amici della sposa',
+    answer: 'Sono amici della sposa',
+  },
+  {
+    guest_instruction: 'Si alzino tutti quelli che sono venuti da fuori citta',
+    answer: 'Sono venuti da fuori citta',
+  },
+  {
+    guest_instruction: 'Si alzino tutti quelli che sono venuti in treno',
+    answer: 'Sono venuti in treno',
+  },
+  {
+    guest_instruction: 'Si alzino tutti quelli che hanno ballato almeno una volta con gli sposi',
+    answer: 'Hanno ballato almeno una volta con gli sposi',
+  },
+]
+
+const makeStandUpRoundId = () =>
+  `sug-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+
+function defaultStandUpGuessConfig(): StandUpGuessConfig {
+  const rounds: StandUpGuessRound[] = STAND_UP_GUESS_PRESETS.map((r, index) => ({
+    id: makeStandUpRoundId(),
+    guest_instruction: r.guest_instruction,
+    answer: r.answer,
+    hint: r.hint,
+    enabled: true,
+    order: index,
+  }))
+  return {
+    enabled: false,
+    status: 'idle',
+    current_round_id: rounds[0]?.id ?? null,
+    current_index: 0,
+    rounds,
+    score: { guessed: 0, missed: 0 },
+    updated_at: new Date().toISOString(),
+  }
+}
+
+function normalizeStandUpGuessConfig(raw: any): StandUpGuessConfig {
+  const fallback = defaultStandUpGuessConfig()
+  if (!raw || typeof raw !== 'object') return fallback
+
+  const mappedRounds: StandUpGuessRound[] = Array.isArray(raw.rounds)
+    ? raw.rounds
+      .map((round: any, index: number) => {
+        if (!round || typeof round !== 'object') return null
+        return {
+          id: typeof round.id === 'string' && round.id.trim() ? round.id : makeStandUpRoundId(),
+          guest_instruction: String(round.guest_instruction ?? '').trim(),
+          answer: String(round.answer ?? '').trim(),
+          hint: round.hint == null ? undefined : String(round.hint),
+          enabled: round.enabled !== false,
+          order: typeof round.order === 'number' ? round.order : index,
+        } satisfies StandUpGuessRound
+      })
+      .filter((round: StandUpGuessRound | null): round is StandUpGuessRound => !!round)
+      .sort((a: StandUpGuessRound, b: StandUpGuessRound) => a.order - b.order)
+      .map((round: StandUpGuessRound, index: number) => ({ ...round, order: index }))
+      .filter((round: StandUpGuessRound) => round.guest_instruction.length > 0 && round.answer.length > 0)
+    : []
+
+  const rounds = mappedRounds.length > 0 ? mappedRounds : fallback.rounds
+  const safeIndex = Math.min(Math.max(Number(raw.current_index ?? 0), 0), Math.max(rounds.length - 1, 0))
+  const roundById = rounds.find((round) => round.id === raw.current_round_id)
+  const statusValues: StandUpGuessStatus[] = ['idle', 'instruction', 'guessing', 'reveal', 'finished']
+  const status: StandUpGuessStatus = statusValues.includes(raw.status) ? raw.status : 'idle'
+
+  return {
+    enabled: raw.enabled === true,
+    status,
+    current_round_id: roundById?.id ?? rounds[safeIndex]?.id ?? null,
+    current_index: safeIndex,
+    rounds,
+    score: {
+      guessed: Math.max(0, Number(raw.score?.guessed ?? 0) || 0),
+      missed: Math.max(0, Number(raw.score?.missed ?? 0) || 0),
+    },
+    updated_at: typeof raw.updated_at === 'string' ? raw.updated_at : fallback.updated_at,
+  }
+}
 
 // ─────────────── VIDEO LIVE — REGIA (dashboard → Screen Mode) ───────────────
 // Remote control for the public Screen Mode video. Each transport action writes
@@ -422,7 +518,9 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
     show_roulette: false,
     show_shoe_game: false,
     show_polls: false,
+    stand_up_guess: defaultStandUpGuessConfig(),
   }
+  const standUpGuessConfig = normalizeStandUpGuessConfig((screenConfig as any).stand_up_guess)
 
   const [videoUrlDraft, setVideoUrlDraft] = useState<string>(session?.screen_config?.video_url ?? '')
   const [videoTitleDraft, setVideoTitleDraft] = useState<string>(session?.screen_config?.video_title ?? '')
@@ -436,6 +534,7 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
     show_roulette: screenConfig.show_roulette ?? false,
     show_shoe_game: screenConfig.show_shoe_game ?? false,
     show_polls: screenConfig.show_polls ?? false,
+    stand_up_guess: standUpGuessConfig,
     show_video_live: (screenConfig as any).show_video_live ?? false,
     video_url: (screenConfig as any).video_url ?? '',
     video_title: (screenConfig as any).video_title ?? '',
@@ -456,6 +555,25 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
 
       console.log('📝 Saving config:', JSON.stringify(newConfig))
       await live.updateSession(session.id, { screen_config: newConfig })
+      await mutate(['session', session.id])
+      toast.success(t('weddingPanels.updated'))
+    } catch (e: any) {
+      toast.error(e?.message ?? t('common.errorGeneric'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const toggleStandUpGuessVisibility = async () => {
+    setSaving(true)
+    try {
+      const current = normalizeStandUpGuessConfig((screenConfig as any).stand_up_guess)
+      const next = {
+        ...current,
+        enabled: !current.enabled,
+        updated_at: new Date().toISOString(),
+      }
+      await live.updateSession(session.id, { screen_config: buildFullConfig({ stand_up_guess: next }) })
       await mutate(['session', session.id])
       toast.success(t('weddingPanels.updated'))
     } catch (e: any) {
@@ -628,6 +746,15 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                                 show_roulette: false,
                                 show_shoe_game: false,
                                 show_polls: false,
+                                stand_up_guess: {
+                                  ...standUpGuessConfig,
+                                  enabled: false,
+                                  status: 'idle',
+                                  current_index: 0,
+                                  current_round_id: standUpGuessConfig.rounds.find((r) => r.enabled)?.id ?? standUpGuessConfig.rounds[0]?.id ?? null,
+                                  score: { guessed: 0, missed: 0 },
+                                  updated_at: new Date().toISOString(),
+                                },
                                 show_video_live: false,
                               })
                               await live.updateSession(session.id, { screen_config: resetConfig })
@@ -738,6 +865,17 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                         />
                         <ListChecks className="h-3.5 w-3.5 text-[#8F1D2C]" />
                         <span className="text-sm text-[#2B2424]">{t('weddingPanels.polls')}</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer select-none p-2 rounded-lg hover:bg-[#FBEAF0] transition">
+                        <input
+                          type="checkbox"
+                          checked={standUpGuessConfig.enabled === true}
+                          onChange={toggleStandUpGuessVisibility}
+                          disabled={saving}
+                          className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
+                        />
+                        <Users className="h-3.5 w-3.5 text-[#8F1D2C]" />
+                        <span className="text-sm text-[#2B2424]">{t('weddingPanels.standUpGuessName')}</span>
                       </label>
                     </div>
 
@@ -1528,6 +1666,8 @@ function GamesPanel({ sessionId, session }: { sessionId: string; session: any })
 
       <ShoeGamePanel sessionId={sessionId} />
 
+      <StandUpGuessPanel sessionId={sessionId} />
+
       <BestPhotoPanel sessionId={sessionId} />
 
       <PollsPanel sessionId={sessionId} />
@@ -1737,6 +1877,378 @@ function ShoeGamePanel({ sessionId }: { sessionId: string }) {
           })}
         </ol>
       )}
+    </WeddingCard>
+  )
+}
+
+function StandUpGuessPanel({ sessionId }: { sessionId: string }) {
+  const { t } = useI18n()
+  const { data: session, mutate: mutateSession } = useSWR(['session', sessionId], () => live.getSession(sessionId))
+  const [busy, setBusy] = useState(false)
+  const [editingRoundId, setEditingRoundId] = useState<string | null>(null)
+  const [roundDrafts, setRoundDrafts] = useState<Record<string, { guest_instruction: string; answer: string; hint: string }>>({})
+
+  const cfg = normalizeStandUpGuessConfig(session?.screen_config?.stand_up_guess)
+  const rounds = [...cfg.rounds].sort((a, b) => a.order - b.order)
+  const enabledRounds = rounds.filter((round) => round.enabled)
+  const fallbackRound = enabledRounds[0] ?? rounds[0] ?? null
+  const currentRound = rounds.find((round) => round.id === cfg.current_round_id) ?? rounds[cfg.current_index] ?? fallbackRound
+  const currentIndex = currentRound ? rounds.findIndex((round) => round.id === currentRound.id) : -1
+
+  const persist = async (next: StandUpGuessConfig, successToast?: string) => {
+    setBusy(true)
+    try {
+      const currentScreenConfig = session?.screen_config ?? {}
+      await live.updateSession(sessionId, {
+        screen_config: {
+          ...currentScreenConfig,
+          stand_up_guess: {
+            ...next,
+            updated_at: new Date().toISOString(),
+          },
+        },
+      })
+      await mutateSession()
+      if (successToast) toast.success(successToast)
+    } catch (e: any) {
+      toast.error(e?.message ?? t('common.errorGeneric'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const updateRounds = async (nextRounds: StandUpGuessRound[]) => {
+    const sorted = [...nextRounds].sort((a, b) => a.order - b.order).map((round, index) => ({ ...round, order: index }))
+    const safeCurrent = sorted.find((round) => round.id === cfg.current_round_id) ?? sorted[Math.min(Math.max(cfg.current_index, 0), Math.max(sorted.length - 1, 0))]
+    await persist({
+      ...cfg,
+      rounds: sorted,
+      current_index: safeCurrent ? sorted.findIndex((round) => round.id === safeCurrent.id) : 0,
+      current_round_id: safeCurrent?.id ?? null,
+    })
+  }
+
+  const updateStatus = async (status: StandUpGuessStatus) => {
+    await persist({
+      ...cfg,
+      status,
+      current_round_id: currentRound?.id ?? null,
+      current_index: Math.max(currentIndex, 0),
+    })
+  }
+
+  const start = async () => {
+    const firstEnabled = rounds.find((round) => round.enabled) ?? rounds[0]
+    if (!firstEnabled) {
+      toast.error(t('weddingPanels.standUpGuessNoRounds'))
+      return
+    }
+    await persist({
+      ...cfg,
+      status: 'instruction',
+      current_round_id: firstEnabled.id,
+      current_index: rounds.findIndex((round) => round.id === firstEnabled.id),
+    }, t('weddingPanels.standUpGuessStarted'))
+  }
+
+  const goToRound = async (direction: -1 | 1) => {
+    if (!rounds.length) return
+    const startIdx = currentIndex >= 0 ? currentIndex : 0
+    let idx = startIdx + direction
+    while (idx >= 0 && idx < rounds.length && rounds[idx] && rounds[idx].enabled === false) idx += direction
+    if (idx < 0 || idx >= rounds.length) return
+    await persist({
+      ...cfg,
+      status: 'instruction',
+      current_index: idx,
+      current_round_id: rounds[idx].id,
+    })
+  }
+
+  const markAnswer = async (kind: 'guessed' | 'missed') => {
+    const score = {
+      guessed: cfg.score.guessed + (kind === 'guessed' ? 1 : 0),
+      missed: cfg.score.missed + (kind === 'missed' ? 1 : 0),
+    }
+    await persist({ ...cfg, score })
+  }
+
+  const resetGame = async () => {
+    const firstEnabled = rounds.find((round) => round.enabled) ?? rounds[0]
+    await persist({
+      ...cfg,
+      status: 'idle',
+      current_index: firstEnabled ? rounds.findIndex((round) => round.id === firstEnabled.id) : 0,
+      current_round_id: firstEnabled?.id ?? null,
+      score: { guessed: 0, missed: 0 },
+    }, t('weddingPanels.standUpGuessResetDone'))
+  }
+
+  const setEnabled = async (enabled: boolean) => {
+    await persist({ ...cfg, enabled })
+  }
+
+  const addRound = async () => {
+    const next: StandUpGuessRound = {
+      id: makeStandUpRoundId(),
+      guest_instruction: t('weddingPanels.standUpGuessInstructionSeed'),
+      answer: t('weddingPanels.standUpGuessAnswerSeed'),
+      hint: '',
+      enabled: true,
+      order: rounds.length,
+    }
+    await updateRounds([...rounds, next])
+    setEditingRoundId(next.id)
+  }
+
+  const updateRound = async (id: string, patch: Partial<StandUpGuessRound>) => {
+    const nextRounds = rounds.map((round) => round.id === id ? { ...round, ...patch } : round)
+    await updateRounds(nextRounds)
+  }
+
+  const deleteRound = async (id: string) => {
+    const nextRounds = rounds.filter((round) => round.id !== id)
+    await updateRounds(nextRounds)
+  }
+
+  const moveRound = async (id: string, direction: -1 | 1) => {
+    const idx = rounds.findIndex((round) => round.id === id)
+    if (idx < 0) return
+    const target = idx + direction
+    if (target < 0 || target >= rounds.length) return
+    const reordered = [...rounds]
+    const [item] = reordered.splice(idx, 1)
+    reordered.splice(target, 0, item)
+    await updateRounds(reordered)
+  }
+
+  const statusLabel: Record<StandUpGuessStatus, string> = {
+    idle: 'Idle',
+    instruction: 'Instruction',
+    guessing: 'Guessing',
+    reveal: 'Reveal',
+    finished: 'Finished',
+  }
+
+  return (
+    <WeddingCard tone="active">
+      <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+        <div>
+          <h2 className="font-wedding text-2xl font-semibold text-[#2B2424] inline-flex items-center gap-2">
+            <Users className="h-5 w-5 text-[#8F1D2C]" /> {t('weddingPanels.standUpGuessName')}
+          </h2>
+          <p className="text-xs text-[#6F6260] mt-1">{t('weddingPanels.standUpGuessSubtitle')}</p>
+        </div>
+        <label className="inline-flex items-center gap-2 text-xs text-[#2B2424] bg-white border border-[#E8B7C8] rounded-full px-3 py-1.5">
+          <input
+            type="checkbox"
+            checked={cfg.enabled === true}
+            onChange={(e) => setEnabled(e.target.checked)}
+            disabled={busy}
+            className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
+          />
+          {t('weddingPanels.standUpGuessShowOnScreen')}
+        </label>
+      </div>
+
+      <div className="rounded-xl border border-[#E8B7C8] bg-white p-4 mb-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-[11px] uppercase tracking-[0.22em] text-[#8F1D2C] font-semibold">
+            {t('weddingPanels.standUpGuessStatus')}: <span className="normal-case tracking-normal text-[#2B2424]">{statusLabel[cfg.status]}</span>
+          </p>
+          <p className="text-[11px] text-[#6F6260]">
+            {t('weddingPanels.standUpGuessScore')}: {cfg.score.guessed} / {cfg.score.guessed + cfg.score.missed}
+          </p>
+        </div>
+
+        <div className="mt-3 rounded-lg border border-[#F0D7E2] bg-[#FBEAF0]/35 px-3 py-3">
+          {currentRound ? (
+            <>
+              <p className="text-[11px] uppercase tracking-[0.22em] text-[#8F1D2C] font-semibold mb-1">
+                {t('weddingPanels.standUpGuessCurrentRound')} {Math.max(currentIndex + 1, 1)} / {Math.max(rounds.length, 1)}
+              </p>
+              <p className="text-sm text-[#2B2424]"><strong>{t('weddingPanels.standUpGuessGuestInstructionLabel')}:</strong> {currentRound.guest_instruction}</p>
+              <p className="text-sm text-[#2B2424] mt-1"><strong>{t('weddingPanels.standUpGuessAnswerLabel')}:</strong> {currentRound.answer}</p>
+              {currentRound.hint && <p className="text-xs text-[#6F6260] mt-1"><strong>{t('weddingPanels.standUpGuessHintLabel')}:</strong> {currentRound.hint}</p>}
+            </>
+          ) : (
+            <p className="text-sm text-[#6F6260]">{t('weddingPanels.standUpGuessNoRounds')}</p>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2 mt-4">
+          <WeddingButton onClick={start} variant="outline" loading={busy} disabled={rounds.length === 0} icon={<Play className="h-4 w-4" />}>
+            {t('weddingPanels.standUpGuessStart')}
+          </WeddingButton>
+          <WeddingButton onClick={() => updateStatus('instruction')} variant="outline" loading={busy} disabled={!currentRound}>
+            {t('weddingPanels.standUpGuessShowInstruction')}
+          </WeddingButton>
+          <WeddingButton onClick={() => updateStatus('guessing')} variant="outline" loading={busy} disabled={!currentRound}>
+            {t('weddingPanels.standUpGuessGoGuessing')}
+          </WeddingButton>
+          <WeddingButton onClick={() => updateStatus('reveal')} variant="gold" loading={busy} disabled={!currentRound}>
+            {t('weddingPanels.standUpGuessRevealAnswer')}
+          </WeddingButton>
+          <WeddingButton onClick={() => markAnswer('guessed')} variant="outline" loading={busy} disabled={!currentRound} icon={<Check className="h-4 w-4" />}>
+            {t('weddingPanels.standUpGuessCorrect')}
+          </WeddingButton>
+          <WeddingButton onClick={() => markAnswer('missed')} variant="ghost" loading={busy} disabled={!currentRound} icon={<X className="h-4 w-4" />}>
+            {t('weddingPanels.standUpGuessWrong')}
+          </WeddingButton>
+          <WeddingButton onClick={() => goToRound(-1)} variant="ghost" loading={busy} disabled={currentIndex <= 0}>
+            {t('weddingPanels.standUpGuessPrevRound')}
+          </WeddingButton>
+          <WeddingButton onClick={() => goToRound(1)} variant="ghost" loading={busy} disabled={currentIndex < 0 || currentIndex >= rounds.length - 1}>
+            {t('weddingPanels.standUpGuessNextRound')}
+          </WeddingButton>
+          <WeddingButton onClick={resetGame} variant="ghost" loading={busy} icon={<RotateCw className="h-4 w-4" />}>
+            {t('weddingPanels.standUpGuessReset')}
+          </WeddingButton>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-[#E8B7C8] bg-white p-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+          <p className="text-[11px] uppercase tracking-[0.22em] text-[#8F1D2C] font-semibold">
+            {t('weddingPanels.standUpGuessRoundsTitle')}
+          </p>
+          <WeddingButton onClick={addRound} size="sm" variant="outline" loading={busy} icon={<Plus className="h-3.5 w-3.5" />}>
+            {t('weddingPanels.standUpGuessAddRound')}
+          </WeddingButton>
+        </div>
+
+        {rounds.length === 0 && (
+          <p className="text-sm text-[#6F6260]">{t('weddingPanels.standUpGuessNoRounds')}</p>
+        )}
+
+        <div className="space-y-2">
+          {rounds.map((round, index) => {
+            const editing = editingRoundId === round.id
+            return (
+              <div key={round.id} className="rounded-lg border border-[#E8B7C8] p-3 bg-[#FFFDFB]">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-[#8F1D2C] font-semibold">
+                      {t('weddingPanels.standUpGuessRoundLabel')} {index + 1}
+                    </p>
+                    {!editing && (
+                      <>
+                        <p className="text-sm text-[#2B2424] mt-1"><strong>{t('weddingPanels.standUpGuessGuestInstructionLabel')}:</strong> {round.guest_instruction}</p>
+                        <p className="text-sm text-[#2B2424] mt-1"><strong>{t('weddingPanels.standUpGuessAnswerLabel')}:</strong> {round.answer}</p>
+                        {round.hint && <p className="text-xs text-[#6F6260] mt-1"><strong>{t('weddingPanels.standUpGuessHintLabel')}:</strong> {round.hint}</p>}
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <label className="inline-flex items-center gap-1 text-[11px] text-[#6F6260] mr-1">
+                      <input
+                        type="checkbox"
+                        checked={round.enabled}
+                        onChange={(e) => updateRound(round.id, { enabled: e.target.checked })}
+                        disabled={busy}
+                        className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
+                      />
+                      {t('weddingPanels.standUpGuessEnabled')}
+                    </label>
+                    <button type="button" onClick={() => moveRound(round.id, -1)} disabled={busy || index === 0} className="p-1.5 rounded hover:bg-[#FBEAF0] disabled:opacity-40">
+                      <span className="sr-only">{t('weddingPanels.standUpGuessMoveUp')}</span>
+                      ↑
+                    </button>
+                    <button type="button" onClick={() => moveRound(round.id, 1)} disabled={busy || index >= rounds.length - 1} className="p-1.5 rounded hover:bg-[#FBEAF0] disabled:opacity-40">
+                      <span className="sr-only">{t('weddingPanels.standUpGuessMoveDown')}</span>
+                      ↓
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (editing) {
+                          setEditingRoundId(null)
+                          return
+                        }
+                        setRoundDrafts((prev) => ({
+                          ...prev,
+                          [round.id]: {
+                            guest_instruction: round.guest_instruction,
+                            answer: round.answer,
+                            hint: round.hint ?? '',
+                          },
+                        }))
+                        setEditingRoundId(round.id)
+                      }}
+                      className="p-1.5 rounded hover:bg-[#FBEAF0] text-xs"
+                    >
+                      {editing ? t('weddingPanels.close') : t('weddingPanels.editQuestions')}
+                    </button>
+                    <button type="button" onClick={() => deleteRound(round.id)} disabled={busy} className="p-1.5 rounded hover:bg-[#FBEAF0] text-[#8F1D2C]">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {editing && (
+                  <div className="mt-3 grid grid-cols-1 gap-2">
+                    <WeddingInput
+                      value={roundDrafts[round.id]?.guest_instruction ?? ''}
+                      onChange={(e) => setRoundDrafts((prev) => ({
+                        ...prev,
+                        [round.id]: {
+                          guest_instruction: e.target.value,
+                          answer: prev[round.id]?.answer ?? round.answer,
+                          hint: prev[round.id]?.hint ?? (round.hint ?? ''),
+                        },
+                      }))}
+                      placeholder={t('weddingPanels.standUpGuessGuestInstructionPlaceholder')}
+                    />
+                    <WeddingInput
+                      value={roundDrafts[round.id]?.answer ?? ''}
+                      onChange={(e) => setRoundDrafts((prev) => ({
+                        ...prev,
+                        [round.id]: {
+                          guest_instruction: prev[round.id]?.guest_instruction ?? round.guest_instruction,
+                          answer: e.target.value,
+                          hint: prev[round.id]?.hint ?? (round.hint ?? ''),
+                        },
+                      }))}
+                      placeholder={t('weddingPanels.standUpGuessAnswerPlaceholder')}
+                    />
+                    <WeddingInput
+                      value={roundDrafts[round.id]?.hint ?? ''}
+                      onChange={(e) => setRoundDrafts((prev) => ({
+                        ...prev,
+                        [round.id]: {
+                          guest_instruction: prev[round.id]?.guest_instruction ?? round.guest_instruction,
+                          answer: prev[round.id]?.answer ?? round.answer,
+                          hint: e.target.value,
+                        },
+                      }))}
+                      placeholder={t('weddingPanels.standUpGuessHintPlaceholder')}
+                    />
+                    <div>
+                      <WeddingButton
+                        size="sm"
+                        variant="outline"
+                        loading={busy}
+                        onClick={async () => {
+                          const draft = roundDrafts[round.id]
+                          if (!draft) return
+                          await updateRound(round.id, {
+                            guest_instruction: draft.guest_instruction,
+                            answer: draft.answer,
+                            hint: draft.hint,
+                          })
+                          setEditingRoundId(null)
+                        }}
+                      >
+                        {t('weddingPanels.save')}
+                      </WeddingButton>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
     </WeddingCard>
   )
 }

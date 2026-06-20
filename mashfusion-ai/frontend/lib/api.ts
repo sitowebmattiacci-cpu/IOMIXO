@@ -188,6 +188,29 @@ export interface GuestConfig {
 
 export type VideoLiveCommand = 'play' | 'pause' | 'mute' | 'unmute' | 'restart' | 'stop'
 export type VideoLivePlaybackState = 'playing' | 'paused' | 'stopped'
+export type StandUpGuessStatus = 'idle' | 'instruction' | 'guessing' | 'reveal' | 'finished'
+
+export interface StandUpGuessRound {
+  id: string
+  guest_instruction: string
+  answer: string
+  hint?: string
+  enabled: boolean
+  order: number
+}
+
+export interface StandUpGuessConfig {
+  enabled: boolean
+  status: StandUpGuessStatus
+  current_round_id: string | null
+  current_index: number
+  rounds: StandUpGuessRound[]
+  score: {
+    guessed: number
+    missed: number
+  }
+  updated_at: string
+}
 
 /**
  * Remote-control state for Video Live. The DJ dashboard is the director: every
@@ -234,6 +257,7 @@ export interface LiveSession {
     show_roulette?: boolean
     show_shoe_game?: boolean
     show_polls?: boolean
+    stand_up_guess?: StandUpGuessConfig | null
     show_video_live?: boolean
     video_url?: string
     video_title?: string
@@ -725,6 +749,7 @@ export interface ScreenPayload {
       show_roulette?: boolean
       show_shoe_game?: boolean
       show_polls?: boolean
+      stand_up_guess?: StandUpGuessConfig | null
       show_video_live?: boolean
       video_url?: string
       video_title?: string
