@@ -36,7 +36,7 @@ function normalizeStandUpGuess(raw: any): StandUpGuessConfig {
       .filter((round: StandUpGuessRound | null): round is StandUpGuessRound => !!round)
       .sort((a: StandUpGuessRound, b: StandUpGuessRound) => a.order - b.order)
       .map((round: StandUpGuessRound, index: number) => ({ ...round, order: index }))
-      .filter((round: StandUpGuessRound) => round.guest_instruction.length > 0 && round.answer.length > 0)
+      .filter((round: StandUpGuessRound) => round.guest_instruction.length > 0)
     : []
 
   const safeIndex = Math.min(Math.max(Number(raw?.current_index ?? 0), 0), Math.max(rounds.length - 1, 0))
@@ -633,6 +633,7 @@ function StandUpGuessStage({
     ? 'rounded-xl border border-wedding-gold/30 bg-gradient-to-br from-wedding-gold/10 to-wedding-blush/10 p-5'
     : 'rounded-2xl border border-wedding-gold/20 bg-black/30 backdrop-blur-md p-12'
   const questionSize = compact ? 'text-4xl' : 'text-5xl'
+  const answerText = round?.answer?.trim() ? round.answer : t('weddingPanels.standUpGuessAnswerMissing')
 
   return (
     <div className={wrapper}>
@@ -670,10 +671,20 @@ function StandUpGuessStage({
       )}
 
       {state.status === 'reveal' && (
-        <div className="text-center py-6 animate-[fadeIn_450ms_ease-out]">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-wedding-gold mb-3">{t('weddingPanels.standUpGuessAnswerLabel')}</p>
-          <p className={`font-wedding ${questionSize} text-wedding-ivory leading-tight`}>{round?.answer ?? '-'}</p>
-          {round?.hint && <p className="text-lg text-wedding-champagne/80 mt-4">{round.hint}</p>}
+        <div className="space-y-5 animate-[fadeIn_450ms_ease-out]">
+          <div className="rounded-2xl border border-wedding-gold/25 bg-wedding-ivory/6 p-5 sm:p-6 text-center">
+            <p className="text-[11px] uppercase tracking-[0.32em] text-wedding-gold mb-3">{t('weddingPanels.standUpGuessInstructionCard')}</p>
+            <p className={`font-wedding ${compact ? 'text-3xl' : 'text-4xl'} text-wedding-ivory leading-tight`}>
+              {round?.guest_instruction ?? t('weddingPanels.standUpGuessNoRounds')}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-wedding-burgundy/35 bg-gradient-to-br from-wedding-ivory/95 to-wedding-blush/25 p-6 sm:p-8 text-center shadow-[0_18px_60px_rgba(143,29,44,0.18)]">
+            <p className="text-[11px] uppercase tracking-[0.32em] text-wedding-burgundy mb-3">{t('weddingPanels.standUpGuessAnswerLabel')}</p>
+            <p className={`font-wedding ${questionSize} text-wedding-burgundy leading-tight`}>
+              {answerText}
+            </p>
+            {round?.hint && <p className="text-lg text-wedding-taupe mt-4">{round.hint}</p>}
+          </div>
         </div>
       )}
 
