@@ -610,3 +610,59 @@ livePublicRouter.post('/:slug/games/shoe/reset', async (req, res, next) => {
     res.json({ data: { ok: true } })
   } catch (e) { next(e) }
 })
+
+// ── GET /api/live/public/:slug/games/stand-up-guess ───────────
+// Get stand-up game config from screen_config (DJ remote control)
+livePublicRouter.get('/:slug/games/stand-up-guess', async (req, res, next) => {
+  try {
+    const { data: session } = await supabaseAdmin
+      .from('live_sessions').select('id, session_type, screen_config')
+      .eq('public_slug', req.params.slug).maybeSingle()
+    if (!session) throw new AppError('Sessione non trovata', 404)
+    if (session.session_type !== 'wedding') {
+      return res.json({ data: null })
+    }
+
+    const standUpGuess = (session.screen_config as any)?.stand_up_guess ?? null
+    res.json({ data: standUpGuess })
+  } catch (e) { next(e) }
+})
+
+// ── PATCH /api/live/public/:slug/games/stand-up-guess ─────────
+// Update stand-up game config inside screen_config (DJ remote control)
+livePublicRouter.patch('/:slug/games/stand-up-guess', async (req, res, next) => {
+  try {
+    const { stand_up_guess } = req.body ?? {}
+    if (!stand_up_guess || typeof stand_up_guess !== 'object') {
+      throw new AppError('Payload non valido', 400)
+    }
+
+    const { data: session } = await supabaseAdmin
+      .from('live_sessions').select('id, dj_id, session_type, screen_config')
+      .eq('public_slug', req.params.slug).maybeSingle()
+    if (!session) throw new AppError('Sessione non trovata', 404)
+    if (session.session_type !== 'wedding') {
+      throw new AppError('Funzione disponibile solo in Wedding Edition', 400)
+    }
+
+    const plan = await getEffectivePlan(session.dj_id, session.id)
+    if (!PLAN_LIMITS[plan].weddingGames) {
+      throw new AppError('Giochi Wedding non disponibili', 402)
+    }
+
+    const nextScreenConfig = {
+      ...((session.screen_config as any) ?? {}),
+      stand_up_guess,
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('live_sessions')
+      .update({ screen_config: nextScreenConfig })
+      .eq('id', session.id)
+      .select('screen_config')
+      .single()
+    if (error) throw new AppError(error.message, 500)
+
+    res.json({ data: (data as any)?.screen_config?.stand_up_guess ?? null })
+  } catch (e) { next(e) }
+})

@@ -5,7 +5,7 @@ import { useState } from 'react'
 import {
   Heart, MessageSquare, Sparkles, Image as ImageIcon,
   Play, RotateCw, SkipForward, Check, X, Trash2, ListChecks,
-  Footprints, Wifi,
+  Footprints, Wifi, Users,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { LiveRequestStatus } from '@/lib/api'
@@ -102,6 +102,15 @@ const remoteApi = {
   },
   async resetShoe(slug: string) {
     return publicFetch<any>(`/api/live/public/${slug}/games/shoe/reset`, { method: 'POST' })
+  },
+  async getStandUpGuess(slug: string) {
+    return publicFetch<any | null>(`/api/live/public/${slug}/games/stand-up-guess`)
+  },
+  async updateStandUpGuess(slug: string, stand_up_guess: any) {
+    return publicFetch<any | null>(`/api/live/public/${slug}/games/stand-up-guess`, {
+      method: 'PATCH',
+      body: JSON.stringify({ stand_up_guess }),
+    })
   },
 }
 
@@ -203,7 +212,7 @@ export default function RemoteControlPage() {
 
         {/* Content panels */}
         <div className="space-y-4">
-          {tab === 'games' && slug && <RemoteGamesPanel slug={slug} />}
+          {tab === 'games' && slug && <RemoteGamesPanel slug={slug} sessionType={session.session_type} />}
           {tab === 'requests' && slug && <RemoteRequestsPanel slug={slug} requests={requests ?? []} />}
           {tab === 'dedications' && slug && <RemoteDedicationsPanel slug={slug} dedications={dedications ?? []} />}
           {tab === 'photos' && slug && <RemotePhotosPanel slug={slug} photos={photos ?? []} />}
@@ -229,9 +238,9 @@ function TabButton({ active, onClick, icon, label }: any) {
   )
 }
 
-function RemoteGamesPanel({ slug }: { slug: string }) {
+function RemoteGamesPanel({ slug, sessionType }: { slug: string; sessionType: string }) {
   const { t } = useI18n()
-  const [activeGame, setActiveGame] = useState<'roulette' | 'shoe' | null>(null)
+  const [activeGame, setActiveGame] = useState<'roulette' | 'shoe' | 'standup' | null>(null)
 
   return (
     <div className="space-y-3">
@@ -274,6 +283,141 @@ function RemoteGamesPanel({ slug }: { slug: string }) {
           </div>
         )}
       </WeddingCard>
+
+      {sessionType === 'wedding' && (
+        <WeddingCard>
+          <button
+            onClick={() => setActiveGame(activeGame === 'standup' ? null : 'standup')}
+            className="w-full flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <Users className="h-5 w-5 text-wedding-gold" />
+              <span className="font-wedding text-xl text-wedding-ink">{t('weddingPanels.standUpGuessName')}</span>
+            </div>
+            <span className="text-wedding-gold">
+              {activeGame === 'standup' ? '−' : '+'}
+            </span>
+          </button>
+          {activeGame === 'standup' && (
+            <div className="mt-4 pt-4 border-t border-wedding-champagne">
+              <RemoteStandUpGuessControls slug={slug} />
+            </div>
+          )}
+        </WeddingCard>
+      )}
+    </div>
+  )
+}
+
+function RemoteStandUpGuessControls({ slug }: { slug: string }) {
+  const { t } = useI18n()
+  const { data: cfg, mutate: refresh } = useSWR(
+    ['remote-standup', slug],
+    () => remoteApi.getStandUpGuess(slug),
+    { refreshInterval: 3_000 },
+  )
+  const [busy, setBusy] = useState(false)
+
+  const rounds = Array.isArray(cfg?.rounds) ? cfg.rounds : []
+  const currentIndex = Number(cfg?.current_index ?? 0)
+  const currentRound = rounds.find((r: any) => r?.id === cfg?.current_round_id) ?? rounds[currentIndex] ?? rounds[0] ?? null
+
+  const save = async (next: any, okMsg?: string) => {
+    setBusy(true)
+    try {
+      await remoteApi.updateStandUpGuess(slug, {
+        ...(cfg ?? {}),
+        ...next,
+        updated_at: new Date().toISOString(),
+      })
+      await refresh()
+      if (okMsg) toast.success(okMsg)
+    } catch (e: any) {
+      toast.error(e?.message ?? t('common.errorGeneric'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const moveRound = async (dir: -1 | 1) => {
+    if (!rounds.length) return
+    let idx = currentIndex + dir
+    while (idx >= 0 && idx < rounds.length && rounds[idx]?.enabled === false) idx += dir
+    if (idx < 0 || idx >= rounds.length) return
+    await save({
+      status: 'instruction',
+      current_index: idx,
+      current_round_id: rounds[idx]?.id ?? null,
+    })
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl bg-wedding-gold/10 border border-wedding-gold/30 p-4 text-center">
+        <p className="text-xs uppercase tracking-wider text-wedding-gold mb-1">{t('weddingPanels.standUpGuessStatus')}</p>
+        <p className="text-sm text-wedding-ink mb-2">{String(cfg?.status ?? 'idle')}</p>
+        {currentRound ? (
+          <>
+            <p className="text-xs uppercase tracking-wider text-wedding-gold mb-1">{t('weddingPanels.standUpGuessGuestInstructionLabel')}</p>
+            <p className="font-wedding text-lg text-wedding-ink">{currentRound.guest_instruction}</p>
+          </>
+        ) : (
+          <p className="text-sm text-wedding-muted">{t('weddingPanels.standUpGuessNoRounds')}</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <WeddingButton onClick={() => save({ status: 'instruction' })} variant="outline" loading={busy}>
+          {t('weddingPanels.standUpGuessShowInstruction')}
+        </WeddingButton>
+        <WeddingButton onClick={() => save({ status: 'guessing' })} variant="outline" loading={busy}>
+          {t('weddingPanels.standUpGuessGoGuessing')}
+        </WeddingButton>
+        <WeddingButton onClick={() => save({ status: 'reveal' })} variant="gold" loading={busy}>
+          {t('weddingPanels.standUpGuessRevealAnswer')}
+        </WeddingButton>
+        <WeddingButton onClick={() => save({ status: 'finished' })} variant="ghost" loading={busy}>
+          {t('weddingPanels.standUpGuessFinished')}
+        </WeddingButton>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <WeddingButton
+          onClick={() => save({ score: { guessed: Number(cfg?.score?.guessed ?? 0) + 1, missed: Number(cfg?.score?.missed ?? 0) } })}
+          variant="outline"
+          loading={busy}
+          icon={<Check className="h-4 w-4" />}
+        >
+          {t('weddingPanels.standUpGuessCorrect')}
+        </WeddingButton>
+        <WeddingButton
+          onClick={() => save({ score: { guessed: Number(cfg?.score?.guessed ?? 0), missed: Number(cfg?.score?.missed ?? 0) + 1 } })}
+          variant="ghost"
+          loading={busy}
+          icon={<X className="h-4 w-4" />}
+        >
+          {t('weddingPanels.standUpGuessWrong')}
+        </WeddingButton>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <WeddingButton onClick={() => moveRound(-1)} variant="outline" loading={busy}>
+          {t('weddingPanels.standUpGuessPrevRound')}
+        </WeddingButton>
+        <WeddingButton onClick={() => moveRound(1)} variant="outline" loading={busy}>
+          {t('weddingPanels.standUpGuessNextRound')}
+        </WeddingButton>
+      </div>
+
+      <WeddingButton
+        onClick={() => save({ status: 'idle', current_index: 0, current_round_id: rounds[0]?.id ?? null, score: { guessed: 0, missed: 0 } }, t('weddingPanels.standUpGuessResetDone'))}
+        variant="ghost"
+        icon={<RotateCw className="h-4 w-4" />}
+        className="w-full"
+        loading={busy}
+      >
+        {t('weddingPanels.standUpGuessReset')}
+      </WeddingButton>
     </div>
   )
 }
