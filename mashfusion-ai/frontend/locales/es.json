@@ -322,6 +322,8 @@
     "standUpGuessInstructionFooter": "Si te reconoces, ponte de pie!",
     "standUpGuessGuessingPrompt": "Novios, ¿qué tienen en común las personas de pie?",
     "standUpGuessGuessingSubtitle": "Observen bien al público.",
+    "standUpGuessInstructionCard": "Instrucción",
+    "standUpGuessAnswerMissing": "Respuesta no configurada",
     "standUpGuessFinished": "Juego terminado",
     "option": "Opción"
   },

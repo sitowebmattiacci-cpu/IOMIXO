@@ -1891,9 +1891,12 @@ function StandUpGuessPanel({ sessionId }: { sessionId: string }) {
   const cfg = normalizeStandUpGuessConfig(session?.screen_config?.stand_up_guess)
   const rounds = [...cfg.rounds].sort((a, b) => a.order - b.order)
   const enabledRounds = rounds.filter((round) => round.enabled)
-  const fallbackRound = enabledRounds[0] ?? rounds[0] ?? null
-  const currentRound = rounds.find((round) => round.id === cfg.current_round_id) ?? rounds[cfg.current_index] ?? fallbackRound
-  const currentIndex = currentRound ? rounds.findIndex((round) => round.id === currentRound.id) : -1
+  const currentByIdIndex = enabledRounds.findIndex((round) => round.id === cfg.current_round_id)
+  const clampedEnabledIndex = enabledRounds.length > 0
+    ? Math.min(Math.max(Number(cfg.current_index ?? 0), 0), enabledRounds.length - 1)
+    : -1
+  const currentIndex = currentByIdIndex >= 0 ? currentByIdIndex : clampedEnabledIndex
+  const currentRound = currentIndex >= 0 ? enabledRounds[currentIndex] : null
 
   const persist = async (next: StandUpGuessConfig, successToast?: string) => {
     setBusy(true)
@@ -1919,12 +1922,16 @@ function StandUpGuessPanel({ sessionId }: { sessionId: string }) {
 
   const updateRounds = async (nextRounds: StandUpGuessRound[]) => {
     const sorted = [...nextRounds].sort((a, b) => a.order - b.order).map((round, index) => ({ ...round, order: index }))
-    const safeCurrent = sorted.find((round) => round.id === cfg.current_round_id) ?? sorted[Math.min(Math.max(cfg.current_index, 0), Math.max(sorted.length - 1, 0))]
+    const nextEnabled = sorted.filter((round) => round.enabled)
+    const safeCurrentId = nextEnabled.find((round) => round.id === cfg.current_round_id)?.id
+      ?? nextEnabled[Math.min(Math.max(cfg.current_index, 0), Math.max(nextEnabled.length - 1, 0))]?.id
+      ?? null
+    const safeCurrentIndex = safeCurrentId ? nextEnabled.findIndex((round) => round.id === safeCurrentId) : 0
     await persist({
       ...cfg,
       rounds: sorted,
-      current_index: safeCurrent ? sorted.findIndex((round) => round.id === safeCurrent.id) : 0,
-      current_round_id: safeCurrent?.id ?? null,
+      current_index: Math.max(safeCurrentIndex, 0),
+      current_round_id: safeCurrentId,
     })
   }
 
@@ -1937,31 +1944,53 @@ function StandUpGuessPanel({ sessionId }: { sessionId: string }) {
     })
   }
 
-  const start = async () => {
-    const firstEnabled = rounds.find((round) => round.enabled) ?? rounds[0]
-    if (!firstEnabled) {
+  const startOrNext = async () => {
+    if (enabledRounds.length === 0) {
       toast.error(t('weddingPanels.standUpGuessNoRounds'))
       return
     }
+
+    const isNotStarted = cfg.status === 'idle' || cfg.status === 'finished' || currentIndex < 0
+    if (isNotStarted) {
+      const firstRound = enabledRounds[0]
+      await persist({
+        ...cfg,
+        status: 'instruction',
+        current_round_id: firstRound.id,
+        current_index: 0,
+      }, t('weddingPanels.standUpGuessStarted'))
+      return
+    }
+
+    const nextIndex = currentIndex + 1
+    if (nextIndex >= enabledRounds.length) {
+      await persist({
+        ...cfg,
+        status: 'finished',
+        current_round_id: enabledRounds[Math.max(enabledRounds.length - 1, 0)]?.id ?? null,
+        current_index: Math.max(enabledRounds.length - 1, 0),
+      })
+      return
+    }
+
+    const nextRound = enabledRounds[nextIndex]
     await persist({
       ...cfg,
       status: 'instruction',
-      current_round_id: firstEnabled.id,
-      current_index: rounds.findIndex((round) => round.id === firstEnabled.id),
-    }, t('weddingPanels.standUpGuessStarted'))
+      current_round_id: nextRound.id,
+      current_index: nextIndex,
+    })
   }
 
   const goToRound = async (direction: -1 | 1) => {
-    if (!rounds.length) return
-    const startIdx = currentIndex >= 0 ? currentIndex : 0
-    let idx = startIdx + direction
-    while (idx >= 0 && idx < rounds.length && rounds[idx] && rounds[idx].enabled === false) idx += direction
-    if (idx < 0 || idx >= rounds.length) return
+    if (!enabledRounds.length) return
+    const idx = currentIndex + direction
+    if (idx < 0 || idx >= enabledRounds.length) return
     await persist({
       ...cfg,
       status: 'instruction',
       current_index: idx,
-      current_round_id: rounds[idx].id,
+      current_round_id: enabledRounds[idx].id,
     })
   }
 
@@ -1974,11 +2003,11 @@ function StandUpGuessPanel({ sessionId }: { sessionId: string }) {
   }
 
   const resetGame = async () => {
-    const firstEnabled = rounds.find((round) => round.enabled) ?? rounds[0]
+    const firstEnabled = enabledRounds[0] ?? null
     await persist({
       ...cfg,
       status: 'idle',
-      current_index: firstEnabled ? rounds.findIndex((round) => round.id === firstEnabled.id) : 0,
+      current_index: 0,
       current_round_id: firstEnabled?.id ?? null,
       score: { guessed: 0, missed: 0 },
     }, t('weddingPanels.standUpGuessResetDone'))
@@ -2065,10 +2094,10 @@ function StandUpGuessPanel({ sessionId }: { sessionId: string }) {
           {currentRound ? (
             <>
               <p className="text-[11px] uppercase tracking-[0.22em] text-[#8F1D2C] font-semibold mb-1">
-                {t('weddingPanels.standUpGuessCurrentRound')} {Math.max(currentIndex + 1, 1)} / {Math.max(rounds.length, 1)}
+                {t('weddingPanels.standUpGuessCurrentRound')} {Math.max(currentIndex + 1, 1)} / {Math.max(enabledRounds.length, 1)}
               </p>
               <p className="text-sm text-[#2B2424]"><strong>{t('weddingPanels.standUpGuessGuestInstructionLabel')}:</strong> {currentRound.guest_instruction}</p>
-              <p className="text-sm text-[#2B2424] mt-1"><strong>{t('weddingPanels.standUpGuessAnswerLabel')}:</strong> {currentRound.answer}</p>
+              <p className="text-sm text-[#2B2424] mt-1"><strong>{t('weddingPanels.standUpGuessAnswerLabel')}:</strong> {currentRound.answer || t('weddingPanels.standUpGuessAnswerMissing')}</p>
               {currentRound.hint && <p className="text-xs text-[#6F6260] mt-1"><strong>{t('weddingPanels.standUpGuessHintLabel')}:</strong> {currentRound.hint}</p>}
             </>
           ) : (
@@ -2077,8 +2106,14 @@ function StandUpGuessPanel({ sessionId }: { sessionId: string }) {
         </div>
 
         <div className="flex flex-wrap gap-2 mt-4">
-          <WeddingButton onClick={start} variant="outline" loading={busy} disabled={rounds.length === 0} icon={<Play className="h-4 w-4" />}>
-            {t('weddingPanels.standUpGuessStart')}
+          <WeddingButton
+            onClick={startOrNext}
+            variant="outline"
+            loading={busy}
+            disabled={enabledRounds.length === 0}
+            icon={cfg.status === 'idle' || cfg.status === 'finished' ? <Play className="h-4 w-4" /> : <SkipForward className="h-4 w-4" />}
+          >
+            {cfg.status === 'idle' || cfg.status === 'finished' ? t('weddingPanels.standUpGuessStart') : t('weddingPanels.standUpGuessNextRound')}
           </WeddingButton>
           <WeddingButton onClick={() => updateStatus('instruction')} variant="outline" loading={busy} disabled={!currentRound}>
             {t('weddingPanels.standUpGuessShowInstruction')}
@@ -2086,7 +2121,7 @@ function StandUpGuessPanel({ sessionId }: { sessionId: string }) {
           <WeddingButton onClick={() => updateStatus('guessing')} variant="outline" loading={busy} disabled={!currentRound}>
             {t('weddingPanels.standUpGuessGoGuessing')}
           </WeddingButton>
-          <WeddingButton onClick={() => updateStatus('reveal')} variant="gold" loading={busy} disabled={!currentRound}>
+          <WeddingButton onClick={() => updateStatus('reveal')} variant={cfg.status === 'reveal' ? 'gold' : 'outline'} loading={busy} disabled={!currentRound}>
             {t('weddingPanels.standUpGuessRevealAnswer')}
           </WeddingButton>
           <WeddingButton onClick={() => markAnswer('guessed')} variant="outline" loading={busy} disabled={!currentRound} icon={<Check className="h-4 w-4" />}>
@@ -2098,7 +2133,7 @@ function StandUpGuessPanel({ sessionId }: { sessionId: string }) {
           <WeddingButton onClick={() => goToRound(-1)} variant="ghost" loading={busy} disabled={currentIndex <= 0}>
             {t('weddingPanels.standUpGuessPrevRound')}
           </WeddingButton>
-          <WeddingButton onClick={() => goToRound(1)} variant="ghost" loading={busy} disabled={currentIndex < 0 || currentIndex >= rounds.length - 1}>
+          <WeddingButton onClick={() => goToRound(1)} variant="ghost" loading={busy} disabled={currentIndex < 0 || currentIndex >= enabledRounds.length - 1}>
             {t('weddingPanels.standUpGuessNextRound')}
           </WeddingButton>
           <WeddingButton onClick={resetGame} variant="ghost" loading={busy} icon={<RotateCw className="h-4 w-4" />}>

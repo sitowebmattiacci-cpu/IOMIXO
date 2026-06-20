@@ -320,6 +320,8 @@
     "standUpGuessInstructionFooter": "If this is you, stand up!",
     "standUpGuessGuessingPrompt": "Couple, what do the standing guests have in common?",
     "standUpGuessGuessingSubtitle": "Observe the audience carefully.",
+    "standUpGuessInstructionCard": "Instruction",
+    "standUpGuessAnswerMissing": "Answer not set",
     "standUpGuessFinished": "Game finished",
     "option": "Option"
   },

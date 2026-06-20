@@ -322,6 +322,8 @@
     "standUpGuessInstructionFooter": "Si vous vous reconnaissez, mettez-vous debout !",
     "standUpGuessGuessingPrompt": "Les mariés, qu'ont en commun les personnes debout ?",
     "standUpGuessGuessingSubtitle": "Observez bien le public.",
+    "standUpGuessInstructionCard": "Instruction",
+    "standUpGuessAnswerMissing": "Réponse non définie",
     "standUpGuessFinished": "Jeu terminé",
     "option": "Option"
   },

@@ -322,6 +322,8 @@
     "standUpGuessInstructionFooter": "Se ti riconosci, alzati in piedi!",
     "standUpGuessGuessingPrompt": "Sposi, cosa hanno in comune le persone in piedi?",
     "standUpGuessGuessingSubtitle": "Osservate bene il pubblico.",
+    "standUpGuessInstructionCard": "Istruzione",
+    "standUpGuessAnswerMissing": "Risposta non impostata",
     "standUpGuessFinished": "Gioco concluso",
     "option": "Opzione"
   },
