@@ -667,12 +667,12 @@ function StandUpGuessStage({
               <p className="text-base sm:text-lg text-wedding-champagne/85 mt-4">{t('weddingPanels.standUpGuessInstructionFooter')}</p>
             )}
           </div>
-          <div className="rounded-2xl border border-wedding-burgundy/35 bg-gradient-to-br from-wedding-ivory/95 to-wedding-blush/25 p-6 sm:p-8 text-center shadow-[0_18px_60px_rgba(143,29,44,0.18)]">
-            <p className="text-[11px] uppercase tracking-[0.32em] text-wedding-burgundy mb-3">{t('weddingPanels.standUpGuessAnswerLabel')}</p>
-            <p className={`font-wedding ${questionSize} text-wedding-burgundy leading-[1.12] whitespace-pre-wrap break-words max-w-[24ch] mx-auto`}>
+          <div className="rounded-2xl border border-wedding-gold/35 bg-gradient-to-br from-wedding-ivory/95 to-wedding-blush/25 p-6 sm:p-8 text-center shadow-[0_18px_60px_rgba(143,29,44,0.18)]">
+            <p className="text-[11px] uppercase tracking-[0.32em] text-wedding-ink mb-3">{t('weddingPanels.standUpGuessAnswerLabel')}</p>
+            <p className={`font-wedding ${questionSize} text-wedding-ink leading-[1.12] whitespace-pre-wrap break-words max-w-[24ch] mx-auto`}>
               {answerText}
             </p>
-            {round?.hint && <p className="text-base sm:text-lg text-wedding-taupe mt-4">{round.hint}</p>}
+            {round?.hint && <p className="text-base sm:text-lg text-wedding-ink/70 mt-4">{round.hint}</p>}
           </div>
         </div>
       )}

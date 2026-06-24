@@ -1935,15 +1935,6 @@ function StandUpGuessPanel({ sessionId }: { sessionId: string }) {
     })
   }
 
-  const updateStatus = async (status: StandUpGuessStatus) => {
-    await persist({
-      ...cfg,
-      status,
-      current_round_id: currentRound?.id ?? null,
-      current_index: Math.max(currentIndex, 0),
-    })
-  }
-
   const startOrNext = async () => {
     if (enabledRounds.length === 0) {
       toast.error(t('weddingPanels.standUpGuessNoRounds'))
@@ -1994,14 +1985,14 @@ function StandUpGuessPanel({ sessionId }: { sessionId: string }) {
     })
   }
 
-  const markAnswer = async (kind: 'guessed' | 'missed') => {
+  const markAnswer = async (_kind: 'guessed' | 'missed') => {
     const score = {
-      guessed: cfg.score.guessed + (kind === 'guessed' ? 1 : 0),
-      missed: cfg.score.missed + (kind === 'missed' ? 1 : 0),
+      guessed: cfg.score.guessed + (_kind === 'guessed' ? 1 : 0),
+      missed: cfg.score.missed + (_kind === 'missed' ? 1 : 0),
     }
     await persist({ ...cfg, score })
   }
-
+  void markAnswer
   const resetGame = async () => {
     const firstEnabled = enabledRounds[0] ?? null
     await persist({
@@ -2052,11 +2043,11 @@ function StandUpGuessPanel({ sessionId }: { sessionId: string }) {
   }
 
   const statusLabel: Record<StandUpGuessStatus, string> = {
-    idle: 'Idle',
-    instruction: 'Instruction',
-    guessing: 'Guessing',
-    reveal: 'Reveal',
-    finished: 'Finished',
+    idle: t('weddingPanels.standUpGuessStateIdle'),
+    instruction: t('weddingPanels.standUpGuessStateActive'),
+    guessing: t('weddingPanels.standUpGuessStateActive'),
+    reveal: t('weddingPanels.standUpGuessStateActive'),
+    finished: t('weddingPanels.standUpGuessStateFinished'),
   }
 
   return (
@@ -2107,33 +2098,21 @@ function StandUpGuessPanel({ sessionId }: { sessionId: string }) {
 
         <div className="flex flex-wrap gap-2 mt-4">
           <WeddingButton
+            onClick={() => goToRound(-1)}
+            variant="ghost"
+            loading={busy}
+            disabled={currentIndex <= 0}
+            icon={<ArrowLeft className="h-4 w-4" />}
+          >
+            {t('weddingPanels.standUpGuessBack')}
+          </WeddingButton>
+          <WeddingButton
             onClick={startOrNext}
             variant="outline"
             loading={busy}
             disabled={enabledRounds.length === 0}
             icon={cfg.status === 'idle' || cfg.status === 'finished' ? <Play className="h-4 w-4" /> : <SkipForward className="h-4 w-4" />}
           >
-            {cfg.status === 'idle' || cfg.status === 'finished' ? t('weddingPanels.standUpGuessStart') : t('weddingPanels.standUpGuessNextRound')}
-          </WeddingButton>
-          <WeddingButton onClick={() => updateStatus('instruction')} variant="outline" loading={busy} disabled={!currentRound}>
-            {t('weddingPanels.standUpGuessShowInstruction')}
-          </WeddingButton>
-          <WeddingButton onClick={() => updateStatus('guessing')} variant="outline" loading={busy} disabled={!currentRound}>
-            {t('weddingPanels.standUpGuessGoGuessing')}
-          </WeddingButton>
-          <WeddingButton onClick={() => updateStatus('reveal')} variant={cfg.status === 'reveal' ? 'gold' : 'outline'} loading={busy} disabled={!currentRound}>
-            {t('weddingPanels.standUpGuessRevealAnswer')}
-          </WeddingButton>
-          <WeddingButton onClick={() => markAnswer('guessed')} variant="outline" loading={busy} disabled={!currentRound} icon={<Check className="h-4 w-4" />}>
-            {t('weddingPanels.standUpGuessCorrect')}
-          </WeddingButton>
-          <WeddingButton onClick={() => markAnswer('missed')} variant="ghost" loading={busy} disabled={!currentRound} icon={<X className="h-4 w-4" />}>
-            {t('weddingPanels.standUpGuessWrong')}
-          </WeddingButton>
-          <WeddingButton onClick={() => goToRound(-1)} variant="ghost" loading={busy} disabled={currentIndex <= 0}>
-            {t('weddingPanels.standUpGuessPrevRound')}
-          </WeddingButton>
-          <WeddingButton onClick={() => goToRound(1)} variant="ghost" loading={busy} disabled={currentIndex < 0 || currentIndex >= enabledRounds.length - 1}>
             {t('weddingPanels.standUpGuessNextRound')}
           </WeddingButton>
           <WeddingButton onClick={resetGame} variant="ghost" loading={busy} icon={<RotateCw className="h-4 w-4" />}>

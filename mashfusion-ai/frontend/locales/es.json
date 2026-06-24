@@ -302,7 +302,9 @@
     "standUpGuessWrong": "Respuesta incorrecta",
     "standUpGuessPrevRound": "Ronda anterior",
     "standUpGuessNextRound": "Siguiente ronda",
+    "standUpGuessBack": "Volver atrás",
     "standUpGuessReset": "Reiniciar juego",
+    "standUpGuessRoundLabel": "Ronda",
     "standUpGuessRoundsTitle": "Configuración de rondas",
     "standUpGuessAddRound": "Agregar ronda",
     "standUpGuessNoRounds": "No hay rondas disponibles.",
@@ -325,6 +327,9 @@
     "standUpGuessInstructionCard": "Instrucción",
     "standUpGuessAnswerMissing": "Respuesta no configurada",
     "standUpGuessFinished": "Juego terminado",
+    "standUpGuessStateIdle": "Juego no iniciado",
+    "standUpGuessStateActive": "En curso",
+    "standUpGuessStateFinished": "Juego terminado",
     "option": "Opción"
   },
   "guestVisibility": {
