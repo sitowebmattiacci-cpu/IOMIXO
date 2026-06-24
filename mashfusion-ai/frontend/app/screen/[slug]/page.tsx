@@ -629,16 +629,24 @@ function StandUpGuessStage({
   inline?: boolean
 }) {
   const { t } = useI18n()
-  const wrapper = inline
-    ? 'rounded-xl border border-wedding-gold/30 bg-gradient-to-br from-wedding-gold/10 to-wedding-blush/10 p-5'
-    : 'rounded-2xl border border-wedding-gold/20 bg-black/30 backdrop-blur-md p-12'
-  const questionSize = compact ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl md:text-5xl'
-  const answerText = round?.answer?.trim() ? round.answer : t('weddingPanels.standUpGuessAnswerMissing')
   const showRoundWithAnswer = state.status === 'instruction' || state.status === 'guessing' || state.status === 'reveal'
+  const wrapperBase = inline
+    ? 'rounded-xl border border-wedding-gold/30 bg-gradient-to-br from-wedding-gold/10 to-wedding-blush/10 p-5'
+    : 'rounded-2xl border border-wedding-gold/20 bg-black/30 backdrop-blur-md p-8 sm:p-12'
+  // Quando un round è attivo nella vista TV principale (single section), centra
+  // verticalmente istruzione + risposta così la risposta sta al centro schermo,
+  // non attaccata in basso. Negli altri layout (griglia / più giochi) resta compatto.
+  const isPrimary = !inline && !compact
+  const wrapper = isPrimary && showRoundWithAnswer
+    ? `${wrapperBase} flex flex-col justify-center min-h-[58vh]`
+    : wrapperBase
+  const questionSize = compact ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl md:text-5xl'
+  const answerSize = compact ? 'text-3xl sm:text-4xl' : 'text-4xl sm:text-5xl md:text-6xl'
+  const answerText = round?.answer?.trim() ? round.answer : t('weddingPanels.standUpGuessAnswerMissing')
 
   return (
     <div className={wrapper}>
-      {!inline && (
+      {!inline && !showRoundWithAnswer && (
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-wedding-gold/20">
           <Users className="h-8 w-8 text-wedding-gold" />
           <h2 className="text-2xl font-semibold uppercase tracking-[0.25em] text-wedding-champagne/90">
@@ -656,7 +664,7 @@ function StandUpGuessStage({
       )}
 
       {showRoundWithAnswer && (
-        <div className="space-y-5 animate-[fadeIn_450ms_ease-out]">
+        <div className="space-y-6 sm:space-y-8 animate-[fadeIn_450ms_ease-out]">
           <p className="text-center text-[11px] uppercase tracking-[0.32em] text-wedding-gold">{t('weddingPanels.standUpGuessModeLabel')}</p>
           <div className="rounded-2xl border border-wedding-gold/25 bg-wedding-ivory/6 p-5 sm:p-6 text-center">
             <p className="text-[11px] uppercase tracking-[0.32em] text-wedding-gold mb-3">{t('weddingPanels.standUpGuessInstructionCard')}</p>
@@ -667,9 +675,9 @@ function StandUpGuessStage({
               <p className="text-base sm:text-lg text-wedding-champagne/85 mt-4">{t('weddingPanels.standUpGuessInstructionFooter')}</p>
             )}
           </div>
-          <div className="rounded-2xl border border-wedding-gold/35 bg-gradient-to-br from-wedding-ivory/95 to-wedding-blush/25 p-6 sm:p-8 text-center shadow-[0_18px_60px_rgba(143,29,44,0.18)]">
-            <p className="text-[11px] uppercase tracking-[0.32em] text-wedding-ink mb-3">{t('weddingPanels.standUpGuessAnswerLabel')}</p>
-            <p className={`font-wedding ${questionSize} text-wedding-ink leading-[1.12] whitespace-pre-wrap break-words max-w-[24ch] mx-auto`}>
+          <div className="rounded-2xl border border-wedding-gold/35 bg-gradient-to-br from-wedding-ivory/95 to-wedding-blush/25 p-6 sm:p-10 text-center shadow-[0_18px_60px_rgba(143,29,44,0.18)]">
+            <p className="text-xs sm:text-sm uppercase tracking-[0.32em] text-wedding-ink mb-4">{t('weddingPanels.standUpGuessAnswerLabel')}</p>
+            <p className={`font-wedding ${answerSize} font-semibold text-wedding-ink leading-[1.12] whitespace-pre-wrap break-words max-w-[24ch] mx-auto`}>
               {answerText}
             </p>
             {round?.hint && <p className="text-base sm:text-lg text-wedding-ink/70 mt-4">{round.hint}</p>}
