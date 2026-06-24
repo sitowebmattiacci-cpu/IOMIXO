@@ -13,7 +13,6 @@ import toast from 'react-hot-toast'
 import Link from 'next/link'
 import {
   live, liveDedications, liveGames, livePolls, livePhotos,
-  bestPhoto,
   type LiveRequestStatus, type LivePoll,
   type StandUpGuessConfig,
   type StandUpGuessRound,
@@ -1700,8 +1699,6 @@ function GamesPanel({ sessionId, session }: { sessionId: string; session: any })
 
       <StandUpGuessPanel sessionId={sessionId} />
 
-      <BestPhotoPanel sessionId={sessionId} />
-
       <PollsPanel sessionId={sessionId} />
     </section>
   )
@@ -2295,54 +2292,6 @@ function StandUpGuessPanel({ sessionId }: { sessionId: string }) {
           })}
         </div>
       </div>
-    </WeddingCard>
-  )
-}
-
-function BestPhotoPanel({ sessionId }: { sessionId: string }) {
-  const { t } = useI18n()
-  const { data: photos, mutate: refresh } = useSWR(
-    ['photo-votes', sessionId],
-    () => bestPhoto.getVotesForDj(sessionId),
-    { refreshInterval: 6_000 },
-  )
-
-  const sorted = [...(photos ?? [])].sort((a, b) => (b.votes ?? 0) - (a.votes ?? 0))
-  const winner = sorted[0]
-
-  return (
-    <WeddingCard tone="cream">
-      <h2 className="font-wedding text-2xl font-semibold text-[#2B2424] mb-2 inline-flex items-center gap-2">
-        <ImageIcon className="h-5 w-5 text-[#8F1D2C]" /> {t('weddingPanels.photoContest')}
-      </h2>
-      <p className="text-xs text-[#6F6260] mb-5">
-        {t('weddingPanels.photoContestDesc')}
-      </p>
-
-      {sorted.length === 0 ? (
-        <p className="text-sm text-[#6F6260] text-center py-4">{t('weddingPanels.noApprovedPhotos')}</p>
-      ) : (
-        <div className="space-y-3">
-          {sorted.map((p, i) => (
-            <div key={p.id} className={`rounded-xl border p-3 flex items-center gap-3 transition-all duration-150 ${
-              i === 0 ? 'border-[#8F1D2C] bg-[#FBEAF0] shadow-md' : 'border-[#E8B7C8] bg-white hover:shadow-md'
-            }`}>
-              {p.url && (
-                <img src={p.url} alt="" className="h-16 w-16 rounded-lg object-cover" />
-              )}
-              <div className="flex-1 min-w-0">
-                {p.caption && <p className="text-sm font-semibold text-[#2B2424] truncate">{p.caption}</p>}
-                <p className="text-xs text-[#6F6260]">{p.guest_name ?? t('weddingPanels.anonymous')}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-3xl font-bold text-[#8F1D2C] tabular-nums">{p.votes ?? 0}</p>
-                <p className="text-[10px] uppercase tracking-wide text-[#6F6260] font-semibold">{t('weddingPanels.votes')}</p>
-                {i === 0 && p.votes! > 0 && <p className="text-[11px] text-[#8F1D2C] font-semibold mt-1">{t('weddingPanels.winner')}</p>}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </WeddingCard>
   )
 }

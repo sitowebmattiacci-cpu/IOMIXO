@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { Music2, Send, Instagram, Facebook, Globe, MapPin, CalendarDays, Lock, AlertTriangle, Check, X, Clock, Heart, Sparkles, Image as ImageIcon, Camera, Gamepad2, BarChart3, ChevronLeft } from 'lucide-react'
-import { publicLive, liveDedications, liveGames, livePolls, livePhotos, bestPhoto, type LiveRequestStatus, type LiveDedication, type LivePoll, type LivePhoto, type LiveGameRound } from '@/lib/api'
+import { publicLive, liveDedications, liveGames, livePolls, livePhotos, type LiveRequestStatus, type LiveDedication, type LivePoll, type LivePhoto, type LiveGameRound } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import {
@@ -948,55 +948,6 @@ function PhotosPublic({ slug }: { slug: string }) {
       ) : (
         <p className="text-xs text-wedding-ink/50 text-center">{t('wedding.photos.empty')}</p>
       )}
-    </LocalCard>
-  )
-}
-
-function BestPhotoPublic({ slug }: { slug: string }) {
-  const { t } = useI18n()
-  const { data: photos, mutate: refresh } = useSWR(
-    ['photo-votes-public', slug],
-    () => bestPhoto.getVotesPublic(slug),
-    { refreshInterval: 8_000 },
-  )
-  const [voted, setVoted] = useState<Set<string>>(new Set())
-  const vote = async (photoId: string) => {
-    if (voted.has(photoId)) return
-    try {
-      await bestPhoto.votePublic(slug, photoId)
-      setVoted((prev) => new Set([...Array.from(prev), photoId]))
-      toast.success(t('live.voteRegistered'))
-      refresh()
-    } catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric')) }
-  }
-  if (!photos || photos.length === 0) return null
-  const sorted = [...photos].sort((a, b) => (b.votes ?? 0) - (a.votes ?? 0))
-  return (
-    <LocalCard title={t('live.photoContest')} icon={<Camera className="h-5 w-5" />}>
-      <p className="text-sm text-[#6F6260] mb-4">
-        {t('live.photoContestDesc')}
-      </p>
-      <div className="grid grid-cols-2 gap-3">
-        {sorted.map((p) => (
-          <div key={p.id} className="relative aspect-square rounded-xl overflow-hidden border border-[#E8B7C8] bg-white">
-            {p.url && <img src={p.url} alt={p.caption ?? ''} className="w-full h-full object-cover" />}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-3">
-              <p className="text-white text-sm font-semibold">{p.votes ?? 0} {t('live.votesSuffix')}</p>
-              <button
-                onClick={() => vote(p.id)}
-                disabled={voted.has(p.id)}
-                className={`mt-2 px-3 py-1.5 rounded-full text-xs font-medium transition ${
-                  voted.has(p.id)
-                    ? 'bg-white/30 text-white cursor-default'
-                    : 'bg-[#8F1D2C] text-white hover:bg-[#741625]'
-                }`}
-              >
-                {voted.has(p.id) ? t('live.voted') : t('live.vote')}
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
     </LocalCard>
   )
 }
