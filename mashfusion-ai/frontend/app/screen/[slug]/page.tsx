@@ -239,8 +239,23 @@ export default function ScreenModePage() {
   // Cinzel and Playfair are wider, so use smaller size
   const selectedFont = session.screen_config?.couple_font ?? 'cormorant'
   const isWideFont = selectedFont === 'cinzel' || selectedFont === 'playfair'
-  const largeFontSize = isWideFont ? 'text-[11rem]' : 'text-[14rem]'
-  const mediumFontSize = isWideFont ? 'text-7xl' : 'text-8xl'
+  const coupleFontSize = session.screen_config?.couple_font_size ?? 'medium'
+  // Empty state (couple names take the whole screen)
+  const largeSizeMap: Record<string, string> = {
+    small: isWideFont ? 'text-[8rem]' : 'text-[10rem]',
+    medium: isWideFont ? 'text-[11rem]' : 'text-[14rem]',
+    large: isWideFont ? 'text-[14rem]' : 'text-[17rem]',
+    xlarge: isWideFont ? 'text-[17rem]' : 'text-[20rem]',
+  }
+  // Names shown above other content
+  const mediumSizeMap: Record<string, string> = {
+    small: isWideFont ? 'text-6xl' : 'text-7xl',
+    medium: isWideFont ? 'text-7xl' : 'text-8xl',
+    large: isWideFont ? 'text-8xl' : 'text-9xl',
+    xlarge: isWideFont ? 'text-9xl' : 'text-[10rem]',
+  }
+  const largeFontSize = largeSizeMap[coupleFontSize] ?? largeSizeMap['medium']
+  const mediumFontSize = mediumSizeMap[coupleFontSize] ?? mediumSizeMap['medium']
 
   return (
     <WeddingShell variant="stage">

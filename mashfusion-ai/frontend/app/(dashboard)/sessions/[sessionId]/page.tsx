@@ -540,6 +540,7 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
     video_title: (screenConfig as any).video_title ?? '',
     live_booth_layout: (screenConfig as any).live_booth_layout ?? 'single',
     couple_font: screenConfig.couple_font ?? 'cormorant',
+    couple_font_size: screenConfig.couple_font_size ?? 'medium',
     ...overrides,
   })
 
@@ -975,6 +976,37 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
                         <option value="dancing">{t('weddingPanels.fontDancing')}</option>
                         <option value="cinzel">{t('weddingPanels.fontCinzel')}</option>
                         <option value="tangerine">{t('weddingPanels.fontTangerine')}</option>
+                      </select>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-[#E8B7C8]">
+                      <label className="block mb-2">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-[#8F1D2C]">
+                          {t('weddingPanels.coupleFontSize')}
+                        </span>
+                      </label>
+                      <select
+                        value={screenConfig.couple_font_size ?? 'medium'}
+                        onChange={async (e) => {
+                          setSaving(true)
+                          try {
+                            const newConfig = { ...screenConfig, couple_font_size: e.target.value as any }
+                            await live.updateSession(session.id, { screen_config: newConfig })
+                            await mutate(['session', session.id])
+                            toast.success(t('weddingPanels.fontUpdated'))
+                          } catch (err: any) {
+                            toast.error(err?.message ?? t('weddingPanels.genericError'))
+                          } finally {
+                            setSaving(false)
+                          }
+                        }}
+                        disabled={saving}
+                        className="w-full rounded-lg border border-[#E8B7C8] bg-white px-3 py-2 text-sm text-[#2B2424] focus:border-[#8F1D2C] focus:ring-1 focus:ring-[#8F1D2C]"
+                      >
+                        <option value="small">{t('weddingPanels.fontSizeSmall')}</option>
+                        <option value="medium">{t('weddingPanels.fontSizeMedium')}</option>
+                        <option value="large">{t('weddingPanels.fontSizeLarge')}</option>
+                        <option value="xlarge">{t('weddingPanels.fontSizeXlarge')}</option>
                       </select>
                     </div>
                   </div>

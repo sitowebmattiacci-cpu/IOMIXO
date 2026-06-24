@@ -263,6 +263,7 @@ export interface LiveSession {
     video_title?: string
     video_live?: VideoLiveControl | null
     couple_font?: 'cormorant' | 'playfair' | 'great-vibes' | 'dancing' | 'cinzel' | 'tangerine'
+    couple_font_size?: 'small' | 'medium' | 'large' | 'xlarge'
   } | null
   guest_config?: GuestConfig | null
 }
@@ -756,6 +757,7 @@ export interface ScreenPayload {
       video_live?: VideoLiveControl | null
       live_booth_layout?: 'single' | 'grid' | 'auto'
       couple_font?: 'cormorant' | 'playfair' | 'great-vibes' | 'dancing' | 'cinzel' | 'tangerine'
+      couple_font_size?: 'small' | 'medium' | 'large' | 'xlarge'
     } | null
   }
   roulette: LiveGameRound | null
