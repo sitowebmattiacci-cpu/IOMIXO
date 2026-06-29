@@ -1025,7 +1025,7 @@ function PartyScreen({
         {anyActive ? (
           <div className="flex flex-col gap-6 flex-1 min-h-0">
             {(showGames || showLiveBooth) && (
-            <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
+            <div className={`grid grid-cols-12 gap-6 min-h-0 ${showVideoLive ? 'shrink-0' : 'flex-1'}`}>
             {/* LEFT — Party Roulette + Music Battle */}
             {showGames && (
               <div className={`flex flex-col gap-6 min-h-0 ${showLiveBooth ? 'col-span-5' : 'col-span-12'}`}>
@@ -1101,13 +1101,13 @@ function PartyScreen({
           </div>
             )}
 
-            {/* Video Live — riquadro scenografico, full width sotto i widget */}
+            {/* Video Live — riquadro scenografico, incastrato al centro/sotto i widget */}
             {partyVideo && (
               <PartyScreenPanel
                 icon={<Youtube />}
                 title={(cfg.video_title as string) || 'Video Live'}
                 subtitle={partyVideo.kind === 'youtube' ? 'YouTube' : 'Video'}
-                className={showGames || showLiveBooth ? '' : 'flex-1'}
+                className="flex-1 min-h-0"
               >
                 <VideoEmbed
                   source={partyVideo}

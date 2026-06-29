@@ -65,7 +65,7 @@ export function PartyPhotoSlideshow({
             <img
               src={photo.url as string}
               alt={photo.caption ?? ''}
-              className="w-auto h-auto max-w-[72vw] md:max-w-[400px] lg:max-w-[440px] max-h-[48vh] lg:max-h-[440px] object-contain rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.55)]"
+              className="w-auto h-auto max-w-[68vw] md:max-w-[340px] lg:max-w-[380px] max-h-[42vh] lg:max-h-[380px] object-contain rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.55)]"
             />
           </motion.div>
         )}
