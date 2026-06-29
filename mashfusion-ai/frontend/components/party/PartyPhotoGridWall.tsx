@@ -138,19 +138,16 @@ export function PartyPhotoAuto({ photos, eventName }: { photos: PartySlidePhoto[
 }
 
 // ════════════════════════════════════════════════════════════════
-// PartyPhotoDisplay — dispatcher in base a screen_config.live_booth_layout.
-// Default 'single' per retrocompatibilità.
+// PartyPhotoDisplay — Live Booth Screen Mode: SEMPRE foto singola,
+// random, slideshow pulito (come Wedding Edition). Niente griglia/auto:
+// la foto è protagonista, centrata e senza overlay.
 // ════════════════════════════════════════════════════════════════
 export function PartyPhotoDisplay({
   photos,
-  layout = 'single',
-  eventName,
 }: {
   photos: PartySlidePhoto[]
   layout?: LiveBoothLayout
   eventName?: string | null
 }) {
-  if (layout === 'grid') return <PartyPhotoGridWall photos={photos} eventName={eventName} />
-  if (layout === 'auto') return <PartyPhotoAuto photos={photos} eventName={eventName} />
-  return <PartyPhotoSlideshow photos={photos} eventName={eventName} />
+  return <PartyPhotoSlideshow photos={photos} />
 }

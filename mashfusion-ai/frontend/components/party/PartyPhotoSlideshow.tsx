@@ -1,6 +1,6 @@
 'use client'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Camera, Star } from 'lucide-react'
+import { Camera } from 'lucide-react'
 import { useSlideshow, SlideItem } from '@/lib/useSlideshow'
 
 // ════════════════════════════════════════════════════════════════
@@ -28,7 +28,6 @@ export interface PartyPhotoSlideshowProps {
 export function PartyPhotoSlideshow({
   photos,
   intervalMs = 6000,
-  eventName,
   className = '',
 }: PartyPhotoSlideshowProps) {
   const { photo, hasPhotos } = useSlideshow(photos, intervalMs)
@@ -37,13 +36,10 @@ export function PartyPhotoSlideshow({
   if (!hasPhotos) {
     return (
       <div
-        className={`rounded-2xl border-2 border-dashed border-[#FF3D8A]/30 bg-white/[0.02] h-full flex flex-col items-center justify-center text-center px-6 py-16 ${className}`}
+        className={`rounded-2xl border-2 border-dashed border-[#FF3D8A]/20 bg-white/[0.02] h-full flex flex-col items-center justify-center text-center px-6 py-16 ${className}`}
       >
         <Camera className="h-14 w-14 text-[#FF3D8A]/40 mb-4" />
-        <p className="text-2xl font-bold text-white mb-2">Photo Moment in arrivo!</p>
-        <p className="text-sm text-white/50">
-          Scansiona il QR e scatta la prima foto della serata
-        </p>
+        <p className="text-2xl font-bold text-white">Le foto degli ospiti appariranno qui</p>
       </div>
     )
   }
@@ -63,25 +59,13 @@ export function PartyPhotoSlideshow({
             transition={{ duration: 1.0, ease: 'easeInOut' }}
             className="relative w-full h-full flex items-center justify-center"
           >
-            {/* Cornice evento: card scura neutra + nome evento */}
-            <div className="relative rounded-3xl bg-black/40 border border-white/10 p-3 sm:p-4 shadow-[0_20px_60px_rgba(0,0,0,0.5)] flex flex-col items-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={photo.url as string}
-                alt={photo.caption ?? ''}
-                className="w-auto h-auto max-w-[62vw] max-h-[40vh] sm:max-w-[36vw] md:max-w-[26vw] lg:max-h-[38vh] object-contain rounded-2xl"
-              />
-              {eventName && (
-                <p className="mt-3 text-center text-sm sm:text-base font-black uppercase tracking-[0.3em] text-[#FF7AB6]">
-                  {eventName}
-                </p>
-              )}
-              {photo.is_featured && (
-                <div className="absolute top-3 right-3 bg-[#FF3D8A] text-white px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
-                  <Star className="h-3 w-3 fill-current" /> In evidenza
-                </div>
-              )}
-            </div>
+            {/* Foto protagonista: centrata, pulita, ombra elegante. Nessuna cornice/overlay. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={photo.url as string}
+              alt={photo.caption ?? ''}
+              className="w-auto h-auto max-w-[92%] max-h-[92%] object-contain rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.55)]"
+            />
           </motion.div>
         )}
       </AnimatePresence>
