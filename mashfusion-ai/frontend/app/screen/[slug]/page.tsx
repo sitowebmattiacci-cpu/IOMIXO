@@ -1109,12 +1109,17 @@ function PartyScreen({
                 subtitle={partyVideo.kind === 'youtube' ? 'YouTube' : 'Video'}
                 className="flex-1 min-h-0"
               >
-                <VideoEmbed
-                  source={partyVideo}
-                  title={(cfg.video_title as string) || 'Video Live'}
-                  control={videoControl}
-                  frameClass="rounded-2xl border border-[#FF3D8A]/40 shadow-[0_0_50px_rgba(255,61,138,0.25)]"
-                />
+                {/* Video contenuto e centrato: non deve diventare gigante su TV. */}
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="w-full max-w-[820px] max-h-full">
+                    <VideoEmbed
+                      source={partyVideo}
+                      title={(cfg.video_title as string) || 'Video Live'}
+                      control={videoControl}
+                      frameClass="rounded-2xl border border-[#FF3D8A]/40 shadow-[0_0_50px_rgba(255,61,138,0.25)]"
+                    />
+                  </div>
+                </div>
               </PartyScreenPanel>
             )}
           </div>
