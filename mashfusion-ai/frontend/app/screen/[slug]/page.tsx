@@ -994,26 +994,32 @@ function PartyScreen({
   const videoConfigured = cfg.show_video_live === true || !!resolveVideoSource(cfg.video_url)
   const anyActive = showLiveBooth || showGames || showVideoLive
 
+  // Layout dinamico: più widget attivi → layout più compatto così entra tutto
+  // in una sola schermata senza box giganti vuoti. Il contenuto (foto/video)
+  // riempie sempre il proprio contenitore (object-contain, mai tagliato).
+  const activeWidgetsCount = [showMusicBattle, showPartyRoulette, showLiveBooth, showVideoLive].filter(Boolean).length
+  const isCompact = activeWidgetsCount >= 3
+
   return (
     <PartyShell>
       {videoConfigured && <VideoLiveAudioUnlock theme="party" />}
-      <div className="h-screen w-screen overflow-hidden flex flex-col p-8 relative">
+      <div className={`h-screen w-screen overflow-hidden flex flex-col relative ${isCompact ? 'p-6' : 'p-8'}`}>
         {/* HEADER */}
-        <header className="flex items-start justify-between gap-6 mb-5 shrink-0">
+        <header className={`flex items-start justify-between gap-6 shrink-0 ${isCompact ? 'mb-4' : 'mb-5'}`}>
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.45em] text-[#FF7AB6] mb-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.45em] text-[#FF7AB6] mb-2">
               ✦ Party Mode Live ✦
             </p>
-            <h1 className="text-5xl xl:text-6xl font-black text-white leading-[0.95] tracking-tight">
+            <h1 className={`font-black text-white leading-[0.95] tracking-tight ${isCompact ? 'text-4xl xl:text-5xl' : 'text-5xl xl:text-6xl'}`}>
               {session.event_name}
             </h1>
             {session.dj_name && (
-              <p className="text-2xl text-white/60 mt-3">DJ <span className="text-[#FF7AB6] font-semibold">{session.dj_name}</span></p>
+              <p className={`text-white/60 ${isCompact ? 'text-lg mt-2' : 'text-2xl mt-3'}`}>DJ <span className="text-[#FF7AB6] font-semibold">{session.dj_name}</span></p>
             )}
           </div>
           <div className="shrink-0 text-center">
             <div className="bg-white p-3 rounded-2xl shadow-[0_0_40px_rgba(255,61,138,0.4)] border-2 border-[#FF3D8A]/60">
-              <QRCodeSVG value={liveUrl} size={180} level="M" includeMargin={false} />
+              <QRCodeSVG value={liveUrl} size={isCompact ? 132 : 180} level="M" includeMargin={false} />
             </div>
             <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.3em] text-white">
               Scansiona & partecipa
@@ -1023,9 +1029,9 @@ function PartyScreen({
 
         {/* MAIN — solo le sezioni abilitate in screen_config */}
         {anyActive ? (
-          <div className="flex flex-col gap-6 flex-1 min-h-0">
+          <div className={`flex flex-col flex-1 min-h-0 ${isCompact ? 'gap-4' : 'gap-6'}`}>
             {(showGames || showLiveBooth) && (
-            <div className={`grid grid-cols-12 gap-6 min-h-0 ${showVideoLive ? 'shrink-0' : 'flex-1'}`}>
+            <div className={`grid grid-cols-12 min-h-0 ${isCompact ? 'gap-4' : 'gap-6'} ${showVideoLive ? 'flex-1' : 'flex-1'}`}>
             {/* LEFT — Party Roulette + Music Battle */}
             {showGames && (
               <div className={`flex flex-col gap-6 min-h-0 ${showLiveBooth ? 'col-span-5' : 'col-span-12'}`}>
@@ -1101,7 +1107,7 @@ function PartyScreen({
           </div>
             )}
 
-            {/* Video Live — riquadro scenografico, incastrato al centro/sotto i widget */}
+            {/* Video Live — riquadro scenografico, altezza proporzionata al numero di widget */}
             {partyVideo && (
               <PartyScreenPanel
                 icon={<Youtube />}
@@ -1109,10 +1115,10 @@ function PartyScreen({
                 subtitle={partyVideo.kind === 'youtube' ? 'YouTube' : 'Video'}
                 className="flex-1 min-h-0"
               >
-                {/* Video contenuto e centrato: dimensionato sull'altezza disponibile
-                    così non diventa gigante e resta nello schermo con tutto attivo. */}
+                {/* Video dimensionato sull'altezza disponibile del box: riempie bene
+                    il contenitore senza diventare microscopico o gigante. */}
                 <div className="w-full h-full flex items-center justify-center">
-                  <div className="h-full max-h-full aspect-video max-w-full">
+                  <div className="h-full max-w-full aspect-video">
                     <VideoEmbed
                       source={partyVideo}
                       title={(cfg.video_title as string) || 'Video Live'}

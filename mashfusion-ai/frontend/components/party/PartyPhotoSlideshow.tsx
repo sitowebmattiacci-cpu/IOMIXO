@@ -57,15 +57,15 @@ export function PartyPhotoSlideshow({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.03 }}
             transition={{ duration: 1.0, ease: 'easeInOut' }}
-            className="flex items-center justify-center"
+            className="w-full h-full flex items-center justify-center"
           >
-            {/* Foto protagonista: contenuta, centrata, intera. Nessuna cornice/overlay,
-                dimensione massima controllata così non diventa gigante su TV/proiettore. */}
+            {/* Foto protagonista: riempie il contenitore restando intera (object-contain).
+                Cresce/diminuisce col box → coerente col layout dinamico dello Screen Mode. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={photo.url as string}
               alt={photo.caption ?? ''}
-              className="w-auto h-auto max-w-[68vw] md:max-w-[340px] lg:max-w-[380px] max-h-[42vh] lg:max-h-[380px] object-contain rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.55)]"
+              className="w-auto h-auto max-w-full max-h-full object-contain rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.55)]"
             />
           </motion.div>
         )}
