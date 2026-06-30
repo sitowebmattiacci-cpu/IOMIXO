@@ -1012,7 +1012,8 @@ function PartyScreen({
   const topGridCols = topCount >= 3 ? 'grid-cols-3' : topCount === 2 ? 'grid-cols-2' : 'grid-cols-1'
   // Fascia video quando condivide lo schermo con le card sopra: più widget →
   // fascia più bassa, così tutto resta proporzionato e il footer respira.
-  const videoBandH = isCompact ? 'h-[28vh]' : 'h-[38vh]'
+  // Compatta: il box “abbraccia” il player 16:9 senza diventare una fascia vuota.
+  const videoBandH = isCompact ? 'h-[22vh]' : 'h-[30vh]'
   const pad = isCompact ? 'p-6' : 'p-8'
   const mainGap = isCompact ? 'gap-4' : 'gap-6'
 
@@ -1164,8 +1165,8 @@ function PartyScreenPanel({
       <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/10 shrink-0">
         <span className="text-[#FF3D8A]">{icon}</span>
         <div className="flex-1 min-w-0">
-          <h2 className="text-base font-bold uppercase tracking-[0.3em] text-white">{title}</h2>
-          {subtitle && <p className="text-[10px] uppercase tracking-[0.25em] text-white/40 mt-0.5">{subtitle}</p>}
+          <h2 className="text-sm font-bold uppercase tracking-[0.22em] text-white">{title}</h2>
+          {subtitle && <p className="text-[9px] uppercase tracking-[0.2em] text-white/40 mt-0.5">{subtitle}</p>}
         </div>
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
