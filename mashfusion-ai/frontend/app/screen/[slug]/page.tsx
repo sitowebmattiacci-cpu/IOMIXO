@@ -997,14 +997,14 @@ function PartyScreen({
   return (
     <PartyShell>
       {videoConfigured && <VideoLiveAudioUnlock theme="party" />}
-      <div className="min-h-screen w-screen overflow-hidden flex flex-col p-10 relative">
+      <div className="h-screen w-screen overflow-hidden flex flex-col p-8 relative">
         {/* HEADER */}
-        <header className="flex items-start justify-between gap-6 mb-8">
+        <header className="flex items-start justify-between gap-6 mb-5 shrink-0">
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-[0.45em] text-[#FF7AB6] mb-3">
               ✦ Party Mode Live ✦
             </p>
-            <h1 className="text-7xl xl:text-8xl font-black text-white leading-[0.95] tracking-tight">
+            <h1 className="text-5xl xl:text-6xl font-black text-white leading-[0.95] tracking-tight">
               {session.event_name}
             </h1>
             {session.dj_name && (
@@ -1109,9 +1109,10 @@ function PartyScreen({
                 subtitle={partyVideo.kind === 'youtube' ? 'YouTube' : 'Video'}
                 className="flex-1 min-h-0"
               >
-                {/* Video contenuto e centrato: non deve diventare gigante su TV. */}
+                {/* Video contenuto e centrato: dimensionato sull'altezza disponibile
+                    così non diventa gigante e resta nello schermo con tutto attivo. */}
                 <div className="w-full h-full flex items-center justify-center">
-                  <div className="w-full max-w-[820px] max-h-full">
+                  <div className="h-full max-h-full aspect-video max-w-full">
                     <VideoEmbed
                       source={partyVideo}
                       title={(cfg.video_title as string) || 'Video Live'}
@@ -1128,7 +1129,7 @@ function PartyScreen({
           <div className="flex-1" />
         )}
 
-        <footer className="mt-8">
+        <footer className="mt-5 shrink-0">
           <PartyDivider />
           <p className="text-center text-[11px] uppercase tracking-[0.4em] text-white/50 mt-4">
             Powered by <span className="text-[#FF7AB6] font-bold">IOMIXO Live Hub</span>
@@ -1143,8 +1144,8 @@ function PartyScreenPanel({
   icon, title, subtitle, children, className = '',
 }: { icon: React.ReactNode; title: string; subtitle?: string; children: React.ReactNode; className?: string }) {
   return (
-    <section className={`rounded-2xl backdrop-blur-md bg-white/[0.04] border border-white/[0.1] p-6 flex flex-col min-h-0 shadow-[0_8px_40px_rgba(139,14,47,0.25)] ${className}`}>
-      <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/10">
+    <section className={`rounded-2xl backdrop-blur-md bg-white/[0.04] border border-white/[0.1] p-5 flex flex-col min-h-0 shadow-[0_8px_40px_rgba(139,14,47,0.25)] ${className}`}>
+      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/10 shrink-0">
         <span className="text-[#FF3D8A]">{icon}</span>
         <div className="flex-1 min-w-0">
           <h2 className="text-base font-bold uppercase tracking-[0.3em] text-white">{title}</h2>
