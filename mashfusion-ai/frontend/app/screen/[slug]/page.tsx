@@ -998,7 +998,15 @@ function PartyScreen({
   // in una sola schermata senza box giganti vuoti. Il contenuto (foto/video)
   // riempie sempre il proprio contenitore (object-contain, mai tagliato).
   const activeWidgetsCount = [showMusicBattle, showPartyRoulette, showLiveBooth, showVideoLive].filter(Boolean).length
+  const isSingle = activeWidgetsCount === 1
+  const isDual = activeWidgetsCount === 2
   const isCompact = activeWidgetsCount >= 3
+  // Larghezza massima del player video in base al numero di widget: il box video
+  // "abbraccia" il player (altezza naturale 16:9) → niente box enorme con video piccolo.
+  const videoMaxW = isCompact ? 'max-w-[680px]' : isDual ? 'max-w-[880px]' : 'max-w-[1120px]'
+  // Video unico widget → centra verticalmente e ingrandisci; altrimenti il box
+  // video sta sotto la riga giochi/foto con altezza naturale.
+  const videoOnly = showVideoLive && !showGames && !showLiveBooth
 
   return (
     <PartyShell>
@@ -1029,9 +1037,9 @@ function PartyScreen({
 
         {/* MAIN — solo le sezioni abilitate in screen_config */}
         {anyActive ? (
-          <div className={`flex flex-col flex-1 min-h-0 ${isCompact ? 'gap-4' : 'gap-6'}`}>
+          <div className={`flex flex-col flex-1 min-h-0 ${isCompact ? 'gap-4' : 'gap-6'} ${videoOnly ? 'justify-center' : ''}`}>
             {(showGames || showLiveBooth) && (
-            <div className={`grid grid-cols-12 min-h-0 ${isCompact ? 'gap-4' : 'gap-6'} ${showVideoLive ? 'flex-1' : 'flex-1'}`}>
+            <div className={`grid grid-cols-12 min-h-0 flex-1 ${isCompact ? 'gap-4' : 'gap-6'}`}>
             {/* LEFT — Party Roulette + Music Battle */}
             {showGames && (
               <div className={`flex flex-col gap-6 min-h-0 ${showLiveBooth ? 'col-span-5' : 'col-span-12'}`}>
@@ -1107,18 +1115,17 @@ function PartyScreen({
           </div>
             )}
 
-            {/* Video Live — riquadro scenografico, altezza proporzionata al numero di widget */}
+            {/* Video Live — il box abbraccia il player (altezza naturale 16:9).
+                Larghezza max per layout → niente box enorme con video piccolo. */}
             {partyVideo && (
               <PartyScreenPanel
                 icon={<Youtube />}
                 title={(cfg.video_title as string) || 'Video Live'}
                 subtitle={partyVideo.kind === 'youtube' ? 'YouTube' : 'Video'}
-                className="flex-1 min-h-0"
+                className={videoOnly ? 'flex-1 min-h-0' : 'shrink-0'}
               >
-                {/* Video dimensionato sull'altezza disponibile del box: riempie bene
-                    il contenitore senza diventare microscopico o gigante. */}
                 <div className="w-full h-full flex items-center justify-center">
-                  <div className="h-full max-w-full aspect-video">
+                  <div className={`w-full ${videoMaxW} ${videoOnly ? 'h-full flex items-center' : ''}`}>
                     <VideoEmbed
                       source={partyVideo}
                       title={(cfg.video_title as string) || 'Video Live'}
