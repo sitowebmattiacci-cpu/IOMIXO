@@ -759,7 +759,7 @@ function VideoLiveAudioUnlock({ theme }: { theme: 'wedding' | 'party' }) {
       onClick={unlock}
       onTouchStart={unlock}
       aria-label={t('wedding.screen.tapToEnable')}
-      className="fixed inset-0 z-[60] flex items-end justify-center p-8 bg-transparent cursor-pointer"
+      className="fixed inset-0 z-[60] flex items-end justify-center p-8 pb-28 bg-transparent cursor-pointer"
     >
       <div className={`flex items-center gap-3 ${card} animate-pulse`}>
         <Youtube className={`h-5 w-5 shrink-0 ${iconColor}`} />
@@ -976,7 +976,6 @@ function PartyScreen({
   const showLiveBooth     = cfg.show_photos   === true
   const showMusicBattle   = cfg.show_polls    === true
   const showPartyRoulette = cfg.show_roulette === true
-  const showGames = showMusicBattle || showPartyRoulette
   // Layout Live Booth (single | grid | auto). Default 'single' (retrocompat).
   const liveBoothLayout: LiveBoothLayout = (cfg.live_booth_layout as LiveBoothLayout) ?? 'single'
   // Video Live — solo con switch attivo E link valido (YouTube o file video).
@@ -992,131 +991,134 @@ function PartyScreen({
   }
   // One-time audio-unlock overlay when Video Live is active or a link exists.
   const videoConfigured = cfg.show_video_live === true || !!resolveVideoSource(cfg.video_url)
-  const anyActive = showLiveBooth || showGames || showVideoLive
 
-  // Layout dinamico: più widget attivi → layout più compatto così entra tutto
-  // in una sola schermata senza box giganti vuoti. Il contenuto (foto/video)
-  // riempie sempre il proprio contenitore (object-contain, mai tagliato).
-  const activeWidgetsCount = [showMusicBattle, showPartyRoulette, showLiveBooth, showVideoLive].filter(Boolean).length
-  const isSingle = activeWidgetsCount === 1
-  const isDual = activeWidgetsCount === 2
+  // ── Layout dinamico ───────────────────────────────────────────────
+  // Le card NON-video (Party Roulette, Music Battle, Live Booth) vivono in una
+  // riga superiore a COLONNE UGUALI → stessa larghezza, stessa altezza, stessa
+  // estetica. Il Video Live occupa la riga inferiore a tutta larghezza, con un
+  // contenitore proporzionato che "abbraccia" il player 16:9 (mai box enorme con
+  // player piccolo). Tutto entra in una sola viewport (h-screen, niente scroll).
+  const topWidgets = ([
+    showPartyRoulette ? 'roulette' : null,
+    showMusicBattle ? 'battle' : null,
+    showLiveBooth ? 'booth' : null,
+  ].filter(Boolean)) as Array<'roulette' | 'battle' | 'booth'>
+  const topCount = topWidgets.length
+  const activeWidgetsCount = topCount + (showVideoLive ? 1 : 0)
+  const anyActive = activeWidgetsCount > 0
   const isCompact = activeWidgetsCount >= 3
-  // Larghezza massima del player video in base al numero di widget: il box video
-  // "abbraccia" il player (altezza naturale 16:9) → niente box enorme con video piccolo.
-  const videoMaxW = isCompact ? 'max-w-[680px]' : isDual ? 'max-w-[880px]' : 'max-w-[1120px]'
-  // Video unico widget → centra verticalmente e ingrandisci; altrimenti il box
-  // video sta sotto la riga giochi/foto con altezza naturale.
-  const videoOnly = showVideoLive && !showGames && !showLiveBooth
+  const videoOnly = showVideoLive && topCount === 0
+  // Colonne riga superiore: 1, 2 o 3 → card sempre simmetriche.
+  const topGridCols = topCount >= 3 ? 'grid-cols-3' : topCount === 2 ? 'grid-cols-2' : 'grid-cols-1'
+  // Fascia video quando condivide lo schermo con le card sopra: più widget →
+  // fascia più bassa, così tutto resta proporzionato e il footer respira.
+  const videoBandH = isCompact ? 'h-[28vh]' : 'h-[38vh]'
+  const pad = isCompact ? 'p-6' : 'p-8'
+  const mainGap = isCompact ? 'gap-4' : 'gap-6'
 
   return (
     <PartyShell>
       {videoConfigured && <VideoLiveAudioUnlock theme="party" />}
-      <div className={`h-screen w-screen overflow-hidden flex flex-col relative ${isCompact ? 'p-6' : 'p-8'}`}>
-        {/* HEADER */}
-        <header className={`flex items-start justify-between gap-6 shrink-0 ${isCompact ? 'mb-4' : 'mb-5'}`}>
+      <div className={`h-screen w-screen overflow-hidden flex flex-col relative ${pad}`}>
+        {/* HEADER — sinistra: titolo evento + DJ · destra: modulo QR "scansiona & partecipa" */}
+        <header className={`flex items-center justify-between gap-8 shrink-0 ${isCompact ? 'mb-5' : 'mb-7'}`}>
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.45em] text-[#FF7AB6] mb-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.45em] text-[#FF7AB6] mb-2">
               ✦ Party Mode Live ✦
             </p>
-            <h1 className={`font-black text-white leading-[0.95] tracking-tight ${isCompact ? 'text-4xl xl:text-5xl' : 'text-5xl xl:text-6xl'}`}>
+            <h1 className={`font-black text-white leading-[0.95] tracking-tight truncate ${isCompact ? 'text-4xl xl:text-5xl' : 'text-5xl xl:text-6xl'}`}>
               {session.event_name}
             </h1>
             {session.dj_name && (
-              <p className={`text-white/60 ${isCompact ? 'text-lg mt-2' : 'text-2xl mt-3'}`}>DJ <span className="text-[#FF7AB6] font-semibold">{session.dj_name}</span></p>
+              <p className={`text-white/55 ${isCompact ? 'text-lg mt-2' : 'text-xl mt-3'}`}>
+                DJ <span className="text-[#FF7AB6] font-semibold">{session.dj_name}</span>
+              </p>
             )}
           </div>
-          <div className="shrink-0 text-center">
-            <div className="bg-white p-3 rounded-2xl shadow-[0_0_40px_rgba(255,61,138,0.4)] border-2 border-[#FF3D8A]/60">
-              <QRCodeSVG value={liveUrl} size={isCompact ? 132 : 180} level="M" includeMargin={false} />
+          {/* Modulo "Scan & join": QR + etichetta in una card coerente, centrata e staccata dal bordo */}
+          <div className="shrink-0 flex flex-col items-center gap-2.5 rounded-2xl bg-white/[0.05] border border-white/10 px-5 py-4 backdrop-blur-md">
+            <div className="bg-white p-3 rounded-xl shadow-[0_0_40px_rgba(255,61,138,0.35)] border-2 border-[#FF3D8A]/60">
+              <QRCodeSVG value={liveUrl} size={isCompact ? 124 : 150} level="M" includeMargin={false} />
             </div>
-            <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.3em] text-white">
-              Scansiona & partecipa
+            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-white text-center">
+              Scansiona &amp; partecipa
             </p>
           </div>
         </header>
 
         {/* MAIN — solo le sezioni abilitate in screen_config */}
         {anyActive ? (
-          <div className={`flex flex-col flex-1 min-h-0 ${isCompact ? 'gap-4' : 'gap-6'} ${videoOnly ? 'justify-center' : ''}`}>
-            {(showGames || showLiveBooth) && (
-            <div className={`grid grid-cols-12 min-h-0 flex-1 ${isCompact ? 'gap-4' : 'gap-6'}`}>
-            {/* LEFT — Party Roulette + Music Battle */}
-            {showGames && (
-              <div className={`flex flex-col gap-6 min-h-0 ${showLiveBooth ? 'col-span-5' : 'col-span-12'}`}>
-                {showPartyRoulette && (
-                  <PartyScreenPanel icon={<Sparkles />} title="Party Roulette">
-                    {roulette?.result ? (
-                      <div className="rounded-2xl bg-gradient-to-br from-[#8B0E2F]/40 to-[#FF3D8A]/30 border border-[#FF3D8A]/40 py-10 px-6 text-center">
-                        <p className="text-5xl xl:text-6xl font-black text-white leading-tight">
-                          {roulette.result.slot_label}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="text-center py-10">
-                        <p className="text-xl text-white/50 italic">
-                          Il DJ avvierà presto la Party Roulette…
-                        </p>
-                      </div>
-                    )}
-                  </PartyScreenPanel>
-                )}
-
-                {showMusicBattle && (
-                  <PartyScreenPanel icon={<ListChecks />} title="Music Battle" subtitle="Vota dal telefono">
-                    {active_poll ? (
-                      <>
-                        <p className="text-3xl font-bold text-white mb-5 leading-snug">{active_poll.question}</p>
-                        <div className="space-y-3">
-                          {active_poll.options.map((opt: string, i: number) => {
-                            const tally = active_poll.tally?.[i] ?? 0
-                            const pct = total > 0 ? Math.round((tally / total) * 100) : 0
-                            const max = Math.max(...(active_poll.tally ?? [0]))
-                            const winning = total > 0 && tally === max && tally > 0
-                            return (
-                              <div key={i} className={`relative rounded-2xl overflow-hidden border h-16 ${winning ? 'border-[#FF3D8A]/70 shadow-[0_0_20px_rgba(255,61,138,0.4)]' : 'border-white/15'} bg-white/[0.05]`}>
-                                <div
-                                  className={`absolute inset-y-0 left-0 transition-all duration-700 ${winning ? 'bg-gradient-to-r from-[#FF3D8A] to-[#8B0E2F]' : 'bg-gradient-to-r from-[#8B0E2F]/50 to-[#B82E54]/40'}`}
-                                  style={{ width: `${pct}%` }}
-                                />
-                                <div className="relative flex items-center justify-between h-full px-6">
-                                  <span className={`text-xl font-bold ${winning ? 'text-white' : 'text-white/90'}`}>{opt}</span>
-                                  <span className="text-xl font-black tabular-nums text-white">
-                                    {pct}% <span className="text-white/50 font-medium text-base">({tally})</span>
-                                  </span>
-                                </div>
-                              </div>
-                            )
-                          })}
+          <div className={`flex flex-col flex-1 min-h-0 ${mainGap}`}>
+            {/* RIGA 1 — card non-video a COLONNE UGUALI: stessa larghezza, stessa altezza */}
+            {topCount > 0 && (
+              <div className={`grid ${topGridCols} ${mainGap} flex-1 min-h-0`}>
+                {topWidgets.map((w) => {
+                  if (w === 'roulette') return (
+                    <PartyScreenPanel key="roulette" icon={<Sparkles />} title="Party Roulette" className="h-full">
+                      {roulette?.result ? (
+                        <div className="h-full flex items-center justify-center">
+                          <div className="w-full rounded-2xl bg-gradient-to-br from-[#8B0E2F]/40 to-[#FF3D8A]/30 border border-[#FF3D8A]/40 py-10 px-6 text-center">
+                            <p className="text-5xl xl:text-6xl font-black text-white leading-tight">
+                              {roulette.result.slot_label}
+                            </p>
+                          </div>
                         </div>
-                        <p className="text-[11px] uppercase tracking-[0.3em] text-white/40 mt-4 text-center">
-                          {total} {total === 1 ? 'voto' : 'voti'}
-                        </p>
-                      </>
-                    ) : (
-                      <div className="text-center py-10">
-                        <p className="text-xl text-white/50 italic">
-                          Il DJ avvierà presto una Music Battle…
-                        </p>
-                      </div>
-                    )}
-                  </PartyScreenPanel>
-                )}
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-center">
+                          <p className="text-xl text-white/50 italic">Il DJ avvierà presto la Party Roulette…</p>
+                        </div>
+                      )}
+                    </PartyScreenPanel>
+                  )
+                  if (w === 'battle') return (
+                    <PartyScreenPanel key="battle" icon={<ListChecks />} title="Music Battle" subtitle="Vota dal telefono" className="h-full">
+                      {active_poll ? (
+                        <div className="h-full flex flex-col">
+                          <p className="text-2xl xl:text-3xl font-bold text-white mb-4 leading-snug">{active_poll.question}</p>
+                          <div className="space-y-3 flex-1">
+                            {active_poll.options.map((opt: string, i: number) => {
+                              const tally = active_poll.tally?.[i] ?? 0
+                              const pct = total > 0 ? Math.round((tally / total) * 100) : 0
+                              const max = Math.max(...(active_poll.tally ?? [0]))
+                              const winning = total > 0 && tally === max && tally > 0
+                              return (
+                                <div key={i} className={`relative rounded-2xl overflow-hidden border h-14 ${winning ? 'border-[#FF3D8A]/70 shadow-[0_0_20px_rgba(255,61,138,0.4)]' : 'border-white/15'} bg-white/[0.05]`}>
+                                  <div
+                                    className={`absolute inset-y-0 left-0 transition-all duration-700 ${winning ? 'bg-gradient-to-r from-[#FF3D8A] to-[#8B0E2F]' : 'bg-gradient-to-r from-[#8B0E2F]/50 to-[#B82E54]/40'}`}
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                  <div className="relative flex items-center justify-between h-full px-5">
+                                    <span className={`text-lg font-bold ${winning ? 'text-white' : 'text-white/90'}`}>{opt}</span>
+                                    <span className="text-lg font-black tabular-nums text-white">
+                                      {pct}% <span className="text-white/50 font-medium text-sm">({tally})</span>
+                                    </span>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                          <p className="text-[11px] uppercase tracking-[0.3em] text-white/40 mt-3 text-center">
+                            {total} {total === 1 ? 'voto' : 'voti'}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-center">
+                          <p className="text-xl text-white/50 italic">Il DJ avvierà presto una Music Battle…</p>
+                        </div>
+                      )}
+                    </PartyScreenPanel>
+                  )
+                  // booth
+                  return (
+                    <PartyScreenPanel key="booth" icon={<Camera />} title="Live Booth" subtitle="Foto del pubblico" className="h-full">
+                      <PartyPhotoDisplay photos={photos as any} layout={liveBoothLayout} eventName={session.event_name} />
+                    </PartyScreenPanel>
+                  )
+                })}
               </div>
             )}
 
-            {/* RIGHT — Live Booth photos */}
-            {showLiveBooth && (
-              <div className={`flex flex-col min-h-0 ${showGames ? 'col-span-7' : 'col-span-12'}`}>
-                <PartyScreenPanel icon={<Camera />} title="Live Booth" subtitle="Foto del pubblico" className="flex-1">
-                  <PartyPhotoDisplay photos={photos as any} layout={liveBoothLayout} eventName={session.event_name} />
-                </PartyScreenPanel>
-              </div>
-            )}
-          </div>
-            )}
-
-            {/* Video Live — il box abbraccia il player (altezza naturale 16:9).
-                Larghezza max per layout → niente box enorme con video piccolo. */}
+            {/* RIGA 2 — Video Live: contenitore proporzionato che abbraccia il player 16:9 */}
             {partyVideo && (
               <PartyScreenPanel
                 icon={<Youtube />}
@@ -1124,8 +1126,8 @@ function PartyScreen({
                 subtitle={partyVideo.kind === 'youtube' ? 'YouTube' : 'Video'}
                 className={videoOnly ? 'flex-1 min-h-0' : 'shrink-0'}
               >
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className={`w-full ${videoMaxW} ${videoOnly ? 'h-full flex items-center' : ''}`}>
+                <div className={`w-full flex items-center justify-center ${videoOnly ? 'h-full' : videoBandH}`}>
+                  <div className="h-full aspect-video mx-auto">
                     <VideoEmbed
                       source={partyVideo}
                       title={(cfg.video_title as string) || 'Video Live'}
@@ -1142,9 +1144,10 @@ function PartyScreen({
           <div className="flex-1" />
         )}
 
-        <footer className="mt-5 shrink-0">
+        {/* FOOTER */}
+        <footer className={`shrink-0 ${isCompact ? 'mt-4' : 'mt-6'}`}>
           <PartyDivider />
-          <p className="text-center text-[11px] uppercase tracking-[0.4em] text-white/50 mt-4">
+          <p className="text-center text-[11px] uppercase tracking-[0.4em] text-white/50 mt-3">
             Powered by <span className="text-[#FF7AB6] font-bold">IOMIXO Live Hub</span>
           </p>
         </footer>
