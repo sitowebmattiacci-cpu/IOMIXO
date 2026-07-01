@@ -1047,7 +1047,7 @@ function PartyScreen({
 
         {/* MAIN — solo le sezioni abilitate in screen_config */}
         {anyActive ? (
-          <div className={`grid grid-cols-12 flex-1 min-h-0 ${mainGap}`}>
+          <div className={`grid grid-cols-12 grid-rows-1 flex-1 min-h-0 ${mainGap}`}>
             {/* COLONNA SINISTRA — Party Roulette + Music Battle + Video Live impilati */}
             {hasLeft && (
               <div className={`flex flex-col min-h-0 ${mainGap} ${hasBooth ? leftSpan : 'col-span-12'}`}>
@@ -1072,16 +1072,16 @@ function PartyScreen({
                 {showMusicBattle && (
                   <PartyScreenPanel icon={<ListChecks />} title="Music Battle" subtitle="Vota dal telefono" className="flex-1">
                     {active_poll ? (
-                      <div className="h-full flex flex-col">
-                        <p className="text-xl xl:text-2xl font-bold text-white mb-3 leading-snug line-clamp-2">{active_poll.question}</p>
-                        <div className="space-y-2.5 flex-1 min-h-0">
+                      <div className="h-full flex flex-col min-h-0">
+                        <p className="text-lg xl:text-xl font-bold text-white mb-2 leading-snug line-clamp-2 shrink-0">{active_poll.question}</p>
+                        <div className="flex flex-col gap-2 flex-1 min-h-0 justify-center">
                           {active_poll.options.map((opt: string, i: number) => {
                             const tally = active_poll.tally?.[i] ?? 0
                             const pct = total > 0 ? Math.round((tally / total) * 100) : 0
                             const max = Math.max(...(active_poll.tally ?? [0]))
                             const winning = total > 0 && tally === max && tally > 0
                             return (
-                              <div key={i} className={`relative rounded-xl overflow-hidden border h-12 ${winning ? 'border-[#FF3D8A]/70 shadow-[0_0_20px_rgba(255,61,138,0.4)]' : 'border-white/15'} bg-white/[0.05]`}>
+                              <div key={i} className={`relative rounded-xl overflow-hidden border flex-1 min-h-0 max-h-16 ${winning ? 'border-[#FF3D8A]/70 shadow-[0_0_20px_rgba(255,61,138,0.4)]' : 'border-white/15'} bg-white/[0.05]`}>
                                 <div
                                   className={`absolute inset-y-0 left-0 transition-all duration-700 ${winning ? 'bg-gradient-to-r from-[#FF3D8A] to-[#8B0E2F]' : 'bg-gradient-to-r from-[#8B0E2F]/50 to-[#B82E54]/40'}`}
                                   style={{ width: `${pct}%` }}
@@ -1096,7 +1096,7 @@ function PartyScreen({
                             )
                           })}
                         </div>
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-white/40 mt-2.5 text-center">
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-white/40 mt-2 text-center shrink-0">
                           {total} {total === 1 ? 'voto' : 'voti'}
                         </p>
                       </div>
@@ -1125,7 +1125,7 @@ function PartyScreen({
 
             {/* COLONNA DESTRA — Live Booth: solo i riquadri foto, senza contenitore né titoli */}
             {hasBooth && (
-              <div className={`min-h-0 h-full overflow-hidden flex items-center justify-center ${hasLeft ? boothSpan : 'col-span-12'}`}>
+              <div className={`min-h-0 h-full overflow-hidden ${hasLeft ? boothSpan : 'col-span-12'}`}>
                 <PartyPhotoDisplay photos={photos as any} layout={liveBoothLayout} eventName={session.event_name} />
               </div>
             )}
