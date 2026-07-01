@@ -2,7 +2,7 @@
 import { useParams } from 'next/navigation'
 import useSWR from 'swr'
 import { QRCodeSVG } from 'qrcode.react'
-import { Heart, Sparkles, ListChecks, Footprints, Youtube, Users } from 'lucide-react'
+import { Heart, Sparkles, ListChecks, Footprints, Youtube, Users, Camera } from 'lucide-react'
 import { liveScreen, type VideoLiveCommand, type StandUpGuessConfig, type StandUpGuessRound } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
@@ -982,7 +982,6 @@ function PartyScreen({
   const partyVideo = cfg.show_video_live === true
     ? resolveVideoSource(cfg.video_url, { autoplay: true })
     : null
-  const showVideoLive = !!partyVideo
   // Remote-control state written by the DJ dashboard (regia video live).
   const videoControl: VideoControl = {
     command: cfg.video_live?.command,
@@ -992,28 +991,162 @@ function PartyScreen({
   // One-time audio-unlock overlay when Video Live is active or a link exists.
   const videoConfigured = cfg.show_video_live === true || !!resolveVideoSource(cfg.video_url)
 
-  // ── Layout Party Mode ─────────────────────────────────────────────
-  // Colonna SINISTRA (impilata, altezze uguali): Party Roulette, Music Battle,
-  // Video Live. Colonna DESTRA: Live Booth, alto quanto tutta la sinistra.
-  //   [ Music Battle ] [ Live Booth ]
-  //   [ Video Live   ] [ Live Booth ]
-  // Card compatte (flex-1 → altezze uguali); il contenuto riempie sempre il box
-  // (foto object-contain centrata, player 16:9 → mai tagliati né microscopici).
-  // SOLO Party Mode: non tocca la Wedding Edition (funzioni/StagePanel separati).
-  const leftCount = (showPartyRoulette ? 1 : 0) + (showMusicBattle ? 1 : 0) + (showVideoLive ? 1 : 0)
+  // ── Layout Party Mode Screen ──────────────────────────────────────
+  // REGOLA UNICA e prevedibile, guidata dal numero di widget attivi.
+  // I widget "colonna" (Party Roulette, Music Battle, Video Live) vengono
+  // impilati a SINISTRA con ALTEZZE UGUALI (flex-1); il Live Booth (foto)
+  // occupa la colonna DESTRA a tutta altezza. Tutto è centrato e con altezza
+  // LIMITATA → card compatte, niente contenitori giganti che riempiono lo schermo.
+  //
+  //   1 widget → card unica centrata (grande ma controllata)
+  //   2 widget → due colonne di pari altezza
+  //   3 widget → [Music Battle]/[Video Live] a sinistra + [Live Booth] a destra (2 righe)
+  //   4 widget → sinistra impilata (3) + Live Booth a destra
+  //
+  // SOLO Party Mode: la Wedding Edition usa funzioni/box separati e NON è toccata.
+
+  const rouletteNode = showPartyRoulette ? (
+    <PartyScreenPanel icon={<Sparkles className="h-5 w-5" />} title="Party Roulette">
+      {roulette?.result ? (
+        <div className="h-full flex items-center justify-center">
+          <div className="w-full rounded-2xl bg-gradient-to-br from-[#8B0E2F]/40 to-[#FF3D8A]/30 border border-[#FF3D8A]/40 py-6 px-6 text-center">
+            <p className="text-3xl xl:text-4xl font-black text-white leading-tight">
+              {roulette.result.slot_label}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="h-full flex items-center justify-center text-center">
+          <p className="text-base text-white/50 italic">Il DJ avvierà presto la Party Roulette…</p>
+        </div>
+      )}
+    </PartyScreenPanel>
+  ) : null
+
+  const musicBattleNode = showMusicBattle ? (
+    <PartyScreenPanel icon={<ListChecks className="h-5 w-5" />} title="Music Battle" subtitle="Vota dal telefono">
+      {active_poll ? (
+        <div className="h-full flex flex-col min-h-0">
+          <p className="text-base xl:text-lg font-bold text-white mb-2 leading-snug line-clamp-2 shrink-0">{active_poll.question}</p>
+          <div className="flex flex-col gap-2 flex-1 min-h-0 justify-center">
+            {active_poll.options.map((opt: string, i: number) => {
+              const tally = active_poll.tally?.[i] ?? 0
+              const pct = total > 0 ? Math.round((tally / total) * 100) : 0
+              const max = Math.max(...(active_poll.tally ?? [0]))
+              const winning = total > 0 && tally === max && tally > 0
+              return (
+                <div key={i} className={`relative rounded-xl overflow-hidden border flex-1 min-h-0 max-h-14 ${winning ? 'border-[#FF3D8A]/70 shadow-[0_0_20px_rgba(255,61,138,0.4)]' : 'border-white/15'} bg-white/[0.05]`}>
+                  <div
+                    className={`absolute inset-y-0 left-0 transition-all duration-700 ${winning ? 'bg-gradient-to-r from-[#FF3D8A] to-[#8B0E2F]' : 'bg-gradient-to-r from-[#8B0E2F]/50 to-[#B82E54]/40'}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                  <div className="relative flex items-center justify-between h-full px-4">
+                    <span className={`text-sm font-bold truncate ${winning ? 'text-white' : 'text-white/90'}`}>{opt}</span>
+                    <span className="text-sm font-black tabular-nums text-white shrink-0 ml-3">
+                      {pct}% <span className="text-white/50 font-medium text-[10px]">({tally})</span>
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-white/40 mt-2 text-center shrink-0">
+            {total} {total === 1 ? 'voto' : 'voti'}
+          </p>
+        </div>
+      ) : (
+        <div className="h-full flex items-center justify-center text-center">
+          <p className="text-base text-white/50 italic">Il DJ avvierà presto una Music Battle…</p>
+        </div>
+      )}
+    </PartyScreenPanel>
+  ) : null
+
+  const videoNode = partyVideo ? (
+    <PartyScreenPanel icon={<Youtube className="h-5 w-5" />} title="Video Live">
+      {/* Player 16:9 centrato: riempie la card in altezza senza deformarsi né tagliarsi. */}
+      <div className="h-full w-full flex items-center justify-center">
+        <div className="h-full aspect-video max-w-full mx-auto">
+          <VideoEmbed
+            source={partyVideo}
+            title={(cfg.video_title as string) || 'Video Live'}
+            control={videoControl}
+            frameClass="border border-[#FF3D8A]/40 shadow-[0_0_40px_rgba(255,61,138,0.2)]"
+          />
+        </div>
+      </div>
+    </PartyScreenPanel>
+  ) : null
+
+  const boothNode = showLiveBooth ? (
+    <PartyScreenPanel icon={<Camera className="h-5 w-5" />} title="Live Booth" subtitle="Foto degli ospiti">
+      {/* Foto INTERA: sfondo scuro soft + object-contain (mai tagliata, mai a striscia). */}
+      <div className="h-full w-full rounded-xl bg-black/30 overflow-hidden flex items-center justify-center">
+        <PartyPhotoDisplay photos={photos as any} layout={liveBoothLayout} eventName={session.event_name} />
+      </div>
+    </PartyScreenPanel>
+  ) : null
+
+  // Widget "colonna" (sinistra), ordine: Party Roulette → Music Battle → Video Live.
+  const leftNodes = [rouletteNode, musicBattleNode, videoNode].filter(Boolean) as React.ReactNode[]
+  const leftCount = leftNodes.length
   const hasLeft = leftCount > 0
-  const hasBooth = showLiveBooth
+  const hasBooth = !!boothNode
   const activeWidgetsCount = leftCount + (hasBooth ? 1 : 0)
   const anyActive = activeWidgetsCount > 0
   const isCompact = activeWidgetsCount >= 3
   const pad = isCompact ? 'p-6' : 'p-8'
-  const mainGap = isCompact ? 'gap-4' : 'gap-6'
-  // Ripartizione colonne: con 3+ widget attivi le due colonne sono bilanciate
-  // (Music Battle e Video Live a sinistra restano grandi uguali via flex-1;
-  // Live Booth a destra si riduce e resta contenuto nello schermo). Con meno
-  // widget il Booth può respirare di più (col-span-7).
-  const leftSpan = isCompact ? 'col-span-6' : 'col-span-5'
-  const boothSpan = isCompact ? 'col-span-6' : 'col-span-7'
+
+  // Altezza dell'area widget: limitata così le card restano compatte.
+  // 1 colonna sinistra → 500px · 2 → 576px (caso 3 widget) · 3 → 620px.
+  const stackHeights: Record<number, string> = { 1: 'h-[500px]', 2: 'h-[576px]', 3: 'h-[620px]' }
+
+  const renderWidgets = () => {
+    // Nessun Live Booth → solo colonne affiancate (1 / 2 / 3).
+    if (!hasBooth) {
+      if (leftCount === 1) {
+        return (
+          <div className="w-full max-w-[1100px] h-[62vh] max-h-[620px] mx-auto">
+            {leftNodes[0]}
+          </div>
+        )
+      }
+      const cols = leftCount === 2 ? 'grid-cols-2' : 'grid-cols-3'
+      return (
+        <div className={`w-full grid ${cols} gap-6 h-[500px] max-h-[70vh] max-w-[1600px] mx-auto`}>
+          {leftNodes.map((n, i) => <div key={i} className="min-h-0">{n}</div>)}
+        </div>
+      )
+    }
+
+    // Solo Live Booth → card unica centrata (grande ma controllata).
+    if (!hasLeft) {
+      return (
+        <div className="w-full max-w-[1150px] h-[64vh] max-h-[640px] mx-auto">
+          {boothNode}
+        </div>
+      )
+    }
+
+    // Live Booth + colonna sinistra impilata (altezze uguali via flex-1).
+    //   [ leftNodes[0] ] [ Live Booth ]
+    //   [ leftNodes[1] ] [ Live Booth ]
+    const leftSpan = leftCount === 1 ? 'col-span-6' : 'col-span-5'
+    const boothSpan = leftCount === 1 ? 'col-span-6' : 'col-span-7'
+    const areaH = stackHeights[Math.min(leftCount, 3)] ?? 'h-[620px]'
+    return (
+      <div className={`w-full grid grid-cols-12 gap-4 ${areaH} max-h-[82vh] max-w-[1700px] mx-auto`}>
+        <div className={`${leftSpan} flex flex-col gap-4 min-h-0`}>
+          {leftNodes.map((n, i) => (
+            <div key={i} className="flex-1 min-h-0">{n}</div>
+          ))}
+        </div>
+        <div className={`${boothSpan} min-h-0`}>
+          {boothNode}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <PartyShell>
@@ -1045,90 +1178,10 @@ function PartyScreen({
           </div>
         </header>
 
-        {/* MAIN — solo le sezioni abilitate in screen_config */}
+        {/* MAIN — griglia stabile guidata dal numero di widget attivi (renderWidgets). */}
         {anyActive ? (
-          <div className={`grid grid-cols-12 grid-rows-1 flex-1 min-h-0 ${mainGap}`}>
-            {/* COLONNA SINISTRA — Party Roulette + Music Battle + Video Live impilati */}
-            {hasLeft && (
-              <div className={`flex flex-col min-h-0 ${mainGap} ${hasBooth ? leftSpan : 'col-span-12'}`}>
-                {showPartyRoulette && (
-                  <PartyScreenPanel icon={<Sparkles />} title="Party Roulette" className="flex-1">
-                    {roulette?.result ? (
-                      <div className="h-full flex items-center justify-center">
-                        <div className="w-full rounded-2xl bg-gradient-to-br from-[#8B0E2F]/40 to-[#FF3D8A]/30 border border-[#FF3D8A]/40 py-8 px-6 text-center">
-                          <p className="text-4xl xl:text-5xl font-black text-white leading-tight">
-                            {roulette.result.slot_label}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-center">
-                        <p className="text-lg text-white/50 italic">Il DJ avvierà presto la Party Roulette…</p>
-                      </div>
-                    )}
-                  </PartyScreenPanel>
-                )}
-
-                {showMusicBattle && (
-                  <PartyScreenPanel icon={<ListChecks />} title="Music Battle" subtitle="Vota dal telefono" className="flex-1">
-                    {active_poll ? (
-                      <div className="h-full flex flex-col min-h-0">
-                        <p className="text-lg xl:text-xl font-bold text-white mb-2 leading-snug line-clamp-2 shrink-0">{active_poll.question}</p>
-                        <div className="flex flex-col gap-2 flex-1 min-h-0 justify-center">
-                          {active_poll.options.map((opt: string, i: number) => {
-                            const tally = active_poll.tally?.[i] ?? 0
-                            const pct = total > 0 ? Math.round((tally / total) * 100) : 0
-                            const max = Math.max(...(active_poll.tally ?? [0]))
-                            const winning = total > 0 && tally === max && tally > 0
-                            return (
-                              <div key={i} className={`relative rounded-xl overflow-hidden border flex-1 min-h-0 max-h-16 ${winning ? 'border-[#FF3D8A]/70 shadow-[0_0_20px_rgba(255,61,138,0.4)]' : 'border-white/15'} bg-white/[0.05]`}>
-                                <div
-                                  className={`absolute inset-y-0 left-0 transition-all duration-700 ${winning ? 'bg-gradient-to-r from-[#FF3D8A] to-[#8B0E2F]' : 'bg-gradient-to-r from-[#8B0E2F]/50 to-[#B82E54]/40'}`}
-                                  style={{ width: `${pct}%` }}
-                                />
-                                <div className="relative flex items-center justify-between h-full px-4">
-                                  <span className={`text-base font-bold truncate ${winning ? 'text-white' : 'text-white/90'}`}>{opt}</span>
-                                  <span className="text-base font-black tabular-nums text-white shrink-0 ml-3">
-                                    {pct}% <span className="text-white/50 font-medium text-xs">({tally})</span>
-                                  </span>
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-white/40 mt-2 text-center shrink-0">
-                          {total} {total === 1 ? 'voto' : 'voti'}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-center">
-                        <p className="text-lg text-white/50 italic">Il DJ avvierà presto una Music Battle…</p>
-                      </div>
-                    )}
-                  </PartyScreenPanel>
-                )}
-
-                {partyVideo && (
-                  <div className="flex-1 min-h-0 w-full flex items-center justify-center">
-                    <div className="h-full aspect-video max-w-full mx-auto">
-                      <VideoEmbed
-                        source={partyVideo}
-                        title={(cfg.video_title as string) || 'Video Live'}
-                        control={videoControl}
-                        frameClass="rounded-2xl border border-[#FF3D8A]/40 shadow-[0_0_50px_rgba(255,61,138,0.25)]"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* COLONNA DESTRA — Live Booth: solo i riquadri foto, senza contenitore né titoli */}
-            {hasBooth && (
-              <div className={`min-h-0 h-full overflow-hidden ${hasLeft ? boothSpan : 'col-span-12'}`}>
-                <PartyPhotoDisplay photos={photos as any} layout={liveBoothLayout} eventName={session.event_name} />
-              </div>
-            )}
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            {renderWidgets()}
           </div>
         ) : (
           /* Nessun toggle attivo → schermo Party pulito: solo header + QR + branding */
@@ -1151,12 +1204,12 @@ function PartyScreenPanel({
   icon, title, subtitle, children, className = '',
 }: { icon: React.ReactNode; title: string; subtitle?: string; children: React.ReactNode; className?: string }) {
   return (
-    <section className={`rounded-2xl backdrop-blur-md bg-white/[0.04] border border-white/[0.1] p-5 flex flex-col min-h-0 shadow-[0_8px_40px_rgba(139,14,47,0.25)] ${className}`}>
-      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/10 shrink-0">
+    <section className={`h-full rounded-2xl backdrop-blur-md bg-white/[0.04] border border-white/[0.1] p-4 flex flex-col min-h-0 shadow-[0_8px_40px_rgba(139,14,47,0.25)] ${className}`}>
+      <div className="flex items-center gap-2.5 mb-3 pb-2.5 border-b border-white/10 shrink-0">
         <span className="text-[#FF3D8A]">{icon}</span>
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-bold uppercase tracking-[0.22em] text-white">{title}</h2>
-          {subtitle && <p className="text-[9px] uppercase tracking-[0.2em] text-white/40 mt-0.5">{subtitle}</p>}
+          <h2 className="text-[13px] font-bold uppercase tracking-[0.22em] text-white leading-none">{title}</h2>
+          {subtitle && <p className="text-[9px] uppercase tracking-[0.18em] text-white/40 mt-1">{subtitle}</p>}
         </div>
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
