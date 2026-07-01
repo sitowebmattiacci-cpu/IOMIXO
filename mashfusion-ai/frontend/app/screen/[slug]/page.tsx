@@ -1008,6 +1008,12 @@ function PartyScreen({
   const isCompact = activeWidgetsCount >= 3
   const pad = isCompact ? 'p-6' : 'p-8'
   const mainGap = isCompact ? 'gap-4' : 'gap-6'
+  // Ripartizione colonne: con 3+ widget attivi le due colonne sono bilanciate
+  // (Music Battle e Video Live a sinistra restano grandi uguali via flex-1;
+  // Live Booth a destra si riduce e resta contenuto nello schermo). Con meno
+  // widget il Booth può respirare di più (col-span-7).
+  const leftSpan = isCompact ? 'col-span-6' : 'col-span-5'
+  const boothSpan = isCompact ? 'col-span-6' : 'col-span-7'
 
   return (
     <PartyShell>
@@ -1044,7 +1050,7 @@ function PartyScreen({
           <div className={`grid grid-cols-12 flex-1 min-h-0 ${mainGap}`}>
             {/* COLONNA SINISTRA — Party Roulette + Music Battle + Video Live impilati */}
             {hasLeft && (
-              <div className={`flex flex-col min-h-0 ${mainGap} ${hasBooth ? 'col-span-5' : 'col-span-12'}`}>
+              <div className={`flex flex-col min-h-0 ${mainGap} ${hasBooth ? leftSpan : 'col-span-12'}`}>
                 {showPartyRoulette && (
                   <PartyScreenPanel icon={<Sparkles />} title="Party Roulette" className="flex-1">
                     {roulette?.result ? (
@@ -1119,7 +1125,7 @@ function PartyScreen({
 
             {/* COLONNA DESTRA — Live Booth: solo i riquadri foto, senza contenitore né titoli */}
             {hasBooth && (
-              <div className={`min-h-0 ${hasLeft ? 'col-span-7' : 'col-span-12'}`}>
+              <div className={`min-h-0 h-full overflow-hidden flex items-center justify-center ${hasLeft ? boothSpan : 'col-span-12'}`}>
                 <PartyPhotoDisplay photos={photos as any} layout={liveBoothLayout} eventName={session.event_name} />
               </div>
             )}
