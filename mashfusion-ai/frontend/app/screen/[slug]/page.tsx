@@ -2,7 +2,7 @@
 import { useParams } from 'next/navigation'
 import useSWR from 'swr'
 import { QRCodeSVG } from 'qrcode.react'
-import { Heart, Sparkles, ListChecks, Camera, Footprints, Youtube, Users } from 'lucide-react'
+import { Heart, Sparkles, ListChecks, Footprints, Youtube, Users } from 'lucide-react'
 import { liveScreen, type VideoLiveCommand, type StandUpGuessConfig, type StandUpGuessRound } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
@@ -1124,12 +1124,10 @@ function PartyScreen({
               </div>
             )}
 
-            {/* COLONNA DESTRA — Live Booth, alto quanto la colonna sinistra */}
+            {/* COLONNA DESTRA — Live Booth: solo i riquadri foto, senza contenitore né titoli */}
             {hasBooth && (
               <div className={`min-h-0 ${hasLeft ? 'col-span-7' : 'col-span-12'}`}>
-                <PartyScreenPanel icon={<Camera />} title="Live Booth" subtitle="Foto del pubblico" className="h-full">
-                  <PartyPhotoDisplay photos={photos as any} layout={liveBoothLayout} eventName={session.event_name} />
-                </PartyScreenPanel>
+                <PartyPhotoDisplay photos={photos as any} layout={liveBoothLayout} eventName={session.event_name} />
               </div>
             )}
           </div>
