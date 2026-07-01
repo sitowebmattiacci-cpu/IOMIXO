@@ -138,16 +138,66 @@ export function PartyPhotoAuto({ photos, eventName }: { photos: PartySlidePhoto[
 }
 
 // ════════════════════════════════════════════════════════════════
-// PartyPhotoDisplay — Live Booth Screen Mode: SEMPRE foto singola,
-// random, slideshow pulito (come Wedding Edition). Niente griglia/auto:
-// la foto è protagonista, centrata e senza overlay.
+// PartyPhotoRow — Live Booth "griglia" pulita per lo Screen Mode Party.
+// Mostra FINO A 3 foto affiancate DENTRO il box Live Booth esistente
+// (nessuna cornice/titolo: il contenitore ha già il suo wrapper). Ruota
+// automaticamente riusando la logica anti-ripetizione di useGridSlideshow
+// (cambia una cella alla volta, preload prima dell'inserimento).
+//   3+ foto → 3 affiancate · 2 foto → 2 · 1 foto → centrata · 0 → placeholder
+// ════════════════════════════════════════════════════════════════
+function PartyPhotoRow({ photos }: { photos: PartySlidePhoto[] }) {
+  const cells = Math.min(3, photos.filter((p) => !!p.url).length || 1)
+  const { grid, hasPhotos } = useGridSlideshow(photos, cells, 4000)
+
+  if (!hasPhotos) {
+    return (
+      <div className="h-full w-full flex flex-col items-center justify-center text-center px-6">
+        <Camera className="h-14 w-14 text-[#FF3D8A]/40 mb-4" />
+        <p className="text-2xl font-bold text-white">Le foto degli ospiti appariranno qui</p>
+      </div>
+    )
+  }
+
+  const cols = grid.length <= 1 ? 'grid-cols-1' : grid.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+
+  return (
+    <div className={`grid ${cols} gap-3 w-full h-full p-2 place-items-center`}>
+      {grid.map((photo, i) => (
+        <div key={i} className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl bg-black/30">
+          <AnimatePresence>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <motion.img
+              key={photo.id}
+              src={photo.url as string}
+              alt={photo.caption ?? ''}
+              initial={{ opacity: 0, scale: 1.04 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.02 }}
+              transition={{ duration: 0.7, ease: 'easeInOut' }}
+              className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.5)]"
+            />
+          </AnimatePresence>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ════════════════════════════════════════════════════════════════
+// PartyPhotoDisplay — Live Booth Screen Mode. Rispetta la modalità
+// scelta dal DJ (screen_config.live_booth_layout):
+//   • 'grid'   → fino a 3 foto affiancate (PartyPhotoRow) dentro lo stesso box
+//   • 'single' / 'auto' → slideshow a foto singola (comportamento invariato)
+// Il contenitore esterno (card Live Booth) resta identico.
 // ════════════════════════════════════════════════════════════════
 export function PartyPhotoDisplay({
   photos,
+  layout = 'single',
 }: {
   photos: PartySlidePhoto[]
   layout?: LiveBoothLayout
   eventName?: string | null
 }) {
+  if (layout === 'grid') return <PartyPhotoRow photos={photos} />
   return <PartyPhotoSlideshow photos={photos} />
 }
