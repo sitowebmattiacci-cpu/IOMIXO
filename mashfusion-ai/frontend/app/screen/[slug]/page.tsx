@@ -1103,23 +1103,16 @@ function PartyScreen({
                 )}
 
                 {partyVideo && (
-                  <PartyScreenPanel
-                    icon={<Youtube />}
-                    title={(cfg.video_title as string) || 'Video Live'}
-                    subtitle={partyVideo.kind === 'youtube' ? 'YouTube' : 'Video'}
-                    className="flex-1"
-                  >
-                    <div className="w-full h-full flex items-center justify-center">
-                      <div className="h-full aspect-video max-w-full mx-auto">
-                        <VideoEmbed
-                          source={partyVideo}
-                          title={(cfg.video_title as string) || 'Video Live'}
-                          control={videoControl}
-                          frameClass="rounded-2xl border border-[#FF3D8A]/40 shadow-[0_0_50px_rgba(255,61,138,0.25)]"
-                        />
-                      </div>
+                  <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+                    <div className="h-full aspect-video max-w-full mx-auto">
+                      <VideoEmbed
+                        source={partyVideo}
+                        title={(cfg.video_title as string) || 'Video Live'}
+                        control={videoControl}
+                        frameClass="rounded-2xl border border-[#FF3D8A]/40 shadow-[0_0_50px_rgba(255,61,138,0.25)]"
+                      />
                     </div>
-                  </PartyScreenPanel>
+                  </div>
                 )}
               </div>
             )}
