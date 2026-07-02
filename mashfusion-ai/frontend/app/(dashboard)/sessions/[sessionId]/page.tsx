@@ -29,6 +29,7 @@ import {
   WeddingCard, WeddingButton, WeddingBadge, WeddingInput, WeddingTextarea, WeddingDivider,
 } from '@/components/wedding/WeddingUI'
 import { WeddingPhotoFrame } from '@/components/wedding/WeddingPhotoFrame'
+import { WinnerAnnouncementPanel } from '@/components/wedding/WinnerAnnouncementPanel'
 import {
   PartyShell, PartyCard, PartyButton, PartyBadge, PartyInput, PartyTextarea,
   PartyDivider, PartyEyebrow, PartyPaywall, PARTY,
@@ -1700,6 +1701,9 @@ function GamesPanel({ sessionId, session }: { sessionId: string; session: any })
       <StandUpGuessPanel sessionId={sessionId} />
 
       <PollsPanel sessionId={sessionId} />
+
+      {/* Wedding · Strumenti finali — Proclamazione Vincitore (NON un gioco). */}
+      <WinnerAnnouncementPanel sessionId={sessionId} />
     </section>
   )
 }

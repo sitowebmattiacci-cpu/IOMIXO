@@ -229,6 +229,38 @@ export interface VideoLiveControl {
   updated_at?: string
 }
 
+// ── Wedding Edition: Proclamazione Vincitore (Strumenti finali) ──
+// Overlay indipendente sul Wedding Screen usato dal DJ per proclamare
+// manualmente il vincitore (sposo/sposa) al termine di una prova. NON è un
+// gioco: nessun punteggio, nessuna casualità, nessuna classifica. Le foto
+// vengono caricate nel bucket privato `wedding-photos` con il flusso già
+// esistente (`/photos/init` + PUT signed URL) e qui sono referenziate SOLO
+// tramite `storage_path`. Il payload pubblico dello Screen (`/screen/:slug`)
+// rigenera le signed URLs a ogni chiamata.
+export type WinnerAnnouncementRole = 'groom' | 'bride'
+export type WinnerAnnouncementPhase = 'hidden' | 'running' | 'revealed' | 'stopped'
+
+export interface WinnerAnnouncementConfig {
+  /** Stato corrente dell'overlay sullo Screen. `hidden` = nulla renderizzato. */
+  phase: WinnerAnnouncementPhase
+  /** Cambia SOLO ad ogni pressione di "Avvia proclamazione". Lo Screen usa
+   *  `run_id` per riprodurre la suspense una sola volta. */
+  run_id: string | null
+  /** Scelta manuale del DJ. Mai casuale. */
+  winner: WinnerAnnouncementRole | null
+  /** Path relativi nel bucket privato `wedding-photos` (mai URL: le signed
+   *  URLs scadono e vengono rigenerate dal backend a ogni /screen/:slug). */
+  groom_photo_path: string | null
+  bride_photo_path: string | null
+  /** Nomi opzionali dedicati (per split affidabile). Fallback → couple_names. */
+  groom_name: string | null
+  bride_name: string | null
+  /** ISO. Riferimento temporale per calcolare, lato Screen, se la suspense è
+   *  ancora in corso o se mostrare direttamente il reveal (reload safe). */
+  started_at: string | null
+  updated_at: string
+}
+
 export interface LiveSession {
   id: string
   dj_id: string
@@ -262,6 +294,7 @@ export interface LiveSession {
     video_url?: string
     video_title?: string
     video_live?: VideoLiveControl | null
+    winner_announcement?: WinnerAnnouncementConfig | null
     couple_font?: 'cormorant' | 'playfair' | 'great-vibes' | 'dancing' | 'cinzel' | 'tangerine'
     couple_font_size?: 'small' | 'medium' | 'large' | 'xlarge'
   } | null
@@ -733,6 +766,23 @@ export const livePhotos = {
   },
   publicListApproved: (slug: string) =>
     publicGet<LivePhoto[]>(`/api/live/public/${slug}/photos`),
+  // Wedding · Proclamazione Vincitore: upload della foto sposo/sposa nel
+  // bucket privato `wedding-photos` riusando `photos/init` + PUT signed URL.
+  // A differenza di publicUpload / boothUpload NON chiama il confirm su
+  // `live_photos`: la foto NON compare nell'album ospiti / Live Booth.
+  // Il path viene poi salvato dal DJ in `screen_config.winner_announcement`.
+  async winnerUploadPhoto(slug: string, file: File): Promise<{ storage_path: string }> {
+    const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase()
+    const init = await publicPost<{ upload_url: string; storage_path: string }>(
+      `/api/live/public/${slug}/photos/init`, { ext, size: file.size },
+    )
+    await fetch(init.upload_url, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type || 'image/jpeg' },
+      body: file,
+    })
+    return { storage_path: init.storage_path }
+  },
 }
 
 export interface ScreenPayload {
@@ -755,6 +805,12 @@ export interface ScreenPayload {
       video_url?: string
       video_title?: string
       video_live?: VideoLiveControl | null
+      /** Backend arricchisce con `groom_photo_url` e `bride_photo_url` (signed
+       *  URLs 1h) accanto ai path se `winner_announcement` è presente. */
+      winner_announcement?: (WinnerAnnouncementConfig & {
+        groom_photo_url?: string | null
+        bride_photo_url?: string | null
+      }) | null
       live_booth_layout?: 'single' | 'grid' | 'auto'
       couple_font?: 'cormorant' | 'playfair' | 'great-vibes' | 'dancing' | 'cinzel' | 'tangerine'
       couple_font_size?: 'small' | 'medium' | 'large' | 'xlarge'

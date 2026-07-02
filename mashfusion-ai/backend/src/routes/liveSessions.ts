@@ -5,8 +5,9 @@ import { AppError } from '../middleware/errorHandler'
 import { uniqueSlug } from '../utils/slug'
 import { canCreateSession } from '../services/liveLimits'
 import { countOnline } from '../services/livePresence'
-import { getUserPlan, hasEventAccess } from '../services/plan'
+import { getUserPlan, hasEventAccess, requireEventAccess } from '../services/plan'
 import { PLAN_LIMITS } from '../config/plans'
+import { deleteWeddingPhoto } from '../services/storage'
 
 export const liveSessionsRouter = Router()
 
@@ -116,11 +117,109 @@ liveSessionsRouter.patch('/sessions/:id', requireAuth, async (req, res, next) =>
     if (roulette_penitenze !== undefined)          patch.roulette_penitenze   = roulette_penitenze
     if (shoe_game_questions !== undefined)         patch.shoe_game_questions  = shoe_game_questions
 
+    // Wedding · Proclamazione Vincitore: gate specifico applicato SOLO se
+    // il payload contiene esplicitamente la chiave `screen_config.winner_announcement`.
+    // Non modifica la policy generale di screen_config per gli altri campi
+    // (roulette, shoe_game, polls, video_live, stand_up_guess, ecc.).
+    //
+    // Distinzione dei 3 casi:
+    //   (a) chiave assente          → nessun gate, comportamento invariato
+    //   (b) oggetto { … }           → gate + validazione path + cleanup file sostituiti
+    //   (c) valore `null` esplicito → gate + cleanup TOTALE (reset feature: cancella
+    //                                 entrambe le foto vecchie dal bucket)
+    //
+    // Il check è basato su `'winner_announcement' in screen_config`, non su
+    // `typeof … === 'object'`, perché in JS `typeof null === 'object'` e non
+    // distingue tra (a) e (c).
+    //
+    // Regole del gate (identiche a photos/init upload):
+    //   1. ownership: la sessione appartiene al DJ autenticato → `.eq('dj_id', userId)`.
+    //   2. session_type === 'wedding' → 403 altrimenti.
+    //   3. hasEventAccess(userId, sessionId) → 402 altrimenti. Copre già:
+    //      - plan Advance (`profile.plan === 'wedding'`)
+    //      - Event Pass 24H attivo per la sessione o globale
+    //   4. path scope (solo caso b): groom_photo_path e bride_photo_path
+    //      devono essere null OR string che inizia con `${sessionId}/` → 400.
+    //
+    // Cleanup file: eseguito DOPO l'UPDATE, fire-and-forget, mai bloccante.
+    let staleWinnerPhotos: string[] = []
+    const hasWinnerKey =
+      typeof screen_config === 'object' &&
+      screen_config !== null &&
+      Object.prototype.hasOwnProperty.call(screen_config, 'winner_announcement')
+
+    if (hasWinnerKey) {
+      const nextWinner = (screen_config as any).winner_announcement
+
+      // Tipo consentito: object non-array oppure null. Qualsiasi altra cosa → 400.
+      const isObject = typeof nextWinner === 'object' && nextWinner !== null && !Array.isArray(nextWinner)
+      const isNullReset = nextWinner === null
+      if (!isObject && !isNullReset) {
+        throw new AppError('winner_announcement deve essere object o null', 400)
+      }
+
+      // (4) Path scope: solo se stiamo aggiornando l'oggetto. Il reset (null)
+      // non contiene path da validare.
+      if (isObject) {
+        for (const key of ['groom_photo_path', 'bride_photo_path'] as const) {
+          const p = nextWinner[key]
+          if (p !== null && p !== undefined) {
+            if (typeof p !== 'string' || !p.startsWith(`${req.params.id}/`)) {
+              throw new AppError(`${key} non valido per questa sessione`, 400)
+            }
+          }
+        }
+      }
+
+      // (1) + (2): SELECT con dj_id (ownership) + session_type + screen_config
+      // (necessario anche per il cleanup dei file sostituiti/rimossi). Una sola query.
+      const { data: current } = await supabaseAdmin
+        .from('live_sessions')
+        .select('session_type, screen_config')
+        .eq('id', req.params.id)
+        .eq('dj_id', userId(req))
+        .maybeSingle()
+      if (!current) throw new AppError('Sessione non trovata', 404)
+      if (current.session_type !== 'wedding') {
+        throw new AppError('Proclamazione vincitore disponibile solo in Wedding Edition.', 403)
+      }
+
+      // (3) Advance plan OR Event Pass 24H attivo. Riusa la stessa logica
+      // usata da photos/init e dagli altri gate Wedding/Event.
+      await requireEventAccess(userId(req), req.params.id)
+
+      // Cleanup: raccogli le foto sostituite/rimosse. Nel caso "null reset"
+      // il newPath è implicitamente null → entrambe le foto precedenti (se
+      // presenti e appartenenti alla sessione) vengono cancellate.
+      const prevWinner = (current.screen_config as any)?.winner_announcement
+      if (prevWinner && typeof prevWinner === 'object') {
+        for (const key of ['groom_photo_path', 'bride_photo_path'] as const) {
+          const oldPath = prevWinner[key]
+          const newPath = isNullReset ? null : nextWinner[key]
+          if (
+            typeof oldPath === 'string' &&
+            oldPath.length > 0 &&
+            oldPath !== newPath &&
+            // safety ridondante: il path deve appartenere alla sessione
+            oldPath.startsWith(`${req.params.id}/`)
+          ) {
+            staleWinnerPhotos.push(oldPath)
+          }
+        }
+      }
+    }
+
     const { data, error } = await supabaseAdmin
       .from('live_sessions').update(patch).eq('id', req.params.id).eq('dj_id', userId(req))
       .select('*').maybeSingle()
     if (error) throw new AppError(error.message, 500)
     if (!data) throw new AppError('Sessione non trovata', 404)
+
+    // Cleanup fire-and-forget dopo il commit (mai bloccante).
+    for (const path of staleWinnerPhotos) {
+      deleteWeddingPhoto(path).catch(() => {})
+    }
+
     res.json({ data })
   } catch (e) { next(e) }
 })

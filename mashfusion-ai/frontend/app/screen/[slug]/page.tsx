@@ -8,6 +8,7 @@ import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
 import { WeddingPhotoDisplay } from '@/components/wedding/WeddingPhotoGridWall'
 import { RouletteWheel } from '@/components/wedding/RouletteWheel'
+import { WinnerAnnouncementStage } from '@/components/wedding/WinnerAnnouncementStage'
 import { PartyShell, PartyDivider, PARTY } from '@/components/party/PartyUI'
 import { PartyPhotoDisplay, type LiveBoothLayout } from '@/components/party/PartyPhotoGridWall'
 import { resolveVideoSource, type VideoLiveSource } from '@/lib/utils'
@@ -268,6 +269,14 @@ export default function ScreenModePage() {
           showClose={false}
         />
       )}
+      {/* Wedding · Proclamazione Vincitore: overlay indipendente sopra lo
+          Screen quando phase !== 'hidden'. Quando phase === 'hidden' non
+          renderizza nulla e lo schermo resta identico. */}
+      <WinnerAnnouncementStage
+        state={(cfg as any).winner_announcement ?? null}
+        coupleNames={session.couple_names}
+        fontFamily={coupleFontFamily}
+      />
       <div className="min-h-screen w-screen overflow-hidden flex items-stretch relative">
         {/* Decorative gold orbs */}
         <div className="absolute top-0 left-1/4 h-[500px] w-[500px] rounded-full bg-wedding-gold/10 blur-3xl pointer-events-none" />

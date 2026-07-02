@@ -72,6 +72,31 @@ liveScreenRouter.get('/public/:slug/screen', async (req, res, next) => {
     const showPolls = config.show_polls === true
     console.log('✓ Visibility:', { showPhotos, showDedications, showRoulette, showShoeGame, showPolls })
 
+    // Wedding · Proclamazione Vincitore: arricchisce winner_announcement con le
+    // signed URLs (1h) delle foto sposo/sposa. I path restano in DB, gli URL
+    // vengono rigenerati a ogni chiamata (il polling dello Screen è 1.5s).
+    // Nessuna nuova route: usa il bucket privato `wedding-photos` esistente.
+    let screenConfigOut: any = session.screen_config
+    const winnerCfg = (config as any).winner_announcement
+    if (winnerCfg && typeof winnerCfg === 'object') {
+      const [groomUrl, brideUrl] = await Promise.all([
+        winnerCfg.groom_photo_path
+          ? createWeddingPhotoSignedUrl(winnerCfg.groom_photo_path, 3600).catch(() => null)
+          : Promise.resolve(null),
+        winnerCfg.bride_photo_path
+          ? createWeddingPhotoSignedUrl(winnerCfg.bride_photo_path, 3600).catch(() => null)
+          : Promise.resolve(null),
+      ])
+      screenConfigOut = {
+        ...(session.screen_config as Record<string, unknown> | null ?? {}),
+        winner_announcement: {
+          ...winnerCfg,
+          groom_photo_url: groomUrl,
+          bride_photo_url: brideUrl,
+        },
+      }
+    }
+
     res.json({
       data: {
         session: {
@@ -82,7 +107,7 @@ liveScreenRouter.get('/public/:slug/screen', async (req, res, next) => {
           wedding_date:  session.wedding_date,
           venue_name:    session.venue_name,
           is_active:     session.is_active,
-          screen_config: session.screen_config,
+          screen_config: screenConfigOut,
         },
         roulette:    showRoulette && roundRes.data?.result ? roundRes.data : null,
         shoe_game:   showShoeGame ? (shoeRes.data ?? null) : null,
