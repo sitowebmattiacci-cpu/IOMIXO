@@ -48,11 +48,11 @@ import { useI18n } from '@/lib/i18n'
 
 // ── Timing map (deterministico da started_at) ────────────────────
 /** Durata totale della suspense (alternanza rallentata sposo/sposa). */
-const SUSPENSE_MS = 4500
+const SUSPENSE_MS = 8000
 /** Durata del flash bianco-dorato al reveal. */
-const FLASH_MS = 150
+const FLASH_MS = 180
 /** Ultimi ms di suspense in cui si attiva il camera shake progressivo. */
-const SHAKE_WINDOW_MS = 800
+const SHAKE_WINDOW_MS = 1400
 /** Periodo del pulse heartbeat sulla card highlightata (2 battiti per periodo). */
 const HEARTBEAT_PERIOD_MS = 900
 /** Durata dell'animazione dei coriandoli dopo il reveal. */
@@ -206,7 +206,10 @@ export function WinnerAnnouncementStage({ state, coupleNames, fontFamily }: Prop
     if (!isSuspense) return null
     const progress = Math.min(1, elapsed / SUSPENSE_MS)
     const eased = easeOutExpo(progress)
-    const totalFlips = 14
+    // 22 flip totali distribuiti su 8s con easeOutExpo: primi 4s scorrono
+    // veloci (drum-roll), ultimi 4s rallentano molto per costruire tensione,
+    // gli ultimi ~1.2s la card highlightata resta stabile prima del reveal.
+    const totalFlips = 22
     const flips = Math.floor(eased * totalFlips)
     return flips % 2 === 0 ? 'groom' : 'bride'
   })()
@@ -257,7 +260,7 @@ export function WinnerAnnouncementStage({ state, coupleNames, fontFamily }: Prop
       {/* Wrapper contenuto con camera shake diretto via style
           (no framer transition, evita render costosi durante il tick 40ms). */}
       <div
-        className="relative w-full max-w-[1600px] flex flex-col items-center gap-10"
+        className="relative w-full max-w-[1600px] flex flex-col items-center gap-16 sm:gap-20"
         style={{
           transform: `translate3d(${shake.x}px, ${shake.y}px, 0)`,
           willChange: shake.x !== 0 || shake.y !== 0 ? 'transform' : undefined,
@@ -494,12 +497,13 @@ function PhotoCard({
           <SparkleRing seed={`${runId}-${role}`} />
         )}
 
-        {/* Corona SVG con bounce (solo winner, posizionata sopra la foto). */}
+        {/* Corona SVG con bounce (solo winner, posizionata sopra la foto).
+            top ridotto per non intersecare la headline anche a scale 1.18. */}
         {isWinner && (
           <motion.div
             className="absolute pointer-events-none z-20"
             style={{
-              top: '-72px',
+              top: '-38px',
               left: '50%',
               transformOrigin: 'center bottom',
             }}
@@ -513,22 +517,23 @@ function PhotoCard({
               mass: 0.9,
             }}
           >
-            <CrownSVG width={110} />
+            <CrownSVG width={92} />
           </motion.div>
         )}
       </div>
 
-      <p
-        className={`text-xl sm:text-2xl md:text-3xl uppercase tracking-[0.28em] transition-colors duration-500 ${
-          isWinner
-            ? 'text-wedding-gold-soft'
-            : isLoser
-              ? 'text-wedding-taupe'
-              : 'text-wedding-ivory/90'
-        }`}
-      >
-        {label}
-      </p>
+      {/* Label sotto la foto: nascosta durante il reveal per evitare la
+          duplicazione visiva del nome (già mostrato in grande da WinnerRevealText).
+          Durante suspense/idle/stopped resta visibile per identificare le due card. */}
+      {!(isWinner || isLoser) && (
+        <p
+          className={`text-xl sm:text-2xl md:text-3xl uppercase tracking-[0.28em] transition-colors duration-500 ${
+            highlighted && !neutral ? 'text-wedding-gold-soft' : 'text-wedding-ivory/90'
+          }`}
+        >
+          {label}
+        </p>
+      )}
     </motion.div>
   )
 }
