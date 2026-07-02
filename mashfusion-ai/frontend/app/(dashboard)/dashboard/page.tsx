@@ -8,8 +8,7 @@ import { live } from '@/lib/api'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
-import { formatRelativeTime } from '@/lib/utils'
-import { useI18n } from '@/lib/i18n'
+import { useI18n, type Locale } from '@/lib/i18n'
 import { useEffectiveAccess, isPremiumSession } from '@/lib/access'
 
 /** Tempo rimanente leggibile (es. "2h 30m") dato un timestamp ISO futuro. */
@@ -23,8 +22,21 @@ function formatRemaining(validUntil: string | null): string | null {
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`
 }
 
+/** BCP-47 tag per Intl a partire dal locale interno dell'app. */
+const INTL_TAG: Record<Locale, string> = { it: 'it-IT', en: 'en-US', es: 'es-ES', fr: 'fr-FR' }
+
+/**
+ * Data evento localizzata in forma lunga (es. "2 luglio 2026", "July 2, 2026").
+ * Gestisce sia date-only (YYYY-MM-DD, campo DATE Postgres) sia timestamp ISO,
+ * ancorando alle 12:00 le date-only per evitare slittamenti di timezone.
+ */
+function formatEventDate(value: string, locale: Locale): string {
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T12:00:00`) : new Date(value)
+  return new Intl.DateTimeFormat(INTL_TAG[locale], { day: 'numeric', month: 'long', year: 'numeric' }).format(date)
+}
+
 function DashboardInner() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const { user: me, isFree, effectiveLabel, hasActiveEventPass, passValidUntil, hasAdvanceAccess } = useEffectiveAccess()
   const { data: sessions } = useSWR('live-sessions', () => live.listSessions())
 
@@ -147,7 +159,7 @@ function DashboardInner() {
                     <p className="font-semibold text-white truncate">{s.event_name}</p>
                   </div>
                   <p className="text-xs text-white/40">
-                    {formatRelativeTime(s.created_at)} · /live/{s.public_slug}
+                    {formatEventDate(s.created_at, locale)}
                   </p>
                 </div>
                 {locked ? (
