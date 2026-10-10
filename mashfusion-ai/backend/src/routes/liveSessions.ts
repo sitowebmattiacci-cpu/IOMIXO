@@ -8,6 +8,7 @@ import { countOnline } from '../services/livePresence'
 import { getUserPlan, hasEventAccess, requireEventAccess } from '../services/plan'
 import { PLAN_LIMITS } from '../config/plans'
 import { deleteWeddingPhoto } from '../services/storage'
+import { projectSession, projectSessionDeleted, projectRequestStatus, projectRequestDeleted } from '../services/eventProjection'
 
 export const liveSessionsRouter = Router()
 
@@ -68,6 +69,7 @@ liveSessionsRouter.post('/sessions', requireAuth, async (req, res, next) => {
       .insert(insertPayload).select('*').single()
     if (error) throw new AppError(error.message, 500)
 
+    await projectSession(req, data) // TODO(firebase-migration): transitional Firestore projection (flag-gated)
     res.status(201).json({ data })
   } catch (e) { next(e) }
 })
@@ -220,6 +222,7 @@ liveSessionsRouter.patch('/sessions/:id', requireAuth, async (req, res, next) =>
       deleteWeddingPhoto(path).catch(() => {})
     }
 
+    await projectSession(req, data) // TODO(firebase-migration): transitional Firestore projection (flag-gated)
     res.json({ data })
   } catch (e) { next(e) }
 })
@@ -230,6 +233,7 @@ liveSessionsRouter.delete('/sessions/:id', requireAuth, async (req, res, next) =
     const { error } = await supabaseAdmin
       .from('live_sessions').delete().eq('id', req.params.id).eq('dj_id', userId(req))
     if (error) throw new AppError(error.message, 500)
+    await projectSessionDeleted(req, req.params.id) // TODO(firebase-migration)
     res.status(204).end()
   } catch (e) { next(e) }
 })
@@ -277,6 +281,7 @@ liveSessionsRouter.patch('/requests/:requestId', requireAuth, async (req, res, n
       .from('live_requests').update({ status }).eq('id', req.params.requestId)
       .select('*').single()
     if (error) throw new AppError(error.message, 500)
+    await projectRequestStatus(existing.session_id, req.params.requestId, status) // TODO(firebase-migration)
     res.json({ data })
   } catch (e) { next(e) }
 })
@@ -286,7 +291,7 @@ liveSessionsRouter.delete('/requests/:requestId', requireAuth, async (req, res, 
   try {
     const { data: existing } = await supabaseAdmin
       .from('live_requests')
-      .select('id, live_sessions!inner(dj_id)')
+      .select('id, session_id, live_sessions!inner(dj_id)')
       .eq('id', req.params.requestId)
       .maybeSingle()
     if (!existing || (existing as any).live_sessions?.dj_id !== userId(req)) {
@@ -295,6 +300,7 @@ liveSessionsRouter.delete('/requests/:requestId', requireAuth, async (req, res, 
     const { error } = await supabaseAdmin
       .from('live_requests').delete().eq('id', req.params.requestId)
     if (error) throw new AppError(error.message, 500)
+    await projectRequestDeleted((existing as any).session_id, req.params.requestId) // TODO(firebase-migration)
     res.status(204).end()
   } catch (e) { next(e) }
 })

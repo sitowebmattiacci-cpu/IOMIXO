@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Cormorant_Garamond, Playfair_Display, Great_Vibes, Dancing_Script, Cinzel, Tangerine } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import { I18nProvider } from '@/lib/i18n'
+import { AuthProvider } from '@/lib/auth/AuthProvider'
 import './globals.css'
 
 const inter = Inter({
@@ -105,7 +106,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="it" className={`${inter.variable} ${cormorant.variable} ${playfair.variable} ${greatVibes.variable} ${dancingScript.variable} ${cinzel.variable} ${tangerine.variable} dark`} suppressHydrationWarning>
       <body className="bg-surface-400 text-white antialiased" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false">
         <I18nProvider>
-          {children}
+          <AuthProvider>{children}</AuthProvider>
           <Toaster
           position="top-right"
           toastOptions={{

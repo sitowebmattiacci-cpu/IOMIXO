@@ -1,7 +1,7 @@
 'use client'
 import { useParams, useRouter } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import {
   ArrowLeft, Trash2, Power, Heart, MessageSquare,
@@ -23,6 +23,9 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { QRCard } from '@/components/live/QRCard'
 import { RequestItem } from '@/components/live/RequestItem'
+import { useRequestsSignal } from '@/lib/events/useRequests'
+import { useDedicationsSignal } from '@/lib/events/useDedications'
+import { usePollsSignal } from '@/lib/events/usePolls'
 import { UpgradeGate } from '@/components/live/UpgradeGate'
 import { SessionLockScreen } from '@/components/live/SessionLockScreen'
 import {
@@ -279,11 +282,16 @@ export default function SessionDetailPage() {
     { refreshInterval: 5_000 },
   )
   const { hasAdvanceAccess, isFree } = useEffectiveAccess()
-  const { data: requests } = useSWR(
+  // Realtime change signal from Firestore for THIS event only. Supabase is still authoritative,
+  // so a change triggers a re-fetch of the legacy list instead of rendering Firestore data.
+  // While the signal is live the 5s polling drops to a 60s safety net (covers a missed projection).
+  const requestsSignal = useRequestsSignal(sessionId)
+  const { data: requests, mutate: refreshRequests } = useSWR(
     sessionId ? ['requests', sessionId] : null,
     () => live.listRequests(sessionId!),
-    { refreshInterval: 5_000 },
+    { refreshInterval: requestsSignal.live ? 60_000 : 5_000 },
   )
+  useEffect(() => { if (requestsSignal.tick > 0) refreshRequests() }, [requestsSignal.tick, refreshRequests])
 
   const [busyId, setBusyId] = useState<string | null>(null)
   const [togglingActive, setTogglingActive] = useState(false)
@@ -1053,9 +1061,14 @@ function WeddingQRCompact({ slug }: { slug: string }) {
 
 function WeddingStats({ sessionId, pendingCount }: { sessionId: string; pendingCount: number }) {
   const { t } = useI18n()
-  const { data: dedications } = useSWR(['dedications', sessionId], () => liveDedications.listForDj(sessionId), { refreshInterval: 8_000 })
+  // Realtime change signal (Firestore) → re-fetch of the authoritative legacy list; slow safety poll while live.
+  const dedSignal = useDedicationsSignal(sessionId)
+  const { data: dedications, mutate: refreshDedications } = useSWR(['dedications', sessionId], () => liveDedications.listForDj(sessionId), { refreshInterval: dedSignal.live ? 60_000 : 8_000 })
+  useEffect(() => { if (dedSignal.tick > 0) refreshDedications() }, [dedSignal.tick, refreshDedications])
   const { data: photos }      = useSWR(['photos', sessionId],      () => livePhotos.listForDj(sessionId),      { refreshInterval: 8_000 })
-  const { data: polls }       = useSWR(['polls', sessionId],       () => livePolls.list(sessionId),            { refreshInterval: 8_000 })
+  const pollSignal = usePollsSignal(sessionId)
+  const { data: polls, mutate: refreshPolls } = useSWR(['polls', sessionId], () => livePolls.list(sessionId), { refreshInterval: pollSignal.live ? 60_000 : 8_000 })
+  useEffect(() => { if (pollSignal.tick > 0) refreshPolls() }, [pollSignal.tick, refreshPolls])
   const activeGames = (polls ?? []).filter((p: LivePoll) => p.is_active).length
 
   // Notifiche live: pulsano solo se ci sono elementi realmente da gestire (pending).
@@ -1151,11 +1164,13 @@ function RequestsPanel({ pending, approved, rejected, busyId, isFree, onUpdate, 
 
 function DedicationsPanel({ sessionId }: { sessionId: string }) {
   const { t } = useI18n()
+  const dedSignal = useDedicationsSignal(sessionId)
   const { data, mutate: refresh } = useSWR(
     ['dedications', sessionId],
     () => liveDedications.listForDj(sessionId),
-    { refreshInterval: 5_000 },
+    { refreshInterval: dedSignal.live ? 60_000 : 5_000 },
   )
+  useEffect(() => { if (dedSignal.tick > 0) refresh() }, [dedSignal.tick, refresh])
   const setStatus = async (id: string, status: 'approved' | 'rejected') => {
     try { await liveDedications.setStatus(id, status); refresh() }
     catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric')) }
@@ -2302,11 +2317,14 @@ function StandUpGuessPanel({ sessionId }: { sessionId: string }) {
 
 function PollsPanel({ sessionId }: { sessionId: string }) {
   const { t } = useI18n()
+  // Realtime change signal (Firestore: polls + tally of open polls) → re-fetch of the authoritative legacy list.
+  const pollSignal = usePollsSignal(sessionId)
   const { data: polls, mutate: refresh } = useSWR(
     ['polls', sessionId],
     () => livePolls.list(sessionId),
-    { refreshInterval: 6_000 },
+    { refreshInterval: pollSignal.live ? 60_000 : 6_000 },
   )
+  useEffect(() => { if (pollSignal.tick > 0) refresh() }, [pollSignal.tick, refresh])
   const [question, setQuestion] = useState('')
   const [options, setOptions] = useState<string[]>(['', ''])
   const [creating, setCreating] = useState(false)
@@ -2715,7 +2733,9 @@ function PartyStatPhotos({ sessionId }: { sessionId: string }) {
 }
 
 function PartyStatPolls({ sessionId }: { sessionId: string }) {
-  const { data } = useSWR(['polls', sessionId], () => livePolls.list(sessionId).catch(() => []), { refreshInterval: 8_000 })
+  const pollSignal = usePollsSignal(sessionId)
+  const { data, mutate: refreshPolls } = useSWR(['polls', sessionId], () => livePolls.list(sessionId).catch(() => []), { refreshInterval: pollSignal.live ? 60_000 : 8_000 })
+  useEffect(() => { if (pollSignal.tick > 0) refreshPolls() }, [pollSignal.tick, refreshPolls])
   const active = (data ?? []).filter((p) => p.is_active).length
   return <PartyStat icon={<ListChecks className="h-4 w-4" />} label="Battle attive" value={String(active)} />
 }
@@ -2812,7 +2832,9 @@ function PartyPhotoTile({ photo, onApprove, onReject, onRemove, onFeature, appro
 
 // ─────────────── MUSIC BATTLE PANEL ───────────────
 function PartyBattlePanel({ sessionId, isFree }: { sessionId: string; isFree: boolean }) {
-  const { data: polls, mutate: refresh } = useSWR(['polls', sessionId], () => livePolls.list(sessionId), { refreshInterval: 5_000 })
+  const pollSignal = usePollsSignal(sessionId)
+  const { data: polls, mutate: refresh } = useSWR(['polls', sessionId], () => livePolls.list(sessionId), { refreshInterval: pollSignal.live ? 60_000 : 5_000 })
+  useEffect(() => { if (pollSignal.tick > 0) refresh() }, [pollSignal.tick, refresh])
   const [customQ, setCustomQ] = useState('')
   const [customA, setCustomA] = useState('')
   const [customB, setCustomB] = useState('')

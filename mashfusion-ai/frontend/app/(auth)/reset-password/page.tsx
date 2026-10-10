@@ -1,15 +1,18 @@
 'use client'
 import { useState, Suspense } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Sparkles, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react'
-import { getSupabaseClient } from '@/lib/supabase'
+import { authProvider, authErrorMessage, legacySupabase } from '@/lib/auth'
+import { completePasswordReset } from '@/lib/firebase/auth'
 import { Button } from '@/components/ui/Button'
 import toast from 'react-hot-toast'
 
 function ResetPasswordContent() {
   const router = useRouter()
+  // Firebase email links carry ?oobCode=...; the legacy Supabase flow relies on a session set by /auth/callback.
+  const oobCode = useSearchParams().get('oobCode')
 
   const [password,  setPassword]  = useState('')
   const [confirm,   setConfirm]   = useState('')
@@ -34,13 +37,17 @@ function ResetPasswordContent() {
 
     setLoading(true)
     try {
-      // Session was established by /auth/callback after user clicked the reset link
-      const { error } = await getSupabaseClient().auth.updateUser({ password })
-      if (error) throw error
+      if (authProvider() === 'firebase') {
+        if (!oobCode) throw new Error('This link is invalid or has expired')
+        await completePasswordReset(oobCode, password)
+      } else {
+        // TODO(firebase-migration): legacy — session was set by /auth/callback after the reset link
+        await legacySupabase.updatePassword(password)
+      }
       setDone(true)
       setTimeout(() => router.push('/login'), 2500)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Reset failed. The link may have expired.')
+      toast.error(authErrorMessage(err, 'Reset failed. The link may have expired.'))
     } finally {
       setLoading(false)
     }

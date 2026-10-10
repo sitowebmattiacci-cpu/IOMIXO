@@ -8,6 +8,7 @@ import { PLAN_LIMITS } from '../config/plans'
 import { getEffectivePlan } from '../services/plan'
 import { createWeddingPhotoSignedUrl } from '../services/storage'
 import { getSmartRandomOption } from '../utils/smartRandom'
+import { projectRequestCreated, projectRequestStatus, projectDedicationStatus } from '../services/eventProjection'
 
 export const livePublicRouter = Router()
 
@@ -120,6 +121,8 @@ livePublicRouter.post('/:slug/requests', async (req, res, next) => {
     }).select('id, track_title, artist, status, created_at').single()
     if (error) throw new AppError(error.message, 500)
 
+    // TODO(firebase-migration): transitional Firestore projection (flag-gated, best effort)
+    await projectRequestCreated({ ...data, session_id: session.id, message: message ? String(message).slice(0, 500) : null })
     res.status(201).json({ data })
   } catch (e) { next(e) }
 })
@@ -212,6 +215,7 @@ livePublicRouter.patch('/:slug/requests/:id', async (req, res, next) => {
     if (error) throw new AppError(error.message, 500)
     if (!data) throw new AppError('Richiesta non trovata', 404)
 
+    await projectRequestStatus(session.id, req.params.id, status) // TODO(firebase-migration)
     res.json({ data })
   } catch (e) { next(e) }
 })
@@ -260,6 +264,7 @@ livePublicRouter.patch('/:slug/dedications/:id', async (req, res, next) => {
     if (error) throw new AppError(error.message, 500)
     if (!data) throw new AppError('Dedica non trovata', 404)
 
+    await projectDedicationStatus(session.id, req.params.id, status) // TODO(firebase-migration)
     res.json({ data })
   } catch (e) { next(e) }
 })

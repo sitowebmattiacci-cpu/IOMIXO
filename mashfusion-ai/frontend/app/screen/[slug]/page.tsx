@@ -4,6 +4,8 @@ import useSWR from 'swr'
 import { QRCodeSVG } from 'qrcode.react'
 import { Heart, Sparkles, ListChecks, Footprints, Youtube, Users, Camera } from 'lucide-react'
 import { liveScreen, type VideoLiveCommand, type StandUpGuessConfig, type StandUpGuessRound } from '@/lib/api'
+import { useLiveEvent } from '@/lib/events/useLiveEvent'
+import { useActivePoll, toLegacyPoll } from '@/lib/events/usePolls'
 import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
 import { WeddingPhotoDisplay } from '@/components/wedding/WeddingPhotoGridWall'
@@ -67,6 +69,10 @@ export default function ScreenModePage() {
     () => liveScreen.get(slug!),
     { refreshInterval: 1_500 },
   )
+  // Poll results arrive in realtime from Firestore (open poll + tally shards; never the votes). The 1.5s polling
+  // of the whole payload stays because the other TV sections (games, photos...) are not migrated yet.
+  const liveEvent = useLiveEvent(slug)
+  const rtPoll = useActivePoll(liveEvent?.id)
 
   const [showRouletteWheel, setShowRouletteWheel] = useState(false)
   const [wheelPenitenze, setWheelPenitenze] = useState<any[]>([])
@@ -146,7 +152,8 @@ export default function ScreenModePage() {
     )
   }
 
-  const { session, roulette, shoe_game, active_poll, dedications, photos } = data
+  const { session, roulette, shoe_game, dedications, photos } = data
+  const active_poll = rtPoll === undefined ? data.active_poll : rtPoll ? (toLegacyPoll(rtPoll) as typeof data.active_poll) : null
   const isParty = (session as any).session_type === 'party'
 
   // ─── PARTY MODE SCREEN (dark premium / red wine / fuchsia) ───

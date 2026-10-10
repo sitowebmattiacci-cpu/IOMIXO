@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test:firebase": "npm --prefix ../../firebase/functions run build && printf 'SUPABASE_SERVICE_ROLE_KEY=test-key\\n' > ../../firebase/functions/.secret.local && printf 'LEGACY_BRIDGE=supabase\\nSUPABASE_URL=http://127.0.0.1:54321\\nAPPCHECK_ENFORCE_VOTE=false\\nAPPCHECK_ENFORCE_DEDICATION=false\\nAPPCHECK_ENFORCE_REQUEST=false\\n' > ../../firebase/functions/.env.demo-iomixo && SUPABASE_SERVICE_ROLE_KEY=test-key NEXT_PUBLIC_FIREBASE_USE_EMULATORS=true firebase emulators:exec --config ../../firebase/firebase.json --project demo-iomixo --only auth,firestore,functions \"tsx --test --test-timeout=60000 --test-concurrency=1 tests/firebase/*.test.ts\"",
+    "dev:emulators": "NEXT_PUBLIC_FIREBASE_USE_EMULATORS=true next dev",
+    "check:owner-cloud": "tsx scripts/owner-cloud-check.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.0.4",
@@ -26,6 +29,7 @@
     "axios": "^1.7.2",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
+    "firebase": "^13.0.0",
     "framer-motion": "^11.2.10",
     "lucide-react": "^0.383.0",
     "next": "14.2.0",
@@ -49,6 +53,7 @@
     "eslint-config-next": "14.2.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
+    "tsx": "^4.23.15",
     "typescript": "^5.4.5"
   }
 }

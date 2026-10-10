@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
-import { getSupabaseClient } from '@/lib/supabase'
+import { signIn, authErrorMessage } from '@/lib/auth'
 import { Button } from '@/components/ui/Button'
 import { Logo } from '@/components/Logo'
 import toast from 'react-hot-toast'
@@ -21,15 +21,11 @@ export default function LoginPage() {
     if (!email || !password) { toast.error('Please fill in all fields'); return }
     setLoading(true)
     try {
-      const { error } = await getSupabaseClient().auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
-      })
-      if (error) throw error
+      await signIn(email.trim().toLowerCase(), password)
       toast.success('Welcome back!')
       router.push('/dashboard')
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Login failed')
+      toast.error(authErrorMessage(err, 'Login failed'))
     } finally {
       setLoading(false)
     }

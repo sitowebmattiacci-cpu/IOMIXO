@@ -6,6 +6,7 @@ import { hashClient, rateLimitOk } from '../utils/ipHash'
 import { getUserPlan, hasFeature, hasEventAccess } from '../services/plan'
 import { PLAN_LIMITS } from '../config/plans'
 import { isEventSession } from '../utils/sessionType'
+import { projectDedicationCreated, projectDedicationStatus, projectDedicationDeleted } from '../services/eventProjection'
 
 export const liveDedicationsRouter = Router()
 
@@ -58,6 +59,8 @@ liveDedicationsRouter.post('/public/:slug/dedications', async (req, res, next) =
       ip_hash:    ipHash,
     }).select('id, status, created_at').single()
     if (error) throw new AppError(error.message, 500)
+    // TODO(firebase-migration): transitional Firestore projection (flag-gated, best effort)
+    await projectDedicationCreated({ id: data.id, session_id: session.id, guest_name: guest_name ? String(guest_name).slice(0, 80) : null, message: message.slice(0, 500), status: data.status, created_at: data.created_at })
     res.status(201).json({ data })
   } catch (e) { next(e) }
 })
@@ -101,7 +104,7 @@ liveDedicationsRouter.patch('/dedications/:id', requireAuth, async (req, res, ne
     }
     const { data: existing } = await supabaseAdmin
       .from('live_dedications')
-      .select('id, live_sessions!inner(dj_id, session_type)')
+      .select('id, session_id, live_sessions!inner(dj_id, session_type)')
       .eq('id', req.params.id).maybeSingle()
     if (!existing || (existing as any).live_sessions?.dj_id !== userId(req)) {
       throw new AppError('Dedica non trovata', 404)
@@ -114,6 +117,7 @@ liveDedicationsRouter.patch('/dedications/:id', requireAuth, async (req, res, ne
       .from('live_dedications').update({ status }).eq('id', req.params.id)
       .select('*').single()
     if (error) throw new AppError(error.message, 500)
+    await projectDedicationStatus((existing as any).session_id, req.params.id, status) // TODO(firebase-migration)
     res.json({ data })
   } catch (e) { next(e) }
 })
@@ -123,7 +127,7 @@ liveDedicationsRouter.delete('/dedications/:id', requireAuth, async (req, res, n
   try {
     const { data: existing } = await supabaseAdmin
       .from('live_dedications')
-      .select('id, live_sessions!inner(dj_id)')
+      .select('id, session_id, live_sessions!inner(dj_id)')
       .eq('id', req.params.id).maybeSingle()
     if (!existing || (existing as any).live_sessions?.dj_id !== userId(req)) {
       throw new AppError('Dedica non trovata', 404)
@@ -131,6 +135,7 @@ liveDedicationsRouter.delete('/dedications/:id', requireAuth, async (req, res, n
     const { error } = await supabaseAdmin
       .from('live_dedications').delete().eq('id', req.params.id)
     if (error) throw new AppError(error.message, 500)
+    await projectDedicationDeleted((existing as any).session_id, req.params.id) // TODO(firebase-migration)
     res.status(204).end()
   } catch (e) { next(e) }
 })

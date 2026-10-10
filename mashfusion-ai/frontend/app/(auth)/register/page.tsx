@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, CheckCircle2, Send } from 'lucide-react'
-import { getSupabaseClient } from '@/lib/supabase'
+import { signUp, resendVerification, authErrorMessage } from '@/lib/auth'
 import { Button } from '@/components/ui/Button'
 import { Logo } from '@/components/Logo'
 import toast from 'react-hot-toast'
@@ -32,18 +32,10 @@ export default function RegisterPage() {
     if (password.length < 8) { toast.error('Password must be at least 8 characters'); return }
     setLoading(true)
     try {
-      const { error } = await getSupabaseClient().auth.signUp({
-        email:    email.trim().toLowerCase(),
-        password,
-        options:  {
-          data:        { full_name: fullName.trim() },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      })
-      if (error) throw error
+      await signUp(email.trim().toLowerCase(), password, fullName.trim())
       setDone(true)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Registration failed')
+      toast.error(authErrorMessage(err, 'Registration failed'))
     } finally {
       setLoading(false)
     }
@@ -52,12 +44,7 @@ export default function RegisterPage() {
   const handleResend = async () => {
     setResending(true)
     try {
-      const { error } = await getSupabaseClient().auth.resend({
-        type:  'signup',
-        email: email.trim().toLowerCase(),
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-      })
-      if (error) throw error
+      await resendVerification(email.trim().toLowerCase())
       toast.success('New verification email sent!')
     } catch {
       toast.error('Failed to resend. Try again in a moment.')

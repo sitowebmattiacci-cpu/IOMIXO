@@ -1,5 +1,5 @@
 import axios, { AxiosError, type AxiosInstance } from 'axios'
-import { getAccessToken } from '@/lib/supabase'
+import { getAuthToken, signOut } from '@/lib/auth'
 import type {
   User, Subscription, Payment,
   ApiResponse,
@@ -16,10 +16,10 @@ function getClient(): AxiosInstance {
     headers: { 'Content-Type': 'application/json' },
   })
 
-  // Attach Supabase JWT on every request
+  // Attach the auth token (Firebase ID token; legacy Supabase JWT as fallback) on every request
   _client.interceptors.request.use(async (cfg) => {
     if (typeof window !== 'undefined') {
-      const token = await getAccessToken()
+      const token = await getAuthToken()
       if (token) cfg.headers.Authorization = `Bearer ${token}`
     }
     return cfg
@@ -61,10 +61,9 @@ export const auth = {
     } catch (e) { apiError(e) }
   },
 
-  /** Sign out via Supabase and redirect. */
+  /** Sign out of the active auth provider. */
   async logout(): Promise<void> {
-    const { getSupabaseClient } = await import('@/lib/supabase')
-    await getSupabaseClient().auth.signOut()
+    await signOut()
   },
 }
 

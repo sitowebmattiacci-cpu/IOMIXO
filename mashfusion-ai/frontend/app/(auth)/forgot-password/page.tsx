@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Sparkles, Mail, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react'
-import { getSupabaseClient } from '@/lib/supabase'
+import { requestPasswordReset, authErrorMessage } from '@/lib/auth'
 import { Button } from '@/components/ui/Button'
 import toast from 'react-hot-toast'
 
@@ -17,14 +17,10 @@ export default function ForgotPasswordPage() {
     if (!email) { toast.error('Enter your email address'); return }
     setLoading(true)
     try {
-      const { error } = await getSupabaseClient().auth.resetPasswordForEmail(
-        email.trim().toLowerCase(),
-        { redirectTo: `${window.location.origin}/auth/callback?next=/reset-password` }
-      )
-      if (error) throw error
+      await requestPasswordReset(email.trim().toLowerCase())
       setSent(true)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Request failed. Try again.')
+      toast.error(authErrorMessage(err, 'Request failed. Try again.'))
     } finally {
       setLoading(false)
     }

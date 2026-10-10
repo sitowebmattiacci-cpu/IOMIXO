@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "iomixo-494817",
+    "prod": "iomixo-494817",
+    "emulator": "demo-iomixo"
+  }
+}

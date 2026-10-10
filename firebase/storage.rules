@@ -1,0 +1,10 @@
+rules_version = '2';
+// Baseline: deny everything. Rules for avatars / event photos are added
+// when the Storage domain is migrated.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

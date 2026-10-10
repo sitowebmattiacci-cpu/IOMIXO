@@ -1,0 +1,9 @@
+{
+  "name": "iomixo-firebase",
+  "private": true,
+  "scripts": {
+    "emulators": "firebase emulators:start --project demo-iomixo",
+    "check:rules-prod": "echo 'Compare the local rules with the deployed ones (read-only):' && firebase firestore:databases:get '(default)' --project iomixo-494817",
+    "deploy:rules:dry": "firebase deploy --only firestore:rules,storage --project iomixo-494817 --dry-run"
+  }
+}

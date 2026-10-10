@@ -1,0 +1,165 @@
+rules_version = '2';
+// Least privilege. Every collection not listed below stays closed (deny-all).
+// Server-only fields (plan, legacySupabaseId, publicSlug, roles...) are written
+// exclusively through the Admin SDK (backend / Cloud Functions), which bypasses rules.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAccount() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+    function isOwner(uid) {
+      return isAccount() && request.auth.uid == uid;
+    }
+    function isEventOwner(eventId) {
+      return isAccount()
+        && get(/databases/$(database)/documents/events/$(eventId)).data.ownerUid == request.auth.uid;
+    }
+    function optStr(d, k, max) {
+      return !(k in d) || d[k] == null || (d[k] is string && d[k].size() <= max);
+    }
+    function optUrl(d, k, max) {
+      return !(k in d) || d[k] == null
+        || (d[k] is string && d[k].size() <= max && d[k].matches('^https?://.+'));
+    }
+
+    // ── users/{uid}: account document ────────────────────────────────────────
+    function validUserProfile(d) {
+      return optStr(d, 'displayName', 80) && optUrl(d, 'avatarUrl', 2048);
+    }
+
+    match /users/{uid} {
+      allow get: if isOwner(uid);
+      allow list: if false;
+
+      // The client may only create its own FREE, non-legacy document.
+      allow create: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(
+             ['uid', 'email', 'displayName', 'avatarUrl', 'plan', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['uid', 'email', 'plan', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid == uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.plan == {'tier': 'free', 'source': 'default'}
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && validUserProfile(request.resource.data);
+
+      // Only profile fields are editable; plan, legacySupabaseId, email, uid are not.
+      allow update: if isOwner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['displayName', 'avatarUrl', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time
+        && validUserProfile(request.resource.data);
+
+      allow delete: if false;
+    }
+
+    // ── djProfiles/{uid}: DJ public-facing profile ───────────────────────────
+    // publicSlug is NOT client-writable (uniqueness needs a server transaction).
+    function validDjProfile(d) {
+      return optStr(d, 'displayName', 80)
+        && optStr(d, 'bio', 1000)
+        && optUrl(d, 'avatarUrl', 2048)
+        && optUrl(d, 'instagramUrl', 300)
+        && optUrl(d, 'tiktokUrl', 300)
+        && optUrl(d, 'spotifyUrl', 300)
+        && optUrl(d, 'soundcloudUrl', 300)
+        && optUrl(d, 'websiteUrl', 300);
+    }
+
+    match /djProfiles/{uid} {
+      allow get: if isOwner(uid);
+      allow list: if false;
+
+      allow create: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(
+             ['displayName', 'bio', 'avatarUrl', 'instagramUrl', 'tiktokUrl', 'spotifyUrl',
+              'soundcloudUrl', 'websiteUrl', 'createdAt', 'updatedAt'])
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && validDjProfile(request.resource.data);
+
+      allow update: if isOwner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+             ['displayName', 'bio', 'avatarUrl', 'instagramUrl', 'tiktokUrl', 'spotifyUrl',
+              'soundcloudUrl', 'websiteUrl', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time
+        && validDjProfile(request.resource.data);
+
+      allow delete: if false;
+    }
+
+    // ── events/{eventId}: public event data (projected from the backend) ────────
+    // TRANSITION: Supabase live_sessions is still the source of truth, so clients
+    // NEVER write events: creation is gated by plan limits / Event Pass (server-side)
+    // and a client write would drift from Supabase. All writes go through the Admin SDK.
+    //
+    // Guests (Firebase anonymous) and any signed-in user may `get` a single event: the
+    // random document id / slug is the capability (same model as the public link today).
+    // Listing is limited to the owner's own events: queries MUST filter on ownerUid
+    // (rules are not filters).
+    match /events/{eventId} {
+      allow get: if request.auth != null;
+      allow list: if isAccount() && resource.data.ownerUid == request.auth.uid;
+      allow write: if false;
+
+      // Owner-only configuration that must never reach guests (e.g. game answers).
+      match /private/{docId} {
+        allow get: if isEventOwner(eventId);
+        allow list, write: if false;
+      }
+
+      // Music requests. Created ONLY by the createMusicRequest Cloud Function; status changes are
+      // projected from the legacy moderation routes (Supabase is authoritative for now).
+      // Owner: reads all requests of the event. Guest: reads only the requests they sent
+      // (queries must filter on guestUid == their uid).
+      match /requests/{requestId} {
+        allow get:  if isEventOwner(eventId)
+                    || (request.auth != null && resource.data.guestUid == request.auth.uid);
+        allow list: if isEventOwner(eventId)
+                    || (request.auth != null && resource.data.guestUid == request.auth.uid);
+        allow write: if false;
+      }
+      // state/requests (counter) and requestGuests/{uid} (anti-spam) are server-only: no rule = denied.
+
+      // Dedications. Created only by the createDedication Cloud Function; moderation is projected from
+      // the legacy routes. Owner: everything. Any signed-in guest: ONLY approved ones (the public wall the
+      // live page shows today) — queries must filter on status == 'approved'. Pending/rejected stay private.
+      // dedicationGuests/{uid} (anti-spam) is server-only.
+      match /dedications/{dedicationId} {
+        allow get, list: if isEventOwner(eventId)
+                         || (request.auth != null && resource.data.status == 'approved');
+        allow write: if false;
+      }
+
+      // Polls. Created/opened/closed by the legacy DJ routes (projected, Supabase authoritative) — never by clients.
+      // The product shows the question, options and LIVE results to every participant, so polls and the
+      // tally shards are readable by any signed-in user (guests, TV, DJ). Individual votes are not:
+      // a guest can `get` only their own vote doc (id == their uid); nobody can list votes (no uid lists).
+      match /polls/{pollId} {
+        allow get, list: if request.auth != null;
+        allow write: if false;
+
+        match /tally/{shardId} {
+          allow get, list: if request.auth != null;
+          allow write: if false;
+        }
+        match /votes/{voterUid} {
+          allow get: if request.auth != null && request.auth.uid == voterUid;
+          allow list, write: if false;
+        }
+      }
+    }
+
+    // slug -> eventId lookup. Doc id == slug gives server-side uniqueness (create() fails if taken).
+    match /eventSlugs/{slug} {
+      allow get: if request.auth != null;
+      allow list, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

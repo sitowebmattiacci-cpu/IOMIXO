@@ -5,6 +5,7 @@ import { AppError } from '../middleware/errorHandler'
 import { hashClient, rateLimitOk } from '../utils/ipHash'
 import { hasEventAccess } from '../services/plan'
 import { isEventSession } from '../utils/sessionType'
+import { projectPollCreated, projectPollActive, projectLegacyVote } from '../services/eventProjection'
 
 export const livePollsRouter = Router()
 
@@ -44,8 +45,8 @@ livePollsRouter.post('/sessions/:id/polls', requireAuth, async (req, res, next) 
     const normalised = options.map((o: unknown) => String(o).slice(0, 80))
 
     // Deactivate previous polls for this session
-    await supabaseAdmin.from('live_polls')
-      .update({ is_active: false }).eq('session_id', session.id).eq('is_active', true)
+    const { data: deactivated } = await supabaseAdmin.from('live_polls')
+      .update({ is_active: false }).eq('session_id', session.id).eq('is_active', true).select('id')
 
     const { data, error } = await supabaseAdmin.from('live_polls').insert({
       session_id: session.id,
@@ -54,6 +55,7 @@ livePollsRouter.post('/sessions/:id/polls', requireAuth, async (req, res, next) 
       is_active:  true,
     }).select('*').single()
     if (error) throw new AppError(error.message, 500)
+    await projectPollCreated(data, (deactivated ?? []).map((p) => p.id)) // TODO(firebase-migration)
     res.status(201).json({ data })
   } catch (e) { next(e) }
 })
@@ -99,6 +101,7 @@ livePollsRouter.patch('/polls/:id', requireAuth, async (req, res, next) => {
     const { data, error } = await supabaseAdmin.from('live_polls')
       .update(patch).eq('id', req.params.id).select('*').single()
     if (error) throw new AppError(error.message, 500)
+    if (typeof is_active === 'boolean') await projectPollActive((existing as any).session_id, req.params.id, is_active) // TODO(firebase-migration)
     res.json({ data })
   } catch (e) { next(e) }
 })
@@ -148,11 +151,16 @@ livePollsRouter.post('/public/:slug/polls/:pollId/vote', async (req, res, next) 
       throw new AppError('Riprova tra qualche secondo.', 429)
     }
 
+    // TODO(firebase-migration): previous choice of this client, needed to keep the Firestore `legacy` tally shard exact
+    const { data: prevVote } = await supabaseAdmin.from('live_poll_votes')
+      .select('option_index').eq('poll_id', poll.id).eq('ip_hash', ipHash).maybeSingle()
+
     // Upsert: un voto per ospite (poll_id, ip_hash). Rivotare cambia la scelta.
     const { error } = await supabaseAdmin.from('live_poll_votes').upsert({
       poll_id: poll.id, option_index: idx, ip_hash: ipHash,
     }, { onConflict: 'poll_id,ip_hash' })
     if (error) throw new AppError(error.message, 500)
+    await projectLegacyVote((poll as any).session_id, poll.id, prevVote?.option_index ?? null, idx) // TODO(firebase-migration)
     res.status(201).json({ ok: true })
   } catch (e) { next(e) }
 })

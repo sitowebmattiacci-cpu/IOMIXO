@@ -6,6 +6,14 @@ import toast from 'react-hot-toast'
 import { Music2, Send, Instagram, Facebook, Globe, MapPin, CalendarDays, Lock, AlertTriangle, Check, X, Clock, Heart, Sparkles, Image as ImageIcon, Camera, Gamepad2, BarChart3, ChevronLeft } from 'lucide-react'
 import { publicLive, liveDedications, liveGames, livePolls, livePhotos, type LiveRequestStatus, type LiveDedication, type LivePoll, type LivePhoto, type LiveGameRound } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
+import { useLiveEvent } from '@/lib/events/useLiveEvent'
+import { useGuestRequests } from '@/lib/events/useRequests'
+import { sendMusicRequest, RequestError } from '@/lib/events/requestService'
+import { sendDedication, DedicationError } from '@/lib/events/dedicationService'
+import { useApprovedDedications } from '@/lib/events/useDedications'
+import { useActivePoll, toLegacyPoll } from '@/lib/events/usePolls'
+import { votePoll, VoteError } from '@/lib/events/pollService'
+import { eventToPublicSession } from '@/lib/events/eventService'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import {
   WeddingShell, WeddingCard, WeddingButton, WeddingSection, WeddingBadge,
@@ -37,11 +45,17 @@ const STATUS_ICON: Record<LiveRequestStatus, React.ReactNode> = {
 export default function PublicLivePage() {
   const { slug } = useParams<{ slug: string }>()
   const { t } = useI18n()
-  const { data, error, isLoading } = useSWR(
+  // Realtime event state (Firestore). When available it replaces the 15s polling of
+  // the session fields; the backend payload is still fetched for profile/plan/features.
+  const liveEvent = useLiveEvent(slug)
+  const { data: payload, error, isLoading } = useSWR(
     slug ? ['public-live', slug] : null,
     () => publicLive.get(slug!),
-    { refreshInterval: 15_000 },
+    { refreshInterval: liveEvent ? 0 : 15_000 },
   )
+  const data = payload && liveEvent
+    ? { ...payload, session: { ...payload.session, ...eventToPublicSession(liveEvent) } }
+    : payload
 
   const [myIds, setMyIds] = useState<string[]>([])
   useEffect(() => { if (slug) setMyIds(loadIds(slug)) }, [slug])
@@ -53,11 +67,24 @@ export default function PublicLivePage() {
     return () => clearInterval(id)
   }, [slug])
 
-  const { data: myRequests } = useSWR(
+  // Realtime "my requests" (Firestore, filtered by the guest's anonymous uid). Requests sent
+  // through the legacy endpoint (localStorage ids, e.g. fallback path) are still polled and merged;
+  // when the guest has none, no polling happens at all.
+  const realtimeRequests = useGuestRequests(liveEvent?.id)
+  const { data: legacyRequests } = useSWR(
     slug && myIds.length > 0 ? ['my-requests', slug, myIds.join(',')] : null,
     () => publicLive.myRequests(slug!, myIds),
     { refreshInterval: 10_000 },
   )
+  const myRequests = realtimeRequests
+    ? [
+        ...realtimeRequests.map((r) => ({
+          id: r.id, track_title: r.songTitle, artist: r.artist,
+          status: r.status, created_at: (r.createdAt ?? new Date()).toISOString(),
+        })),
+        ...(legacyRequests ?? []),
+      ].sort((a, b) => b.created_at.localeCompare(a.created_at))
+    : legacyRequests
 
   const [form, setForm] = useState({ track_title: '', artist: '', message: '' })
   const [sending, setSending] = useState(false)
@@ -68,13 +95,27 @@ export default function PublicLivePage() {
     if (!form.track_title.trim()) return
     setSending(true)
     try {
-      const created = await publicLive.submitRequest(slug!, {
+      const payload = {
         track_title: form.track_title.trim(),
         artist: form.artist.trim() || undefined,
         message: form.message.trim() || undefined,
-      })
-      const newIds = [...myIds.filter((i) => i !== created.id), created.id]
-      saveIds(slug!, newIds); setMyIds(newIds)
+      }
+      // Firestore path (Cloud Function) when the event is available there; the legacy Express
+      // endpoint remains the fallback for any infrastructure failure or unprojected event.
+      let created: { id: string } | null = null
+      if (liveEvent) {
+        try {
+          const r = await sendMusicRequest({ eventId: liveEvent.id, songTitle: payload.track_title, artist: payload.artist, message: payload.message })
+          created = { id: r.requestId }
+        } catch (e) {
+          if (!(e instanceof RequestError) || !e.fallbackToLegacy) throw e
+        }
+      }
+      if (!created) {
+        const legacy = await publicLive.submitRequest(slug!, payload)
+        const newIds = [...myIds.filter((i) => i !== legacy.id), legacy.id]
+        saveIds(slug!, newIds); setMyIds(newIds)
+      }
       toast.success(t('live.requestSent'))
       setForm({ track_title: '', artist: '', message: '' })
       await mutate(['public-live', slug])
@@ -176,7 +217,7 @@ export default function PublicLivePage() {
         icon: <Heart className="h-6 w-6" />,
         title: t('guestMenu.dedications'),
         desc: t('guestMenu.dedicationsDesc'),
-        node: <DedicationsPublic slug={slug!} />,
+        node: <DedicationsPublic slug={slug!} eventId={liveEvent?.id} />,
       })
     }
     if (features.weddingGames && guestOn('shoe_game')) {
@@ -194,7 +235,7 @@ export default function PublicLivePage() {
         icon: <BarChart3 className="h-6 w-6" />,
         title: t('guestMenu.polls'),
         desc: t('guestMenu.pollsDesc'),
-        node: <PollPublic slug={slug!} />,
+        node: <PollPublic slug={slug!} eventId={liveEvent?.id} />,
       })
     }
     const activeWedding = weddingSections.find((s) => s.key === activeGuestSection) ?? null
@@ -382,7 +423,7 @@ export default function PublicLivePage() {
         icon: <BarChart3 className="h-6 w-6" />,
         title: t('guestMenu.polls'),
         desc: t('guestMenu.pollsDesc'),
-        node: <PartyMusicBattle slug={slug!} />,
+        node: <PartyMusicBattle slug={slug!} eventId={liveEvent?.id} />,
       })
     }
   }
@@ -802,21 +843,38 @@ function ShoeGamePublic({ slug }: { slug: string }) {
   )
 }
 
-function PollPublic({ slug }: { slug: string }) {
+/**
+ * Casts a vote: Cloud Function first when the poll comes from Firestore, legacy endpoint as fallback
+ * (infrastructure errors / event_not_ready). `legacyId` is the Supabase poll id.
+ */
+async function castVote(opts: { slug: string; eventId?: string; realtime: boolean; pollId: string; legacyId?: string; index: number }) {
+  if (opts.realtime && opts.eventId) {
+    try { await votePoll({ eventId: opts.eventId, pollId: opts.pollId, optionIndex: opts.index }); return 'realtime' as const }
+    catch (e) { if (!(e instanceof VoteError) || !e.fallbackToLegacy) throw e }
+  }
+  await livePolls.publicVote(opts.slug, opts.legacyId ?? opts.pollId, opts.index)
+  return 'legacy' as const
+}
+
+function PollPublic({ slug, eventId }: { slug: string; eventId?: string }) {
   const { t } = useI18n()
-  const { data: poll, mutate: refresh } = useSWR<LivePoll | null>(
-    ['public-poll', slug],
+  // Realtime (Firestore): open poll + live tally + my vote. While available the 5s polling is off.
+  const rt = useActivePoll(eventId)
+  const { data: legacyPoll, mutate: refresh } = useSWR<LivePoll | null>(
+    rt !== undefined ? null : ['public-poll', slug],
     () => livePolls.publicActive(slug),
     { refreshInterval: 5_000 },
   )
-  const [voted, setVoted] = useState<number | null>(null)
+  const poll: (LivePoll & { legacy_id?: string }) | null | undefined = rt !== undefined ? (rt ? toLegacyPoll(rt) : null) : legacyPoll
+  const [votedLocal, setVoted] = useState<number | null>(null)
+  const voted = rt?.myVote ?? votedLocal
   if (!poll) return null
   const vote = async (i: number) => {
     try {
-      await livePolls.publicVote(slug, poll.id, i)
+      const via = await castVote({ slug, eventId, realtime: rt !== undefined, pollId: poll.id, legacyId: poll.legacy_id, index: i })
       setVoted(i)
       toast.success(t('wedding.polls.voted'))
-      refresh()
+      if (via === 'legacy' || rt === undefined) refresh()
     } catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric')) }
   }
   const total = (poll.tally ?? []).reduce((a, b) => a + b, 0) || 0
@@ -848,12 +906,18 @@ function PollPublic({ slug }: { slug: string }) {
   )
 }
 
-function DedicationsPublic({ slug }: { slug: string }) {
+function DedicationsPublic({ slug, eventId }: { slug: string; eventId?: string }) {
   const { t } = useI18n()
-  const { data, mutate: refresh } = useSWR<LiveDedication[]>(
-    ['public-dedications', slug], () => liveDedications.listApproved(slug),
+  // Realtime wall (Firestore, approved only). While it is available the 8s polling is off;
+  // otherwise (Firebase off / event not projected / listener error) the legacy polling is unchanged.
+  const realtime = useApprovedDedications(eventId)
+  const { data: legacy, mutate: refresh } = useSWR<LiveDedication[]>(
+    realtime ? null : ['public-dedications', slug], () => liveDedications.listApproved(slug),
     { refreshInterval: 8_000 },
   )
+  const data: LiveDedication[] | undefined = realtime
+    ? realtime.map((d) => ({ id: d.id, guest_name: d.senderName, message: d.message, created_at: (d.createdAt ?? new Date()).toISOString(), status: 'approved' } as LiveDedication))
+    : legacy
   const [form, setForm] = useState({ guest_name: '', message: '' })
   const [sending, setSending] = useState(false)
   const send = async (e: React.FormEvent) => {
@@ -861,10 +925,21 @@ function DedicationsPublic({ slug }: { slug: string }) {
     if (!form.message.trim()) return
     setSending(true)
     try {
-      await liveDedications.submit(slug, { guest_name: form.guest_name || undefined, message: form.message })
+      // Cloud Function first when the event is on Firestore; the legacy endpoint stays the fallback
+      // for infrastructure errors / unprojected events. Business errors are shown, never retried.
+      let sent = false
+      if (eventId) {
+        try {
+          await sendDedication({ eventId, senderName: form.guest_name.trim() || undefined, message: form.message })
+          sent = true
+        } catch (err) {
+          if (!(err instanceof DedicationError) || !err.fallbackToLegacy) throw err
+        }
+      }
+      if (!sent) await liveDedications.submit(slug, { guest_name: form.guest_name || undefined, message: form.message })
       toast.success(t('wedding.dedications.submitted'))
       setForm({ guest_name: '', message: '' })
-      refresh()
+      if (!realtime) refresh()
     } catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric')) }
     finally { setSending(false) }
   }
@@ -1012,11 +1087,14 @@ function PartyBoothCTA({ slug }: { slug: string }) {
   )
 }
 
-function PartyMusicBattle({ slug }: { slug: string }) {
+function PartyMusicBattle({ slug, eventId }: { slug: string; eventId?: string }) {
   const { t } = useI18n()
-  const { data } = useSWR(['public-poll', slug], () => livePolls.publicActive(slug), { refreshInterval: 5_000 })
-  const poll: LivePoll | null = (data as any) ?? null
-  const [voted, setVoted] = useState<number | null>(null)
+  // Realtime (Firestore) when available; otherwise the legacy 5s polling, unchanged.
+  const rt = useActivePoll(eventId)
+  const { data } = useSWR(rt !== undefined ? null : ['public-poll', slug], () => livePolls.publicActive(slug), { refreshInterval: 5_000 })
+  const poll = (rt !== undefined ? (rt ? toLegacyPoll(rt) : null) : ((data as any) ?? null)) as (LivePoll & { legacy_id?: string }) | null
+  const [votedLocal, setVoted] = useState<number | null>(null)
+  const voted = rt?.myVote ?? votedLocal
   const [voting, setVoting] = useState(false)
 
   useEffect(() => {
