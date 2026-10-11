@@ -125,3 +125,19 @@ export interface PollDoc {
   createdAt: Date | null
   updatedAt: Date | null
 }
+
+/**
+ * events/{eventId}/games/{roundId} — projection of the legacy live_game_rounds rows (id == Supabase row id).
+ * `status`, `config` and `result` keep the legacy vocabulary and shape verbatim.
+ */
+export type GameType = 'wedding_roulette' | 'shoe_game'
+export type GameStatus = 'idle' | 'running' | 'completed'
+export interface GameRoundDoc {
+  id:        string
+  type:      GameType
+  status:    GameStatus
+  config:    Record<string, unknown> | null
+  result:    Record<string, unknown> | null
+  createdAt: Date | null
+  updatedAt: Date | null
+}

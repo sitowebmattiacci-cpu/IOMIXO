@@ -2,6 +2,7 @@ import { FieldValue, type Firestore } from 'firebase-admin/firestore'
 import type { LegacyBridge } from '../requests/legacyBridge'
 import type { DedicationInput } from './validation'
 import { fail, loadLiveEvent, reserveSlot, releaseSlot, createWithRetry } from '../shared/guard'
+import { selectEventEntitlements, logEntitlementDecision } from '../entitlements/source'
 
 /**
  * Legacy behaviour: one dedication per 30 s per client, no per-guest or event cap.
@@ -24,10 +25,15 @@ export async function createDedication(
   if (ev.type !== 'party' && ev.type !== 'wedding') {
     throw fail('failed-precondition', 'Dedications are only available for Party and Wedding sessions', 'dedications_unavailable')
   }
-  if (ev.dedicationsEnabled === undefined || (bridge && !ev.legacySupabaseId)) {
+  // Access = Advance plan or a valid Event Pass for THIS event. Source: see entitlements/source.ts —
+  // Firestore entitlements when they exist for the owner (final), else the legacy-projected `dedicationsEnabled`.
+  const decision = await selectEventEntitlements(db, input.eventId, ev, new Date(now()))
+  if ((decision.source === 'legacy_projected_fallback' && ev.dedicationsEnabled === undefined) || (bridge && !ev.legacySupabaseId)) {
     throw fail('failed-precondition', 'Event not ready for Firestore dedications', 'event_not_ready')
   }
-  if (ev.dedicationsEnabled !== true) {
+  const allowed = decision.ent ? decision.ent.gates.dedications : ev.dedicationsEnabled === true
+  logEntitlementDecision('createDedication', decision, allowed ? 'allow' : 'deny', 'dedications')
+  if (!allowed) {
     throw fail('permission-denied', 'Dedications require the Advance plan or an Event Pass', 'dedications_unavailable')
   }
 

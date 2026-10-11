@@ -8,7 +8,7 @@ import { PLAN_LIMITS } from '../config/plans'
 import { getEffectivePlan } from '../services/plan'
 import { createWeddingPhotoSignedUrl } from '../services/storage'
 import { getSmartRandomOption } from '../utils/smartRandom'
-import { projectRequestCreated, projectRequestStatus, projectDedicationStatus } from '../services/eventProjection'
+import { projectRequestCreated, projectRequestStatus, projectDedicationStatus, projectGameRound } from '../services/eventProjection'
 
 export const livePublicRouter = Router()
 
@@ -377,9 +377,10 @@ livePublicRouter.post('/:slug/games/roulette/start', async (req, res, next) => {
         status: 'idle',
         config: { slots },
       })
-      .select('id, game_type, status, config')
+      .select('id, game_type, status, config, session_id, created_at, updated_at')
       .single()
     if (error) throw new AppError(error.message, 500)
+    await projectGameRound(data as any) // TODO(firebase-migration): flag-gated Firestore projection
 
     res.json({ data })
   } catch (e) { next(e) }
@@ -440,6 +441,7 @@ livePublicRouter.post('/:slug/games/roulette/spin', async (req, res, next) => {
       .select('*')
       .single()
     if (error) throw new AppError(error.message, 500)
+    await projectGameRound(data) // TODO(firebase-migration): flag-gated Firestore projection
 
     res.json({ data })
   } catch (e) { next(e) }
@@ -464,11 +466,14 @@ livePublicRouter.post('/:slug/games/roulette/reset', async (req, res, next) => {
       .maybeSingle()
     if (!round) throw new AppError('Nessuna roulette trovata', 404)
 
-    const { error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from('live_game_rounds')
       .update({ status: 'idle', result: null, updated_at: new Date().toISOString() })
       .eq('id', round.id)
+      .select('*')
+      .single()
     if (error) throw new AppError(error.message, 500)
+    await projectGameRound(data as any) // TODO(firebase-migration): flag-gated Firestore projection
 
     res.json({ data: { ok: true } })
   } catch (e) { next(e) }
@@ -539,6 +544,7 @@ livePublicRouter.post('/:slug/games/shoe/start', async (req, res, next) => {
       .select('*')
       .single()
     if (error) throw new AppError(error.message, 500)
+    await projectGameRound(data) // TODO(firebase-migration): flag-gated Firestore projection
 
     res.json({ data })
   } catch (e) { next(e) }
@@ -578,6 +584,7 @@ livePublicRouter.post('/:slug/games/shoe/next', async (req, res, next) => {
       .select('*')
       .single()
     if (error) throw new AppError(error.message, 500)
+    await projectGameRound(data) // TODO(firebase-migration): flag-gated Firestore projection
 
     res.json({ data })
   } catch (e) { next(e) }
@@ -602,7 +609,7 @@ livePublicRouter.post('/:slug/games/shoe/reset', async (req, res, next) => {
       .maybeSingle()
     if (!round) throw new AppError('Nessun gioco trovato', 404)
 
-    const { error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from('live_game_rounds')
       .update({
         status: 'idle',
@@ -610,7 +617,10 @@ livePublicRouter.post('/:slug/games/shoe/reset', async (req, res, next) => {
         updated_at: new Date().toISOString(),
       })
       .eq('id', round.id)
+      .select('*')
+      .single()
     if (error) throw new AppError(error.message, 500)
+    await projectGameRound(data as any) // TODO(firebase-migration): flag-gated Firestore projection
 
     res.json({ data: { ok: true } })
   } catch (e) { next(e) }

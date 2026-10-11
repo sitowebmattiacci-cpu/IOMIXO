@@ -12,6 +12,7 @@ import { sendMusicRequest, RequestError } from '@/lib/events/requestService'
 import { sendDedication, DedicationError } from '@/lib/events/dedicationService'
 import { useApprovedDedications } from '@/lib/events/useDedications'
 import { useActivePoll, toLegacyPoll } from '@/lib/events/usePolls'
+import { useLatestGames, preferRealtime } from '@/lib/events/useGames'
 import { votePoll, VoteError } from '@/lib/events/pollService'
 import { eventToPublicSession } from '@/lib/events/eventService'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -226,7 +227,7 @@ export default function PublicLivePage() {
         icon: <Gamepad2 className="h-6 w-6" />,
         title: t('guestMenu.games'),
         desc: t('guestMenu.gamesDesc'),
-        node: <ShoeGamePublic slug={slug!} />,
+        node: <ShoeGamePublic slug={slug!} eventId={liveEvent?.id} />,
       })
     }
     if (features.livePolls && guestOn('polls')) {
@@ -414,7 +415,7 @@ export default function PublicLivePage() {
         icon: <Gamepad2 className="h-6 w-6" />,
         title: t('guestMenu.games'),
         desc: t('guestMenu.gamesDesc'),
-        node: <PartyRouletteResult slug={slug!} />,
+        node: <PartyRouletteResult slug={slug!} eventId={liveEvent?.id} />,
       })
     }
     if (guestOn('music_battle')) {
@@ -822,10 +823,12 @@ function LocalCard({ title, icon, children }: { title: string; icon: React.React
   )
 }
 
-function ShoeGamePublic({ slug }: { slug: string }) {
+function ShoeGamePublic({ slug, eventId }: { slug: string; eventId?: string }) {
   const { t } = useI18n()
-  const { data } = useSWR(['public-shoe', slug], () => liveGames.publicLatest(slug), { refreshInterval: 4_000 })
-  const r: LiveGameRound | null = data?.shoeGame ?? null
+  // Realtime from Firestore once a projected round exists; otherwise (flag off / not projected) the legacy polling.
+  const rt = useLatestGames(eventId)?.shoeGame ?? null
+  const { data } = useSWR(['public-shoe', slug], () => liveGames.publicLatest(slug), { refreshInterval: rt ? 0 : 4_000 })
+  const r: LiveGameRound | null = preferRealtime(rt, data?.shoeGame)
   if (!r || r.status !== 'running' || !r.config?.is_active) return null
   const questions = r.config.questions ?? []
   const idx = r.config.current_index ?? 0
@@ -1172,10 +1175,11 @@ function PartyMusicBattle({ slug, eventId }: { slug: string; eventId?: string })
   )
 }
 
-function PartyRouletteResult({ slug }: { slug: string }) {
+function PartyRouletteResult({ slug, eventId }: { slug: string; eventId?: string }) {
   const { t } = useI18n()
-  const { data } = useSWR(['public-roulette', slug], () => liveGames.publicLatest(slug), { refreshInterval: 5_000 })
-  const r: LiveGameRound | null = data?.roulette ?? null
+  const rt = useLatestGames(eventId)?.roulette ?? null
+  const { data } = useSWR(['public-roulette', slug], () => liveGames.publicLatest(slug), { refreshInterval: rt ? 0 : 5_000 })
+  const r: LiveGameRound | null = preferRealtime(rt, data?.roulette)
   if (!r || r.status !== 'completed' || !r.result?.slot_label) return null
   return (
     <div className="rounded-2xl p-6 bg-gradient-to-br from-[#FF3D8A]/30 via-[#8B0E2F]/40 to-black/60 border border-[#FF3D8A]/40 text-center shadow-[0_10px_40px_rgba(255,61,138,0.25)]">

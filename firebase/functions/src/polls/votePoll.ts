@@ -42,6 +42,10 @@ export async function votePoll(
   db: Firestore, bridge: LegacyBridge | null, uid: string, input: VoteInput, now: () => number = Date.now,
 ): Promise<VoteResult> {
   const { ref: eventRef } = await loadLiveEvent(db, input.eventId)
+  // NO entitlement check here, on purpose (legacy semantics): the premium gate belongs to the DJ side — creating / opening / closing a poll.
+  // A poll that exists and is `open` was authorised when it was opened, and a later expiry of the Event Pass does not invalidate it.
+  // TODO(firebase-migration): when poll management (create/open/close) moves to Functions, apply requireEventAccess THERE
+  // (entitlements/load.ts), never on the guest vote.
   const pollRef = eventRef.collection('polls').doc(input.pollId)
   const poll = await pollRef.get()
   if (!poll.exists) throw fail('not-found', 'Poll not found', 'poll_not_found')

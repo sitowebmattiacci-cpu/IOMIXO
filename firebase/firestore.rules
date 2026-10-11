@@ -53,6 +53,14 @@ service cloud.firestore {
         && validUserProfile(request.resource.data);
 
       allow delete: if false;
+
+      // Event Passes of the account. Written ONLY by the server (legacy projection now, Stripe webhook later).
+      // The owner may read their own passes (billing page); nobody can write them, so validUntil / status / source
+      // can never be edited from a client. Entitlements are always computed server-side (functions/src/entitlements).
+      match /eventPasses/{passId} {
+        allow get, list: if isOwner(uid);
+        allow write: if false;
+      }
     }
 
     // ── djProfiles/{uid}: DJ public-facing profile ───────────────────────────
@@ -149,6 +157,15 @@ service cloud.firestore {
           allow get: if request.auth != null && request.auth.uid == voterUid;
           allow list, write: if false;
         }
+      }
+
+      // Game rounds (wedding_roulette, shoe_game), projected from the legacy live_game_rounds rows (Supabase is
+      // authoritative; the DJ drives them through the legacy routes). The product already shows the round state
+      // (shoe question, roulette slots and result) to every participant, guests and TV included, so any signed-in
+      // user may read them. Nothing is writable from a client. Listing is scoped to one event (no collection group rule).
+      match /games/{gameId} {
+        allow get, list: if request.auth != null;
+        allow write: if false;
       }
     }
 

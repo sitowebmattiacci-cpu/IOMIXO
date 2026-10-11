@@ -6,9 +6,11 @@ const hasEventAccess = jest.fn()
 jest.mock('../plan', () => ({ getEffectivePlan, hasEventAccess }))
 const pollRepo = { projectPollCreated: jest.fn(), projectPollActive: jest.fn(), projectLegacyVote: jest.fn() }
 jest.mock('../../repositories/pollRepository', () => pollRepo)
+const gameRepo = { projectGameRound: jest.fn(), projectGameRounds: jest.fn() }
+jest.mock('../../repositories/gameRoundRepository', () => gameRepo)
 jest.mock('../../repositories/eventRepository', () => ({ upsertEventFromLegacy: upsert, deleteEventByLegacyId: del }))
 
-import { projectSession, projectSessionDeleted, projectPollCreated, projectPollActive, projectLegacyVote } from '../eventProjection'
+import { projectSession, projectSessionDeleted, projectPollCreated, projectPollActive, projectLegacyVote, projectGameRound, projectGameRounds } from '../eventProjection'
 
 const req = (user: object) => ({ user }) as any
 const row = { id: 's1', public_slug: 'abc', event_name: 'x', is_active: true }
@@ -82,5 +84,61 @@ describe('poll projection (flag-gated, never throws)', () => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
     await expect(projectLegacyVote('s1', 'p1', null, 0)).resolves.toBeUndefined()
     expect(spy).toHaveBeenCalled(); spy.mockRestore()
+  })
+})
+
+describe('game round projection (own flag, off by default, never throws)', () => {
+  const round = { id: 'r1', session_id: 's1', game_type: 'shoe_game', status: 'running' as const, created_at: '2026-02-01T09:00:00.000001+00:00', updated_at: '2026-02-01T10:00:00.000001+00:00' }
+  const calls = () => Promise.all([projectGameRound(round), projectGameRounds([round, { ...round, id: 'r2' }])])
+  beforeEach(() => { Object.values(gameRepo).forEach((f) => f.mockReset()); delete process.env.FIRESTORE_EVENT_PROJECTION; delete process.env.FIRESTORE_GAMES_PROJECTION })
+
+  it('does nothing with both flags off, with only the global flag, or with only the games flag', async () => {
+    await calls()
+    process.env.FIRESTORE_EVENT_PROJECTION = 'on'; await calls()
+    delete process.env.FIRESTORE_EVENT_PROJECTION; process.env.FIRESTORE_GAMES_PROJECTION = 'on'; await calls()
+    Object.values(gameRepo).forEach((f) => expect(f).not.toHaveBeenCalled())
+  })
+
+  it('forwards rows (single and bulk) when both flags are on; ignores empty bulks; swallows failures', async () => {
+    process.env.FIRESTORE_EVENT_PROJECTION = 'on'; process.env.FIRESTORE_GAMES_PROJECTION = 'on'
+    await calls()
+    expect(gameRepo.projectGameRound).toHaveBeenCalledWith(round)
+    expect(gameRepo.projectGameRounds).toHaveBeenCalledWith([round, { ...round, id: 'r2' }])
+    gameRepo.projectGameRounds.mockClear(); await projectGameRounds([]); await projectGameRounds(null)
+    expect(gameRepo.projectGameRounds).not.toHaveBeenCalled()
+    gameRepo.projectGameRound.mockRejectedValue(new Error('boom'))
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    await expect(projectGameRound(round)).resolves.toBeUndefined()
+    expect(spy).toHaveBeenCalled(); spy.mockRestore()
+  })
+})
+
+describe('entitlement projection (own flag, off by default, never throws)', () => {
+  const entRepo = { projectEventPass: jest.fn(), projectLegacyPlan: jest.fn() }
+  jest.doMock('../../repositories/entitlementRepository', () => entRepo)
+  const pass = { id: 'p1', user_id: 'u1', valid_until: '2026-02-02T00:00:00Z', status: 'active' as const, created_at: '2026-02-01T00:00:00Z', updated_at: '2026-02-01T00:00:00Z' }
+  const plan = { id: 'u1', plan: 'wedding', updated_at: '2026-02-01T00:00:00Z' }
+  const run = async () => {
+    const m = await import('../eventProjection')
+    await m.projectEventPass(pass); await m.projectEventPasses([pass, pass]); await m.projectLegacyPlan(plan)
+    await m.projectEventPass(null); await m.projectLegacyPlan(undefined)
+  }
+  beforeEach(() => { Object.values(entRepo).forEach((f) => f.mockReset()); delete process.env.FIRESTORE_EVENT_PROJECTION; delete process.env.FIRESTORE_ENTITLEMENTS_PROJECTION })
+
+  it('does nothing with both flags off, with only the global flag, or with only the entitlements flag', async () => {
+    await run()
+    process.env.FIRESTORE_EVENT_PROJECTION = 'on'; await run()
+    delete process.env.FIRESTORE_EVENT_PROJECTION; process.env.FIRESTORE_ENTITLEMENTS_PROJECTION = 'on'; await run()
+    Object.values(entRepo).forEach((f) => expect(f).not.toHaveBeenCalled())
+  })
+
+  it('forwards rows when both flags are on (null rows ignored) and swallows failures', async () => {
+    process.env.FIRESTORE_EVENT_PROJECTION = 'on'; process.env.FIRESTORE_ENTITLEMENTS_PROJECTION = 'on'
+    await run()
+    expect(entRepo.projectEventPass).toHaveBeenCalledTimes(3); expect(entRepo.projectLegacyPlan).toHaveBeenCalledTimes(1)
+    entRepo.projectLegacyPlan.mockRejectedValue(new Error('boom'))
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const m = await import('../eventProjection')
+    await expect(m.projectLegacyPlan(plan)).resolves.toBeUndefined(); expect(spy).toHaveBeenCalled(); spy.mockRestore()
   })
 })

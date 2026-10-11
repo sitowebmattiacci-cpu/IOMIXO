@@ -26,6 +26,7 @@ import { RequestItem } from '@/components/live/RequestItem'
 import { useRequestsSignal } from '@/lib/events/useRequests'
 import { useDedicationsSignal } from '@/lib/events/useDedications'
 import { usePollsSignal } from '@/lib/events/usePolls'
+import { useGamesSignal } from '@/lib/events/useGames'
 import { UpgradeGate } from '@/components/live/UpgradeGate'
 import { SessionLockScreen } from '@/components/live/SessionLockScreen'
 import {
@@ -1726,11 +1727,14 @@ function GamesPanel({ sessionId, session }: { sessionId: string; session: any })
 function ShoeGamePanel({ sessionId }: { sessionId: string }) {
   const { t } = useI18n()
   const { data: session, mutate: mutateSession } = useSWR(['session', sessionId], () => live.getSession(sessionId))
+  // Realtime change signal (Firestore games) → re-fetch of the authoritative legacy state; slow safety poll while live.
+  const gamesSignal = useGamesSignal(sessionId)
   const { data: round, mutate: refresh } = useSWR(
     ['shoe-game', sessionId],
     () => liveGames.getShoeState(sessionId),
-    { refreshInterval: 4_000 },
+    { refreshInterval: gamesSignal.live ? 30_000 : 4_000 },
   )
+  useEffect(() => { if (gamesSignal.tick > 0) refresh() }, [gamesSignal.tick, refresh])
   const [busy, setBusy] = useState(false)
   const [showQuestionsEditor, setShowQuestionsEditor] = useState(false)
   const [customQuestions, setCustomQuestions] = useState<string[]>([])
@@ -2982,11 +2986,13 @@ function PartyComingSoonCard({ icon, title, description }: any) {
 }
 
 function PartyRouletteCard({ session, isFree }: any) {
+  const gamesSignal = useGamesSignal(session.id)
   const { data: round, mutate: refresh } = useSWR(
     ['party-roulette', session.id],
     () => liveGames.publicLatest(session.public_slug).then((d) => d.roulette).catch(() => null),
-    { refreshInterval: 4_000 },
+    { refreshInterval: gamesSignal.live ? 30_000 : 4_000 },
   )
+  useEffect(() => { if (gamesSignal.tick > 0) refresh() }, [gamesSignal.tick, refresh])
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<string[]>(() => {
     const cur = (session.roulette_penitenze ?? []).map((p: any) => p.label).filter(Boolean)

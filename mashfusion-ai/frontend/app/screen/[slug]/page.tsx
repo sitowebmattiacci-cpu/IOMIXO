@@ -6,6 +6,7 @@ import { Heart, Sparkles, ListChecks, Footprints, Youtube, Users, Camera } from 
 import { liveScreen, type VideoLiveCommand, type StandUpGuessConfig, type StandUpGuessRound } from '@/lib/api'
 import { useLiveEvent } from '@/lib/events/useLiveEvent'
 import { useActivePoll, toLegacyPoll } from '@/lib/events/usePolls'
+import { useLatestGames, preferRealtime } from '@/lib/events/useGames'
 import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
 import { WeddingPhotoDisplay } from '@/components/wedding/WeddingPhotoGridWall'
@@ -73,6 +74,10 @@ export default function ScreenModePage() {
   // of the whole payload stays because the other TV sections (games, photos...) are not migrated yet.
   const liveEvent = useLiveEvent(slug)
   const rtPoll = useActivePoll(liveEvent?.id)
+  // Roulette / shoe-game rounds also arrive in realtime (only the games part of the TV payload is migrated).
+  const rtGames = useLatestGames(liveEvent?.id)
+  const rouletteRound = preferRealtime(rtGames?.roulette, data?.roulette)
+  const shoeRound = preferRealtime(rtGames?.shoeGame, data?.shoe_game)
 
   const [showRouletteWheel, setShowRouletteWheel] = useState(false)
   const [wheelPenitenze, setWheelPenitenze] = useState<any[]>([])
@@ -83,33 +88,33 @@ export default function ScreenModePage() {
   const pageLoadedAt = useRef<number>(Date.now())
 
   useEffect(() => {
-    if (!data?.roulette) return
-    if (!data.roulette.result) return // round in corso senza risultato
+    if (!rouletteRound) return
+    if (!rouletteRound.result) return // round in corso senza risultato
 
     // Se l'id non è cambiato, è lo stesso round già visto: niente da fare
-    if (data.roulette.id === lastRouletteId.current) return
+    if (rouletteRound.id === lastRouletteId.current) return
 
     // Round creato prima dell'apertura schermo → è "storico", solo segnalo
     // come visto senza rigiocare l'animazione
-    const createdAt = data.roulette.created_at
-      ? new Date(data.roulette.created_at).getTime()
+    const createdAt = rouletteRound.created_at
+      ? new Date(rouletteRound.created_at).getTime()
       : 0
     if (createdAt && createdAt < pageLoadedAt.current - 5000) {
-      lastRouletteId.current = data.roulette.id
+      lastRouletteId.current = rouletteRound.id
       return
     }
 
     // Nuovo round arrivato dopo il page load → fai partire la ruota
-    lastRouletteId.current = data.roulette.id
+    lastRouletteId.current = rouletteRound.id
 
     // Il backend salva le penitenze in config.penitenze come array di oggetti
     // { label, category, enabled }. Manteniamo fallback su "slots" per legacy.
-    const rouletteConfig = data.roulette.config as any
+    const rouletteConfig = rouletteRound.config as any
     const rawPenitenze: any[] =
       rouletteConfig?.penitenze ||
       rouletteConfig?.slots ||
       []
-    const idx = data.roulette.result.slot_index ?? 0
+    const idx = rouletteRound.result.slot_index ?? 0
 
     if (rawPenitenze.length > 0 && idx >= 0) {
       // Normalizza: supporta sia stringhe legacy sia oggetti { label, category, enabled }
@@ -131,7 +136,7 @@ export default function ScreenModePage() {
         setShowRouletteWheel(false)
       }, 17000)
     }
-  }, [data?.roulette])
+  }, [rouletteRound])
 
   if (error) {
     return (
@@ -152,7 +157,8 @@ export default function ScreenModePage() {
     )
   }
 
-  const { session, roulette, shoe_game, dedications, photos } = data
+  const { session, dedications, photos } = data
+  const roulette = rouletteRound, shoe_game = shoeRound
   const active_poll = rtPoll === undefined ? data.active_poll : rtPoll ? (toLegacyPoll(rtPoll) as typeof data.active_poll) : null
   const isParty = (session as any).session_type === 'party'
 

@@ -291,6 +291,7 @@ stripeRouter.post('/webhook', async (req: Request, res: Response) => {
 // New env vars take priority; legacy STRIPE_PRO_PRICE_ID / STRIPE_STUDIO_PRICE_ID
 // remain as fallback so existing deployments don't break.
 import { PLAN_CREDITS, normalizePlan, type PlanTier } from '../config/plans'
+import { projectEventPass, projectEventPasses, projectLegacyPlan } from '../services/eventProjection'
 
 function buildPlanPriceMap(): Record<string, PlanTier> {
   const map: Record<string, PlanTier> = {}
@@ -357,7 +358,8 @@ async function recomputeUserPlan(userId: string, customerId: string) {
   }
   const update: Record<string, unknown> = { plan: best, credits_remaining: PLAN_CREDITS[best] }
   if (bestPeriodEnd) update.credits_reset_at = new Date(bestPeriodEnd * 1000).toISOString()
-  await supabaseAdmin.from('users').update(update).eq('id', userId)
+  const { data: planRow } = await supabaseAdmin.from('users').update(update).eq('id', userId).select('id, plan, updated_at').maybeSingle()
+  await projectLegacyPlan(planRow as any) // TODO(firebase-migration): flag-gated Firestore projection
 }
 
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
@@ -390,12 +392,13 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     current_period_end:     new Date(subscription.current_period_end * 1000).toISOString(),
   }, { onConflict: 'stripe_subscription_id' })
 
-  await supabaseAdmin.from('users').update({
+  const { data: planRow } = await supabaseAdmin.from('users').update({
     plan,
     credits_remaining:  PLAN_CREDITS[plan],
     stripe_customer_id: customerId,
     credits_reset_at:   new Date(subscription.current_period_end * 1000).toISOString(),
-  }).eq('id', userId)
+  }).eq('id', userId).select('id, plan, updated_at').maybeSingle()
+  await projectLegacyPlan(planRow as any) // TODO(firebase-migration): flag-gated Firestore projection
 
   // Plan switch → cancel any previous subscription so only the new one stays active.
   await cancelOtherActiveSubscriptions(customerId, subscription.id)
@@ -515,7 +518,7 @@ async function handleEventPassPayment(session: Stripe.Checkout.Session) {
   const validUntil = new Date()
   validUntil.setHours(validUntil.getHours() + 24)
 
-  const { error: insertError } = await supabaseAdmin.from('event_passes').insert({
+  const { data: passRow, error: insertError } = await supabaseAdmin.from('event_passes').insert({
     user_id: userId,
     session_id: sessionId,
     stripe_payment_intent_id: paymentIntentId,
@@ -523,12 +526,13 @@ async function handleEventPassPayment(session: Stripe.Checkout.Session) {
     currency,
     valid_until: validUntil.toISOString(),
     status: 'active',
-  })
+  }).select('*').single()
 
   if (insertError) {
     logger.error('Failed to create event pass', { userId, error: insertError })
     return
   }
+  await projectEventPass(passRow as any) // TODO(firebase-migration): flag-gated Firestore projection
 
   // Registra pagamento (amount 0 per coupon 100% è valido)
   await supabaseAdmin.from('payments').upsert({
@@ -572,11 +576,13 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
   }
 
   if (passes && passes.length > 0) {
-    const { error: upErr } = await supabaseAdmin
+    const { data: revoked, error: upErr } = await supabaseAdmin
       .from('event_passes')
       .update({ status: 'refunded' })
       .eq('stripe_payment_intent_id', paymentIntentId)
       .eq('status', 'active')
+      .select('*')
+    await projectEventPasses(revoked as any) // TODO(firebase-migration): flag-gated Firestore projection
     if (upErr) logger.error('charge.refunded: failed to revoke event pass', { paymentIntentId, error: upErr })
     else logger.info(`charge.refunded: revoked ${passes.length} event pass(es)`, { paymentIntentId })
   }

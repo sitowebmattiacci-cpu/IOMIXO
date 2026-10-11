@@ -3,6 +3,7 @@ import type { Firestore } from 'firebase-admin/firestore'
 import type { LegacyBridge } from './legacyBridge'
 import type { RequestInput } from './validation'
 import { fail, loadLiveEvent, reserveSlot, releaseSlot, createWithRetry } from '../shared/guard'
+import { selectEventEntitlements, logEntitlementDecision } from '../entitlements/source'
 
 /** Anti-spam policy (per guest and event). Cooldown mirrors the legacy 20 s limit; the per-guest cap is new. */
 export const POLICY = { cooldownMs: 20_000, maxPerGuest: 10, writeRetries: 3 } as const
@@ -29,11 +30,17 @@ export async function createRequest(
   if (ev.type !== 'standard' && ev.guestConfig?.requests === false) {
     throw fail('failed-precondition', 'Song requests are disabled for this event', 'requests_disabled')
   }
-  // `requestLimit` (number | null = unlimited) is projected server-side from the DJ's effective plan.
-  // Missing means the event was projected before this feature: let the caller use the legacy path.
-  if (ev.requestLimit === undefined || (bridge && !ev.legacySupabaseId)) {
+  // Limit of the DJ's EFFECTIVE plan (server side only; nothing from the client). Source: see entitlements/source.ts.
+  //  - 'firestore': resolver over users/{owner}.plan + Event Passes (Infinity → null = unlimited)
+  //  - 'legacy_projected_fallback': `requestLimit` projected on the event (number | null = unlimited); missing means the event was
+  //    projected before this feature: let the caller use the legacy path.
+  const decision = await selectEventEntitlements(db, input.eventId, ev, new Date(now()))
+  if ((decision.source === 'legacy_projected_fallback' && ev.requestLimit === undefined) || (bridge && !ev.legacySupabaseId)) {
     throw fail('failed-precondition', 'Event not ready for Firestore requests', 'event_not_ready')
   }
+  const max = decision.ent ? decision.ent.limits.maxRequestsPerSession : (ev.requestLimit as number | null)
+  const requestLimit: number | null = max === null || !Number.isFinite(max) ? null : max
+  logEntitlementDecision('createMusicRequest', decision, 'allow', 'requestLimit')
 
   const counterRef = eventRef.collection('state').doc('requests')
   const guestRef   = eventRef.collection('requestGuests').doc(uid)
@@ -42,7 +49,7 @@ export async function createRequest(
   // Seed the counter from the authoritative count when it does not exist yet (outside the txn: network call).
   const seed = bridge && !(await counterRef.get()).exists ? await bridge.count(ev.legacySupabaseId) : 0
 
-  const slot = { guestRef, counterRef, limit: ev.requestLimit as number | null, seed, ...POLICY, now: now() }
+  const slot = { guestRef, counterRef, limit: requestLimit, seed, ...POLICY, now: now() }
   const previousLastAt = await reserveSlot(db, slot)
 
   let legacyId: string | undefined

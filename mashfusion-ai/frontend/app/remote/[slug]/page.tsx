@@ -13,6 +13,8 @@ import {
   WeddingShell, WeddingCard, WeddingButton, WeddingBadge,
 } from '@/components/wedding/WeddingUI'
 import { useI18n } from '@/lib/i18n'
+import { useLiveEvent } from '@/lib/events/useLiveEvent'
+import { useLatestGames, preferRealtime } from '@/lib/events/useGames'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 // ── Public API client (no auth) ────────────────────────────────
@@ -483,11 +485,14 @@ function RemoteRouletteControls({ slug }: { slug: string }) {
 
 function RemoteShoeControls({ slug }: { slug: string }) {
   const { t } = useI18n()
-  const { data: round, mutate: refresh } = useSWR(
+  // Realtime shoe-game round (Firestore) once projected; otherwise the legacy polling.
+  const rtRound = useLatestGames(useLiveEvent(slug)?.id)?.shoeGame ?? null
+  const { data: legacyRound, mutate: refresh } = useSWR(
     ['remote-shoe-game', slug],
     () => remoteApi.getShoeState(slug),
-    { refreshInterval: 4_000 },
+    { refreshInterval: rtRound ? 0 : 4_000 },
   )
+  const round = preferRealtime(rtRound, legacyRound)
   const [busy, setBusy] = useState(false)
 
   const questions = round?.config?.questions ?? []

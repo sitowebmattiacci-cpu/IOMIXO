@@ -6,6 +6,7 @@ import { getUserPlan, hasEventAccess } from '../services/plan'
 import { PLAN_LIMITS } from '../config/plans'
 import { isEventSession } from '../utils/sessionType'
 import { getSmartRandomOption } from '../utils/smartRandom'
+import { projectGameRound, projectGameRounds } from '../services/eventProjection'
 
 export const liveGamesRouter = Router()
 
@@ -145,10 +146,13 @@ liveGamesRouter.post('/sessions/:id/games/roulette/start', requireAuth, async (r
     }
 
     // Close any previous active rounds (idle/running) for this game type
-    await supabaseAdmin.from('live_game_rounds')
+    // `.select('*')` returns the rows the update really touched, with their DB updated_at (version for the projection).
+    const { data: closed } = await supabaseAdmin.from('live_game_rounds')
       .update({ status: 'completed' })
       .eq('session_id', req.params.id).eq('game_type', 'wedding_roulette')
       .in('status', ['idle', 'running'])
+      .select('*')
+    await projectGameRounds(closed as any) // TODO(firebase-migration): flag-gated Firestore projection
 
     const { data, error } = await supabaseAdmin.from('live_game_rounds').insert({
       session_id: req.params.id,
@@ -158,6 +162,7 @@ liveGamesRouter.post('/sessions/:id/games/roulette/start', requireAuth, async (r
       result:     null,
     }).select('*').single()
     if (error) throw new AppError(error.message, 500)
+    await projectGameRound(data) // TODO(firebase-migration): flag-gated Firestore projection
     res.status(201).json({ data })
   } catch (e) { next(e) }
 })
@@ -200,6 +205,7 @@ liveGamesRouter.post('/sessions/:id/games/roulette/spin', requireAuth, async (re
       .update({ status: 'completed', result })
       .eq('id', round.id).select('*').single()
     if (error) throw new AppError(error.message, 500)
+    await projectGameRound(data) // TODO(firebase-migration): flag-gated Firestore projection
     res.json({ data })
   } catch (e) { next(e) }
 })
@@ -210,11 +216,13 @@ liveGamesRouter.post('/sessions/:id/games/roulette/reset', requireAuth, async (r
     await ownedWeddingSession(req.params.id, userId(req))
     await requireWeddingFeature(userId(req))
 
-    const { error } = await supabaseAdmin.from('live_game_rounds')
+    const { data: reset, error } = await supabaseAdmin.from('live_game_rounds')
       .update({ status: 'completed', result: null })
       .eq('session_id', req.params.id).eq('game_type', 'wedding_roulette')
       .in('status', ['idle', 'running'])
+      .select('*')
     if (error) throw new AppError(error.message, 500)
+    await projectGameRounds(reset as any) // TODO(firebase-migration): flag-gated Firestore projection
     res.status(204).end()
   } catch (e) { next(e) }
 })
@@ -282,10 +290,13 @@ liveGamesRouter.post('/sessions/:id/games/shoe/start', requireAuth, async (req, 
       ? req.body.questions.map((q: unknown) => String(q).slice(0, 200))
       : (customQuestions ?? DEFAULT_SHOE_QUESTIONS)
 
-    await supabaseAdmin.from('live_game_rounds')
+    // `.select('*')` returns the rows the update really touched, with their DB updated_at (version for the projection).
+    const { data: closed } = await supabaseAdmin.from('live_game_rounds')
       .update({ status: 'completed' })
       .eq('session_id', req.params.id).eq('game_type', 'shoe_game')
       .in('status', ['idle', 'running'])
+      .select('*')
+    await projectGameRounds(closed as any) // TODO(firebase-migration): flag-gated Firestore projection
 
     const { data, error } = await supabaseAdmin.from('live_game_rounds').insert({
       session_id: req.params.id,
@@ -295,6 +306,7 @@ liveGamesRouter.post('/sessions/:id/games/shoe/start', requireAuth, async (req, 
       result:     null,
     }).select('*').single()
     if (error) throw new AppError(error.message, 500)
+    await projectGameRound(data) // TODO(firebase-migration): flag-gated Firestore projection
     res.status(201).json({ data })
   } catch (e) { next(e) }
 })
@@ -328,6 +340,7 @@ liveGamesRouter.post('/sessions/:id/games/shoe/next', requireAuth, async (req, r
     const { data, error } = await supabaseAdmin.from('live_game_rounds')
       .update(patch).eq('id', round.id).select('*').single()
     if (error) throw new AppError(error.message, 500)
+    await projectGameRound(data) // TODO(firebase-migration): flag-gated Firestore projection
     res.json({ data })
   } catch (e) { next(e) }
 })
@@ -338,11 +351,13 @@ liveGamesRouter.post('/sessions/:id/games/shoe/reset', requireAuth, async (req, 
     await ownedWeddingSession(req.params.id, userId(req))
     await requireWeddingFeature(userId(req))
 
-    const { error } = await supabaseAdmin.from('live_game_rounds')
+    const { data: reset, error } = await supabaseAdmin.from('live_game_rounds')
       .update({ status: 'completed', result: null })
       .eq('session_id', req.params.id).eq('game_type', 'shoe_game')
       .in('status', ['idle', 'running'])
+      .select('*')
     if (error) throw new AppError(error.message, 500)
+    await projectGameRounds(reset as any) // TODO(firebase-migration): flag-gated Firestore projection
     res.status(204).end()
   } catch (e) { next(e) }
 })

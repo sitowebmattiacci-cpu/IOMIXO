@@ -5,6 +5,8 @@ import type { LegacySessionRow } from '../repositories/eventRepository'
 import type { LegacyRequestRow, RequestStatus } from '../repositories/requestRepository'
 import type { LegacyDedicationRow, DedicationStatus } from '../repositories/dedicationRepository'
 import type { LegacyPollRow } from '../repositories/pollRepository'
+import type { LegacyGameRoundRow } from '../repositories/gameRoundRepository'
+import type { LegacyEventPassRow, LegacyPlanRow } from '../repositories/entitlementRepository'
 
 /**
  * TRANSITIONAL one-way projection Supabase live_sessions → Firestore events.
@@ -125,4 +127,39 @@ export async function projectLegacyVote(sessionId: string, pollId: string, previ
   if (!enabled()) return
   try { await (await import('../repositories/pollRepository')).projectLegacyVote(sessionId, pollId, previous, next) }
   catch (e) { console.error('[pollProjection] legacy vote failed', pollId, (e as Error).message) }
+}
+
+// ── live_game_rounds projection (roulette / shoe game) ───────────────────────────────────────
+// Own fail-safe switch, OFF by default: games are projected only when BOTH the event projection and
+// FIRESTORE_GAMES_PROJECTION are 'on', so enabling the event projection later does not start this domain by itself.
+const gamesEnabled = () => enabled() && process.env.FIRESTORE_GAMES_PROJECTION === 'on'
+
+export async function projectGameRound(row: LegacyGameRoundRow): Promise<void> {
+  if (!gamesEnabled()) return
+  try { await (await import('../repositories/gameRoundRepository')).projectGameRound(row) }
+  catch (e) { console.error('[gameProjection] upsert failed', row.id, (e as Error).message) }
+}
+/** Rows returned by a legacy bulk update (idle/running → completed on start, reset). Each row is versioned independently. */
+export async function projectGameRounds(rows: LegacyGameRoundRow[] | null | undefined): Promise<void> {
+  if (!gamesEnabled() || !rows?.length) return
+  try { await (await import('../repositories/gameRoundRepository')).projectGameRounds(rows) }
+  catch (e) { console.error('[gameProjection] bulk upsert failed', (e as Error).message) }
+}
+
+// ── plan / Event Pass projection (users/{uid}.plan, users/{uid}/eventPasses/{key}) ───────────
+// Own fail-safe switch, OFF by default (needs the global event projection flag too). Supabase stays authoritative.
+const entitlementsEnabled = () => enabled() && process.env.FIRESTORE_ENTITLEMENTS_PROJECTION === 'on'
+
+export async function projectEventPass(row: LegacyEventPassRow | null | undefined): Promise<void> {
+  if (!entitlementsEnabled() || !row) return
+  try { await (await import('../repositories/entitlementRepository')).projectEventPass(row) }
+  catch (e) { console.error('[entitlementProjection] event pass failed', row.id, (e as Error).message) }
+}
+export async function projectEventPasses(rows: LegacyEventPassRow[] | null | undefined): Promise<void> {
+  for (const r of rows ?? []) await projectEventPass(r)
+}
+export async function projectLegacyPlan(row: LegacyPlanRow | null | undefined): Promise<void> {
+  if (!entitlementsEnabled() || !row) return
+  try { await (await import('../repositories/entitlementRepository')).projectLegacyPlan(row) }
+  catch (e) { console.error('[entitlementProjection] plan failed', row.id, (e as Error).message) }
 }
