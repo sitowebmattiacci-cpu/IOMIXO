@@ -3,6 +3,7 @@ rules_version = '2';
 //
 //   events/{eventId}/photos/{photoId}/original.{jpg|jpeg|png|webp}   guest album + Live Booth
 //   events/{eventId}/winner/{groom|bride}-<random>.{ext}             winner-announcement photos (owner)
+//   profiles/{uid}/avatar/{user|dj}-<random>.{jpg|png|webp}          profile avatars (owner only, ≤5 MB; committed by the commitAvatar callable)
 //
 // Never listable. No client may overwrite or delete anything: removals / token rotation / cleanup are done by Cloud Functions (Admin SDK).
 // The Firestore photo doc is created by the createPhotoUpload callable (event live + plan + anti-spam) BEFORE the bytes: the write is accepted only
@@ -41,6 +42,18 @@ service firebase.storage {
         && validImage();
       // The TV (anonymous) shows these; the random file name is the capability, as the legacy 1 h signed URL was.
       allow get: if signedIn() && !('deletedAt' in event(eventId));
+      allow list, update, delete: if false;
+    }
+
+    // Avatars: the owner creates a NEW random-named object (never an overwrite); the commitAvatar callable verifies it, publishes its download URL and
+    // removes the replaced one; removeAvatar deletes. Reading the bytes goes through the tokenised URL stored in Firestore (the token is the capability, as
+    // the legacy public bucket URL was), so the only direct read is the owner's.
+    match /profiles/{uid}/avatar/{file} {
+      allow create: if isAccount() && request.auth.uid == uid && resource == null
+        && file.matches('(user|dj)-[A-Za-z0-9_-]{16,64}\\.(jpg|png|webp)')
+        && request.resource.size > 0 && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+      allow get: if isAccount() && request.auth.uid == uid;
       allow list, update, delete: if false;
     }
 

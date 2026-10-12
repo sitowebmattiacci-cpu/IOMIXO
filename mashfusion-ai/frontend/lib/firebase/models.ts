@@ -16,7 +16,9 @@ export interface UserDoc {
   uid:         string
   email:       string
   displayName?: string | null
+  /** Server-written (commitAvatar): tokenised Storage URL + its path. Legacy docs may carry an old Supabase URL without a path. */
   avatarUrl?:  string | null
+  avatarPath?: string | null
   plan:        PlanState
   /** TRANSITIONAL, server-only: Supabase users.id of the owner / legacy records. */
   legacySupabaseId?: string
@@ -40,13 +42,16 @@ export interface EventPassDoc {
   updatedAt:  Date | null
 }
 
-export type UserProfilePatch = Partial<Pick<UserDoc, 'displayName' | 'avatarUrl'>>
+/** Client-writable account fields. The avatar is NOT one of them (commitAvatar / removeAvatar callables). */
+export type UserProfilePatch = Partial<Pick<UserDoc, 'displayName'>>
 
 /** djProfiles/{firebaseUid} */
 export interface DjProfileDoc {
   displayName?:   string | null
   bio?:           string | null
+  /** Server-written (commitAvatar), like UserDoc.avatarUrl. */
   avatarUrl?:     string | null
+  avatarPath?:    string | null
   instagramUrl?:  string | null
   tiktokUrl?:     string | null
   spotifyUrl?:    string | null
@@ -58,7 +63,7 @@ export interface DjProfileDoc {
   updatedAt:      Date | null
 }
 
-export type DjProfilePatch = Partial<Omit<DjProfileDoc, 'publicSlug' | 'createdAt' | 'updatedAt'>>
+export type DjProfilePatch = Partial<Omit<DjProfileDoc, 'publicSlug' | 'avatarUrl' | 'avatarPath' | 'createdAt' | 'updatedAt'>>
 
 export type EventType   = 'standard' | 'party' | 'wedding'
 export type EventStatus = 'live' | 'ended'

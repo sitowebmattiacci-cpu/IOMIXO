@@ -83,3 +83,5 @@ backfill-report-*.json
 entitlement-snapshot*.json
 snapshot-*.json
 *.rollback.json
+photo-binaries-*.json
+avatar-binaries-*.json

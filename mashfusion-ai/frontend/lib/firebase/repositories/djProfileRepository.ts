@@ -11,6 +11,7 @@ function fromDoc(d: DocumentData): DjProfileDoc {
     displayName:   d.displayName   ?? null,
     bio:           d.bio           ?? null,
     avatarUrl:     d.avatarUrl     ?? null,
+    avatarPath:    d.avatarPath    ?? null,
     instagramUrl:  d.instagramUrl  ?? null,
     tiktokUrl:     d.tiktokUrl     ?? null,
     spotifyUrl:    d.spotifyUrl    ?? null,
@@ -27,7 +28,7 @@ export async function getDjProfile(db: Firestore, uid: string): Promise<DjProfil
   return snap.exists() ? fromDoc(snap.data()) : null
 }
 
-/** Create-or-update the editable fields. publicSlug is not writable from the client. */
+/** Create-or-update the editable fields. publicSlug and the avatar fields are not writable from the client. */
 export async function saveDjProfile(db: Firestore, uid: string, patch: DjProfilePatch): Promise<void> {
   const ref = doc(db, 'djProfiles', uid)
   const exists = (await getDoc(ref)).exists()

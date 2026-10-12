@@ -59,11 +59,13 @@ test('cannot create own doc with a paid plan, a legacy id, or for someone else',
   assert.ok(await denied(setDoc(doc(a.db, 'users', a.uid), { ...base, plan: { tier: 'free', source: 'default' }, createdAt: new Date() })))
 })
 
-test('invalid profile values rejected (oversized name, non-http avatar)', async () => {
+test('invalid profile values rejected (oversized name)', async () => {
   const a = await mk()
   await createUser(a.db, { uid: a.uid, email: a.email })
   assert.ok(await denied(updateUserProfile(a.db, a.uid, { displayName: 'x'.repeat(81) })))
-  assert.ok(await denied(updateUserProfile(a.db, a.uid, { avatarUrl: 'javascript:alert(1)' })))
+  // the avatar is server-only: a client cannot write it at all (not even a valid https URL)
+  for (const patch of [{ avatarUrl: 'https://evil.example/x.png' }, { avatarPath: 'profiles/other/avatar/user-aaaaaaaaaaaaaaaa.png' }, { avatarUrl: 'javascript:alert(1)' }])
+    assert.ok(await denied(updateDoc(doc(a.db, 'users', a.uid), { ...patch, updatedAt: serverTimestamp() })), JSON.stringify(Object.keys(patch)))
 })
 
 test('5. anonymous cannot read or write profiles (users and djProfiles)', async () => {

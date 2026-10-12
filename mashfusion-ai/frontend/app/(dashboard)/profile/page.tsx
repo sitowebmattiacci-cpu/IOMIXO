@@ -2,13 +2,14 @@
 import { useEffect, useRef, useState } from 'react'
 import useSWR from 'swr'
 import toast from 'react-hot-toast'
-import { UserCircle, Save, Upload } from 'lucide-react'
+import { UserCircle, Save, Upload, Trash2 } from 'lucide-react'
 import { djProfile, type DjProfile } from '@/lib/api'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { UpgradeGate } from '@/components/live/UpgradeGate'
 import { useEffectiveAccess } from '@/lib/access'
 import { useI18n } from '@/lib/i18n'
+import { dashboardFlag } from '@/lib/events/flags'
 
 const EMPTY: DjProfile = {
   display_name: '',
@@ -46,6 +47,16 @@ export default function ProfilePage() {
       setUploading(false)
       if (fileRef.current) fileRef.current.value = ''
     }
+  }
+
+  const handleRemoveAvatar = async () => {
+    setUploading(true)
+    try {
+      const updated = await djProfile.removeAvatar()
+      if (updated) { await mutate(updated, { revalidate: false }); setForm((f) => ({ ...f, avatar_url: '' })) }
+    } catch (err: any) {
+      toast.error(err?.message ?? t('profile.genericError'))
+    } finally { setUploading(false) }
   }
 
   useEffect(() => {
@@ -125,10 +136,16 @@ export default function ProfilePage() {
               >
                 {form.avatar_url ? t('profile.changePhoto') : t('profile.uploadPhoto')}
               </Button>
+              {dashboardFlag() && form.avatar_url && (
+                <button type="button" onClick={handleRemoveAvatar} disabled={uploading}
+                  className="flex items-center gap-1.5 text-xs text-red-400/60 hover:text-red-400 transition-colors">
+                  <Trash2 className="h-3 w-3" /> {t('settings.remove')}
+                </button>
+              )}
             </div>
           </Field>
           <Field label={t('profile.slug')} hint={t('profile.slugHint')}>
-            <input value={form.public_slug ?? ''} onChange={set('public_slug')} className={inputCls} placeholder={t('profile.slugPlaceholder')} />
+            <input value={form.public_slug ?? ''} onChange={set('public_slug')} readOnly={dashboardFlag()} className={inputCls} placeholder={t('profile.slugPlaceholder')} />
           </Field>
           <Field label={t('profile.bio')}>
             <textarea value={form.bio ?? ''} onChange={set('bio')} rows={3} className={inputCls} placeholder={t('profile.bioPlaceholder')} />

@@ -25,8 +25,9 @@ service cloud.firestore {
     }
 
     // ── users/{uid}: account document ────────────────────────────────────────
+    // avatarPath / avatarUrl are SERVER-ONLY (commitAvatar / removeAvatar callables): a client could otherwise point the public page at any URL.
     function validUserProfile(d) {
-      return optStr(d, 'displayName', 80) && optUrl(d, 'avatarUrl', 2048);
+      return optStr(d, 'displayName', 80);
     }
 
     match /users/{uid} {
@@ -36,7 +37,7 @@ service cloud.firestore {
       // The client may only create its own FREE, non-legacy document.
       allow create: if isOwner(uid)
         && request.resource.data.keys().hasOnly(
-             ['uid', 'email', 'displayName', 'avatarUrl', 'plan', 'createdAt', 'updatedAt'])
+             ['uid', 'email', 'displayName', 'plan', 'createdAt', 'updatedAt'])
         && request.resource.data.keys().hasAll(['uid', 'email', 'plan', 'createdAt', 'updatedAt'])
         && request.resource.data.uid == uid
         && request.resource.data.email == request.auth.token.email
@@ -48,7 +49,7 @@ service cloud.firestore {
       // Only profile fields are editable; plan, legacySupabaseId, email, uid are not.
       allow update: if isOwner(uid)
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['displayName', 'avatarUrl', 'updatedAt'])
+             .hasOnly(['displayName', 'updatedAt'])
         && request.resource.data.updatedAt == request.time
         && validUserProfile(request.resource.data);
 
@@ -64,11 +65,11 @@ service cloud.firestore {
     }
 
     // ── djProfiles/{uid}: DJ public-facing profile ───────────────────────────
-    // publicSlug is NOT client-writable (uniqueness needs a server transaction).
+    // publicSlug, avatarPath and avatarUrl are NOT client-writable (slug needs a server transaction; avatar = commitAvatar callable).
+    // Guests never read this document: the public profile fields reach them through the getPublicEvent callable.
     function validDjProfile(d) {
       return optStr(d, 'displayName', 80)
         && optStr(d, 'bio', 1000)
-        && optUrl(d, 'avatarUrl', 2048)
         && optUrl(d, 'instagramUrl', 300)
         && optUrl(d, 'tiktokUrl', 300)
         && optUrl(d, 'spotifyUrl', 300)
@@ -82,7 +83,7 @@ service cloud.firestore {
 
       allow create: if isOwner(uid)
         && request.resource.data.keys().hasOnly(
-             ['displayName', 'bio', 'avatarUrl', 'instagramUrl', 'tiktokUrl', 'spotifyUrl',
+             ['displayName', 'bio', 'instagramUrl', 'tiktokUrl', 'spotifyUrl',
               'soundcloudUrl', 'websiteUrl', 'createdAt', 'updatedAt'])
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time
@@ -90,7 +91,7 @@ service cloud.firestore {
 
       allow update: if isOwner(uid)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
-             ['displayName', 'bio', 'avatarUrl', 'instagramUrl', 'tiktokUrl', 'spotifyUrl',
+             ['displayName', 'bio', 'instagramUrl', 'tiktokUrl', 'spotifyUrl',
               'soundcloudUrl', 'websiteUrl', 'updatedAt'])
         && request.resource.data.updatedAt == request.time
         && validDjProfile(request.resource.data);

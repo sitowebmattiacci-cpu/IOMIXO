@@ -105,7 +105,8 @@ Backend: `src/repositories/userRepository.ts` (Admin SDK). Models: `lib/firebase
 | Field | Writer | Notes |
 |---|---|---|
 | `uid`, `email` | client at create | must equal the token's uid/email; immutable afterwards |
-| `displayName`, `avatarUrl` | client | ≤80 chars / https URL ≤2048 (avatar = legacy URL until the Storage step) |
+| `displayName` | client | ≤80 chars |
+| `avatarPath`, `avatarUrl` | **server only** (`commitAvatar` / `removeAvatar`) | Storage path + tokenised download URL |
 | `plan { tier, source, validUntil? }` | **server only** | tier `free\|pro\|wedding` (wedding = Advance); source `default\|legacy\|stripe`. Client can only create `free/default`. |
 | `legacySupabaseId` | **server only** | transitional bridge to Supabase `users.id` (owner/legacy records) |
 | `createdAt`, `updatedAt` | server timestamps | enforced `== request.time` by rules |
@@ -418,3 +419,11 @@ Rollback of one callable: set its parameter to `false` and `firebase deploy --on
 **BLOCKING PREREQUISITE for `NEXT_PUBLIC_AUTH_PROVIDER=firebase` (cutover):** the real hosting environment (Vercel) must define
 `NEXT_PUBLIC_FIREBASE_APPCHECK_SITE_KEY` (the public reCAPTCHA Enterprise key) and `NEXT_PUBLIC_FIREBASE_APPCHECK_PROVIDER=enterprise`,
 plus the `NEXT_PUBLIC_FIREBASE_*` web config. Without them guests have no App Check token and every callable is rejected.
+
+
+## Profile + avatar (PROFILE/AVATAR STEP)
+- Account name → `users/{uid}.displayName`, DJ profile → `djProfiles/{uid}`: direct owner writes under `firestore.rules`. `publicSlug`, `avatarPath`, `avatarUrl` are server-only.
+- Avatar bytes: browser → Storage `profiles/{uid}/avatar/{user|dj}-<random>.{jpg|png|webp}` (owner only, create-only, ≤5 MB). Then callable `commitAvatar({kind,path})`
+  (owner prefix + kind, size, magic bytes, mints download token, writes `avatarPath`/`avatarUrl`, deletes the replaced file and orphans). `removeAvatar({kind})` clears + deletes.
+- Guests never read `djProfiles`: name/bio/avatar/socials reach them through `getPublicEvent` (unchanged).
+- Frontend: `lib/events/profileService.ts`, behind `NEXT_PUBLIC_FIRESTORE_DASHBOARD`. Backfill: `backend/scripts/backfill-profiles.ts` (+ `scripts/sql/profiles_snapshot.sql`); avatar binaries are only PLANNED (`--plan-binaries`).

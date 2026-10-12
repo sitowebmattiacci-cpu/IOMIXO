@@ -17,6 +17,7 @@ function fromDoc(uid: string, d: DocumentData): UserDoc {
     email:       d.email ?? '',
     displayName: d.displayName ?? null,
     avatarUrl:   d.avatarUrl ?? null,
+    avatarPath:  d.avatarPath ?? null,
     plan:        { tier, source: d.plan?.source ?? 'default', validUntil: toDate(d.plan?.validUntil) },
     legacySupabaseId: d.legacySupabaseId,
     createdAt:   toDate(d.createdAt),

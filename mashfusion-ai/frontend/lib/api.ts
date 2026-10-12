@@ -57,6 +57,7 @@ function apiError(err: unknown): never {
  * Dashboard READ path served by Firestore (sessions, user plan, Event Passes) when NEXT_PUBLIC_FIRESTORE_DASHBOARD=on|true;
  * null → not applicable, the legacy Express route is used. Dynamic import: nothing Firebase-related loads while the switch is off.
  */
+const profile = async () => (dashboardFlag() ? (await import('./events/profileService')).profileOps : null)
 const dashboard = async () => (dashboardFlag() ? (await import('./events/dashboardService')).dashboardOps : null)
 
 export const auth = {
@@ -93,6 +94,10 @@ export const user = {
   },
 
   async updateProfile(payload: { full_name?: string; avatar_url?: string }): Promise<User> {
+    // Firestore: the name is a direct write; clearing the avatar goes through removeAvatar (a client can never write an arbitrary avatar URL).
+    const ops = await profile()
+    if (ops && payload.avatar_url === '' && payload.full_name === undefined) { const r = await ops.removeUserAvatar(); if (r) return r }
+    else if (ops && payload.full_name !== undefined && payload.avatar_url === undefined) { const r = await ops.updateName(payload.full_name); if (r) return r }
     try {
       const { data } = await getClient().patch<ApiResponse<User>>('/user/profile', payload)
       return data.data!
@@ -100,6 +105,7 @@ export const user = {
   },
 
   async uploadAvatar(file: File): Promise<User> {
+    const fs = await profile().then((o) => o?.uploadUserAvatar(file)); if (fs) return fs
     try {
       const form = new FormData()
       form.append('avatar', file)
@@ -516,18 +522,25 @@ export const live = {
 
 export const djProfile = {
   async get(): Promise<DjProfile | null> {
+    const fs = await profile().then((o) => o?.getDj()); if (fs) return fs.data
     try {
       const { data } = await getClient().get<{ data: DjProfile | null }>('/api/dj/profile')
       return data.data
     } catch (e) { apiError(e) }
   },
   async update(patch: Partial<DjProfile>): Promise<DjProfile> {
+    const fs = await profile().then((o) => o?.updateDj(patch)); if (fs) return fs
     try {
       const { data } = await getClient().patch<{ data: DjProfile }>('/api/dj/profile', patch)
       return data.data
     } catch (e) { apiError(e) }
   },
+  async removeAvatar(): Promise<DjProfile | null> {
+    const fs = await profile().then((o) => o?.removeDjAvatar()); if (fs) return fs
+    return null   // legacy had no DJ avatar removal
+  },
   async uploadAvatar(file: File): Promise<DjProfile> {
+    const fs = await profile().then((o) => o?.uploadDjAvatar(file)); if (fs) return fs
     try {
       const fd = new FormData()
       fd.append('avatar', file)

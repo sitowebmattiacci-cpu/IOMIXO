@@ -8,6 +8,10 @@ const nextConfig = {
       { protocol: 'https', hostname: '*.supabase.co' },
       { protocol: 'https', hostname: '*.amazonaws.com' },
       { protocol: 'https', hostname: 'res.cloudinary.com' },
+      // Firebase Storage download URLs (profile avatars, server-published by commitAvatar)
+      { protocol: 'https', hostname: 'firebasestorage.googleapis.com' },
+      // Local Storage emulator (browser tests only)
+      ...(process.env.NEXT_PUBLIC_FIREBASE_USE_EMULATORS === 'true' ? [{ protocol: 'http', hostname: '127.0.0.1', port: '9199' }] : []),
     ],
   },
   async headers() {

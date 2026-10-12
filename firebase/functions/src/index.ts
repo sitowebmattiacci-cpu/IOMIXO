@@ -17,6 +17,7 @@ import { parseConfigInput, updateEventConfig as updateEventConfigImpl } from './
 import { parseCreateEventInput, parseEventRefInput, createEvent as createEventImpl, deleteEvent as deleteEventImpl, restoreEvent as restoreEventImpl } from './owner/sessions'
 import { parseGameActionInput, parseGameConfigInput, gameAction as gameActionImpl, setGameConfig as setGameConfigImpl } from './owner/games'
 import { parseCreatePhotoUploadInput, parsePhotoRefInput, parseModeratePhotoInput, createPhotoUpload as createPhotoUploadImpl, finalizePhoto as finalizePhotoImpl, moderatePhoto as moderatePhotoImpl } from './photos/photos'
+import { parseCommitAvatarInput, parseRemoveAvatarInput, commitAvatar as commitAvatarImpl, removeAvatar as removeAvatarImpl } from './profile/avatar'
 import { parseSlug, getPublicEvent as getPublicEventImpl } from './owner/publicEvent'
 
 // Cost baseline: europe-west1, scale to zero, bounded concurrency.
@@ -113,6 +114,10 @@ export const deleteEvent        = ownerCall('deleteEvent',        parseEventRefI
 export const restoreEvent       = ownerCall('restoreEvent',       parseEventRefInput,    (r, i) => restoreEventImpl(getFirestore(), r, i))
 export const ownerGameAction    = ownerCall('ownerGameAction',    parseGameActionInput,  (r, i) => gameActionImpl(getFirestore(), r, i))
 export const setGameConfig      = ownerCall('setGameConfig',      parseGameConfigInput,  (r, i) => setGameConfigImpl(getFirestore(), r, i))
+
+// Profile avatar (settings + public DJ profile): bytes go to Storage under storage.rules; these two callables are the only writers of avatarPath/avatarUrl.
+export const commitAvatar      = ownerCall('commitAvatar',       parseCommitAvatarInput, (r, i) => commitAvatarImpl(getFirestore(), r as any, i))
+export const removeAvatar      = ownerCall('removeAvatar',       parseRemoveAvatarInput, (r, i) => removeAvatarImpl(getFirestore(), r as any, i))
 
 export const moderatePhoto      = ownerCall('moderatePhoto',      parseModeratePhotoInput, (r, i) => moderatePhotoImpl(getFirestore(), r, i))
 
