@@ -17,14 +17,23 @@ export const idField = (raw: unknown, field: string): string => {
  * Owner-only operations: a real (non-anonymous) account that owns the event. The owner is taken from the verified token and
  * compared with events/{id}.ownerUid; nothing about identity comes from the payload. Unlike guest callables, the event may be ended.
  */
-export async function requireEventOwner(db: Firestore, request: CallerAuth, eventId: string): Promise<{ uid: string; ref: DocumentReference; data: DocumentData }> {
+/** A real (non-anonymous) signed-in account; returns its uid. */
+export function requireAccount(request: CallerAuth): string {
   const uid = request.auth?.uid
   if (!uid) throw fail('unauthenticated', 'Sign in required', 'unauthenticated')
   if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') throw fail('permission-denied', 'Account required', 'account_required')
+  return uid
+}
+
+/** Soft-deleted events (events/{id}.deletedAt) behave as missing for every owner operation, except an explicit restore. */
+export async function requireEventOwner(
+  db: Firestore, request: CallerAuth, eventId: string, opts: { allowDeleted?: boolean } = {},
+): Promise<{ uid: string; ref: DocumentReference; data: DocumentData }> {
+  const uid = requireAccount(request)
   const ref = db.collection('events').doc(eventId)
   const snap = await ref.get()
-  // Same answer for "missing" and "not yours": do not reveal which event ids exist.
-  if (!snap.exists || snap.data()!.ownerUid !== uid) throw fail('not-found', 'Event not found', 'event_not_found')
+  // Same answer for "missing", "deleted" and "not yours": do not reveal which event ids exist.
+  if (!snap.exists || snap.data()!.ownerUid !== uid || (snap.data()!.deletedAt && !opts.allowDeleted)) throw fail('not-found', 'Event not found', 'event_not_found')
   return { uid, ref, data: snap.data()! }
 }
 

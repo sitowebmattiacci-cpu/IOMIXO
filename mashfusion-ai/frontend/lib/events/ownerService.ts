@@ -3,13 +3,15 @@ import { httpsCallable } from 'firebase/functions'
 import { getFirebaseDb, getFirebaseFunctions } from '../firebase/client'
 import { waitForAuthReady } from '../firebase/auth'
 import { authProvider } from '../auth'
-import { ownerOpsFlag } from './flags'
-import { getOwnerEventByLegacyId } from '../firebase/repositories/eventRepository'
+import { dashboardFlag, ownerCallablesFlag } from './flags'
+import { eventToSession } from './legacyMappers'
+import { getEventById, getOwnerEventByLegacyId } from '../firebase/repositories/eventRepository'
+import { getLatestGame } from '../firebase/repositories/gameRepository'
 import { listEventRequests } from '../firebase/repositories/requestRepository'
 import { listEventDedications } from '../firebase/repositories/dedicationRepository'
 import { fromPollDoc, sumTally } from '../firebase/repositories/pollRepository'
 import type { EventDoc } from '../firebase/models'
-import type { LiveDedication, LivePoll, LiveRequest, LiveRequestStatus } from '../api'
+import type { LiveDedication, LiveGameRound, LivePoll, LiveRequest, LiveRequestStatus, LiveSession } from '../api'
 
 /**
  * DJ-side operations on Firestore (requests / dedications moderation, polls, event settings) for events that already live in
@@ -20,7 +22,9 @@ import type { LiveDedication, LivePoll, LiveRequest, LiveRequestStatus } from '.
  *
  * Switch: NEXT_PUBLIC_FIRESTORE_OWNER_OPS=on|true (default off → behaviour unchanged).
  */
-export const ownerOpsEnabled = () => ownerOpsFlag() && authProvider() === 'firebase'
+export const ownerOpsEnabled = () => ownerCallablesFlag() && authProvider() === 'firebase'
+/** Dashboard switch (NEXT_PUBLIC_FIRESTORE_DASHBOARD): Firestore is AUTHORITATIVE for the event lifecycle, core fields and games. */
+export const dashboardOn = () => dashboardFlag() && authProvider() === 'firebase'
 
 const MESSAGES: Record<string, string> = {
   event_access_required: 'Funzione disponibile con il piano Advance o un Event Pass 24H.',
@@ -32,6 +36,13 @@ const MESSAGES: Record<string, string> = {
   invalid_payload:       'Dati non validi',
   account_required:      'Accedi con il tuo account',
   unauthenticated:       'Accedi con il tuo account',
+  session_limit:         'Il tuo piano permette al massimo 1 sessione attiva. Passa a Pro per sessioni illimitate.',
+  request_id_conflict:   'Richiesta già usata, riprova',
+  slug_unavailable:      'Impossibile generare un link univoco, riprova',
+  slug_taken:            'Il link della sessione è stato assegnato a un altro evento',
+  games_unavailable:     'Funzione disponibile solo per sessioni Party Mode o Wedding Edition.',
+  no_active_game:        'Nessun gioco attivo. Avvia il gioco.',
+  no_penalties:          'Nessuna penitenza disponibile con le categorie selezionate.',
 }
 
 async function callOwner<Out>(name: string, payload: object): Promise<Out> {
@@ -51,7 +62,12 @@ export function resolveOwnerEvent(sessionId: string): Promise<EventDoc | null> {
     p = (async () => {
       const user = await waitForAuthReady()
       if (!user || user.isAnonymous) return null
-      return getOwnerEventByLegacyId(getFirebaseDb(), user.uid, sessionId)
+      const db = getFirebaseDb()
+      const byLegacy = await getOwnerEventByLegacyId(db, user.uid, sessionId)
+      if (byLegacy) return byLegacy
+      // Events created natively in Firestore have no Supabase id: the dashboard URL then carries the event id (owner check is explicit).
+      const byId = await getEventById(db, sessionId).catch(() => null)
+      return byId && byId.ownerUid === user.uid ? byId : null
     })().catch(() => null)
     events.set(sessionId, p)
     // A negative answer may become positive (event backfilled meanwhile): do not cache it for long.
@@ -60,13 +76,66 @@ export function resolveOwnerEvent(sessionId: string): Promise<EventDoc | null> {
   return p
 }
 const forSession = async (sessionId: string) => (ownerOpsEnabled() ? resolveOwnerEvent(sessionId) : null)
+/** Same, but only when the DASHBOARD switch is on (authoritative operations: lifecycle, core fields, games). */
+const forDashboard = async (sessionId: string) => (dashboardOn() ? resolveOwnerEvent(sessionId) : null)
+
+const requestId = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}${Math.random().toString(36).slice(2)}`).replace(/[^A-Za-z0-9_-]/g, '')
 
 // id → eventId registry (module memory only)
 const owners = { request: new Map<string, string>(), dedication: new Map<string, string>(), poll: new Map<string, string>() }
 const eventOf = (kind: keyof typeof owners, id: string) => (ownerOpsEnabled() ? owners[kind].get(id) ?? null : null)
 const iso = (d: Date | null) => (d ?? new Date()).toISOString()
 
+const GAME_TYPE = { roulette: 'wedding_roulette', shoe: 'shoe_game' } as const
+const roundToLegacy = (g: NonNullable<Awaited<ReturnType<typeof getLatestGame>>>): LiveGameRound => ({
+  id: g.id, game_type: g.type, status: g.status, config: g.config as LiveGameRound['config'], result: g.result as LiveGameRound['result'],
+  created_at: (g.createdAt ?? new Date()).toISOString(), updated_at: (g.updatedAt ?? new Date()).toISOString(),
+})
+
 export const ownerOps = {
+  /** Event lifecycle (dashboard switch): the event is created / soft-deleted in Firestore only, nothing reaches Render or Supabase. */
+  sessions: {
+    async create(input: {
+      event_name: string; dj_name?: string; description?: string; session_type?: string
+      couple_names?: string; wedding_date?: string; venue_name?: string; screen_mode_enabled?: boolean
+    }): Promise<LiveSession | null> {
+      if (!dashboardOn()) return null
+      const r = await callOwner<{ eventId: string; slug: string }>('createEvent', {
+        requestId: requestId(), title: input.event_name, djName: input.dj_name, description: input.description, type: input.session_type,
+        coupleNames: input.couple_names, weddingDate: input.wedding_date, venueName: input.venue_name, screenModeEnabled: input.screen_mode_enabled,
+      })
+      const ev = await getEventById(getFirebaseDb(), r.eventId)
+      if (!ev) throw new Error('Sessione creata ma non ancora leggibile, riprova')
+      return eventToSession(ev)
+    },
+    async remove(sessionId: string): Promise<boolean> {
+      const ev = await forDashboard(sessionId); if (!ev) return false
+      await callOwner('deleteEvent', { eventId: ev.id })
+      events.delete(sessionId); return true
+    },
+    async restore(sessionId: string, eventId: string): Promise<void> {
+      await callOwner('restoreEvent', { eventId }); events.delete(sessionId)
+    },
+  },
+  /** DJ games (dashboard switch). Every action returns the round as the legacy UI expects it, read back from Firestore. */
+  games: {
+    async act(sessionId: string, game: 'roulette' | 'shoe', action: 'start' | 'spin' | 'next' | 'reset', extra: { categories?: string[]; questions?: string[] } = {}): Promise<{ round: LiveGameRound | null } | null> {
+      const ev = await forDashboard(sessionId); if (!ev) return null
+      const r = await callOwner<{ roundId: string | null }>('ownerGameAction', { eventId: ev.id, game, action, ...extra })
+      if (!r.roundId) return { round: null }
+      const latest = await getLatestGame(getFirebaseDb(), ev.id, GAME_TYPE[game])
+      return { round: latest ? roundToLegacy(latest) : null }
+    },
+    async latest(sessionId: string, game: 'roulette' | 'shoe'): Promise<{ round: LiveGameRound | null } | null> {
+      const ev = await forDashboard(sessionId); if (!ev) return null
+      const latest = await getLatestGame(getFirebaseDb(), ev.id, GAME_TYPE[game])
+      return { round: latest ? roundToLegacy(latest) : null }
+    },
+    async setConfig(sessionId: string, patch: { roulettePenitenze?: unknown; shoeGameQuestions?: unknown }): Promise<boolean> {
+      const ev = await forDashboard(sessionId); if (!ev) return false
+      await callOwner('setGameConfig', { eventId: ev.id, ...patch }); return true
+    },
+  },
   requests: {
     async list(sessionId: string): Promise<LiveRequest[] | null> {
       const ev = await forSession(sessionId); if (!ev) return null

@@ -10,6 +10,9 @@
  *   # rollback of what a previous apply created/updated (dry-run unless --apply --yes-production)
  *   … --rollback ./backfill-rollback-events-<ts>.json [--apply --yes-production]
  *
+ *   # game customisation (roulette_penitenze / shoe_game_questions → events/{id}/private/gameConfig; additive, run AFTER the events backfill)
+ *   … --game-config [--apply --yes-production]
+ *
  * Flags: --limit N · --legacy-user-id <supabase users.id> · --report out.json (masked).
  * Owner mapping is ONLY users/{uid}.legacySupabaseId (there is no email fallback). Nothing is ever deleted by a run.
  * Snapshot format (SQL: scripts/sql/live_sessions_snapshot.sql): { "format": "iomixo.live_sessions.snapshot.v1", "generatedAt", "count", "sessions": [ {id, dj_id, public_slug,
@@ -18,7 +21,7 @@
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { BackfillRefused } from '../src/services/entitlementBackfill'
-import { inventoryEvents, runEventBackfill, runEventRollback, type LegacySessionSnapshotRow } from '../src/services/eventBackfill'
+import { inventoryEvents, runEventBackfill, runEventRollback, runGameConfigBackfill, type LegacySessionSnapshotRow } from '../src/services/eventBackfill'
 
 const argv = process.argv.slice(2)
 const flag = (n: string) => argv.includes(`--${n}`)
@@ -53,6 +56,11 @@ async function main() {
     const file = JSON.parse(readFileSync(val('rollback')!, 'utf8'))
     const r = await runEventRollback(db, file, { apply, projectId: project, yesProduction: yes })
     console.log(JSON.stringify({ mode: apply ? 'rollback-apply' : 'rollback-dry-run', ...r }, null, 2)); return
+  }
+
+  if (flag('game-config')) {
+    const r = await runGameConfigBackfill({ sessions: loadSessions() }, { apply, projectId: project, yesProduction: yes }, { db })
+    console.log(JSON.stringify(r, null, 2)); return
   }
 
   const sessions = loadSessions()

@@ -196,3 +196,37 @@ describe('event backfill (pure)', () => {
     expect(inv).toMatchObject({ total: 3, duplicateIds: 1, duplicateSlugs: 1, invalidSlugs: 1, withScreenConfig: 1, distinctOwners: 1 })
   })
 })
+
+d('game config backfill (Firestore emulator)', () => {
+  jest.setTimeout(120_000)
+  const PEN = [{ label: 'Brindisi', category: 'soft', enabled: true }, { label: 'Shot', category: 'wild', enabled: false }]
+  const gc = (eventId: string) => firestore().doc(`events/${eventId}/private/gameConfig`)
+  const runGc = (sessions: any[], o: any = OPTS) => svc.runGameConfigBackfill({ sessions }, o, { db: firestore() })
+
+  it('dry-run writes nothing; apply creates the owner-private doc; a rerun is a no-op; sessions without custom config are ignored', async () => {
+    const l = 'dj-' + uid(); await fbUser(l)
+    const s = ses(l, { roulette_penitenze: PEN, shoe_game_questions: ['Chi?', '  Come?  '] }), plain = ses(l)
+    await run([s, plain], APPLY)
+    const [e] = await byLegacy(s.id)
+    expect((await runGc([s, plain])).config).toMatchObject({ wouldCreate: 1, wouldFill: 0 }); expect((await gc(e.id).get()).exists).toBe(false)
+    const r = await runGc([s, plain], APPLY)
+    expect(r.sessions.withCustomConfig).toBe(1); expect(r.applied).toEqual({ written: 1, skipped: 0 })
+    const d1 = (await gc(e.id).get()).data()!
+    expect(d1.roulettePenitenze).toEqual(PEN); expect(d1.shoeGameQuestions).toEqual(['Chi?', 'Come?'])
+    expect((await runGc([s, plain], APPLY)).config.wouldNoop).toBe(1)
+  })
+
+  it('never overwrites an existing different value (edited in Firestore after the cutover) but fills a missing field; unmapped sessions are reported', async () => {
+    const l = 'dj-' + uid(); await fbUser(l)
+    const s = ses(l, { roulette_penitenze: PEN, shoe_game_questions: ['A?'] })
+    await run([s], APPLY); const [e] = await byLegacy(s.id)
+    await gc(e.id).set({ roulettePenitenze: [{ label: 'Nuova', category: 'party', enabled: true }] })
+    const r = await runGc([s], APPLY)
+    expect(r.config).toMatchObject({ wouldFill: 1, keptExisting: 1 })
+    const d2 = (await gc(e.id).get()).data()!
+    expect(d2.roulettePenitenze).toEqual([{ label: 'Nuova', category: 'party', enabled: true }]); expect(d2.shoeGameQuestions).toEqual(['A?'])
+    const orphan = ses('dj-none', { roulette_penitenze: PEN })
+    expect((await runGc([orphan])).sessions.noEvent).toBe(1)
+    await expect(runGc([s], { apply: true, projectId: 'iomixo-494817' })).rejects.toThrow()
+  })
+})

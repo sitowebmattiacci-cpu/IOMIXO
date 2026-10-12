@@ -22,7 +22,7 @@ export async function getPublicEvent(db: Firestore, slug: string, now: Date = ne
   if (!s.exists) throw fail('not-found', 'Event not found', 'event_not_found')
   const eventId = String(s.data()!.eventId)
   const evSnap = await db.collection('events').doc(eventId).get()
-  if (!evSnap.exists) throw fail('not-found', 'Event not found', 'event_not_found')
+  if (!evSnap.exists || evSnap.data()!.deletedAt) throw fail('not-found', 'Event not found', 'event_not_found')
   const e = evSnap.data()!
   const ent = await loadEventEntitlements(db, eventId, now)
   const limits = PLAN_LIMITS[ent.effectiveTier]

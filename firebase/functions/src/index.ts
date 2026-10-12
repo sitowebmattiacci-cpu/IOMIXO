@@ -14,6 +14,8 @@ import { createDedication as createDedicationImpl } from './dedications/createDe
 import { parseModerationInput, moderateRequest as moderateRequestImpl, moderateDedication as moderateDedicationImpl } from './owner/moderation'
 import { parseCreatePollInput, parseSetPollStatusInput, createPoll as createPollImpl, setPollStatus as setPollStatusImpl } from './owner/polls'
 import { parseConfigInput, updateEventConfig as updateEventConfigImpl } from './owner/config'
+import { parseCreateEventInput, parseEventRefInput, createEvent as createEventImpl, deleteEvent as deleteEventImpl, restoreEvent as restoreEventImpl } from './owner/sessions'
+import { parseGameActionInput, parseGameConfigInput, gameAction as gameActionImpl, setGameConfig as setGameConfigImpl } from './owner/games'
 import { parseSlug, getPublicEvent as getPublicEventImpl } from './owner/publicEvent'
 
 // Cost baseline: europe-west1, scale to zero, bounded concurrency.
@@ -101,6 +103,13 @@ export const moderateDedication = ownerCall('moderateDedication', (d) => parseMo
 export const createPoll         = ownerCall('createPoll',         parseCreatePollInput,    (r, i) => createPollImpl(getFirestore(), r, i))
 export const setPollStatus      = ownerCall('setPollStatus',      parseSetPollStatusInput, (r, i) => setPollStatusImpl(getFirestore(), r, i))
 export const updateEventConfig  = ownerCall('updateEventConfig',  parseConfigInput,        (r, i) => updateEventConfigImpl(getFirestore(), r, i))
+
+// Event lifecycle + games (Firestore-authoritative; no Supabase). Same App Check parameter as the other owner callables.
+export const createEvent        = ownerCall('createEvent',        parseCreateEventInput, (r, i) => createEventImpl(getFirestore(), r, i))
+export const deleteEvent        = ownerCall('deleteEvent',        parseEventRefInput,    (r, i) => deleteEventImpl(getFirestore(), r, i))
+export const restoreEvent       = ownerCall('restoreEvent',       parseEventRefInput,    (r, i) => restoreEventImpl(getFirestore(), r, i))
+export const ownerGameAction    = ownerCall('ownerGameAction',    parseGameActionInput,  (r, i) => gameActionImpl(getFirestore(), r, i))
+export const setGameConfig      = ownerCall('setGameConfig',      parseGameConfigInput,  (r, i) => setGameConfigImpl(getFirestore(), r, i))
 
 /** Callable: public event lookup by slug (replaces GET /api/live/public/:slug). Any signed-in identity, incl. anonymous guests. */
 export const getPublicEvent = onCall({ ...guestCallOptions(ENFORCE_PUBLIC_EVENT), secrets: [] }, async (request) => {

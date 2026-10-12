@@ -18,6 +18,7 @@ export async function loadLiveEvent(db: Firestore, eventId: string): Promise<Liv
   const snap = await ref.get()
   if (!snap.exists) throw fail('not-found', 'Event not found', 'event_not_found')
   const data = snap.data()!
+  if (data.deletedAt) throw fail('not-found', 'Event not found', 'event_not_found')
   if (data.status !== 'live') throw fail('failed-precondition', 'This live session has ended', 'event_ended')
   return { ref, data }
 }

@@ -24,6 +24,22 @@ export interface UserDoc {
   updatedAt:   Date | null
 }
 
+/** users/{uid}/eventPasses/{key} — server-written (legacy backfill now, Stripe webhook later). */
+export interface EventPassDoc {
+  id:         string
+  status:     'active' | 'expired' | 'refunded'
+  validUntil: Date
+  /** Legacy Supabase session id this pass is scoped to (null = valid for any event). */
+  legacySessionId?: string | null
+  eventId?:   string | null
+  legacySupabaseId?: string | null
+  stripePaymentIntentId?: string | null
+  amountCents: number
+  currency:   string
+  createdAt:  Date | null
+  updatedAt:  Date | null
+}
+
 export type UserProfilePatch = Partial<Pick<UserDoc, 'displayName' | 'avatarUrl'>>
 
 /** djProfiles/{firebaseUid} */
@@ -70,6 +86,8 @@ export interface EventDoc {
   guestConfig:       Record<string, unknown> | null
   /** TV screen section toggles (`show_*`, stand-up config...). Public data; written by the updateEventConfig callable / the events backfill. Undefined = never migrated (use the legacy payload). */
   screenConfig?:     Record<string, unknown> | null
+  /** Soft delete (deleteEvent callable): the event is hidden everywhere; the data is kept and restorable. */
+  deletedAt?:        Date | null
   createdAt:         Date | null
   updatedAt:         Date | null
 }
@@ -142,4 +160,10 @@ export interface GameRoundDoc {
   result:    Record<string, unknown> | null
   createdAt: Date | null
   updatedAt: Date | null
+}
+
+/** events/{eventId}/private/gameConfig — owner-only customisation of the games (absent field = defaults). Written only by the setGameConfig callable. */
+export interface GameConfigDoc {
+  roulettePenitenze?: Array<{ label: string; category: 'soft' | 'party' | 'wild'; enabled: boolean }>
+  shoeGameQuestions?: string[]
 }

@@ -2,7 +2,7 @@ import {
   collection, doc, getDoc, getDocs, onSnapshot, query, where, orderBy, limit, Timestamp,
   type Firestore, type DocumentData, type Unsubscribe,
 } from 'firebase/firestore'
-import type { EventDoc, EventType, EventStatus } from '../models'
+import type { EventDoc, EventType, EventStatus, GameConfigDoc } from '../models'
 
 // Read-side repository for events/{eventId} and eventSlugs/{slug}.
 // There are intentionally NO client write functions: events are written by the
@@ -29,6 +29,7 @@ export function fromEventDoc(id: string, d: DocumentData): EventDoc {
     screenModeEnabled: d.screenModeEnabled === true,
     guestConfig:       d.guestConfig ?? null,
     ...('screenConfig' in d ? { screenConfig: d.screenConfig ?? null } : {}),
+    ...(d.deletedAt ? { deletedAt: toDate(d.deletedAt) ?? new Date(0) } : {}),
     createdAt:         toDate(d.createdAt),
     updatedAt:         toDate(d.updatedAt),
   }
@@ -51,16 +52,17 @@ export async function getEventBySlug(db: Firestore, slug: string): Promise<Event
 }
 
 /** Owner's events, newest first. Filters by ownerUid (required by the rules) and is always bounded. */
-export async function listOwnerEvents(db: Firestore, ownerUid: string, max = 50): Promise<EventDoc[]> {
+export async function listOwnerEvents(db: Firestore, ownerUid: string, max = 50, opts: { includeDeleted?: boolean } = {}): Promise<EventDoc[]> {
   const q = query(collection(db, 'events'), where('ownerUid', '==', ownerUid), orderBy('createdAt', 'desc'), limit(max))
-  return (await getDocs(q)).docs.map((d) => fromEventDoc(d.id, d.data()))
+  return (await getDocs(q)).docs.map((d) => fromEventDoc(d.id, d.data())).filter((e) => opts.includeDeleted || !e.deletedAt)   // soft-deleted events stay out of every list
 }
 
 /** The owner's event projected from a legacy Supabase session (one bounded query; ownerUid filter satisfies the rules). */
 export async function getOwnerEventByLegacyId(db: Firestore, ownerUid: string, legacySupabaseId: string): Promise<EventDoc | null> {
   const q = query(collection(db, 'events'), where('ownerUid', '==', ownerUid), where('legacySupabaseId', '==', legacySupabaseId), limit(1))
   const snap = await getDocs(q)
-  return snap.empty ? null : fromEventDoc(snap.docs[0].id, snap.docs[0].data())
+  const e = snap.empty ? null : fromEventDoc(snap.docs[0].id, snap.docs[0].data())
+  return e && !e.deletedAt ? e : null
 }
 
 /**
@@ -78,4 +80,12 @@ export function subscribeEvent(
     (snap) => onChange(snap.exists() ? fromEventDoc(snap.id, snap.data()) : null),
     (err) => onError?.(err),
   )
+}
+
+/** Owner-private games customisation (rules: only the event owner can read it). null = none stored (defaults apply) or not readable. */
+export async function getGameConfig(db: Firestore, eventId: string): Promise<GameConfigDoc | null> {
+  try {
+    const snap = await getDoc(doc(db, 'events', eventId, 'private', 'gameConfig'))
+    return snap.exists() ? (snap.data() as GameConfigDoc) : null
+  } catch { return null }
 }

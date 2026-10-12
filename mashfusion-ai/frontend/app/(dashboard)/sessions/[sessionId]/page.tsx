@@ -2989,7 +2989,7 @@ function PartyRouletteCard({ session, isFree }: any) {
   const gamesSignal = useGamesSignal(session.id)
   const { data: round, mutate: refresh } = useSWR(
     ['party-roulette', session.id],
-    () => liveGames.publicLatest(session.public_slug).then((d) => d.roulette).catch(() => null),
+    () => liveGames.getRouletteState(session.id, session.public_slug),
     { refreshInterval: gamesSignal.live ? 30_000 : 4_000 },
   )
   useEffect(() => { if (gamesSignal.tick > 0) refresh() }, [gamesSignal.tick, refresh])

@@ -271,3 +271,70 @@ export async function runEventRollback(db: Firestore, file: { entries: EventRoll
   }
   return out
 }
+
+// ── game customisation: live_sessions.roulette_penitenze / shoe_game_questions → events/{id}/private/gameConfig (owner-private) ──
+export interface GameConfigBackfillReport {
+  mode: 'dry-run' | 'apply'; project: string
+  sessions: { read: number; withCustomConfig: number; noEvent: number; ambiguousEvent: number; invalid: number }
+  config: { wouldCreate: number; wouldFill: number; wouldNoop: number; keptExisting: number }
+  blockers: string[]
+  applied?: { written: number; skipped: number }
+  /** Documents created / fields added, for a manual rollback (delete the listed fields). */
+  entries?: Array<{ path: string; fieldsAdded: string[]; created: boolean }>
+}
+const PEN_CATEGORIES = ['soft', 'party', 'wild']
+const cleanPen = (raw: unknown) => Array.isArray(raw) && raw.length > 0 && raw.length <= 60 && raw.every((p: any) => p && typeof p.label === 'string' && p.label.trim() && PEN_CATEGORIES.includes(p.category))
+  ? (raw as any[]).map((p) => ({ label: String(p.label).trim().slice(0, 120), category: p.category as string, enabled: p.enabled !== false })) : null
+const cleanQs = (raw: unknown) => Array.isArray(raw) && raw.length > 0 && raw.length <= 60
+  ? (raw as unknown[]).map((q) => String(q).trim().slice(0, 200)).filter(Boolean) : null
+
+/**
+ * ADDITIVE and idempotent: creates events/{id}/private/gameConfig (or fills a MISSING field) from the legacy columns; an existing different value is
+ * never overwritten (it was edited in Firestore after the cutover). Same guards as the events backfill (dry-run default; apply needs a demo project or
+ * --yes-production). Events are matched by legacySupabaseId; sessions without an event are reported (run the events backfill first).
+ */
+export async function runGameConfigBackfill(
+  input: { sessions: LegacySessionSnapshotRow[] }, opts: { apply: boolean; projectId: string; yesProduction?: boolean }, deps: { db: Firestore },
+): Promise<GameConfigBackfillReport> {
+  if (opts.apply && !(opts.projectId.startsWith('demo-') || opts.yesProduction === true)) throw new BackfillRefused(['non-emulator project requires --yes-production'])
+  const { db } = deps
+  const report: GameConfigBackfillReport = {
+    mode: opts.apply ? 'apply' : 'dry-run', project: opts.projectId, blockers: [],
+    sessions: { read: input.sessions.length, withCustomConfig: 0, noEvent: 0, ambiguousEvent: 0, invalid: 0 },
+    config: { wouldCreate: 0, wouldFill: 0, wouldNoop: 0, keptExisting: 0 },
+  }
+  const planned: Array<() => Promise<'written' | 'skipped'>> = [], entries: NonNullable<GameConfigBackfillReport['entries']> = []
+  for (const r of input.sessions) {
+    if (r.roulette_penitenze == null && r.shoe_game_questions == null) continue
+    const fields: Record<string, unknown> = {}
+    const pen = r.roulette_penitenze == null ? undefined : cleanPen(r.roulette_penitenze), qs = r.shoe_game_questions == null ? undefined : cleanQs(r.shoe_game_questions)
+    if ((r.roulette_penitenze != null && !pen) || (r.shoe_game_questions != null && !qs)) { report.sessions.invalid++ }
+    if (pen) fields.roulettePenitenze = pen
+    if (qs) fields.shoeGameQuestions = qs
+    if (!Object.keys(fields).length) continue
+    report.sessions.withCustomConfig++
+    const ev = await db.collection('events').where('legacySupabaseId', '==', r.id).limit(2).get()
+    if (ev.size === 0) { report.sessions.noEvent++; continue }
+    if (ev.size > 1) { report.sessions.ambiguousEvent++; continue }
+    const ref = ev.docs[0].ref.collection('private').doc('gameConfig')
+    const cur = await ref.get(), stored = cur.exists ? cur.data()! : {}
+    const missing = Object.keys(fields).filter((k) => !(k in stored))
+    if (Object.keys(fields).some((k) => k in stored && !sameValue(stored[k], fields[k]))) report.config.keptExisting++
+    if (!missing.length) { report.config.wouldNoop++; continue }
+    cur.exists ? report.config.wouldFill++ : report.config.wouldCreate++
+    planned.push(() => db.runTransaction(async (tx) => {
+      const s2 = await tx.get(ref), c = s2.exists ? s2.data()! : {}
+      const add = Object.fromEntries(missing.filter((k) => !(k in c)).map((k) => [k, fields[k]]))
+      if (!Object.keys(add).length) return 'skipped' as const
+      tx.set(ref, { ...add, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
+      entries.push({ path: ref.path, fieldsAdded: Object.keys(add), created: !s2.exists })
+      return 'written' as const
+    }))
+  }
+  if (opts.apply) {
+    let written = 0, skipped = 0
+    for (const w of planned) { (await w()) === 'written' ? written++ : skipped++ }
+    report.applied = { written, skipped }; report.entries = entries
+  }
+  return report
+}

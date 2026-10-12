@@ -1,6 +1,6 @@
 import axios, { AxiosError, type AxiosInstance } from 'axios'
 import { getAuthToken, signOut } from '@/lib/auth'
-import { ownerOpsFlag } from '@/lib/events/flags'
+import { ownerCallablesFlag, dashboardFlag } from '@/lib/events/flags'
 import type {
   User, Subscription, Payment,
   ApiResponse,
@@ -30,7 +30,7 @@ function getClient(): AxiosInstance {
   _client.interceptors.response.use(
     (res) => res,
     async (err: AxiosError) => {
-      if (err.response?.status === 401 && typeof window !== 'undefined') {
+      if (err.response?.status === 401 && typeof window !== 'undefined' && !(err.config as { skipAuthRedirect?: boolean } | undefined)?.skipAuthRedirect) {
         window.location.href = '/login'
       }
       return Promise.reject(err)
@@ -53,9 +53,16 @@ function apiError(err: unknown): never {
 // AUTH — compatibility shim (wraps Supabase + /user/me endpoint)
 // ══════════════════════════════════════════════════════════════
 
+/**
+ * Dashboard READ path served by Firestore (sessions, user plan, Event Passes) when NEXT_PUBLIC_FIRESTORE_DASHBOARD=on|true;
+ * null → not applicable, the legacy Express route is used. Dynamic import: nothing Firebase-related loads while the switch is off.
+ */
+const dashboard = async () => (dashboardFlag() ? (await import('./events/dashboardService')).dashboardOps : null)
+
 export const auth = {
   /** Returns the full user row from the database. */
   async me(): Promise<User> {
+    const fs = await dashboard().then((d) => d?.me()); if (fs) return fs
     try {
       const { data } = await getClient().get<ApiResponse<User>>('/user/me')
       return data.data!
@@ -125,6 +132,7 @@ export const billing = {
   },
 
   async getEventPasses() {
+    const fs = await dashboard().then((d) => d?.eventPasses()); if (fs) return fs
     try {
       const { data } = await getClient().get<ApiResponse<any[]>>('/stripe/event-passes')
       return data.data ?? []
@@ -369,7 +377,7 @@ export interface PublicLivePayload {
  * DJ operations served by Firestore (owner callables) for events already migrated; null/false = not applicable → legacy Express route.
  * Off unless NEXT_PUBLIC_FIRESTORE_OWNER_OPS=on|true. Dynamic import: nothing Firebase-related is loaded while the switch is off.
  */
-const owner = async () => (ownerOpsFlag() ? (await import('./events/ownerService')).ownerOps : null)
+const owner = async () => (ownerCallablesFlag() ? (await import('./events/ownerService')).ownerOps : null)
 
 async function legacyUpdateSession(id: string, patch: Partial<Pick<LiveSession, 'event_name' | 'dj_name' | 'description' | 'is_active' | 'couple_names' | 'wedding_date' | 'venue_name' | 'screen_mode_enabled' | 'screen_config' | 'guest_config' | 'roulette_penitenze' | 'shoe_game_questions'>>): Promise<LiveSession> {
   try {
@@ -380,12 +388,28 @@ async function legacyUpdateSession(id: string, patch: Partial<Pick<LiveSession, 
 
 export const live = {
   async listSessions(): Promise<LiveSession[]> {
+    const d = await dashboard()
+    const fs = d ? await d.listSessions() : null
+    if (fs) return fs                // Firestore has events for this owner (possibly none visible): it is the source, Render is not asked
     try {
       const { data } = await getClient().get<{ data: LiveSession[] }>('/api/live/sessions')
       return data.data
-    } catch (e) { apiError(e) }
+    } catch (e) {
+      if (d) return []           // dashboard on, nothing in Firestore and Render unreachable: an empty list, not an error screen
+      apiError(e)
+    }
   },
   async getSession(id: string): Promise<LiveSession> {
+    // Dashboard on: Firestore is the source (event + owner-private games config). Render is asked ONLY for the live presence count
+    // (in-memory on Render), best effort with a short timeout, and only for events that still have a Supabase row.
+    const fs = await dashboard().then((d) => d?.getSession(id))
+    if (fs) {
+      if (!fs.hasLegacy) return fs.session
+      try {
+        const { data } = await getClient().get<{ data: LiveSession }>(`/api/live/sessions/${id}`, { timeout: 2_500, skipAuthRedirect: true } as object)
+        return { ...fs.session, online_count: data.data.online_count }
+      } catch { return fs.session }
+    }
     let session: LiveSession
     try {
       const { data } = await getClient().get<{ data: LiveSession }>(`/api/live/sessions/${id}`)
@@ -404,6 +428,7 @@ export const live = {
     venue_name?: string
     screen_mode_enabled?: boolean
   }): Promise<LiveSession> {
+    const fs = await owner().then((o) => o?.sessions.create(input)); if (fs) return fs
     try {
       const { data } = await getClient().post<{ data: LiveSession }>('/api/live/sessions', input)
       return data.data
@@ -422,6 +447,24 @@ export const live = {
     const o = await owner()
     const ev = o ? await o.config.event(id) : null
     if (!o || !ev) return legacyUpdateSession(id, patch)
+
+    // Dashboard switch: Firestore is authoritative for EVERY field the dashboard edits, except the winner announcement (its photos are
+    // validated / cleaned by the legacy route, which stays on Render until the photo stack moves). Nothing is written to Supabase.
+    const winnerInPatch = !!patch.screen_config && Object.prototype.hasOwnProperty.call(patch.screen_config, 'winner_announcement')
+    if (dashboardFlag() && !winnerInPatch) {
+      const fs: Parameters<typeof o.config.update>[1] = {}
+      if ('screen_config' in patch) fs.screen_config = patch.screen_config as any
+      if ('guest_config' in patch) fs.guest_config = patch.guest_config as any
+      if ('screen_mode_enabled' in patch) fs.screen_mode_enabled = patch.screen_mode_enabled
+      const core = Object.fromEntries(Object.entries(patch).filter(([k]) => Object.keys(o.config.MIRRORED_KEYS).concat('is_active').includes(k)))
+      if (Object.keys(core).length) fs.mirror = core
+      if (Object.keys(fs).length) await o.config.update(id, fs)
+      const gameCfg: { roulettePenitenze?: unknown; shoeGameQuestions?: unknown } = {}
+      if ('roulette_penitenze' in patch) gameCfg.roulettePenitenze = patch.roulette_penitenze
+      if ('shoe_game_questions' in patch) gameCfg.shoeGameQuestions = patch.shoe_game_questions
+      if (Object.keys(gameCfg).length) await o.games.setConfig(id, gameCfg)
+      return { id } as LiveSession
+    }
 
     const cfgKeys = o.config.CONFIG_KEYS as readonly string[], mirrorKeys = Object.keys(o.config.MIRRORED_KEYS).concat('is_active')
     const sc = (patch.screen_config ?? null) as Record<string, unknown> | null
@@ -445,6 +488,7 @@ export const live = {
     return result
   },
   async deleteSession(id: string): Promise<void> {
+    if (await owner().then((o) => o?.sessions.remove(id))) return        // soft delete in Firestore (dashboard switch)
     try { await getClient().delete(`/api/live/sessions/${id}`) } catch (e) { apiError(e) }
   },
   async listRequests(sessionId: string): Promise<LiveRequest[]> {
@@ -678,6 +722,7 @@ export const liveDedications = {
 
 export const liveGames = {
   async startRoulette(sessionId: string, categories?: string[]): Promise<LiveGameRound> {
+    const fs = await owner().then((o) => o?.games.act(sessionId, 'roulette', 'start', categories ? { categories } : {})); if (fs?.round) return fs.round
     try {
       const { data } = await getClient().post<{ data: LiveGameRound }>(
         `/api/live/sessions/${sessionId}/games/roulette/start`,
@@ -687,6 +732,7 @@ export const liveGames = {
     } catch (e) { apiError(e) }
   },
   async spinRoulette(sessionId: string): Promise<LiveGameRound> {
+    const fs = await owner().then((o) => o?.games.act(sessionId, 'roulette', 'spin')); if (fs?.round) return fs.round
     try {
       const { data } = await getClient().post<{ data: LiveGameRound }>(
         `/api/live/sessions/${sessionId}/games/roulette/spin`, {})
@@ -694,14 +740,21 @@ export const liveGames = {
     } catch (e) { apiError(e) }
   },
   async resetRoulette(sessionId: string): Promise<void> {
+    if (await owner().then((o) => o?.games.act(sessionId, 'roulette', 'reset'))) return
     try { await getClient().post(`/api/live/sessions/${sessionId}/games/roulette/reset`, {}) }
     catch (e) { apiError(e) }
   },
   publicLatest: (slug: string) =>
     publicGet<{ roulette: LiveGameRound | null; shoeGame: LiveGameRound | null }>(`/api/live/public/${slug}/games`),
+  /** DJ-side current roulette round: Firestore for dashboard events, the public legacy payload otherwise. */
+  async getRouletteState(sessionId: string, slug: string): Promise<LiveGameRound | null> {
+    const fs = await owner().then((o) => o?.games.latest(sessionId, 'roulette')); if (fs) return fs.round
+    return liveGames.publicLatest(slug).then((d) => d.roulette).catch(() => null)
+  },
 
   // Gioco della Scarpa
   async getShoeState(sessionId: string): Promise<LiveGameRound | null> {
+    const fs = await owner().then((o) => o?.games.latest(sessionId, 'shoe')); if (fs) return fs.round
     try {
       const { data } = await getClient().get<{ data: LiveGameRound | null }>(
         `/api/live/sessions/${sessionId}/games/shoe/state`)
@@ -709,6 +762,7 @@ export const liveGames = {
     } catch (e) { apiError(e) }
   },
   async startShoe(sessionId: string, questions?: string[]): Promise<LiveGameRound> {
+    const fs = await owner().then((o) => o?.games.act(sessionId, 'shoe', 'start', questions ? { questions } : {})); if (fs?.round) return fs.round
     try {
       const { data } = await getClient().post<{ data: LiveGameRound }>(
         `/api/live/sessions/${sessionId}/games/shoe/start`,
@@ -718,6 +772,7 @@ export const liveGames = {
     } catch (e) { apiError(e) }
   },
   async nextShoe(sessionId: string): Promise<LiveGameRound> {
+    const fs = await owner().then((o) => o?.games.act(sessionId, 'shoe', 'next')); if (fs?.round) return fs.round
     try {
       const { data } = await getClient().post<{ data: LiveGameRound }>(
         `/api/live/sessions/${sessionId}/games/shoe/next`, {})
@@ -725,6 +780,7 @@ export const liveGames = {
     } catch (e) { apiError(e) }
   },
   async resetShoe(sessionId: string): Promise<void> {
+    if (await owner().then((o) => o?.games.act(sessionId, 'shoe', 'reset'))) return
     try { await getClient().post(`/api/live/sessions/${sessionId}/games/shoe/reset`, {}) }
     catch (e) { apiError(e) }
   },

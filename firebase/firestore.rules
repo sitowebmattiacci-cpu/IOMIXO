@@ -108,7 +108,9 @@ service cloud.firestore {
     // Listing is limited to the owner's own events: queries MUST filter on ownerUid
     // (rules are not filters).
     match /events/{eventId} {
-      allow get: if request.auth != null;
+      // A soft-deleted event (deletedAt, set by the deleteEvent callable) is no longer readable by get; the owner's LIST still returns it
+      // (rules are not filters: a list rule that excluded it would reject the whole query), so the dashboard filters it out client-side.
+      allow get: if request.auth != null && !('deletedAt' in resource.data);
       allow list: if isAccount() && resource.data.ownerUid == request.auth.uid;
       allow write: if false;
 
