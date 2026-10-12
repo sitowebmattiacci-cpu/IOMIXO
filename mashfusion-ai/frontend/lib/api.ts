@@ -1,5 +1,6 @@
 import axios, { AxiosError, type AxiosInstance } from 'axios'
 import { getAuthToken, signOut } from '@/lib/auth'
+import { ownerOpsFlag } from '@/lib/events/flags'
 import type {
   User, Subscription, Payment,
   ApiResponse,
@@ -364,6 +365,19 @@ export interface PublicLivePayload {
   requestsRemaining: number | null
 }
 
+/**
+ * DJ operations served by Firestore (owner callables) for events already migrated; null/false = not applicable → legacy Express route.
+ * Off unless NEXT_PUBLIC_FIRESTORE_OWNER_OPS=on|true. Dynamic import: nothing Firebase-related is loaded while the switch is off.
+ */
+const owner = async () => (ownerOpsFlag() ? (await import('./events/ownerService')).ownerOps : null)
+
+async function legacyUpdateSession(id: string, patch: Partial<Pick<LiveSession, 'event_name' | 'dj_name' | 'description' | 'is_active' | 'couple_names' | 'wedding_date' | 'venue_name' | 'screen_mode_enabled' | 'screen_config' | 'guest_config' | 'roulette_penitenze' | 'shoe_game_questions'>>): Promise<LiveSession> {
+  try {
+    const { data } = await getClient().patch<{ data: LiveSession }>(`/api/live/sessions/${id}`, patch)
+    return data.data
+  } catch (e) { apiError(e) }
+}
+
 export const live = {
   async listSessions(): Promise<LiveSession[]> {
     try {
@@ -372,10 +386,13 @@ export const live = {
     } catch (e) { apiError(e) }
   },
   async getSession(id: string): Promise<LiveSession> {
+    let session: LiveSession
     try {
       const { data } = await getClient().get<{ data: LiveSession }>(`/api/live/sessions/${id}`)
-      return data.data
+      session = data.data
     } catch (e) { apiError(e) }
+    // Event config is authoritative in Firestore for migrated events: show what updateSession saved there.
+    const o = await owner(); return o ? o.config.overlay(id, session) : session
   },
   async createSession(input: {
     event_name: string
@@ -392,28 +409,60 @@ export const live = {
       return data.data
     } catch (e) { apiError(e) }
   },
+  /**
+   * Field ownership while the cutover is partial (NEXT_PUBLIC_FIRESTORE_OWNER_OPS):
+   *  - CONFIG (screen_config, guest_config, screen_mode_enabled) → Firestore only, via the updateEventConfig callable. Never written to Supabase.
+   *  - LEGACY (event_name, dj_name, description, is_active, couple_*, wedding_date, venue_name, roulette_penitenze, shoe_game_questions) → Render/Supabase
+   *    first (authoritative), then the simple event fields are MIRRORED to Firestore so guests/TV see them. If the legacy write fails nothing else happens.
+   *  - Winner announcement (screen_config.winner_announcement): the legacy route validates/saves the photos, so the whole patch goes there; the winner
+   *    object is then mirrored to Firestore as a SIGNAL (the TV falls back to the legacy payload while a winner exists).
+   * Sessions that are not in Firestore (or with the switch off) keep the old single legacy PATCH.
+   */
   async updateSession(id: string, patch: Partial<Pick<LiveSession, 'event_name' | 'dj_name' | 'description' | 'is_active' | 'couple_names' | 'wedding_date' | 'venue_name' | 'screen_mode_enabled' | 'screen_config' | 'guest_config' | 'roulette_penitenze' | 'shoe_game_questions'>>): Promise<LiveSession> {
-    try {
-      const { data } = await getClient().patch<{ data: LiveSession }>(`/api/live/sessions/${id}`, patch)
-      return data.data
-    } catch (e) { apiError(e) }
+    const o = await owner()
+    const ev = o ? await o.config.event(id) : null
+    if (!o || !ev) return legacyUpdateSession(id, patch)
+
+    const cfgKeys = o.config.CONFIG_KEYS as readonly string[], mirrorKeys = Object.keys(o.config.MIRRORED_KEYS).concat('is_active')
+    const sc = (patch.screen_config ?? null) as Record<string, unknown> | null
+    const hasWinner = !!sc && Object.prototype.hasOwnProperty.call(sc, 'winner_announcement')
+    const legacyPatch: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(patch)) if (!cfgKeys.includes(k) || (hasWinner && cfgKeys.includes(k))) legacyPatch[k] = v
+    let result = { id } as LiveSession
+    if (Object.keys(legacyPatch).length) result = await legacyUpdateSession(id, legacyPatch as typeof patch)
+
+    const fs: Parameters<typeof o.config.update>[1] = {}
+    if ('screen_config' in patch) fs.screen_config = hasWinner ? (({ winner_announcement: _w, ...rest }) => (void _w, rest))(sc!) : patch.screen_config as any
+    if ('guest_config' in patch) fs.guest_config = patch.guest_config as any
+    if ('screen_mode_enabled' in patch) fs.screen_mode_enabled = patch.screen_mode_enabled
+    if (hasWinner) fs.winner_announcement = (sc!.winner_announcement ?? null) as Record<string, unknown> | null
+    const mirror = Object.fromEntries(Object.entries(patch).filter(([k]) => mirrorKeys.includes(k)))
+    if (Object.keys(mirror).length) fs.mirror = mirror
+    if (Object.keys(fs).length) {
+      try { await o.config.update(id, fs) }
+      catch (e) { throw new Error(Object.keys(legacyPatch).length ? 'Salvato, ma la sincronizzazione con lo schermo non è riuscita. Riprova.' : (e as Error).message) }
+    }
+    return result
   },
   async deleteSession(id: string): Promise<void> {
     try { await getClient().delete(`/api/live/sessions/${id}`) } catch (e) { apiError(e) }
   },
   async listRequests(sessionId: string): Promise<LiveRequest[]> {
+    const fs = await owner().then((o) => o?.requests.list(sessionId)); if (fs) return fs
     try {
       const { data } = await getClient().get<{ data: LiveRequest[] }>(`/api/live/sessions/${sessionId}/requests`)
       return data.data
     } catch (e) { apiError(e) }
   },
   async updateRequest(requestId: string, status: LiveRequestStatus): Promise<LiveRequest> {
+    if (await owner().then((o) => o?.requests.setStatus(requestId, status))) return { id: requestId, status } as LiveRequest
     try {
       const { data } = await getClient().patch<{ data: LiveRequest }>(`/api/live/requests/${requestId}`, { status })
       return data.data
     } catch (e) { apiError(e) }
   },
   async deleteRequest(requestId: string): Promise<void> {
+    if (await owner().then((o) => o?.requests.remove(requestId))) return
     try { await getClient().delete(`/api/live/requests/${requestId}`) } catch (e) { apiError(e) }
   },
 }
@@ -603,18 +652,21 @@ async function publicPost<T>(path: string, body: unknown): Promise<T> {
 
 export const liveDedications = {
   async listForDj(sessionId: string): Promise<LiveDedication[]> {
+    const fs = await owner().then((o) => o?.dedications.list(sessionId)); if (fs) return fs
     try {
       const { data } = await getClient().get<{ data: LiveDedication[] }>(`/api/live/sessions/${sessionId}/dedications`)
       return data.data
     } catch (e) { apiError(e) }
   },
   async setStatus(id: string, status: 'pending' | 'approved' | 'rejected'): Promise<LiveDedication> {
+    if (await owner().then((o) => o?.dedications.setStatus(id, status))) return { id, status } as LiveDedication
     try {
       const { data } = await getClient().patch<{ data: LiveDedication }>(`/api/live/dedications/${id}`, { status })
       return data.data
     } catch (e) { apiError(e) }
   },
   async remove(id: string): Promise<void> {
+    if (await owner().then((o) => o?.dedications.remove(id))) return
     try { await getClient().delete(`/api/live/dedications/${id}`) } catch (e) { apiError(e) }
   },
   // public
@@ -680,18 +732,21 @@ export const liveGames = {
 
 export const livePolls = {
   async list(sessionId: string): Promise<LivePoll[]> {
+    const fs = await owner().then((o) => o?.polls.list(sessionId)); if (fs) return fs
     try {
       const { data } = await getClient().get<{ data: LivePoll[] }>(`/api/live/sessions/${sessionId}/polls`)
       return data.data
     } catch (e) { apiError(e) }
   },
   async create(sessionId: string, body: { question: string; options: string[] }): Promise<LivePoll> {
+    const fs = await owner().then((o) => o?.polls.create(sessionId, body)); if (fs) return fs
     try {
       const { data } = await getClient().post<{ data: LivePoll }>(`/api/live/sessions/${sessionId}/polls`, body)
       return data.data
     } catch (e) { apiError(e) }
   },
   async setActive(id: string, isActive: boolean): Promise<LivePoll> {
+    if (await owner().then((o) => o?.polls.setActive(id, isActive))) return { id, is_active: isActive } as LivePoll
     try {
       const { data } = await getClient().patch<{ data: LivePoll }>(`/api/live/polls/${id}`, { is_active: isActive })
       return data.data

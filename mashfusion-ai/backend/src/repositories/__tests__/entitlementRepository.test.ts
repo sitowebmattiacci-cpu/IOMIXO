@@ -52,6 +52,16 @@ d('entitlementRepository projection (Firestore emulator)', () => {
     expect((await firestore().collection('users').doc(fbUid).collection('eventPasses').get()).size).toBe(1)
   })
 
+  it('a refund whose updated_at did NOT move (legacy has no updated_at trigger on event_passes) still revokes; a revoked pass is never revived', async () => {
+    const { fbUid, legacy } = await mkUser(); const p = pass(legacy)
+    await repo.projectEventPass(p as any)
+    expect(await repo.projectEventPass({ ...p, status: 'refunded' } as any)).toBe('applied')          // same updated_at
+    expect((await passDoc(fbUid, p.stripe_payment_intent_id)).status).toBe('refunded')
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
+    expect(await repo.projectEventPass({ ...p, status: 'active', updated_at: v(50) } as any)).toBe('stale_ignored')   // even a "newer" active row
+    warn.mockRestore(); expect((await passDoc(fbUid, p.stripe_payment_intent_id)).status).toBe('refunded')
+  })
+
   it('50 concurrent old/new pass pairs (refund racing the activation) → always the newer state', async () => {
     const { fbUid, legacy } = await mkUser()
     const out = await Promise.all(Array.from({ length: 50 }, async () => {

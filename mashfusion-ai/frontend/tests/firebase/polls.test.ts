@@ -182,7 +182,8 @@ test('11/12. realtime: poll close, tally and my-vote listeners update; unsubscri
 test('13. client service: reasons map to legacy wording; fallback only for not-ready / infrastructure', async () => {
   const dj = await mk('account')
   const noLegacy = await seedPoll(dj.uid, { poll: { legacySupabaseId: undefined } })
-  await assert.rejects(votePollService({ eventId: noLegacy.id, pollId: noLegacy.pollId, optionIndex: 0 }), (e: any) => e instanceof VoteError && e.reason === 'event_not_ready' && e.fallbackToLegacy)
+  // A poll without legacySupabaseId is Firestore-native (createPoll callable): there is no Supabase row to mirror, so the vote succeeds without the bridge.
+  assert.equal((await votePollService({ eventId: noLegacy.id, pollId: noLegacy.pollId, optionIndex: 2 })).optionIndex, 2)
   const closed = await seedPoll(dj.uid, { poll: { status: 'closed' } })
   await assert.rejects(votePollService({ eventId: closed.id, pollId: closed.pollId, optionIndex: 0 }), (e: any) => !e.fallbackToLegacy && /chiuso/.test(e.message))
   const ok = await seedPoll(dj.uid)

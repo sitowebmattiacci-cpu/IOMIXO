@@ -5,6 +5,8 @@ import { QRCodeSVG } from 'qrcode.react'
 import { Heart, Sparkles, ListChecks, Footprints, Youtube, Users, Camera } from 'lucide-react'
 import { liveScreen, type VideoLiveCommand, type StandUpGuessConfig, type StandUpGuessRound } from '@/lib/api'
 import { useLiveEvent } from '@/lib/events/useLiveEvent'
+import { useFirestoreScreen } from '@/lib/events/useScreen'
+import { useApprovedDedications } from '@/lib/events/useDedications'
 import { useActivePoll, toLegacyPoll } from '@/lib/events/usePolls'
 import { useLatestGames, preferRealtime } from '@/lib/events/useGames'
 import { useI18n } from '@/lib/i18n'
@@ -65,17 +67,21 @@ function normalizeStandUpGuess(raw: any): StandUpGuessConfig {
 export default function ScreenModePage() {
   const { slug } = useParams<{ slug: string }>()
   const { t } = useI18n()
-  const { data, error } = useSWR(
-    slug ? ['screen', slug] : null,
+  // Poll results arrive in realtime from Firestore (open poll + tally shards; never the votes).
+  const liveEvent = useLiveEvent(slug)
+  const rtPoll = useActivePoll(liveEvent?.id)
+  // Roulette / shoe-game rounds also arrive in realtime.
+  const rtGames = useLatestGames(liveEvent?.id)
+  // Whole TV payload from Firestore when the event is fully there (screenConfig, no photos); otherwise the legacy 1.5s polling.
+  const rtDedications = useApprovedDedications(liveEvent?.id)
+  const fsScreen = useFirestoreScreen(liveEvent, rtPoll, rtGames, rtDedications, slug)
+  const { data: legacyData, error: legacyError } = useSWR(
+    slug && fsScreen.decided && !fsScreen.payload ? ['screen', slug] : null,
     () => liveScreen.get(slug!),
     { refreshInterval: 1_500 },
   )
-  // Poll results arrive in realtime from Firestore (open poll + tally shards; never the votes). The 1.5s polling
-  // of the whole payload stays because the other TV sections (games, photos...) are not migrated yet.
-  const liveEvent = useLiveEvent(slug)
-  const rtPoll = useActivePoll(liveEvent?.id)
-  // Roulette / shoe-game rounds also arrive in realtime (only the games part of the TV payload is migrated).
-  const rtGames = useLatestGames(liveEvent?.id)
+  const data = fsScreen.payload ?? legacyData
+  const error = fsScreen.payload ? undefined : legacyError
   const rouletteRound = preferRealtime(rtGames?.roulette, data?.roulette)
   const shoeRound = preferRealtime(rtGames?.shoeGame, data?.shoe_game)
 

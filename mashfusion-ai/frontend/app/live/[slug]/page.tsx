@@ -9,6 +9,7 @@ import { useI18n } from '@/lib/i18n'
 import { useLiveEvent } from '@/lib/events/useLiveEvent'
 import { useGuestRequests } from '@/lib/events/useRequests'
 import { sendMusicRequest, RequestError } from '@/lib/events/requestService'
+import { fetchPublicLive } from '@/lib/events/publicEventService'
 import { sendDedication, DedicationError } from '@/lib/events/dedicationService'
 import { useApprovedDedications } from '@/lib/events/useDedications'
 import { useActivePoll, toLegacyPoll } from '@/lib/events/usePolls'
@@ -51,7 +52,7 @@ export default function PublicLivePage() {
   const liveEvent = useLiveEvent(slug)
   const { data: payload, error, isLoading } = useSWR(
     slug ? ['public-live', slug] : null,
-    () => publicLive.get(slug!),
+    () => fetchPublicLive(slug!),
     { refreshInterval: liveEvent ? 0 : 15_000 },
   )
   const data = payload && liveEvent
@@ -1115,7 +1116,8 @@ function PartyMusicBattle({ slug, eventId }: { slug: string; eventId?: string })
     if (voting || voted === idx) return
     setVoting(true)
     try {
-      await livePolls.publicVote(slug, poll.id, idx)
+      // Same path as the wedding poll: Cloud Function when the poll is in Firestore, legacy endpoint only as the fallback.
+      await castVote({ slug, eventId, realtime: rt !== undefined, pollId: poll.id, legacyId: poll.legacy_id, index: idx })
       localStorage.setItem(`iomixo.partyPollVote.${poll.id}`, String(idx))
       setVoted(idx)
       await mutate(['public-poll', slug])

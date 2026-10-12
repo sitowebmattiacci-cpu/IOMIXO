@@ -11,6 +11,10 @@ import { parseDedicationInput } from './dedications/validation'
 import { parseVoteInput } from './polls/validation'
 import { votePoll as votePollImpl } from './polls/votePoll'
 import { createDedication as createDedicationImpl } from './dedications/createDedication'
+import { parseModerationInput, moderateRequest as moderateRequestImpl, moderateDedication as moderateDedicationImpl } from './owner/moderation'
+import { parseCreatePollInput, parseSetPollStatusInput, createPoll as createPollImpl, setPollStatus as setPollStatusImpl } from './owner/polls'
+import { parseConfigInput, updateEventConfig as updateEventConfigImpl } from './owner/config'
+import { parseSlug, getPublicEvent as getPublicEventImpl } from './owner/publicEvent'
 
 // Cost baseline: europe-west1, scale to zero, bounded concurrency.
 setGlobalOptions({ region: 'europe-west1', minInstances: 0, maxInstances: 5, memory: '256MiB', timeoutSeconds: 30 })
@@ -35,6 +39,9 @@ const SERVICE_ACCOUNT = 'iomixo-functions@iomixo-494817.iam.gserviceaccount.com'
 const ENFORCE_REQUEST    = defineBoolean('APPCHECK_ENFORCE_REQUEST',    { default: false })
 const ENFORCE_DEDICATION = defineBoolean('APPCHECK_ENFORCE_DEDICATION', { default: false })
 const ENFORCE_VOTE       = defineBoolean('APPCHECK_ENFORCE_VOTE',       { default: false })
+// Owner-side callables (moderation, polls, event settings) and the public event lookup: same convention, default false (observe only).
+const ENFORCE_OWNER        = defineBoolean('APPCHECK_ENFORCE_OWNER',        { default: false })
+const ENFORCE_PUBLIC_EVENT = defineBoolean('APPCHECK_ENFORCE_PUBLIC_EVENT', { default: false })
 const observeAppCheck = (
   fn: string, enforced: { value(): boolean },
   request: { app?: unknown; auth?: { token?: { firebase?: { sign_in_provider?: string } } } },
@@ -77,4 +84,27 @@ export const votePoll = onCall(guestCallOptions(ENFORCE_VOTE), async (request) =
   observeAppCheck('votePoll', ENFORCE_VOTE, request)
   if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign in required', { reason: 'unauthenticated' })
   return votePollImpl(getFirestore(), bridgeFromEnv(), request.auth.uid, parseVoteInput(request.data))
+})
+
+// ── Owner callables (STEP: runtime independence from Render/Supabase for the migrated owner) ───────────────────────────────────
+// Identity = verified token, ownership = events/{id}.ownerUid (owner/guard.ts). No bridge: these write Firestore only.
+// The client never sends an owner id, a status transition table or any server field.
+const ownerCallOptions = { ...guestCallOptions(ENFORCE_OWNER), secrets: [] }
+const ownerCall = <I, O>(name: string, parse: (d: unknown) => I, run: (req: { auth?: any }, input: I) => Promise<O>) =>
+  onCall(ownerCallOptions, async (request) => {
+    observeAppCheck(name, ENFORCE_OWNER, request)
+    return run(request, parse(request.data))
+  })
+
+export const moderateRequest    = ownerCall('moderateRequest',    (d) => parseModerationInput(d, 'requestId'),    (r, i) => moderateRequestImpl(getFirestore(), r, i))
+export const moderateDedication = ownerCall('moderateDedication', (d) => parseModerationInput(d, 'dedicationId'), (r, i) => moderateDedicationImpl(getFirestore(), r, i))
+export const createPoll         = ownerCall('createPoll',         parseCreatePollInput,    (r, i) => createPollImpl(getFirestore(), r, i))
+export const setPollStatus      = ownerCall('setPollStatus',      parseSetPollStatusInput, (r, i) => setPollStatusImpl(getFirestore(), r, i))
+export const updateEventConfig  = ownerCall('updateEventConfig',  parseConfigInput,        (r, i) => updateEventConfigImpl(getFirestore(), r, i))
+
+/** Callable: public event lookup by slug (replaces GET /api/live/public/:slug). Any signed-in identity, incl. anonymous guests. */
+export const getPublicEvent = onCall({ ...guestCallOptions(ENFORCE_PUBLIC_EVENT), secrets: [] }, async (request) => {
+  observeAppCheck('getPublicEvent', ENFORCE_PUBLIC_EVENT, request)
+  if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign in required', { reason: 'unauthenticated' })
+  return getPublicEventImpl(getFirestore(), parseSlug(request.data))
 })

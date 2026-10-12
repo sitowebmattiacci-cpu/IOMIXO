@@ -76,3 +76,10 @@ coverage/
 # Firebase emulator
 firebase/*.log
 firebase/.firebase/
+
+# backfill artefacts: pre-images / rollback files / reports contain account data and must never be committed
+backfill-rollback-*.json
+backfill-report-*.json
+entitlement-snapshot*.json
+snapshot-*.json
+*.rollback.json

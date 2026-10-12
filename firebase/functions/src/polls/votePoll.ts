@@ -52,7 +52,9 @@ export async function votePoll(
   const p = poll.data()!
   if (p.status !== 'open') throw fail('failed-precondition', 'Poll closed', 'poll_closed')
   if (!Array.isArray(p.options) || input.optionIndex >= p.options.length) throw fail('invalid-argument', 'Invalid option', 'invalid_option')
-  if (bridge && !p.legacySupabaseId) throw fail('failed-precondition', 'Poll not ready for Firestore voting', 'event_not_ready')
+  // A poll WITHOUT legacySupabaseId was created natively in Firestore (createPoll callable): there is no Supabase row to mirror,
+  // so the bridge is skipped for it. Polls projected from Supabase always carry the legacy id and keep the bridge.
+  const legacyBridge = p.legacySupabaseId ? bridge : null
 
   const voteRef  = pollRef.collection('votes').doc(uid)
   const shardRef = pollRef.collection('tally').doc(`s${shardOf(uid)}`)
@@ -78,13 +80,13 @@ export async function votePoll(
     return { kind: 'changed' as const, prev }
   })
 
-  if (bridge) {
+  if (legacyBridge) {
     try {
-      await bridge.upsertPollVote({ pollId: p.legacySupabaseId, guestKey: `fb:${uid}`, optionIndex: opt })
+      await legacyBridge.upsertPollVote({ pollId: p.legacySupabaseId, guestKey: `fb:${uid}`, optionIndex: opt })
       // Converge: a concurrent change by the same guest may have committed meanwhile; make Supabase match Firestore.
       const current = (await voteRef.get()).data()?.optionIndex as number | undefined
       if (current !== undefined && current !== opt) {
-        await bridge.upsertPollVote({ pollId: p.legacySupabaseId, guestKey: `fb:${uid}`, optionIndex: current })
+        await legacyBridge.upsertPollVote({ pollId: p.legacySupabaseId, guestKey: `fb:${uid}`, optionIndex: current })
         return { optionIndex: current, changed: outcome.kind === 'changed', alreadyVoted: false }
       }
     } catch (e) {

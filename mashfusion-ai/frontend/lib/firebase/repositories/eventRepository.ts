@@ -28,6 +28,7 @@ export function fromEventDoc(id: string, d: DocumentData): EventDoc {
     venueName:         d.venueName ?? null,
     screenModeEnabled: d.screenModeEnabled === true,
     guestConfig:       d.guestConfig ?? null,
+    ...('screenConfig' in d ? { screenConfig: d.screenConfig ?? null } : {}),
     createdAt:         toDate(d.createdAt),
     updatedAt:         toDate(d.updatedAt),
   }

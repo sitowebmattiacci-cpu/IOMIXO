@@ -68,6 +68,8 @@ export interface EventDoc {
   venueName:         string | null
   screenModeEnabled: boolean
   guestConfig:       Record<string, unknown> | null
+  /** TV screen section toggles (`show_*`, stand-up config...). Public data; written by the updateEventConfig callable / the events backfill. Undefined = never migrated (use the legacy payload). */
+  screenConfig?:     Record<string, unknown> | null
   createdAt:         Date | null
   updatedAt:         Date | null
 }
