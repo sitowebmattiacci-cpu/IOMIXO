@@ -1,8 +1,49 @@
 rules_version = '2';
-// Baseline: deny everything. Rules for avatars / event photos are added
-// when the Storage domain is migrated.
+// Event photos. Least privilege: everything is closed except the two paths below. Cross-service rules read Firestore (events, photos).
+//
+//   events/{eventId}/photos/{photoId}/original.{jpg|jpeg|png|webp}   guest album + Live Booth
+//   events/{eventId}/winner/{groom|bride}-<random>.{ext}             winner-announcement photos (owner)
+//
+// Never listable. No client may overwrite or delete anything: removals / token rotation / cleanup are done by Cloud Functions (Admin SDK).
+// The Firestore photo doc is created by the createPhotoUpload callable (event live + plan + anti-spam) BEFORE the bytes: the write is accepted only
+// for that exact path, by the guest it was issued to, once, with the declared image type and at most 8 MB.
 service firebase.storage {
   match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+    function isAccount() { return signedIn() && request.auth.token.firebase.sign_in_provider != 'anonymous'; }
+    function event(eventId) { return firestore.get(/databases/(default)/documents/events/$(eventId)).data; }
+    function isEventOwner(eventId) { return isAccount() && event(eventId).ownerUid == request.auth.uid; }
+    function validImage() {
+      return request.resource.size > 0 && request.resource.size <= 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+
+    match /events/{eventId}/photos/{photoId}/{file} {
+      function photo() { return firestore.get(/databases/(default)/documents/events/$(eventId)/photos/$(photoId)).data; }
+
+      // `resource == null`: the object must not exist yet (an overwrite is an update, which is never allowed; stated explicitly for the emulator too).
+      allow create: if signedIn() && resource == null
+        && file.matches('original\\.(jpg|jpeg|png|webp)')
+        && photo().status == 'uploading'
+        && photo().guestUid == request.auth.uid
+        && photo().storagePath == ('events/' + eventId + '/photos/' + photoId + '/' + file)
+        && request.resource.contentType == photo().contentType
+        && validImage()
+        && event(eventId).status == 'live' && !('deletedAt' in event(eventId));
+      // Read one file: approved photos of a not-deleted event by any signed-in viewer (guest page, TV), everything by the event owner. No listing.
+      allow get: if signedIn() && ((photo().status == 'approved' && !('deletedAt' in event(eventId))) || isEventOwner(eventId));
+      allow list, update, delete: if false;
+    }
+
+    match /events/{eventId}/winner/{file} {
+      allow create: if resource == null && isEventOwner(eventId) && !('deletedAt' in event(eventId))
+        && file.matches('(groom|bride)-[A-Za-z0-9_-]{12,}\\.(jpg|jpeg|png|webp)')
+        && validImage();
+      // The TV (anonymous) shows these; the random file name is the capability, as the legacy 1 h signed URL was.
+      allow get: if signedIn() && !('deletedAt' in event(eventId));
+      allow list, update, delete: if false;
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

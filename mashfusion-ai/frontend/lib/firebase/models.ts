@@ -88,6 +88,8 @@ export interface EventDoc {
   screenConfig?:     Record<string, unknown> | null
   /** Soft delete (deleteEvent callable): the event is hidden everywhere; the data is kept and restorable. */
   deletedAt?:        Date | null
+  /** Set by the photos backfill once this legacy event's photos (metadata AND binaries) are served from Firebase. Native events never need it. */
+  photosMigratedAt?: Date | null
   createdAt:         Date | null
   updatedAt:         Date | null
 }
@@ -166,4 +168,27 @@ export interface GameRoundDoc {
 export interface GameConfigDoc {
   roulettePenitenze?: Array<{ label: string; category: 'soft' | 'party' | 'wild'; enabled: boolean }>
   shoeGameQuestions?: string[]
+}
+
+export type PhotoStatus = 'uploading' | 'pending' | 'approved' | 'rejected'
+export type PhotoSource = 'guest_upload' | 'live_booth'
+
+/**
+ * events/{eventId}/photos/{photoId} — guest album + Live Booth. Created only by createPhotoUpload / finalizePhoto, moderated only by moderatePhoto.
+ * The bytes live in Storage at `storagePath` (events/{eventId}/photos/{photoId}/original.{ext}); `legacyStoragePath` is set on backfilled photos whose
+ * binary has not been copied yet (they are not served from Firebase until it is).
+ */
+export interface PhotoDoc {
+  id:          string
+  guestUid:    string | null
+  guestName:   string | null
+  caption:     string | null
+  source:      PhotoSource
+  status:      PhotoStatus
+  isFeatured:  boolean
+  storagePath: string
+  legacySupabaseId?: string
+  legacyStoragePath?: string
+  createdAt:   Date | null
+  updatedAt:   Date | null
 }

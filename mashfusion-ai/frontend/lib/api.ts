@@ -1,6 +1,6 @@
 import axios, { AxiosError, type AxiosInstance } from 'axios'
 import { getAuthToken, signOut } from '@/lib/auth'
-import { ownerCallablesFlag, dashboardFlag } from '@/lib/events/flags'
+import { ownerCallablesFlag, dashboardFlag, publicReadFlag } from '@/lib/events/flags'
 import type {
   User, Subscription, Payment,
   ApiResponse,
@@ -448,12 +448,15 @@ export const live = {
     const ev = o ? await o.config.event(id) : null
     if (!o || !ev) return legacyUpdateSession(id, patch)
 
-    // Dashboard switch: Firestore is authoritative for EVERY field the dashboard edits, except the winner announcement (its photos are
-    // validated / cleaned by the legacy route, which stays on Render until the photo stack moves). Nothing is written to Supabase.
-    const winnerInPatch = !!patch.screen_config && Object.prototype.hasOwnProperty.call(patch.screen_config, 'winner_announcement')
-    if (dashboardFlag() && !winnerInPatch) {
+    // Dashboard switch: Firestore is authoritative for EVERY field the dashboard edits, the winner announcement included (its photos live in
+    // Firebase Storage). Nothing is written to Supabase.
+    if (dashboardFlag()) {
       const fs: Parameters<typeof o.config.update>[1] = {}
-      if ('screen_config' in patch) fs.screen_config = patch.screen_config as any
+      const dsc = (patch.screen_config ?? null) as Record<string, unknown> | null
+      const dashWinner = !!dsc && Object.prototype.hasOwnProperty.call(dsc, 'winner_announcement')
+      // The winner announcement is its own field in Firestore (paths validated, replaced photos deleted by updateEventConfig).
+      if ('screen_config' in patch) fs.screen_config = dashWinner ? (({ winner_announcement: _w, ...rest }) => (void _w, rest))(dsc!) : patch.screen_config as any
+      if (dashWinner) fs.winner_announcement = (dsc!.winner_announcement ?? null) as Record<string, unknown> | null
       if ('guest_config' in patch) fs.guest_config = patch.guest_config as any
       if ('screen_mode_enabled' in patch) fs.screen_mode_enabled = patch.screen_mode_enabled
       const core = Object.fromEntries(Object.entries(patch).filter(([k]) => Object.keys(o.config.MIRRORED_KEYS).concat('is_active').includes(k)))
@@ -642,6 +645,8 @@ export interface LivePhoto {
   status?: 'pending' | 'approved' | 'rejected'
   url: string | null
   votes?: number
+  is_featured?: boolean
+  source?: 'guest_upload' | 'live_booth' | string
   created_at: string
 }
 
@@ -814,42 +819,52 @@ export const livePolls = {
     publicPost<{ ok: boolean }>(`/api/live/public/${slug}/polls/${pollId}/vote`, { option_index: optionIndex }),
 }
 
+/** Guest-side photos on Firebase (callables + Storage) when NEXT_PUBLIC_FIRESTORE_PUBLIC_READ=on|true; null/undefined → legacy routes. Dynamic import. */
+const photoGuest = async () => (publicReadFlag() ? await import('./events/photoService') : null)
+
 export const livePhotos = {
   async listForDj(sessionId: string): Promise<LivePhoto[]> {
+    const fs = await owner().then((o) => o?.photos.list(sessionId)); if (fs) return fs
     try {
       const { data } = await getClient().get<{ data: LivePhoto[] }>(`/api/live/sessions/${sessionId}/photos`)
       return data.data
     } catch (e) { apiError(e) }
   },
   async listBoothPhotos(sessionId: string): Promise<LivePhoto[]> {
+    const fs = await owner().then((o) => o?.photos.list(sessionId, true)); if (fs) return fs
     try {
       const { data } = await getClient().get<{ data: LivePhoto[] }>(`/api/live/sessions/${sessionId}/booth/photos`)
       return data.data
     } catch (e) { apiError(e) }
   },
   async setStatus(id: string, status: 'pending' | 'approved' | 'rejected'): Promise<LivePhoto> {
+    if (await owner().then((o) => o?.photos.moderate(id, { action: 'set_status', status }))) return { id, status } as LivePhoto
     try {
       const { data } = await getClient().patch<{ data: LivePhoto }>(`/api/live/photos/${id}`, { status })
       return data.data
     } catch (e) { apiError(e) }
   },
   async setFeatured(id: string, is_featured: boolean): Promise<LivePhoto> {
+    if (await owner().then((o) => o?.photos.moderate(id, { action: 'set_featured', isFeatured: is_featured }))) return { id, is_featured } as LivePhoto
     try {
       const { data } = await getClient().patch<{ data: LivePhoto }>(`/api/live/photos/${id}/feature`, { is_featured })
       return data.data
     } catch (e) { apiError(e) }
   },
   async approve(id: string): Promise<LivePhoto> {
+    if (await owner().then((o) => o?.photos.moderate(id, { action: 'set_status', status: 'approved' }))) return { id, status: 'approved' } as LivePhoto
     try {
       const { data } = await getClient().patch<{ data: LivePhoto }>(`/api/live/photos/${id}/approve`, {})
       return data.data
     } catch (e) { apiError(e) }
   },
   async remove(id: string): Promise<void> {
+    if (await owner().then((o) => o?.photos.moderate(id, { action: 'delete' }))) return
     try { await getClient().delete(`/api/live/photos/${id}`) } catch (e) { apiError(e) }
   },
-  // public 2-step upload (guest album)
+  // public 2-step upload (guest album): Firebase = createPhotoUpload → Storage → finalizePhoto; legacy = signed URL on Supabase
   async publicUpload(slug: string, file: File, meta: { guest_name?: string; caption?: string }): Promise<{ id: string }> {
+    const fs = await photoGuest().then((g) => g?.uploadGuestPhoto(slug, file, meta, 'guest_upload')); if (fs) return fs
     const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase()
     const init = await publicPost<{ upload_url: string; storage_path: string }>(
       `/api/live/public/${slug}/photos/init`, { ext, size: file.size },
@@ -863,6 +878,7 @@ export const livePhotos = {
   },
   // Live Booth: single-step upload
   async boothUpload(slug: string, file: File, meta: { guest_name?: string; caption?: string }): Promise<{ id: string }> {
+    const fs = await photoGuest().then((g) => g?.uploadGuestPhoto(slug, file, meta, 'live_booth')); if (fs) return fs
     const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase()
     const init = await publicPost<{ upload_url: string; storage_path: string }>(
       `/api/live/public/${slug}/photos/init`, { ext, size: file.size },
@@ -874,14 +890,15 @@ export const livePhotos = {
       caption:      meta.caption,
     })
   },
-  publicListApproved: (slug: string) =>
-    publicGet<LivePhoto[]>(`/api/live/public/${slug}/photos`),
-  // Wedding · Proclamazione Vincitore: upload della foto sposo/sposa nel
-  // bucket privato `wedding-photos` riusando `photos/init` + PUT signed URL.
-  // A differenza di publicUpload / boothUpload NON chiama il confirm su
-  // `live_photos`: la foto NON compare nell'album ospiti / Live Booth.
+  async publicListApproved(slug: string): Promise<LivePhoto[]> {
+    const fs = await photoGuest().then((g) => g?.listApprovedForGuest(slug)); if (fs) return fs
+    return publicGet<LivePhoto[]>(`/api/live/public/${slug}/photos`)
+  },
+  // Wedding · Proclamazione Vincitore: foto sposo/sposa. Firebase (dashboard switch): Storage direct under events/{id}/winner/, rules = owner only.
+  // Legacy: bucket privato `wedding-photos` riusando `photos/init` + PUT signed URL (NON compare nell'album né nel Live Booth).
   // Il path viene poi salvato dal DJ in `screen_config.winner_announcement`.
-  async winnerUploadPhoto(slug: string, file: File): Promise<{ storage_path: string }> {
+  async winnerUploadPhoto(slug: string, file: File, role: 'groom' | 'bride' = 'groom'): Promise<{ storage_path: string }> {
+    const fs = await owner().then((o) => o?.photos.uploadWinnerPhoto(slug, file, role)); if (fs) return fs
     const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase()
     const init = await publicPost<{ upload_url: string; storage_path: string }>(
       `/api/live/public/${slug}/photos/init`, { ext, size: file.size },
@@ -892,6 +909,12 @@ export const livePhotos = {
       body: file,
     })
     return { storage_path: init.storage_path }
+  },
+  /** Preview URLs of the stored winner photos: Storage for Firebase paths (dashboard switch), the legacy screen payload otherwise. */
+  async winnerPreviewUrls(slug: string, cfg: { groom_photo_path?: string | null; bride_photo_path?: string | null }): Promise<{ groom: string | null; bride: string | null }> {
+    const fs = await owner().then((o) => o?.photos.winnerUrls(cfg)); if (fs && (fs.groom || fs.bride || !(cfg.groom_photo_path || cfg.bride_photo_path))) return fs
+    const w = ((await liveScreen.get(slug).catch(() => null))?.session?.screen_config as any)?.winner_announcement
+    return { groom: w?.groom_photo_url ?? null, bride: w?.bride_photo_url ?? null }
   },
 }
 

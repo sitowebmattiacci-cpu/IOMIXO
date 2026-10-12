@@ -16,6 +16,7 @@ import { parseCreatePollInput, parseSetPollStatusInput, createPoll as createPoll
 import { parseConfigInput, updateEventConfig as updateEventConfigImpl } from './owner/config'
 import { parseCreateEventInput, parseEventRefInput, createEvent as createEventImpl, deleteEvent as deleteEventImpl, restoreEvent as restoreEventImpl } from './owner/sessions'
 import { parseGameActionInput, parseGameConfigInput, gameAction as gameActionImpl, setGameConfig as setGameConfigImpl } from './owner/games'
+import { parseCreatePhotoUploadInput, parsePhotoRefInput, parseModeratePhotoInput, createPhotoUpload as createPhotoUploadImpl, finalizePhoto as finalizePhotoImpl, moderatePhoto as moderatePhotoImpl } from './photos/photos'
 import { parseSlug, getPublicEvent as getPublicEventImpl } from './owner/publicEvent'
 
 // Cost baseline: europe-west1, scale to zero, bounded concurrency.
@@ -41,6 +42,8 @@ const SERVICE_ACCOUNT = 'iomixo-functions@iomixo-494817.iam.gserviceaccount.com'
 const ENFORCE_REQUEST    = defineBoolean('APPCHECK_ENFORCE_REQUEST',    { default: false })
 const ENFORCE_DEDICATION = defineBoolean('APPCHECK_ENFORCE_DEDICATION', { default: false })
 const ENFORCE_VOTE       = defineBoolean('APPCHECK_ENFORCE_VOTE',       { default: false })
+// Guest photo upload (createPhotoUpload / finalizePhoto): observe-only until verified on the web client, like the owner callables.
+const ENFORCE_PHOTO      = defineBoolean('APPCHECK_ENFORCE_PHOTO',      { default: false })
 // Owner-side callables (moderation, polls, event settings) and the public event lookup: same convention, default false (observe only).
 const ENFORCE_OWNER        = defineBoolean('APPCHECK_ENFORCE_OWNER',        { default: false })
 const ENFORCE_PUBLIC_EVENT = defineBoolean('APPCHECK_ENFORCE_PUBLIC_EVENT', { default: false })
@@ -110,6 +113,21 @@ export const deleteEvent        = ownerCall('deleteEvent',        parseEventRefI
 export const restoreEvent       = ownerCall('restoreEvent',       parseEventRefInput,    (r, i) => restoreEventImpl(getFirestore(), r, i))
 export const ownerGameAction    = ownerCall('ownerGameAction',    parseGameActionInput,  (r, i) => gameActionImpl(getFirestore(), r, i))
 export const setGameConfig      = ownerCall('setGameConfig',      parseGameConfigInput,  (r, i) => setGameConfigImpl(getFirestore(), r, i))
+
+export const moderatePhoto      = ownerCall('moderatePhoto',      parseModeratePhotoInput, (r, i) => moderatePhotoImpl(getFirestore(), r, i))
+
+// Guest photo callables: identity = verified token (anonymous allowed). Bytes never pass through them (the client writes to Storage under storage.rules).
+const photoCallOptions = { ...guestCallOptions(ENFORCE_PHOTO), secrets: [] }
+export const createPhotoUpload = onCall(photoCallOptions, async (request) => {
+  observeAppCheck('createPhotoUpload', ENFORCE_PHOTO, request)
+  if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign in required', { reason: 'unauthenticated' })
+  return createPhotoUploadImpl(getFirestore(), request.auth.uid, parseCreatePhotoUploadInput(request.data))
+})
+export const finalizePhoto = onCall(photoCallOptions, async (request) => {
+  observeAppCheck('finalizePhoto', ENFORCE_PHOTO, request)
+  if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign in required', { reason: 'unauthenticated' })
+  return finalizePhotoImpl(getFirestore(), request.auth.uid, parsePhotoRefInput(request.data))
+})
 
 /** Callable: public event lookup by slug (replaces GET /api/live/public/:slug). Any signed-in identity, incl. anonymous guests. */
 export const getPublicEvent = onCall({ ...guestCallOptions(ENFORCE_PUBLIC_EVENT), secrets: [] }, async (request) => {

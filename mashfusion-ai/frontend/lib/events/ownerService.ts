@@ -1,17 +1,21 @@
 import { collection, getDocs } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
-import { getFirebaseDb, getFirebaseFunctions } from '../firebase/client'
+import { getFirebaseDb, getFirebaseFunctions, getFirebaseStorage } from '../firebase/client'
 import { waitForAuthReady } from '../firebase/auth'
 import { authProvider } from '../auth'
 import { dashboardFlag, ownerCallablesFlag } from './flags'
 import { eventToSession } from './legacyMappers'
 import { getEventById, getOwnerEventByLegacyId } from '../firebase/repositories/eventRepository'
 import { getLatestGame } from '../firebase/repositories/gameRepository'
+import { listOwnerPhotos, photoUrl, forgetPhotoUrl } from '../firebase/repositories/photoRepository'
+import { toLegacyPhotos, extensionOf } from './photoService'
+import { ref as storageRef, uploadBytes } from 'firebase/storage'
+import { getEventIdBySlug } from '../firebase/repositories/eventRepository'
 import { listEventRequests } from '../firebase/repositories/requestRepository'
 import { listEventDedications } from '../firebase/repositories/dedicationRepository'
 import { fromPollDoc, sumTally } from '../firebase/repositories/pollRepository'
 import type { EventDoc } from '../firebase/models'
-import type { LiveDedication, LiveGameRound, LivePoll, LiveRequest, LiveRequestStatus, LiveSession } from '../api'
+import type { LiveDedication, LiveGameRound, LivePhoto, LivePoll, LiveRequest, LiveRequestStatus, LiveSession } from '../api'
 
 /**
  * DJ-side operations on Firestore (requests / dedications moderation, polls, event settings) for events that already live in
@@ -43,6 +47,9 @@ const MESSAGES: Record<string, string> = {
   games_unavailable:     'Funzione disponibile solo per sessioni Party Mode o Wedding Edition.',
   no_active_game:        'Nessun gioco attivo. Avvia il gioco.',
   no_penalties:          'Nessuna penitenza disponibile con le categorie selezionate.',
+  photo_not_found:       'Foto non trovata',
+  photo_not_ready:       'Il caricamento della foto non è terminato',
+  photos_unavailable:    'Album foto disponibile solo per sessioni Party Mode o Wedding Edition.',
 }
 
 async function callOwner<Out>(name: string, payload: object): Promise<Out> {
@@ -82,7 +89,7 @@ const forDashboard = async (sessionId: string) => (dashboardOn() ? resolveOwnerE
 const requestId = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}${Math.random().toString(36).slice(2)}`).replace(/[^A-Za-z0-9_-]/g, '')
 
 // id → eventId registry (module memory only)
-const owners = { request: new Map<string, string>(), dedication: new Map<string, string>(), poll: new Map<string, string>() }
+const owners = { request: new Map<string, string>(), dedication: new Map<string, string>(), poll: new Map<string, string>(), photo: new Map<string, string>() }
 const eventOf = (kind: keyof typeof owners, id: string) => (ownerOpsEnabled() ? owners[kind].get(id) ?? null : null)
 const iso = (d: Date | null) => (d ?? new Date()).toISOString()
 
@@ -117,6 +124,44 @@ export const ownerOps = {
       await callOwner('restoreEvent', { eventId }); events.delete(sessionId)
     },
   },
+  /**
+   * Photos (dashboard switch): the owner's lists / moderation / winner photos. Lists fill an id → eventId registry so the id-only legacy signatures
+   * (setStatus(id)) can find their event, as for requests and polls.
+   */
+  photos: {
+    async list(sessionId: string, onlyBooth = false): Promise<LivePhoto[] | null> {
+      const ev = await forDashboard(sessionId); if (!ev) return null
+      const docs = await listOwnerPhotos(getFirebaseDb(), ev.id)
+      docs.forEach((p) => owners.photo.set(p.id, ev.id))
+      const rows = await toLegacyPhotos(docs.filter((p) => !onlyBooth || p.source === 'live_booth'))
+      return rows.map((r) => ({ ...r, session_id: sessionId } as LivePhoto))
+    },
+    async moderate(photoId: string, body: { action: 'set_status'; status: 'pending' | 'approved' | 'rejected' } | { action: 'set_featured'; isFeatured: boolean } | { action: 'delete' }): Promise<boolean> {
+      const eventId = dashboardOn() ? owners.photo.get(photoId) : null; if (!eventId) return false
+      await callOwner('moderatePhoto', { eventId, photoId, ...body })
+      const doc = owners.photo.get(photoId); void doc
+      return true
+    },
+    /** Winner-announcement photo: straight to Storage under the event's winner folder (rules: owner only). Returns the path stored in screenConfig. */
+    async uploadWinnerPhoto(slug: string, file: File, role: 'groom' | 'bride'): Promise<{ storage_path: string } | null> {
+      if (!dashboardOn()) return null
+      const eventId = await getEventIdBySlug(getFirebaseDb(), slug); if (!eventId) return null
+      const token = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}${Math.random().toString(36).slice(2)}`).replace(/[^A-Za-z0-9]/g, '')
+      const path = `events/${eventId}/winner/${role}-${token}.${extensionOf(file)}`
+      const type = file.type === 'image/png' ? 'image/png' : file.type === 'image/webp' ? 'image/webp' : 'image/jpeg'
+      try { await uploadBytes(storageRef(getFirebaseStorage(), path), file, { contentType: type }) } catch { throw new Error('Caricamento non riuscito, riprova.') }
+      return { storage_path: path }
+    },
+    /** URLs to preview the stored winner photos; null = not applicable (legacy preview). Firebase paths only. */
+    async winnerUrls(cfg: { groom_photo_path?: string | null; bride_photo_path?: string | null }): Promise<{ groom: string | null; bride: string | null } | null> {
+      if (!dashboardOn()) return null
+      const st = getFirebaseStorage()
+      const one = (p?: string | null) => (p && p.startsWith('events/') ? photoUrl(st, p) : Promise.resolve(null))
+      return { groom: await one(cfg.groom_photo_path), bride: await one(cfg.bride_photo_path) }
+    },
+    forget: forgetPhotoUrl,
+  },
+
   /** DJ games (dashboard switch). Every action returns the round as the legacy UI expects it, read back from Firestore. */
   games: {
     async act(sessionId: string, game: 'roulette' | 'shoe', action: 'start' | 'spin' | 'next' | 'reset', extra: { categories?: string[]; questions?: string[] } = {}): Promise<{ round: LiveGameRound | null } | null> {

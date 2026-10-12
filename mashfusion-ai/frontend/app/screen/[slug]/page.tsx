@@ -6,6 +6,7 @@ import { Heart, Sparkles, ListChecks, Footprints, Youtube, Users, Camera } from 
 import { liveScreen, type VideoLiveCommand, type StandUpGuessConfig, type StandUpGuessRound } from '@/lib/api'
 import { useLiveEvent } from '@/lib/events/useLiveEvent'
 import { useFirestoreScreen } from '@/lib/events/useScreen'
+import { useApprovedPhotos, useWinnerUrls } from '@/lib/events/usePhotos'
 import { useApprovedDedications } from '@/lib/events/useDedications'
 import { useActivePoll, toLegacyPoll } from '@/lib/events/usePolls'
 import { useLatestGames, preferRealtime } from '@/lib/events/useGames'
@@ -17,7 +18,7 @@ import { WinnerAnnouncementStage } from '@/components/wedding/WinnerAnnouncement
 import { PartyShell, PartyDivider, PARTY } from '@/components/party/PartyUI'
 import { PartyPhotoDisplay, type LiveBoothLayout } from '@/components/party/PartyPhotoGridWall'
 import { resolveVideoSource, type VideoLiveSource } from '@/lib/utils'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 /** Remote-control state read from screen_config.video_live and applied by the
  *  Screen Mode players. The dashboard is the director. */
@@ -74,7 +75,12 @@ export default function ScreenModePage() {
   const rtGames = useLatestGames(liveEvent?.id)
   // Whole TV payload from Firestore when the event is fully there (screenConfig, no photos); otherwise the legacy 1.5s polling.
   const rtDedications = useApprovedDedications(liveEvent?.id)
-  const fsScreen = useFirestoreScreen(liveEvent, rtPoll, rtGames, rtDedications, slug)
+  // Live Booth photos (realtime, approved only) and the winner photos' Storage URLs: only subscribed when the TV actually shows them.
+  const showPhotosCfg = (liveEvent?.screenConfig as Record<string, unknown> | null | undefined)?.show_photos === true
+  const rtPhotos = useApprovedPhotos(showPhotosCfg ? liveEvent?.id : undefined)
+  const winnerUrls = useWinnerUrls((liveEvent?.screenConfig as Record<string, unknown> | null | undefined)?.winner_announcement)
+  const screenExtras = useMemo(() => ({ photos: rtPhotos, winnerUrls }), [rtPhotos, winnerUrls])
+  const fsScreen = useFirestoreScreen(liveEvent, rtPoll, rtGames, rtDedications, slug, screenExtras)
   const { data: legacyData, error: legacyError } = useSWR(
     slug && fsScreen.decided && !fsScreen.payload ? ['screen', slug] : null,
     () => liveScreen.get(slug!),

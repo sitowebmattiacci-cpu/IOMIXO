@@ -25,7 +25,7 @@ import useSWR, { mutate as globalMutate } from 'swr'
 import toast from 'react-hot-toast'
 import { Award, Play, StopCircle, EyeOff, RotateCw, Upload, Trash2, Loader2 } from 'lucide-react'
 import {
-  live, livePhotos, liveScreen,
+  live, livePhotos,
   type WinnerAnnouncementConfig,
   type WinnerAnnouncementRole,
 } from '@/lib/api'
@@ -81,12 +81,12 @@ export function WinnerAnnouncementPanel({ sessionId }: Props) {
   )
   const slug = session?.public_slug ?? null
 
-  // Signed URLs delle foto sposo/sposa: le prendiamo dal payload pubblico
-  // dello Screen (già arricchito dal backend). Refresh su richiesta dopo
-  // ogni upload/save. Non pollato per non aggiungere carico API.
-  const { data: screenPayload, mutate: mutateScreen } = useSWR(
-    slug ? ['screen-preview', slug] : null,
-    () => liveScreen.get(slug!),
+  // URL delle foto sposo/sposa: Storage per i path Firebase, payload pubblico dello Screen (signed URL legacy) altrimenti.
+  // Refresh su richiesta dopo ogni upload/save. Non pollato per non aggiungere carico.
+  const winnerPaths = (session?.screen_config as any)?.winner_announcement
+  const { data: winnerPreview, mutate: mutateScreen } = useSWR(
+    slug ? ['winner-preview', slug, winnerPaths?.groom_photo_path ?? null, winnerPaths?.bride_photo_path ?? null] : null,
+    () => livePhotos.winnerPreviewUrls(slug!, { groom_photo_path: winnerPaths?.groom_photo_path ?? null, bride_photo_path: winnerPaths?.bride_photo_path ?? null }),
   )
 
   const cfg = useMemo(
@@ -109,8 +109,8 @@ export function WinnerAnnouncementPanel({ sessionId }: Props) {
   const [uploading, setUploading] = useState<{ groom?: boolean; bride?: boolean }>({})
   const [busy, setBusy] = useState(false)
 
-  const groomServerUrl = (screenPayload?.session?.screen_config as any)?.winner_announcement?.groom_photo_url ?? null
-  const brideServerUrl = (screenPayload?.session?.screen_config as any)?.winner_announcement?.bride_photo_url ?? null
+  const groomServerUrl = winnerPreview?.groom ?? null
+  const brideServerUrl = winnerPreview?.bride ?? null
   const groomPreviewUrl = localPreview.groom ?? groomServerUrl ?? null
   const bridePreviewUrl = localPreview.bride ?? brideServerUrl ?? null
 
@@ -152,7 +152,7 @@ export function WinnerAnnouncementPanel({ sessionId }: Props) {
     setUploading((s) => ({ ...s, [role]: true }))
     try {
       const compressed = await compressImage(file, { maxWidth: 1400, maxHeight: 1400, quality: 0.85 })
-      const { storage_path } = await livePhotos.winnerUploadPhoto(slug, compressed)
+      const { storage_path } = await livePhotos.winnerUploadPhoto(slug, compressed, role)
       // Salva il path e resetta la fase (il vecchio file viene rimosso dal backend).
       await persist({
         ...cfg,

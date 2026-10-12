@@ -161,6 +161,16 @@ service cloud.firestore {
         }
       }
 
+      // Event photos (guest album + Live Booth). Created ONLY by createPhotoUpload / finalizePhoto, moderated ONLY by moderatePhoto (Functions).
+      // Owner: reads every photo (pending / rejected / uploading too). Guests and the TV: ONLY approved ones of a live-or-ended, not deleted event
+      // (queries must filter status == 'approved'). The bytes are protected by storage.rules with the same logic. photoGuests/{uid} is server-only.
+      match /photos/{photoId} {
+        allow get, list: if isEventOwner(eventId)
+                         || (request.auth != null && resource.data.status == 'approved'
+                             && !('deletedAt' in get(/databases/$(database)/documents/events/$(eventId)).data));
+        allow write: if false;
+      }
+
       // Game rounds (wedding_roulette, shoe_game), projected from the legacy live_game_rounds rows (Supabase is
       // authoritative; the DJ drives them through the legacy routes). The product already shows the round state
       // (shoe question, roulette slots and result) to every participant, guests and TV included, so any signed-in

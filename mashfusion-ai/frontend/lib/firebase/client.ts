@@ -28,7 +28,7 @@ const cloudConfig = {
 // real NEXT_PUBLIC_FIREBASE_* values are present in the environment. (An emulator serving another project id
 // would not apply the rules of the project it was started with.)
 const config = useEmulators
-  ? { apiKey: 'demo-api-key', authDomain: 'demo-iomixo.firebaseapp.com', projectId: 'demo-iomixo', appId: 'demo-app-id' }
+  ? { apiKey: 'demo-api-key', authDomain: 'demo-iomixo.firebaseapp.com', projectId: 'demo-iomixo', appId: 'demo-app-id', storageBucket: 'demo-iomixo.firebasestorage.app' }
   : cloudConfig
 
 export function isFirebaseConfigured(): boolean {

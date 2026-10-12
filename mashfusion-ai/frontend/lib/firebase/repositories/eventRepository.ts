@@ -30,6 +30,7 @@ export function fromEventDoc(id: string, d: DocumentData): EventDoc {
     guestConfig:       d.guestConfig ?? null,
     ...('screenConfig' in d ? { screenConfig: d.screenConfig ?? null } : {}),
     ...(d.deletedAt ? { deletedAt: toDate(d.deletedAt) ?? new Date(0) } : {}),
+    ...(d.photosMigratedAt ? { photosMigratedAt: toDate(d.photosMigratedAt) ?? new Date(0) } : {}),
     createdAt:         toDate(d.createdAt),
     updatedAt:         toDate(d.updatedAt),
   }

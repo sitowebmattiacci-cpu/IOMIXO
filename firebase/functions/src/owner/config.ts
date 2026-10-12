@@ -1,6 +1,7 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore'
 import { HttpsError } from 'firebase-functions/v2/https'
 import { idField, requireEventOwner, type CallerAuth } from './guard'
+import { deleteObjects } from '../photos/storage'
 
 export const CONFIG_MAX_BYTES = 16_000
 /** Event fields that are still AUTHORITATIVE in Supabase: the owner's client mirrors them here right after the legacy write. */
@@ -61,12 +62,42 @@ export function parseConfigInput(data: unknown): UpdateEventConfigInput {
  * `screenConfig.winner_announcement` is NEVER taken from `screenConfig`: it carries Storage paths (photo upload is not migrated), so the stored
  * value is preserved unless the client sends `winnerAnnouncement` (mirror of what the legacy route just validated and saved).
  */
+const WINNER_PHOTO_KEYS = ['groom_photo_path', 'bride_photo_path'] as const
+const winnerPrefix = (eventId: string) => `events/${eventId}/winner/`
+/**
+ * Winner photo paths: null, UNCHANGED from what is stored, a path inside THIS event's winner folder, or — for a legacy-backed event only — a path inside
+ * its legacy session folder (`${supabaseId}/…`: what the legacy route validates and the client then mirrors here as a signal while Supabase is still in
+ * charge; it can only point into that event's own folder). Anything else (another event, a guest photo, `..`) is refused.
+ */
+function checkWinnerPaths(eventId: string, legacyId: string | null, next: Record<string, unknown> | null, stored: Record<string, unknown> | null | undefined) {
+  if (!next) return
+  for (const k of WINNER_PHOTO_KEYS) {
+    const v = next[k]
+    if (v === null || v === undefined || v === stored?.[k]) continue
+    const inLegacyFolder = legacyId !== null && typeof v === 'string' && v.startsWith(`${legacyId}/`)
+    if (typeof v !== 'string' || !(v.startsWith(winnerPrefix(eventId)) || inLegacyFolder) || v.includes('..') || v.length > 300) {
+      throw new HttpsError('invalid-argument', `${k} invalid for this event`, { reason: 'invalid_payload', field: k })
+    }
+  }
+}
+
 export async function updateEventConfig(db: Firestore, request: CallerAuth, input: UpdateEventConfigInput): Promise<{ updated: string[] }> {
   const { ref } = await requireEventOwner(db, request, input.eventId)
-  return db.runTransaction(async (tx) => {
+  const stale: string[] = []
+  const result = await db.runTransaction(async (tx) => {
+    stale.length = 0
     const cur = (await tx.get(ref)).data()!
     const patch: Record<string, unknown> = {}
     const curCfg = cur.screenConfig as Record<string, unknown> | null | undefined
+    if (input.winnerAnnouncement !== undefined) {
+      const storedWinner = (curCfg?.winner_announcement ?? null) as Record<string, unknown> | null
+      checkWinnerPaths(input.eventId, typeof cur.legacySupabaseId === 'string' && cur.legacySupabaseId ? cur.legacySupabaseId : null, input.winnerAnnouncement, storedWinner)
+      // Replaced / removed Firebase winner photos are deleted after the commit (legacy paths are never touched here).
+      for (const k of WINNER_PHOTO_KEYS) {
+        const old = storedWinner?.[k]
+        if (typeof old === 'string' && old.startsWith(winnerPrefix(input.eventId)) && old !== input.winnerAnnouncement?.[k]) stale.push(old)
+      }
+    }
     if (input.screenConfig !== undefined || input.winnerAnnouncement !== undefined) {
       const { winner_announcement: _ignored, ...restCur } = curCfg ?? {}
       void _ignored
@@ -80,4 +111,6 @@ export async function updateEventConfig(db: Firestore, request: CallerAuth, inpu
     tx.update(ref, { ...patch, updatedAt: FieldValue.serverTimestamp() })
     return { updated: Object.keys(patch) }
   })
+  if (stale.length) await deleteObjects(stale)            // after the commit, best effort (never blocks the owner)
+  return result
 }

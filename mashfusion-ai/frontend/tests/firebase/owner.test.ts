@@ -219,8 +219,9 @@ test('E1. updateEventConfig: owner edits TV toggles / guest config / screen mode
 
 test('E1b. winnerAnnouncement is the ONLY way to change the winner signal; eventFields mirror the legacy-owned event fields (validated, status live/ended)', async () => {
   const dj = await mk(); const e = await seedEvent(dj.uid)
-  await callAs(dj, 'updateEventConfig', { eventId: e.id, screenConfig: { show_polls: true }, winnerAnnouncement: { groom_photo_path: `${e.id}/g.jpg`, enabled: true } })
-  assert.deepEqual((await getDoc(doc(dj.db, 'events', e.id))).data()!.screenConfig, { show_polls: true, winner_announcement: { groom_photo_path: `${e.id}/g.jpg`, enabled: true } })
+  const legacyId = (await getDoc(doc(dj.db, 'events', e.id))).data()!.legacySupabaseId as string       // the legacy route validates `${supabaseSessionId}/…` and the client mirrors it here
+  await callAs(dj, 'updateEventConfig', { eventId: e.id, screenConfig: { show_polls: true }, winnerAnnouncement: { groom_photo_path: `${legacyId}/g.jpg`, enabled: true } })
+  assert.deepEqual((await getDoc(doc(dj.db, 'events', e.id))).data()!.screenConfig, { show_polls: true, winner_announcement: { groom_photo_path: `${legacyId}/g.jpg`, enabled: true } })
   await callAs(dj, 'updateEventConfig', { eventId: e.id, screenConfig: { show_polls: false } })                 // later toggles keep the signal
   assert.ok((await getDoc(doc(dj.db, 'events', e.id))).data()!.screenConfig.winner_announcement)
   await callAs(dj, 'updateEventConfig', { eventId: e.id, winnerAnnouncement: null })                              // reset (legacy cleaned the photos)

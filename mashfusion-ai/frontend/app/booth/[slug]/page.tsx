@@ -4,7 +4,8 @@ import Link from 'next/link'
 import useSWR from 'swr'
 import { useState, useRef, useEffect } from 'react'
 import { Camera, X, RotateCw, Check, Sparkles, ArrowLeft, RefreshCw, ImagePlus, AlertTriangle } from 'lucide-react'
-import { publicLive, livePhotos } from '@/lib/api'
+import { livePhotos } from '@/lib/api'
+import { fetchPublicLive } from '@/lib/events/publicEventService'
 import { compressImage } from '@/lib/imageCompress'
 import { WeddingShell, WeddingButton } from '@/components/wedding/WeddingUI'
 import {
@@ -19,7 +20,7 @@ export default function LiveBoothPage() {
   const { slug } = useParams<{ slug: string }>()
   const { data, error } = useSWR(
     slug ? ['public-live', slug] : null,
-    () => publicLive.get(slug!),
+    () => fetchPublicLive(slug!),
     { refreshInterval: 3_000 },
   )
 
