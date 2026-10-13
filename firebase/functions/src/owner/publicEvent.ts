@@ -15,7 +15,7 @@ export function parseSlug(data: unknown): string {
 /**
  * Replacement of GET /api/live/public/:slug. Same payload shape (snake_case, so the guest page does not change), computed server-side:
  * plan / branding / features / profile socials depend on the owner's EFFECTIVE entitlements, which clients cannot read.
- * `events` (upcoming gigs, Supabase dj_events) has no Firestore home yet → always []. Any signed-in identity (incl. anonymous guests).
+ * `events` = the DJ's public upcoming dates (djProfiles/{uid}/dates, isPublic, today or later, max 10). Any signed-in identity (incl. anonymous guests).
  */
 export async function getPublicEvent(db: Firestore, slug: string, now: Date = new Date()) {
   const s = await db.collection('eventSlugs').doc(slug).get()
@@ -27,10 +27,18 @@ export async function getPublicEvent(db: Firestore, slug: string, now: Date = ne
   const ent = await loadEventEntitlements(db, eventId, now)
   const limits = PLAN_LIMITS[ent.effectiveTier]
 
-  const [profileSnap, counter] = await Promise.all([
+  const today = now.toISOString().slice(0, 10)
+  const [profileSnap, counter, datesSnap] = await Promise.all([
     db.collection('djProfiles').doc(ent.ownerUid).get(),
     db.collection('events').doc(eventId).collection('state').doc('requests').get(),
+    db.collection('djProfiles').doc(ent.ownerUid).collection('dates').where('isPublic', '==', true).get(),
   ])
+  const dates = datesSnap.docs
+    .map((d): Record<string, any> => ({ id: d.id, ...d.data() }))
+    .filter((d) => typeof d.eventDate === 'string' && (d.eventDate as string) >= today)
+    .sort((a, b) => String(a.eventDate).localeCompare(String(b.eventDate)))
+    .slice(0, 10)
+    .map((d) => ({ id: d.id, title: d.title ?? '', event_date: d.eventDate ?? null, venue_name: d.venueName ?? null, city: d.city ?? null, ticket_url: d.ticketUrl ?? null }))
   const p = profileSnap.data()
   const social = (v: unknown) => (limits.profileSocials ? (v ?? null) : null)
   const used = counter.exists ? Number(counter.data()!.total ?? 0) : 0
@@ -46,7 +54,7 @@ export async function getPublicEvent(db: Firestore, slug: string, now: Date = ne
       instagram_url: social(p.instagramUrl), tiktok_url: social(p.tiktokUrl), spotify_url: social(p.spotifyUrl),
       soundcloud_url: social(p.soundcloudUrl), website_url: social(p.websiteUrl),
     } : null,
-    events: [] as unknown[],
+    events: dates,
     plan: ent.effectiveTier,
     branding: limits.customBranding,
     features: {

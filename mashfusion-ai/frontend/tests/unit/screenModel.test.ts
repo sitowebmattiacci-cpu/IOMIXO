@@ -15,32 +15,22 @@ test('Firestore screen is used when the event is complete and the plan allows it
   assert.equal(v.ok, true)
 })
 
-test('explicit legacy fallback for every case the Firestore data cannot cover', () => {
+test('every case the TV cannot show is explicit; everything else renders from Firestore', () => {
   const reason = (e: EventDoc | null, allowed: boolean | null = true, g = undefined as any, x: any = {}) => { const v = screenEligibility(e, allowed, g, x); return v.ok ? 'ok' : v.legacyReason }
   assert.equal(reason(null), 'no_event')
   assert.equal(reason(ev({ type: 'standard' })), 'not_screen_type')
-  for (const bad of [undefined, null, [], 'x', 5]) assert.equal(reason(ev({ screenConfig: bad as any })), 'no_config', String(bad))
+  for (const bad of [undefined, null, [], 'x', 5]) assert.equal(reason(ev({ screenConfig: bad as any })), 'ok', String(bad))   // empty screen, no fallback
   assert.equal(reason(ev(), null), 'pending')
   assert.equal(reason(ev(), false), 'screen_not_allowed')
-  // photos: native events serve them from Firestore once the realtime list is there; a legacy-backed event only after its photos were migrated
-  assert.equal(reason(ev({ screenConfig: { show_photos: true } })), 'pending')                                  // realtime list not ready yet
-  assert.equal(reason(ev({ screenConfig: { show_photos: true } }), true, undefined, { photos: [] }), 'ok')      // ready, no approved photo: an empty wall, no fallback
-  assert.equal(reason(ev({ legacySupabaseId: 'ls1', screenConfig: { show_photos: true } }), true, undefined, { photos: [] }), 'photos')   // legacy photos not migrated → legacy
-  assert.equal(reason(ev({ legacySupabaseId: 'ls1', photosMigratedAt: new Date(), screenConfig: { show_photos: true } }), true, undefined, { photos: [] }), 'ok')
-  assert.equal(reason(ev({ legacySupabaseId: 'ls1', screenConfig: { show_photos: false } })), 'ok')            // photos hidden: nothing to migrate for the TV
-  // winner: names only → Firestore; legacy storage paths → legacy; Firebase paths → need the resolved URLs
-  assert.equal(reason(ev({ screenConfig: { show_polls: true, winner_announcement: { enabled: true } } })), 'ok')
-  assert.equal(reason(ev({ screenConfig: { winner_announcement: { groom_photo_path: 'x/g.jpg' } } })), 'winner')
+  assert.equal(reason(ev({ screenConfig: { show_photos: true } })), 'pending')
+  assert.equal(reason(ev({ screenConfig: { show_photos: true } }), true, undefined, { photos: [] }), 'ok')
+  assert.equal(reason(ev({ legacySupabaseId: 'ls1', screenConfig: { show_photos: true } }), true, undefined, { photos: [] }), 'ok')
+  assert.equal(reason(ev({ screenConfig: { winner_announcement: { groom_photo_path: 'x/g.jpg' } } })), 'ok')   // legacy path ignored
   assert.equal(reason(ev({ screenConfig: { winner_announcement: { groom_photo_path: 'events/e1/winner/groom-aaaaaaaaaaaa.jpg' } } })), 'pending')
   assert.equal(reason(ev({ screenConfig: { winner_announcement: { groom_photo_path: 'events/e1/winner/groom-aaaaaaaaaaaa.jpg' } } }), true, undefined, { winnerUrls: { groom: 'u', bride: null } }), 'ok')
-  assert.equal(reason(ev({ screenConfig: { winner_announcement: { groom_photo_path: 'events/e1/winner/groom-aaaaaaaaaaaa.jpg', bride_photo_path: 'old/b.jpg' } } }), true, undefined, { winnerUrls: { groom: 'u', bride: null } }), 'winner')
-  assert.equal(reason(ev({ screenConfig: { winner_announcement: true as any } })), 'winner')                   // unknown shape → legacy decides
-  assert.equal(reason(ev({ screenConfig: { winner_announcement: null } })), 'ok')                            // reset winner → Firestore is fine
-  assert.equal(reason(ev({ screenConfig: { show_roulette: true } }), true, undefined), 'pending')            // games still loading
-  assert.equal(reason(ev({ screenConfig: { show_roulette: true } }), true, { roulette: null, shoeGame: null }), 'games_pending')   // no history in Firestore → legacy
-  assert.equal(reason(ev({ screenConfig: { show_shoe_game: true } }), true, { roulette: round('r'), shoeGame: null }), 'games_pending')
+  assert.equal(reason(ev({ screenConfig: { show_roulette: true } }), true, undefined), 'pending')
+  assert.equal(reason(ev({ screenConfig: { show_roulette: true } }), true, { roulette: null, shoeGame: null }), 'ok')   // no round yet: nothing shown
   assert.equal(reason(ev({ screenConfig: { show_roulette: true, show_shoe_game: true } }), true, games), 'ok')
-  assert.equal(reason(ev({ screenConfig: { show_roulette: false } }), true, { roulette: null, shoeGame: null }), 'ok')   // hidden sections need no data
 })
 
 test('composeScreenPayload: photos only when shown (max 12), winner enriched with the resolved URLs', () => {

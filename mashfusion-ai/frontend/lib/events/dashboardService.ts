@@ -53,19 +53,16 @@ export const dashboardOps = {
     const db = getFirebaseDb()
     const all = await listOwnerEvents(db, user.uid, 50, { includeDeleted: true })
     if (all.length > 0) return all.filter((e) => !e.deletedAt).map(eventToSession)
-    // Nothing in Firestore (not even deleted events). Only an account migrated from Supabase can still own legacy sessions that were not
-    // backfilled: for it the caller may ask the legacy route. A Firebase-native account has nowhere else to look.
-    return (await getUser(db, user.uid))?.legacySupabaseId ? null : []
+    return []
   },
 
-  /** The event + the owner-private games customisation. `hasLegacy` = a Supabase row exists (only then Render may know the presence count). */
-  async getSession(id: string): Promise<{ session: LiveSession; hasLegacy: boolean } | null> {
+  /** The event + the owner-private games customisation. */
+  async getSession(id: string): Promise<{ session: LiveSession } | null> {
     if (!dashboardEnabled()) return null
     const ev = await resolveOwnerEvent(id); if (!ev) return null
     const cfg = await getGameConfig(getFirebaseDb(), ev.id)
     return {
       session: { ...eventToSession(ev), roulette_penitenze: cfg?.roulettePenitenze ?? null, shoe_game_questions: cfg?.shoeGameQuestions ?? null },
-      hasLegacy: Boolean(ev.legacySupabaseId),
     }
   },
 

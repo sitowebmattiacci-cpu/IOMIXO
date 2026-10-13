@@ -1,15 +1,14 @@
 'use client'
 import { useParams } from 'next/navigation'
-import useSWR from 'swr'
 import { QRCodeSVG } from 'qrcode.react'
 import { Heart, Sparkles, ListChecks, Footprints, Youtube, Users, Camera } from 'lucide-react'
-import { liveScreen, type VideoLiveCommand, type StandUpGuessConfig, type StandUpGuessRound } from '@/lib/api'
+import { type VideoLiveCommand, type StandUpGuessConfig, type StandUpGuessRound } from '@/lib/api'
 import { useLiveEvent } from '@/lib/events/useLiveEvent'
 import { useFirestoreScreen } from '@/lib/events/useScreen'
 import { useApprovedPhotos, useWinnerUrls } from '@/lib/events/usePhotos'
 import { useApprovedDedications } from '@/lib/events/useDedications'
 import { useActivePoll, toLegacyPoll } from '@/lib/events/usePolls'
-import { useLatestGames, preferRealtime } from '@/lib/events/useGames'
+import { useLatestGames } from '@/lib/events/useGames'
 import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
 import { WeddingPhotoDisplay } from '@/components/wedding/WeddingPhotoGridWall'
@@ -81,15 +80,10 @@ export default function ScreenModePage() {
   const winnerUrls = useWinnerUrls((liveEvent?.screenConfig as Record<string, unknown> | null | undefined)?.winner_announcement)
   const screenExtras = useMemo(() => ({ photos: rtPhotos, winnerUrls }), [rtPhotos, winnerUrls])
   const fsScreen = useFirestoreScreen(liveEvent, rtPoll, rtGames, rtDedications, slug, screenExtras)
-  const { data: legacyData, error: legacyError } = useSWR(
-    slug && fsScreen.decided && !fsScreen.payload ? ['screen', slug] : null,
-    () => liveScreen.get(slug!),
-    { refreshInterval: 1_500 },
-  )
-  const data = fsScreen.payload ?? legacyData
-  const error = fsScreen.payload ? undefined : legacyError
-  const rouletteRound = preferRealtime(rtGames?.roulette, data?.roulette)
-  const shoeRound = preferRealtime(rtGames?.shoeGame, data?.shoe_game)
+  const data = fsScreen.payload
+  const error = fsScreen.decided && !fsScreen.payload ? new Error('screen_unavailable') : undefined
+  const rouletteRound = rtGames?.roulette ?? data?.roulette ?? null
+  const shoeRound = rtGames?.shoeGame ?? data?.shoe_game ?? null
 
   const [showRouletteWheel, setShowRouletteWheel] = useState(false)
   const [wheelPenitenze, setWheelPenitenze] = useState<any[]>([])

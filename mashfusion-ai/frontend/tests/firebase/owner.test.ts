@@ -247,15 +247,13 @@ test('E2. updateEventConfig: unauthorized and invalid payloads are refused', asy
 })
 
 // ── client service (flag + legacy shapes + id registry) ───────────────────────
-test('F. ownerOps: flag off → null (legacy); on → Firestore lists in the legacy shapes, actions via callables, unknown ids fall back', async () => {
+test('F. ownerOps: Firestore lists in the legacy shapes, actions via callables, unknown ids resolve to null/false', async () => {
   const { ownerOps, ownerOpsEnabled } = await import('../../lib/events/ownerService')
   const cred = await createUserWithEmailAndPassword(getFirebaseAuth(), `svc${Date.now()}@example.com`, 'password123')
   const uid = cred.user.uid, legacy = `legacy-svc-${Date.now()}`
   const e = await seedEvent(uid, { legacySupabaseId: legacy })
   const g = await mk('anonymous'); const rid = await seedRequest(e.id, g.uid); const did = await seedDedication(e.id)
 
-  delete process.env.NEXT_PUBLIC_FIRESTORE_OWNER_OPS
-  assert.equal(ownerOpsEnabled(), false); assert.equal(await ownerOps.requests.list(legacy), null)
   process.env.NEXT_PUBLIC_FIRESTORE_OWNER_OPS = 'on'
   assert.equal(ownerOpsEnabled(), true)
 

@@ -81,8 +81,7 @@ export default function PrivacyPage() {
           <Section title="4. Sub-processors">
             <p>We share data only with vendors strictly required to operate the service:</p>
             <ul>
-              <li><strong>Supabase</strong> — database, authentication, and storage (EU region).</li>
-              <li><strong>Render</strong> — backend and API hosting.</li>
+              <li><strong>Google Firebase</strong> — database, authentication, file storage, and backend functions (EU region, europe-west1).</li>
               <li><strong>Vercel</strong> — frontend hosting.</li>
               <li><strong>Stripe</strong> — payment processing. Stripe&apos;s privacy policy applies to card data.</li>
             </ul>

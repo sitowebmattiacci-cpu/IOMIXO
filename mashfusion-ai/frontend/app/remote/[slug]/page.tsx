@@ -8,7 +8,10 @@ import {
   Footprints, Wifi, Users,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import type { LiveRequestStatus } from '@/lib/api'
+import { live, liveDedications, liveGames, livePhotos, type LiveRequestStatus } from '@/lib/api'
+import { eventIdForSlug } from '@/lib/events/photoService'
+import { resolveOwnerEvent } from '@/lib/events/ownerService'
+import { AuthGate } from '@/lib/auth/AuthProvider'
 import {
   WeddingShell, WeddingCard, WeddingButton, WeddingBadge,
 } from '@/components/wedding/WeddingUI'
@@ -17,9 +20,7 @@ import { useLiveEvent } from '@/lib/events/useLiveEvent'
 import { useLatestGames, preferRealtime } from '@/lib/events/useGames'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
-// ── Public API client (no auth) ────────────────────────────────
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-
+// ── DJ remote on Firebase: the DJ signs in on the phone, every action is an owner operation (same as the dashboard) ──
 interface PublicSessionData {
   session: {
     id: string
@@ -31,92 +32,75 @@ interface PublicSessionData {
     is_active: boolean
     session_type: string
   }
-  profile: any
-  events: any[]
-  plan: string
-  features: any
 }
 
-async function publicFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-  })
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(body?.error ?? `HTTP ${res.status}`)
-  }
-  const json = await res.json()
-  return json.data
+/** slug → event id, only when the signed-in account owns the event. */
+async function ownedEventId(slug: string): Promise<string> {
+  const id = await eventIdForSlug(slug)
+  const ev = id ? await resolveOwnerEvent(id) : null
+  if (!ev) throw new Error('Sessione non trovata')
+  return ev.id
 }
 
 const remoteApi = {
   async getSessionBySlug(slug: string): Promise<PublicSessionData> {
-    return publicFetch<PublicSessionData>(`/api/live/public/${slug}`)
+    return { session: (await live.getSession(await ownedEventId(slug))) as unknown as PublicSessionData['session'] }
   },
   async listRequests(slug: string) {
-    return publicFetch<any[]>(`/api/live/public/${slug}/requests`)
+    return live.listRequests(await ownedEventId(slug))
   },
-  async updateRequest(slug: string, requestId: string, status: LiveRequestStatus) {
-    return publicFetch<any>(`/api/live/public/${slug}/requests/${requestId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    })
+  async updateRequest(_slug: string, requestId: string, status: LiveRequestStatus) {
+    return live.updateRequest(requestId, status)
   },
   async listDedications(slug: string) {
-    return publicFetch<any[]>(`/api/live/public/${slug}/dedications`)
+    return liveDedications.listForDj(await ownedEventId(slug))
   },
-  async updateDedication(slug: string, dedicationId: string, status: 'approved' | 'rejected') {
-    return publicFetch<any>(`/api/live/public/${slug}/dedications/${dedicationId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    })
+  async updateDedication(_slug: string, dedicationId: string, status: 'approved' | 'rejected') {
+    return liveDedications.setStatus(dedicationId, status)
   },
   async listPhotos(slug: string) {
-    return publicFetch<any[]>(`/api/live/public/${slug}/photos`)
+    return livePhotos.listForDj(await ownedEventId(slug))
   },
-  async updatePhoto(slug: string, photoId: string, status: 'approved' | 'rejected') {
-    return publicFetch<any>(`/api/live/public/${slug}/photos/${photoId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    })
+  async updatePhoto(_slug: string, photoId: string, status: 'approved' | 'rejected') {
+    return livePhotos.setStatus(photoId, status)
   },
   async startRoulette(slug: string, categories: string[]) {
-    return publicFetch<any>(`/api/live/public/${slug}/games/roulette/start`, {
-      method: 'POST',
-      body: JSON.stringify({ categories }),
-    })
+    return liveGames.startRoulette(await ownedEventId(slug), categories)
   },
   async spinRoulette(slug: string) {
-    return publicFetch<any>(`/api/live/public/${slug}/games/roulette/spin`, { method: 'POST' })
+    return liveGames.spinRoulette(await ownedEventId(slug))
   },
   async resetRoulette(slug: string) {
-    return publicFetch<any>(`/api/live/public/${slug}/games/roulette/reset`, { method: 'POST' })
+    return liveGames.resetRoulette(await ownedEventId(slug))
   },
   async getShoeState(slug: string) {
-    return publicFetch<any>(`/api/live/public/${slug}/games/shoe`)
+    return liveGames.getShoeState(await ownedEventId(slug))
   },
   async startShoe(slug: string) {
-    return publicFetch<any>(`/api/live/public/${slug}/games/shoe/start`, { method: 'POST' })
+    return liveGames.startShoe(await ownedEventId(slug))
   },
   async nextShoe(slug: string) {
-    return publicFetch<any>(`/api/live/public/${slug}/games/shoe/next`, { method: 'POST' })
+    return liveGames.nextShoe(await ownedEventId(slug))
   },
   async resetShoe(slug: string) {
-    return publicFetch<any>(`/api/live/public/${slug}/games/shoe/reset`, { method: 'POST' })
+    return liveGames.resetShoe(await ownedEventId(slug))
   },
   async getStandUpGuess(slug: string) {
-    return publicFetch<any | null>(`/api/live/public/${slug}/games/stand-up-guess`)
+    return (await live.getSession(await ownedEventId(slug))).screen_config?.stand_up_guess ?? null
   },
   async updateStandUpGuess(slug: string, stand_up_guess: any) {
-    return publicFetch<any | null>(`/api/live/public/${slug}/games/stand-up-guess`, {
-      method: 'PATCH',
-      body: JSON.stringify({ stand_up_guess }),
-    })
+    const id = await ownedEventId(slug)
+    const cur = (await live.getSession(id)).screen_config ?? {}
+    await live.updateSession(id, { screen_config: { ...cur, stand_up_guess } })
+    return stand_up_guess
   },
 }
 
 export default function RemoteControlPage() {
+  return <AuthGate><RemoteControl /></AuthGate>
+}
+
+function RemoteControl() {
   const { slug } = useParams<{ slug: string }>()
   const { t } = useI18n()
   const [tab, setTab] = useState<'games' | 'requests' | 'dedications' | 'photos'>('games')

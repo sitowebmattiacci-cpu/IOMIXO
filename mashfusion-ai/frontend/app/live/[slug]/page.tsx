@@ -4,34 +4,23 @@ import { useParams } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { Music2, Send, Instagram, Facebook, Globe, MapPin, CalendarDays, Lock, AlertTriangle, Check, X, Clock, Heart, Sparkles, Image as ImageIcon, Camera, Gamepad2, BarChart3, ChevronLeft } from 'lucide-react'
-import { publicLive, liveDedications, liveGames, livePolls, livePhotos, type LiveRequestStatus, type LiveDedication, type LivePoll, type LivePhoto, type LiveGameRound } from '@/lib/api'
+import { liveDedications, livePolls, livePhotos, type LiveRequestStatus, type LiveDedication, type LivePoll, type LivePhoto, type LiveGameRound } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { useLiveEvent } from '@/lib/events/useLiveEvent'
 import { useGuestRequests } from '@/lib/events/useRequests'
-import { sendMusicRequest, RequestError } from '@/lib/events/requestService'
+import { sendMusicRequest } from '@/lib/events/requestService'
 import { fetchPublicLive } from '@/lib/events/publicEventService'
-import { sendDedication, DedicationError } from '@/lib/events/dedicationService'
+import { sendDedication } from '@/lib/events/dedicationService'
 import { useApprovedDedications } from '@/lib/events/useDedications'
 import { useActivePoll, toLegacyPoll } from '@/lib/events/usePolls'
-import { useLatestGames, preferRealtime } from '@/lib/events/useGames'
-import { votePoll, VoteError } from '@/lib/events/pollService'
+import { useLatestGames } from '@/lib/events/useGames'
+import { votePoll } from '@/lib/events/pollService'
 import { eventToPublicSession } from '@/lib/events/eventService'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import {
   WeddingShell, WeddingCard, WeddingButton, WeddingSection, WeddingBadge,
   WeddingDivider, WeddingInput, WeddingTextarea,
 } from '@/components/wedding/WeddingUI'
-
-const STORAGE_PREFIX = 'iomixo.publicReq.'
-
-function loadIds(slug: string): string[] {
-  if (typeof window === 'undefined') return []
-  try { return JSON.parse(localStorage.getItem(STORAGE_PREFIX + slug) || '[]') } catch { return [] }
-}
-function saveIds(slug: string, ids: string[]) {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(STORAGE_PREFIX + slug, JSON.stringify(ids.slice(-10)))
-}
 
 const STATUS_STYLE: Record<LiveRequestStatus, string> = {
   pending:  'bg-amber-500/15 text-amber-300 border-amber-500/30',
@@ -59,34 +48,14 @@ export default function PublicLivePage() {
     ? { ...payload, session: { ...payload.session, ...eventToPublicSession(liveEvent) } }
     : payload
 
-  const [myIds, setMyIds] = useState<string[]>([])
-  useEffect(() => { if (slug) setMyIds(loadIds(slug)) }, [slug])
-
-  useEffect(() => {
-    if (!slug) return
-    publicLive.heartbeat(slug)
-    const id = setInterval(() => publicLive.heartbeat(slug), 10_000)
-    return () => clearInterval(id)
-  }, [slug])
-
-  // Realtime "my requests" (Firestore, filtered by the guest's anonymous uid). Requests sent
-  // through the legacy endpoint (localStorage ids, e.g. fallback path) are still polled and merged;
-  // when the guest has none, no polling happens at all.
+  // Realtime "my requests" (Firestore, filtered by the guest's anonymous uid).
   const realtimeRequests = useGuestRequests(liveEvent?.id)
-  const { data: legacyRequests } = useSWR(
-    slug && myIds.length > 0 ? ['my-requests', slug, myIds.join(',')] : null,
-    () => publicLive.myRequests(slug!, myIds),
-    { refreshInterval: 10_000 },
-  )
   const myRequests = realtimeRequests
-    ? [
-        ...realtimeRequests.map((r) => ({
-          id: r.id, track_title: r.songTitle, artist: r.artist,
-          status: r.status, created_at: (r.createdAt ?? new Date()).toISOString(),
-        })),
-        ...(legacyRequests ?? []),
-      ].sort((a, b) => b.created_at.localeCompare(a.created_at))
-    : legacyRequests
+    ? realtimeRequests.map((r) => ({
+        id: r.id, track_title: r.songTitle, artist: r.artist,
+        status: r.status, created_at: (r.createdAt ?? new Date()).toISOString(),
+      })).sort((a, b) => b.created_at.localeCompare(a.created_at))
+    : undefined
 
   const [form, setForm] = useState({ track_title: '', artist: '', message: '' })
   const [sending, setSending] = useState(false)
@@ -102,22 +71,8 @@ export default function PublicLivePage() {
         artist: form.artist.trim() || undefined,
         message: form.message.trim() || undefined,
       }
-      // Firestore path (Cloud Function) when the event is available there; the legacy Express
-      // endpoint remains the fallback for any infrastructure failure or unprojected event.
-      let created: { id: string } | null = null
-      if (liveEvent) {
-        try {
-          const r = await sendMusicRequest({ eventId: liveEvent.id, songTitle: payload.track_title, artist: payload.artist, message: payload.message })
-          created = { id: r.requestId }
-        } catch (e) {
-          if (!(e instanceof RequestError) || !e.fallbackToLegacy) throw e
-        }
-      }
-      if (!created) {
-        const legacy = await publicLive.submitRequest(slug!, payload)
-        const newIds = [...myIds.filter((i) => i !== legacy.id), legacy.id]
-        saveIds(slug!, newIds); setMyIds(newIds)
-      }
+      if (!liveEvent) throw new Error(t('live.notFound'))
+      await sendMusicRequest({ eventId: liveEvent.id, songTitle: payload.track_title, artist: payload.artist, message: payload.message })
       toast.success(t('live.requestSent'))
       setForm({ track_title: '', artist: '', message: '' })
       await mutate(['public-live', slug])
@@ -826,10 +781,8 @@ function LocalCard({ title, icon, children }: { title: string; icon: React.React
 
 function ShoeGamePublic({ slug, eventId }: { slug: string; eventId?: string }) {
   const { t } = useI18n()
-  // Realtime from Firestore once a projected round exists; otherwise (flag off / not projected) the legacy polling.
   const rt = useLatestGames(eventId)?.shoeGame ?? null
-  const { data } = useSWR(['public-shoe', slug], () => liveGames.publicLatest(slug), { refreshInterval: rt ? 0 : 4_000 })
-  const r: LiveGameRound | null = preferRealtime(rt, data?.shoeGame)
+  const r: LiveGameRound | null = rt
   if (!r || r.status !== 'running' || !r.config?.is_active) return null
   const questions = r.config.questions ?? []
   const idx = r.config.current_index ?? 0
@@ -847,38 +800,25 @@ function ShoeGamePublic({ slug, eventId }: { slug: string; eventId?: string }) {
   )
 }
 
-/**
- * Casts a vote: Cloud Function first when the poll comes from Firestore, legacy endpoint as fallback
- * (infrastructure errors / event_not_ready). `legacyId` is the Supabase poll id.
- */
-async function castVote(opts: { slug: string; eventId?: string; realtime: boolean; pollId: string; legacyId?: string; index: number }) {
-  if (opts.realtime && opts.eventId) {
-    try { await votePoll({ eventId: opts.eventId, pollId: opts.pollId, optionIndex: opts.index }); return 'realtime' as const }
-    catch (e) { if (!(e instanceof VoteError) || !e.fallbackToLegacy) throw e }
-  }
-  await livePolls.publicVote(opts.slug, opts.legacyId ?? opts.pollId, opts.index)
-  return 'legacy' as const
+/** Casts a vote through the votePoll Cloud Function. */
+async function castVote(opts: { eventId?: string; pollId: string; index: number }) {
+  if (!opts.eventId) throw new Error('Sessione non trovata')
+  await votePoll({ eventId: opts.eventId, pollId: opts.pollId, optionIndex: opts.index })
 }
 
-function PollPublic({ slug, eventId }: { slug: string; eventId?: string }) {
+function PollPublic({ slug: _slug, eventId }: { slug: string; eventId?: string }) {
   const { t } = useI18n()
-  // Realtime (Firestore): open poll + live tally + my vote. While available the 5s polling is off.
+  // Realtime (Firestore): open poll + live tally + my vote.
   const rt = useActivePoll(eventId)
-  const { data: legacyPoll, mutate: refresh } = useSWR<LivePoll | null>(
-    rt !== undefined ? null : ['public-poll', slug],
-    () => livePolls.publicActive(slug),
-    { refreshInterval: 5_000 },
-  )
-  const poll: (LivePoll & { legacy_id?: string }) | null | undefined = rt !== undefined ? (rt ? toLegacyPoll(rt) : null) : legacyPoll
+  const poll: LivePoll | null | undefined = rt ? toLegacyPoll(rt) : rt
   const [votedLocal, setVoted] = useState<number | null>(null)
   const voted = rt?.myVote ?? votedLocal
   if (!poll) return null
   const vote = async (i: number) => {
     try {
-      const via = await castVote({ slug, eventId, realtime: rt !== undefined, pollId: poll.id, legacyId: poll.legacy_id, index: i })
+      await castVote({ eventId, pollId: poll.id, index: i })
       setVoted(i)
       toast.success(t('wedding.polls.voted'))
-      if (via === 'legacy' || rt === undefined) refresh()
     } catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric')) }
   }
   const total = (poll.tally ?? []).reduce((a, b) => a + b, 0) || 0
@@ -910,18 +850,13 @@ function PollPublic({ slug, eventId }: { slug: string; eventId?: string }) {
   )
 }
 
-function DedicationsPublic({ slug, eventId }: { slug: string; eventId?: string }) {
+function DedicationsPublic({ slug: _slug, eventId }: { slug: string; eventId?: string }) {
   const { t } = useI18n()
-  // Realtime wall (Firestore, approved only). While it is available the 8s polling is off;
-  // otherwise (Firebase off / event not projected / listener error) the legacy polling is unchanged.
+  // Realtime wall (Firestore, approved only).
   const realtime = useApprovedDedications(eventId)
-  const { data: legacy, mutate: refresh } = useSWR<LiveDedication[]>(
-    realtime ? null : ['public-dedications', slug], () => liveDedications.listApproved(slug),
-    { refreshInterval: 8_000 },
-  )
   const data: LiveDedication[] | undefined = realtime
     ? realtime.map((d) => ({ id: d.id, guest_name: d.senderName, message: d.message, created_at: (d.createdAt ?? new Date()).toISOString(), status: 'approved' } as LiveDedication))
-    : legacy
+    : undefined
   const [form, setForm] = useState({ guest_name: '', message: '' })
   const [sending, setSending] = useState(false)
   const send = async (e: React.FormEvent) => {
@@ -929,21 +864,10 @@ function DedicationsPublic({ slug, eventId }: { slug: string; eventId?: string }
     if (!form.message.trim()) return
     setSending(true)
     try {
-      // Cloud Function first when the event is on Firestore; the legacy endpoint stays the fallback
-      // for infrastructure errors / unprojected events. Business errors are shown, never retried.
-      let sent = false
-      if (eventId) {
-        try {
-          await sendDedication({ eventId, senderName: form.guest_name.trim() || undefined, message: form.message })
-          sent = true
-        } catch (err) {
-          if (!(err instanceof DedicationError) || !err.fallbackToLegacy) throw err
-        }
-      }
-      if (!sent) await liveDedications.submit(slug, { guest_name: form.guest_name || undefined, message: form.message })
+      if (!eventId) throw new Error(t('live.notFound'))
+      await sendDedication({ eventId, senderName: form.guest_name.trim() || undefined, message: form.message })
       toast.success(t('wedding.dedications.submitted'))
       setForm({ guest_name: '', message: '' })
-      if (!realtime) refresh()
     } catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric')) }
     finally { setSending(false) }
   }
@@ -1091,12 +1015,11 @@ function PartyBoothCTA({ slug }: { slug: string }) {
   )
 }
 
-function PartyMusicBattle({ slug, eventId }: { slug: string; eventId?: string }) {
+function PartyMusicBattle({ slug: _slug, eventId }: { slug: string; eventId?: string }) {
   const { t } = useI18n()
-  // Realtime (Firestore) when available; otherwise the legacy 5s polling, unchanged.
+  // Realtime (Firestore).
   const rt = useActivePoll(eventId)
-  const { data } = useSWR(rt !== undefined ? null : ['public-poll', slug], () => livePolls.publicActive(slug), { refreshInterval: 5_000 })
-  const poll = (rt !== undefined ? (rt ? toLegacyPoll(rt) : null) : ((data as any) ?? null)) as (LivePoll & { legacy_id?: string }) | null
+  const poll = (rt ? toLegacyPoll(rt) : null) as LivePoll | null
   const [votedLocal, setVoted] = useState<number | null>(null)
   const voted = rt?.myVote ?? votedLocal
   const [voting, setVoting] = useState(false)
@@ -1116,11 +1039,9 @@ function PartyMusicBattle({ slug, eventId }: { slug: string; eventId?: string })
     if (voting || voted === idx) return
     setVoting(true)
     try {
-      // Same path as the wedding poll: Cloud Function when the poll is in Firestore, legacy endpoint only as the fallback.
-      await castVote({ slug, eventId, realtime: rt !== undefined, pollId: poll.id, legacyId: poll.legacy_id, index: idx })
+      await castVote({ eventId, pollId: poll.id, index: idx })
       localStorage.setItem(`iomixo.partyPollVote.${poll.id}`, String(idx))
       setVoted(idx)
-      await mutate(['public-poll', slug])
     } catch (e: any) {
       toast.error(e?.message ?? t('live.errorVote'))
     } finally { setVoting(false) }
@@ -1177,11 +1098,9 @@ function PartyMusicBattle({ slug, eventId }: { slug: string; eventId?: string })
   )
 }
 
-function PartyRouletteResult({ slug, eventId }: { slug: string; eventId?: string }) {
+function PartyRouletteResult({ slug: _slug, eventId }: { slug: string; eventId?: string }) {
   const { t } = useI18n()
-  const rt = useLatestGames(eventId)?.roulette ?? null
-  const { data } = useSWR(['public-roulette', slug], () => liveGames.publicLatest(slug), { refreshInterval: rt ? 0 : 5_000 })
-  const r: LiveGameRound | null = preferRealtime(rt, data?.roulette)
+  const r: LiveGameRound | null = useLatestGames(eventId)?.roulette ?? null
   if (!r || r.status !== 'completed' || !r.result?.slot_label) return null
   return (
     <div className="rounded-2xl p-6 bg-gradient-to-br from-[#FF3D8A]/30 via-[#8B0E2F]/40 to-black/60 border border-[#FF3D8A]/40 text-center shadow-[0_10px_40px_rgba(255,61,138,0.25)]">

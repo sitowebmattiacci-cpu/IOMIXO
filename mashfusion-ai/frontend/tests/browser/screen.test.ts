@@ -43,35 +43,22 @@ test('S1. screen/[slug] renders entirely from Firestore (event, approved dedicat
   assert.deepEqual(errors, [])
 })
 
-test('S2. explicit legacy fallback: show_photos, winner announcement, missing config, Free plan → the page uses the legacy payload (no crash, no blank)', async () => {
-  render.routes.set('GET /api/live/public/*', (c) => (c.path.endsWith('/screen') ? legacyScreen(`LEGACY ${c.path.split('/').at(-2)}`) : null))
-  const cases: Array<[string, Record<string, unknown>, string?]> = [
+test('S2. missing / null config, no photos yet, no game round: the TV renders (empty) with no crash and no Render call', async () => {
+  const cases: Array<[string, Record<string, unknown>]> = [
     ['photos', { screenConfig: { show_dedications: true, show_photos: true } }],
-    ['winner', { screenConfig: { show_dedications: true, winner_announcement: { enabled: true, groom_photo_path: 'x/g.jpg' } } }],
     ['no config', {}],
     ['null config', { screenConfig: null }],
-    ['free plan', { screenConfig: { show_dedications: true } }, 'free'],
+    ['roulette without round', { screenConfig: { show_dedications: true, show_roulette: true } }],
   ]
-  for (const [label, over, tier] of cases) {
-    const e = await seedScreenEvent(over, tier)
+  for (const [label, over] of cases) {
+    const e = await seedScreenEvent(over)
     render.calls.length = 0
     const page = await (await browser.newContext()).newPage(); const errors: string[] = []; page.on('pageerror', (x) => errors.push(x.message))
     await page.goto(`${app.url}/screen/${e.slug}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
-    await page.getByText('Messaggio dal percorso legacy').first().waitFor({ timeout: 40_000 })
-    assert.ok(screenCalls().length >= 1, `${label}: the legacy /screen endpoint must be used`)
+    await page.waitForTimeout(6000)
+    assert.equal(await page.getByText('Sessione non trovata').count(), 0, label)
+    assert.equal(screenCalls().length, 0, label)
     assert.deepEqual(errors, [], label)
     await page.context().close()
   }
-  render.routes.clear()
-})
-
-test('S3. historical roulette/shoe data lives in Supabase: if the screen shows games but Firestore has no round → legacy', async () => {
-  render.routes.set('GET /api/live/public/*', (c) => (c.path.endsWith('/screen') ? legacyScreen('LEGACY games') : null))
-  const e = await seedScreenEvent({ screenConfig: { show_dedications: true, show_roulette: true } })
-  render.calls.length = 0
-  const page = await (await browser.newContext()).newPage()
-  await page.goto(`${app.url}/screen/${e.slug}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
-  await page.getByText('Messaggio dal percorso legacy').first().waitFor({ timeout: 40_000 })
-  assert.ok(screenCalls().length >= 1)
-  render.routes.clear()
 })

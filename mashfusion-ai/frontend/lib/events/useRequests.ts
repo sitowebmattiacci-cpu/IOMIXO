@@ -4,7 +4,7 @@ import { getFirebaseDb } from '../firebase/client'
 import { onAuthChange } from '../firebase/auth'
 import { authProvider } from '../auth'
 import { subscribeGuestRequests, subscribeEventRequests } from '../firebase/repositories/requestRepository'
-import { getOwnerEventByLegacyId } from '../firebase/repositories/eventRepository'
+import { resolveOwnerEvent } from './ownerService'
 import type { RequestDoc } from '../firebase/models'
 
 /**
@@ -54,7 +54,7 @@ export function useEventChildSignal(sessionId: string | undefined, subscribe: Si
       if (!user || user.isAnonymous) return
       try {
         const db = getFirebaseDb()
-        const ev = await getOwnerEventByLegacyId(db, user.uid, sessionId)
+        const ev = await resolveOwnerEvent(sessionId)
         if (!ev || cancelled) return
         unsubscribe = subscribe(
           db, ev.id,

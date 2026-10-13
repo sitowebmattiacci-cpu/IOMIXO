@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 
 /**
- * This page is shown after register when Supabase sends the confirmation email.
- * Actual verification happens automatically via /auth/callback when the user clicks the link.
+ * This page is shown after register when Firebase sends the verification email.
+ * Verification is completed by /auth/action when the user clicks the link.
  */
 export default function VerifyEmailPage() {
   return (

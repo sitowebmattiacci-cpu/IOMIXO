@@ -112,6 +112,25 @@ service cloud.firestore {
         && validDjProfile(request.resource.data);
 
       allow delete: if false;
+
+      // DJ upcoming dates ("Eventi" page). Owner CRUD; guests only see the public ones through getPublicEvent.
+      function validDjDate(d) {
+        return d.keys().hasOnly(['title', 'eventDate', 'venueName', 'city', 'ticketUrl', 'isPublic', 'createdAt', 'updatedAt'])
+          && d.title is string && d.title.size() > 0 && d.title.size() <= 120
+          && (d.eventDate == null || (d.eventDate is string && d.eventDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')))
+          && optStr(d, 'venueName', 120)
+          && optStr(d, 'city', 120)
+          && optUrl(d, 'ticketUrl', 300)
+          && d.isPublic is bool
+          && d.updatedAt == request.time;
+      }
+      match /dates/{dateId} {
+        allow get, list: if isOwner(uid);
+        allow create: if isOwner(uid) && validDjDate(request.resource.data) && request.resource.data.createdAt == request.time;
+        allow update: if isOwner(uid) && validDjDate(request.resource.data)
+          && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isOwner(uid);
+      }
     }
 
     // ── events/{eventId}: public event data (projected from the backend) ────────

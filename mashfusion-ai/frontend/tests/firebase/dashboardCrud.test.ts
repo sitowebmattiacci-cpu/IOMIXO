@@ -88,8 +88,8 @@ test('C1. the whole owner cycle runs with Render at 503 and never calls it', asy
   assert.deepEqual(calls, [], 'delete did not touch Render either')
 })
 
-test('C2. dashboard switch OFF-equivalent: events that are not in Firestore still fall back to the legacy route', async () => {
+test('C2. a session that is not an event of this owner is an error, never a legacy call', async () => {
   calls.length = 0
-  await assert.rejects(api.live.getSession('legacy-only-session'), /render suspended|503/)        // not an event of this owner → legacy GET (503 here)
-  assert.equal(calls.filter((c) => c.method === 'GET' && c.url.endsWith('/api/live/sessions/legacy-only-session')).length, 1)
+  await assert.rejects(api.live.getSession('legacy-only-session'), /Sessione non trovata/)
+  assert.deepEqual(calls, [])
 })

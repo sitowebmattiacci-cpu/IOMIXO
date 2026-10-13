@@ -6,19 +6,15 @@ import type { ScreenPayload, LiveDedication, LivePhoto } from '../api'
 import type { WinnerUrls } from './usePhotos'
 
 /**
- * Pure model of the TV screen read path from Firestore (no React, no I/O) so every fallback rule is unit-tested.
+ * Pure model of the TV screen read path from Firestore (no React, no I/O) so every rule is unit-tested.
  *
- * The Firestore screen is used ONLY when it can show EXACTLY what the legacy payload would. Otherwise `legacyReason` says why and the page keeps
- * the legacy 1.5 s polling. Reasons (all explicit, never a crash):
- *   no_event / not_screen_type   the event is not in Firestore, or is a standard session (legacy answers 400 for those)
- *   no_config                    `screenConfig` missing / null / not an object → never migrated; legacy knows the toggles
- *   screen_not_allowed           plan does not allow screen mode (legacy answers 402) or the gate could not be checked
- *   photos                       show_photos=true on a LEGACY-backed event whose photos were not migrated yet (`photosMigratedAt` missing): the legacy
- *                                payload holds photos Firestore does not know. Native events and migrated ones serve photos from Firestore + Storage.
- *   winner                       the winner announcement still points at LEGACY Storage paths (not `events/…`): only the legacy signed URLs show them
- *   games_pending                roulette/shoe is shown but Firestore has no round for it (games are not backfilled: legacy holds the history)
+ * `legacyReason` (name kept) says why the TV cannot be shown:
+ *   no_event / not_screen_type   the event does not exist, or is a standard session
+ *   screen_not_allowed           plan does not allow screen mode (or the gate could not be checked)
+ *   pending                      realtime data (photos / winner URLs / games) is still loading
+ * A missing config is an empty screen; legacy (non `events/`) winner paths are ignored: Firebase is the only data source.
  */
-export type LegacyReason = 'no_event' | 'not_screen_type' | 'no_config' | 'screen_not_allowed' | 'photos' | 'winner' | 'games_pending'
+export type LegacyReason = 'no_event' | 'not_screen_type' | 'screen_not_allowed'
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 
@@ -26,8 +22,6 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
 export interface ScreenExtras { photos?: LivePhoto[]; winnerUrls?: WinnerUrls | null }
 
 const firebasePath = (v: unknown) => typeof v === 'string' && v.startsWith('events/')
-const hasLegacyWinnerPath = (w: Record<string, unknown>) =>
-  [w.groom_photo_path, w.bride_photo_path].some((p) => typeof p === 'string' && p.length > 0 && !firebasePath(p))
 const hasFirebaseWinnerPath = (w: Record<string, unknown>) => firebasePath(w.groom_photo_path) || firebasePath(w.bride_photo_path)
 
 export function screenEligibility(
@@ -35,21 +29,13 @@ export function screenEligibility(
 ): { ok: true; config: Record<string, unknown> } | { ok: false; legacyReason: LegacyReason | 'pending' } {
   if (!event) return { ok: false, legacyReason: 'no_event' }
   if (event.type !== 'party' && event.type !== 'wedding') return { ok: false, legacyReason: 'not_screen_type' }
-  const cfg = event.screenConfig
-  if (!isObject(cfg)) return { ok: false, legacyReason: 'no_config' }
+  const cfg = isObject(event.screenConfig) ? event.screenConfig : {}
   if (screenAllowed === null) return { ok: false, legacyReason: 'pending' }
   if (screenAllowed === false) return { ok: false, legacyReason: 'screen_not_allowed' }
-  if (cfg.show_photos === true) {
-    if (event.legacySupabaseId && !event.photosMigratedAt) return { ok: false, legacyReason: 'photos' }
-    if (extras.photos === undefined) return { ok: false, legacyReason: 'pending' }                       // realtime list not ready (or failed → grace timeout → legacy)
-  }
+  if (cfg.show_photos === true && extras.photos === undefined) return { ok: false, legacyReason: 'pending' }
   const w = cfg.winner_announcement
-  if (isObject(w)) {
-    if (hasLegacyWinnerPath(w)) return { ok: false, legacyReason: 'winner' }
-    if (hasFirebaseWinnerPath(w) && extras.winnerUrls === undefined) return { ok: false, legacyReason: 'pending' }
-  } else if (w !== null && w !== undefined && w !== false) return { ok: false, legacyReason: 'winner' }  // unknown shape: let the legacy payload decide
+  if (isObject(w) && hasFirebaseWinnerPath(w) && extras.winnerUrls === undefined) return { ok: false, legacyReason: 'pending' }
   if ((cfg.show_roulette === true || cfg.show_shoe_game === true) && games === undefined) return { ok: false, legacyReason: 'pending' }
-  if ((cfg.show_roulette === true && !games?.roulette) || (cfg.show_shoe_game === true && !games?.shoeGame)) return { ok: false, legacyReason: 'games_pending' }
   return { ok: true, config: cfg }
 }
 

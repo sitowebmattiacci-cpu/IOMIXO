@@ -3,12 +3,10 @@ import { getFirebaseFunctions } from '../firebase/client'
 import { ensureAnonymousSession } from '../firebase/auth'
 import { authProvider } from '../auth'
 import { publicReadFlag } from './flags'
-import { publicLive, type PublicLivePayload } from '../api'
+import type { PublicLivePayload } from '../api'
 
 /**
- * Public event lookup by slug (guest page). With NEXT_PUBLIC_FIRESTORE_PUBLIC_READ=on|true the payload comes from the getPublicEvent
- * callable (Firestore + entitlements, no Express/Supabase); a definitive "not found" is reported as such, any other failure
- * (network, function unavailable, event not in Firestore yet) falls back to the legacy endpoint. Default off → legacy only.
+ * Public event lookup by slug (guest page): the getPublicEvent callable (Firestore + entitlements).
  */
 export const publicReadEnabled = () => publicReadFlag() && authProvider() === 'firebase'
 
@@ -26,13 +24,7 @@ export async function fetchPublicEvent(slug: string): Promise<PublicEventResult>
 }
 
 export async function fetchPublicLive(slug: string): Promise<PublicLivePayload> {
-  if (!publicReadEnabled()) return publicLive.get(slug)
-  try {
-    const { eventId: _eventId, ...payload } = await fetchPublicEvent(slug)
-    void _eventId
-    return payload
-  } catch {
-    // Not in Firestore yet (event not migrated) or infrastructure failure → the legacy endpoint decides.
-    return publicLive.get(slug)
-  }
+  const { eventId: _eventId, ...payload } = await fetchPublicEvent(slug)
+  void _eventId
+  return payload
 }

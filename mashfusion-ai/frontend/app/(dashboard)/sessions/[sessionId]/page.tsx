@@ -414,22 +414,6 @@ export default function SessionDetailPage() {
           <div className="lg:col-span-1 space-y-4">
             <QRCard slug={session.public_slug} />
             <Card className="p-4 space-y-3">
-              {isFree ? (
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-white/50 inline-flex items-center gap-1.5">
-                    <Users className="h-3.5 w-3.5" /> {t('weddingPanels.peopleOnline')}
-                  </span>
-                  <Link href="/billing" className="text-[11px] text-purple-300">{t('weddingPanels.proOnly')}</Link>
-                </div>
-              ) : (
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-white/50 inline-flex items-center gap-1.5">
-                    <Users className="h-3.5 w-3.5" /> {t('weddingPanels.peopleOnline')}
-                  </span>
-                  <span className="font-bold text-emerald-300">{session.online_count ?? 0}</span>
-                </div>
-              )}
-              <div className="border-t border-white/5" />
               <div className="flex justify-between text-sm"><span className="text-white/50">{t('common.pending')}</span><span className="font-bold text-white">{pending.length}</span></div>
               <div className="flex justify-between text-sm"><span className="text-white/50">{t('common.approved')}</span><span className="font-bold text-emerald-300">{approved.length}</span></div>
               <div className="flex justify-between text-sm"><span className="text-white/50">{t('common.rejected')}</span><span className="font-bold text-white/50">{rejected.length}</span></div>
@@ -2632,9 +2616,8 @@ function PartyDashboard({
         </PartyCard>
 
         {/* STATS */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <div className="grid grid-cols-3 gap-3 mb-5">
           <PartyStat icon={<Music2 className="h-4 w-4" />} label="Richieste" value={(pending.length + approved.length).toString()} pulse={pending.length > 0} />
-          <PartyStatLive sessionId={session.id} />
           <PartyStatPhotos sessionId={session.id} />
           <PartyStatPolls sessionId={session.id} />
         </div>
@@ -2723,11 +2706,6 @@ function PartyStat({ icon, label, value, hint, pulse }: { icon: React.ReactNode;
       {hint && <p className="text-[10px] text-white/40 mt-0.5">{hint}</p>}
     </div>
   )
-}
-
-function PartyStatLive({ sessionId }: { sessionId: string }) {
-  const { data } = useSWR(['session', sessionId], () => live.getSession(sessionId), { refreshInterval: 8_000 })
-  return <PartyStat icon={<Users className="h-4 w-4" />} label="Online" value={String(data?.online_count ?? 0)} />
 }
 
 function PartyStatPhotos({ sessionId }: { sessionId: string }) {

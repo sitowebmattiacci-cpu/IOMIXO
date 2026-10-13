@@ -153,9 +153,11 @@ export function WinnerAnnouncementPanel({ sessionId }: Props) {
     try {
       const compressed = await compressImage(file, { maxWidth: 1400, maxHeight: 1400, quality: 0.85 })
       const { storage_path } = await livePhotos.winnerUploadPhoto(slug, compressed, role)
+      // Fresh state: the other photo may have been saved while this one was uploading.
+      const fresh = normalizeWinnerConfig((await live.getSession(sessionId)).screen_config?.winner_announcement)
       // Salva il path e resetta la fase (il vecchio file viene rimosso dal backend).
       await persist({
-        ...cfg,
+        ...fresh,
         [role === 'groom' ? 'groom_photo_path' : 'bride_photo_path']: storage_path,
         phase: 'hidden',
         run_id: null,

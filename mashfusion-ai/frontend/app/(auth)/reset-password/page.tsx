@@ -4,14 +4,14 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Sparkles, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react'
-import { authProvider, authErrorMessage, legacySupabase } from '@/lib/auth'
+import { authErrorMessage } from '@/lib/auth'
 import { completePasswordReset } from '@/lib/firebase/auth'
 import { Button } from '@/components/ui/Button'
 import toast from 'react-hot-toast'
 
 function ResetPasswordContent() {
   const router = useRouter()
-  // Firebase email links carry ?oobCode=...; the legacy Supabase flow relies on a session set by /auth/callback.
+  // Firebase email links carry ?oobCode=...
   const oobCode = useSearchParams().get('oobCode')
 
   const [password,  setPassword]  = useState('')
@@ -37,13 +37,8 @@ function ResetPasswordContent() {
 
     setLoading(true)
     try {
-      if (authProvider() === 'firebase') {
-        if (!oobCode) throw new Error('This link is invalid or has expired')
-        await completePasswordReset(oobCode, password)
-      } else {
-        // TODO(firebase-migration): legacy — session was set by /auth/callback after the reset link
-        await legacySupabase.updatePassword(password)
-      }
+      if (!oobCode) throw new Error('This link is invalid or has expired')
+      await completePasswordReset(oobCode, password)
       setDone(true)
       setTimeout(() => router.push('/login'), 2500)
     } catch (err: unknown) {
