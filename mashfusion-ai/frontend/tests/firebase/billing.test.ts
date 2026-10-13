@@ -25,7 +25,7 @@ const id = (p: string) => `${p}${Date.now().toString(36)}${n++}`
 
 // ── fake Stripe ──
 function fakeStripe() {
-  const st = { customers: new Map<string, boolean>(), subs: new Map<string, any>(), lineItems: new Map<string, string[]>(), calls: [] as string[], created: [] as any[], portal: [] as any[], cancelled: [] as string[], failRetrieve: false, missingCustomers: new Set<string>() }
+  const st = { invoices: new Map<string, any>(), failInvoice: false, customers: new Map<string, boolean>(), subs: new Map<string, any>(), lineItems: new Map<string, string[]>(), calls: [] as string[], created: [] as any[], portal: [] as any[], cancelled: [] as string[], failRetrieve: false, missingCustomers: new Set<string>() }
   const api = {
     customers: {
       retrieve: async (cid: string) => { st.calls.push('customers.retrieve'); if (st.missingCustomers.has(cid) || !st.customers.has(cid)) throw Object.assign(new Error('No such customer'), { type: 'StripeInvalidRequestError', code: 'resource_missing' }); return { id: cid } },
@@ -36,6 +36,7 @@ function fakeStripe() {
       listLineItems: async (sid: string) => { st.calls.push('listLineItems'); return { data: (st.lineItems.get(sid) ?? []).map((p) => ({ price: { id: p } })) } },
     } },
     billingPortal: { sessions: { create: async (p: any) => { st.portal.push(p); return { url: 'https://billing.stripe.test/p/session' } } } },
+    invoices: { retrieve: async (iid: string) => { st.calls.push('invoices.retrieve'); if (st.failInvoice) throw new Error('stripe is down'); const v = st.invoices.get(iid); if (!v) throw Object.assign(new Error('No such invoice'), { type: 'StripeInvalidRequestError', code: 'resource_missing' }); return v } },
     subscriptions: {
       retrieve: async (sid: string) => { st.calls.push('subscriptions.retrieve'); if (st.failRetrieve) throw new Error('stripe is down'); return st.subs.get(sid) },
       list: async (p: any) => { st.calls.push('subscriptions.list'); return { data: Array.from(st.subs.values()).filter((s) => s.customer === p.customer) } },
@@ -283,6 +284,29 @@ test('W8b. a newer-API subscription event (period on the item, not on the subscr
   fs.st.subs.set(s.id, s); await deliver(fs, evt('customer.subscription.updated', newer))
   const d = (await get(`users/${uid}/subscriptions/${s.id}`))!
   assert.equal(d.currentPeriodEnd.toMillis(), end * 1000); assert.equal(d.currentPeriodStart.toMillis(), sec(NOW) * 1000)
+})
+
+test('W8c. API 2026-04-22.dahlia invoices: subscription/metadata under `parent`, no payment_intent (read through the pinned client); same payment ids as the old shape, one payment, no in_in_', async () => {
+  const fs = fakeStripe(); const { uid } = await mkUser(); const cust = id('cus_'); await seedSet(`stripeCustomers/${cust}`, { uid })
+  const s = sub(cust, P.PRO); fs.st.subs.set(s.id, s); await deliver(fs, evt('customer.subscription.updated', s))
+  const parent = { type: 'subscription_details', subscription_details: { subscription: s.id, metadata: { firebaseUid: uid } } }
+  const inv = { id: id('in_'), customer: cust, parent, amount_paid: 999, amount_due: 999, currency: 'eur' }          // dahlia: no `subscription`, no `payment_intent`
+  const pi = id('pi_'); fs.st.invoices.set(inv.id, { ...inv, payment_intent: pi })
+  await deliver(fs, evt('invoice.paid', inv)); await deliver(fs, evt('invoice.payment_succeeded', inv))
+  assert.equal((await db.collection(`users/${uid}/payments`).get()).size, 1)
+  const pd = (await get(`users/${uid}/payments/${pi}`))!; assert.deepEqual([pd.amountCents, pd.status, pd.stripePaymentIntentId, pd.stripeInvoiceId], [999, 'succeeded', pi, inv.id])
+  const bad = { ...inv, id: id('in_'), amount_paid: 0 }; fs.st.invoices.set(bad.id, { ...bad, payment_intent: id('pi_') })
+  await deliver(fs, evt('invoice.payment_failed', bad, { created: sec(NOW) + 5 }))
+  assert.equal((await get(`users/${uid}/payments/${bad.id}`))!.status, 'failed'); assert.ok((await get(`users/${uid}/subscriptions/${s.id}`))!.lastPaymentFailedAt, 'subscription found through parent.subscription_details')
+  const zero = { id: id('in_'), customer: cust, parent, amount_paid: 0, amount_due: 0, currency: 'eur' }; fs.st.invoices.set(zero.id, { ...zero, payment_intent: null })       // 0 € invoice
+  await deliver(fs, evt('invoice.paid', zero)); assert.ok((await db.doc(`users/${uid}/payments/${zero.id}`).get()).exists)
+  assert.ok(!(await db.collection(`users/${uid}/payments`).get()).docs.some((d) => d.id.startsWith('in_in_')))
+  // owner resolved by the metadata under `parent` alone (customer unknown)
+  const meta = { id: id('in_'), customer: id('cus_'), parent, amount_paid: 0, amount_due: 0, currency: 'eur' }; fs.st.invoices.set(meta.id, { ...meta, payment_intent: null })
+  assert.equal((await deliver(fs, evt('invoice.paid', meta))).status, 200); assert.ok((await db.doc(`users/${uid}/payments/${meta.id}`).get()).exists)
+  // Stripe unreadable while the payment intent is needed → 500 (Stripe retries), nothing written
+  fs.st.failInvoice = true; const late = { ...zero, id: id('in_') }; fs.st.invoices.set(late.id, late)
+  const r = await deliver(fs, evt('invoice.paid', late)); assert.equal(r.status, 500); assert.ok(!(await db.doc(`users/${uid}/payments/${late.id}`).get()).exists)
 })
 
 test('W9. refund revokes the Event Pass (monotonic: never resurrected by a late completed event) and marks the payment; replays are harmless', async () => {

@@ -1,7 +1,7 @@
 import Stripe from 'stripe'
 import { FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore'
 import { logger } from 'firebase-functions/logger'
-import type { StripeApi } from './stripeApi'
+import { isStripeError, type StripeApi } from './stripeApi'
 import { priceInfo, UnknownPriceError, type PriceTable } from './prices'
 import { resolveUid, UnresolvedAccountError } from './accounts'
 import type { PlanTier } from '../entitlements/plans'
@@ -175,17 +175,34 @@ async function createOnce(ref: FirebaseFirestore.DocumentReference, data: Record
   try { await ref.create(data); return true } catch (e) { if ((e as { code?: number }).code === 6) return false; throw e }       // 6 = ALREADY_EXISTS
 }
 
+/** The subscription / payment intent / subscription metadata of an invoice, whichever API version shaped the event.
+ *  Up to 2024-04-10: `subscription`, `payment_intent`, `subscription_details` at the top level.
+ *  Basil and later (incl. 2026-04-22.dahlia): `parent.subscription_details.{subscription,metadata}`, and NO `payment_intent` (it lives behind `invoice.payments`);
+ *  then the invoice is read once through the pinned client (2024-04-10 shape) to get the payment intent. */
+async function invoiceRefs(deps: WebhookDeps, inv: Stripe.Invoice) {
+  const x = inv as unknown as { subscription?: unknown; payment_intent?: unknown; subscription_details?: { metadata?: Record<string, string> | null } | null; parent?: { subscription_details?: { subscription?: unknown; metadata?: Record<string, string> | null } | null } | null }
+  const parentSub = x.parent?.subscription_details
+  const subId = str(x.subscription) ?? str(parentSub?.subscription)
+  const meta = x.subscription_details?.metadata ?? parentSub?.metadata ?? null
+  let pi: string | null
+  if (x.payment_intent !== undefined) pi = str(x.payment_intent)                       // older shape: present (null = no payment intent)
+  else {
+    try { pi = str((await deps.stripe.invoices.retrieve(inv.id!) as unknown as { payment_intent?: unknown }).payment_intent) }
+    catch (e) { if (isStripeError(e) && e.code === 'resource_missing') pi = null; else throw e }       // any other failure → 500, Stripe retries
+  }
+  return { subId, meta, pi }
+}
+
 async function onInvoice(deps: WebhookDeps, event: Stripe.Event, inv: Stripe.Invoice, outcome: 'succeeded' | 'failed') {
   const customerId = str(inv.customer)
-  const uid = await resolveUid(deps.db, { customerId, firebaseUid: inv.subscription_details?.metadata?.firebaseUid, legacyUserId: inv.subscription_details?.metadata?.user_id })
-  const pi = str(inv.payment_intent)
+  const { subId, meta, pi } = await invoiceRefs(deps, inv)
+  const uid = await resolveUid(deps.db, { customerId, firebaseUid: meta?.firebaseUid, legacyUserId: meta?.user_id })
   const id = outcome === 'succeeded' ? (pi ?? invoicePaymentId(inv.id!)) : invoicePaymentId(inv.id!)
   await createOnce(deps.db.doc(`users/${uid}/payments/${id}`), {
     stripePaymentIntentId: pi, stripeInvoiceId: inv.id, stripeCheckoutSessionId: null, amountCents: outcome === 'succeeded' ? inv.amount_paid : inv.amount_due,
     currency: inv.currency, status: outcome, description: 'Subscription payment', kind: 'subscription', historical: false, source: 'stripe', uid,
     createdAt: ts(event.created), updatedAt: ts(event.created),
   })
-  const subId = str(inv.subscription)
   if (outcome === 'failed' && subId) {
     const sref = deps.db.doc(`users/${uid}/subscriptions/${safeId(subId)}`)
     if ((await sref.get()).exists) await sref.update({ lastPaymentFailedAt: ts(event.created) })

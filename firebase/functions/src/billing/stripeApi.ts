@@ -11,6 +11,7 @@ export interface StripeApi {
     listLineItems(id: string, params?: Stripe.Checkout.SessionListLineItemsParams): Promise<{ data: Array<{ price?: { id: string } | null }> }>
   } }
   billingPortal: { sessions: { create(params: Stripe.BillingPortal.SessionCreateParams): Promise<{ url: string }> } }
+  invoices: { retrieve(id: string): Promise<Stripe.Invoice> }
   subscriptions: {
     retrieve(id: string): Promise<Stripe.Subscription>
     list(params: Stripe.SubscriptionListParams): Promise<{ data: Stripe.Subscription[] }>
