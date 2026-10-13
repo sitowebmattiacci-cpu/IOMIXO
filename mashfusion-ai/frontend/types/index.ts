@@ -201,7 +201,7 @@ export interface Payment {
   stripe_payment_intent_id: string
   amount_cents: number
   currency: string
-  status: 'succeeded' | 'pending' | 'failed'
+  status: 'succeeded' | 'pending' | 'failed' | 'refunded'
   description: string
   created_at: string
 }

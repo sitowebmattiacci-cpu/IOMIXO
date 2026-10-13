@@ -427,3 +427,10 @@ plus the `NEXT_PUBLIC_FIREBASE_*` web config. Without them guests have no App Ch
   (owner prefix + kind, size, magic bytes, mints download token, writes `avatarPath`/`avatarUrl`, deletes the replaced file and orphans). `removeAvatar({kind})` clears + deletes.
 - Guests never read `djProfiles`: name/bio/avatar/socials reach them through `getPublicEvent` (unchanged).
 - Frontend: `lib/events/profileService.ts`, behind `NEXT_PUBLIC_FIRESTORE_DASHBOARD`. Backfill: `backend/scripts/backfill-profiles.ts` (+ `scripts/sql/profiles_snapshot.sql`); avatar binaries are only PLANNED (`--plan-binaries`).
+
+## Billing (Stripe on Firebase) — implemented, NOT deployed
+- Callables `createCheckoutSession({priceId, trial?, eventId?})`, `createPortalSession()` and HTTPS `stripeWebhook` (`functions/src/billing/*`). Stripe stays the provider.
+- Prices: server-side table from the deploy env (`STRIPE_PRICE_*`); the client can only pick an allow-listed price. Unknown price in a webhook = explicit failure, never a fallback plan.
+- Webhook: raw body + signature with its OWN secret; idempotent via `stripeEvents/{eventId}`; any handler failure answers non-2xx (Stripe retries). Writes `users/{uid}.plan` (`source:'stripe'`, `validUntil` = period end + 3 d), `subscriptions`, `payments`, `eventPasses` (validUntil = payment time + 24 h).
+- Secrets only in Secret Manager: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`. Frontend switch: `NEXT_PUBLIC_FIREBASE_BILLING`.
+- Rules: owner reads `subscriptions` / `payments` / `eventPasses`; `stripeCustomers` and `stripeEvents` are server-only.

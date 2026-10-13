@@ -2,7 +2,7 @@ import {
   collection, doc, getDoc, getDocs, limit, setDoc, updateDoc, serverTimestamp, Timestamp, query,
   type Firestore, type DocumentData,
 } from 'firebase/firestore'
-import type { UserDoc, UserProfilePatch, PlanTier, EventPassDoc } from '../models'
+import type { UserDoc, UserProfilePatch, PlanTier, EventPassDoc, SubscriptionDoc, PaymentDoc } from '../models'
 
 // Repository: the ONLY place that knows the users/{uid} path and field names.
 // Firestore instance is injected so it can be tested against the emulator.
@@ -63,4 +63,26 @@ export async function listEventPasses(db: Firestore, uid: string, max = 50): Pro
     }]
   })
   return passes.sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0))
+}
+
+/** users/{uid}/subscriptions: server-written (webhook; legacy history from the backfill, flagged `historical`). Unordered query; the caller picks. */
+export async function listSubscriptions(db: Firestore, uid: string, max = 20): Promise<SubscriptionDoc[]> {
+  const snap = await getDocs(query(collection(db, 'users', uid, 'subscriptions'), limit(max)))
+  return snap.docs.map((s): SubscriptionDoc => {
+    const d = s.data()
+    return {
+      id: s.id, status: String(d.status ?? d.legacyStatus ?? ''), historical: d.historical === true, stale: d.stale === true,
+      tier: tiers.includes(d.tier) ? d.tier : null, stripeSubscriptionId: d.stripeSubscriptionId ?? s.id, stripeCustomerId: d.stripeCustomerId ?? null,
+      currentPeriodStart: toDate(d.currentPeriodStart), currentPeriodEnd: toDate(d.currentPeriodEnd), cancelAtPeriodEnd: d.cancelAtPeriodEnd === true, createdAt: toDate(d.createdAt),
+    }
+  })
+}
+
+/** users/{uid}/payments: the billing ledger (server-written). Newest first in memory (no index). */
+export async function listPayments(db: Firestore, uid: string, max = 50): Promise<PaymentDoc[]> {
+  const snap = await getDocs(query(collection(db, 'users', uid, 'payments'), limit(max)))
+  return snap.docs.map((s): PaymentDoc => {
+    const d = s.data()
+    return { id: s.id, userRef: uid, stripePaymentIntentId: d.stripePaymentIntentId ?? d.stripeCheckoutSessionId ?? s.id, amountCents: d.amountCents ?? 0, currency: d.currency ?? 'eur', status: String(d.status ?? 'succeeded'), description: d.description ?? '', createdAt: toDate(d.createdAt) }
+  }).sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0))
 }

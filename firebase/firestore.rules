@@ -62,6 +62,21 @@ service cloud.firestore {
         allow get, list: if isOwner(uid);
         allow write: if false;
       }
+
+      // Billing HISTORY (legacy backfill now, Stripe webhook later): written only by the server, readable by the owner. Never an entitlement source.
+      match /subscriptions/{subscriptionId} {
+        allow get, list: if isOwner(uid);
+        allow write: if false;
+      }
+      match /payments/{paymentId} {
+        allow get, list: if isOwner(uid);
+        allow write: if false;
+      }
+    }
+
+    // ── stripeCustomers/{customerId}: reverse mapping Stripe customer → account. Server-only: no client read, no client write. ──
+    match /stripeCustomers/{customerId} {
+      allow read, write: if false;
     }
 
     // ── djProfiles/{uid}: DJ public-facing profile ───────────────────────────

@@ -1,6 +1,6 @@
 import axios, { AxiosError, type AxiosInstance } from 'axios'
 import { getAuthToken, signOut } from '@/lib/auth'
-import { ownerCallablesFlag, dashboardFlag, publicReadFlag } from '@/lib/events/flags'
+import { ownerCallablesFlag, dashboardFlag, publicReadFlag, billingFlag } from '@/lib/events/flags'
 import type {
   User, Subscription, Payment,
   ApiResponse,
@@ -58,6 +58,7 @@ function apiError(err: unknown): never {
  * null → not applicable, the legacy Express route is used. Dynamic import: nothing Firebase-related loads while the switch is off.
  */
 const profile = async () => (dashboardFlag() ? (await import('./events/profileService')).profileOps : null)
+const billingFs = async () => (billingFlag() ? (await import('./events/billingService')).billingOps : null)
 const dashboard = async () => (dashboardFlag() ? (await import('./events/dashboardService')).dashboardOps : null)
 
 export const auth = {
@@ -122,6 +123,8 @@ export const user = {
 // ══════════════════════════════════════════════════════════════
 export const billing = {
   async createCheckoutSession(priceId: string, mode: 'subscription' | 'payment' = 'subscription', sessionId?: string, opts?: { trial?: boolean; plan?: string }): Promise<{ url: string }> {
+    // Firebase: the server decides mode, URLs, metadata and the customer; `sessionId` (a Firebase event id) only scopes an Event Pass. Failures do NOT fall back to Render.
+    const fs = await billingFs().then((o) => o?.checkout(priceId, { trial: opts?.trial, eventId: sessionId })); if (fs) return fs
     try {
       const payload: any = {
         price_id: priceId,
@@ -138,6 +141,7 @@ export const billing = {
   },
 
   async getEventPasses() {
+    const bfs = await billingFs().then((o) => o?.eventPasses()); if (bfs) return bfs.data
     const fs = await dashboard().then((d) => d?.eventPasses()); if (fs) return fs
     try {
       const { data } = await getClient().get<ApiResponse<any[]>>('/stripe/event-passes')
@@ -151,6 +155,7 @@ export const billing = {
   },
 
   async createPortalSession(): Promise<{ url: string }> {
+    const fs = await billingFs().then((o) => o?.portal()); if (fs) return fs
     try {
       const { data } = await getClient().post<{ url: string }>('/stripe/create-portal', {
         return_url: `${window.location.origin}/billing`,
@@ -160,6 +165,7 @@ export const billing = {
   },
 
   async getSubscription(): Promise<Subscription | null> {
+    const fs = await billingFs().then((o) => o?.subscription()); if (fs) return fs.data
     try {
       const { data } = await getClient().get<ApiResponse<Subscription | null>>('/stripe/subscription')
       return data.data
@@ -167,6 +173,7 @@ export const billing = {
   },
 
   async getPaymentHistory(limit = 10): Promise<Payment[]> {
+    const fs = await billingFs().then((o) => o?.payments(limit)); if (fs) return fs.data
     try {
       const { data } = await getClient().get<ApiResponse<Payment[]>>('/stripe/payments', {
         params: { limit },

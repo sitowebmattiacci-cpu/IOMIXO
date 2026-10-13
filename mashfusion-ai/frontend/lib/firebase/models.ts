@@ -43,6 +43,19 @@ export interface EventPassDoc {
 }
 
 /** Client-writable account fields. The avatar is NOT one of them (commitAvatar / removeAvatar callables). */
+/** users/{uid}/subscriptions/{stripeSubscriptionId} — server-written. `historical` docs come from the legacy backfill (their status is NOT authoritative). */
+export interface SubscriptionDoc {
+  id: string; status: string; historical: boolean; stale: boolean; tier: PlanTier | null
+  stripeSubscriptionId: string; stripeCustomerId: string | null
+  currentPeriodStart: Date | null; currentPeriodEnd: Date | null; cancelAtPeriodEnd: boolean; createdAt: Date | null
+}
+
+/** users/{uid}/payments/{id} — billing ledger, server-written. */
+export interface PaymentDoc {
+  id: string; userRef: string; stripePaymentIntentId: string; amountCents: number; currency: string
+  status: string; description: string; createdAt: Date | null
+}
+
 export type UserProfilePatch = Partial<Pick<UserDoc, 'displayName'>>
 
 /** djProfiles/{firebaseUid} */

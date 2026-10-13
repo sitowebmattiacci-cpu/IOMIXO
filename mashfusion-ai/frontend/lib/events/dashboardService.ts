@@ -27,6 +27,24 @@ export { eventToSession, userToLegacy }
 
 const iso = (d: Date | null) => (d ?? new Date(0)).toISOString()
 
+/** users/{uid}/eventPasses in the legacy `event_passes` row shape (newest first, max 10 like the route). Shared with the billing switch. */
+export async function eventPassesFor(uid: string): Promise<EventPass[]> {
+  const db = getFirebaseDb()
+  const [profile, passes] = await Promise.all([getUser(db, uid), listEventPasses(db, uid)])
+  return passes.slice(0, 10).map((p) => ({
+    id: p.legacySupabaseId ?? p.id,
+    user_id: profile?.legacySupabaseId ?? uid,
+    session_id: p.legacySessionId ?? p.eventId ?? null,
+    stripe_payment_intent_id: p.stripePaymentIntentId ?? null,
+    amount_cents: p.amountCents,
+    currency: p.currency,
+    valid_until: p.validUntil.toISOString(),
+    status: p.status,
+    created_at: iso(p.createdAt),
+    updated_at: iso(p.updatedAt ?? p.createdAt),
+  }))
+}
+
 export const dashboardOps = {
   /** Owner's events, newest first (bounded 50). `null` = no event in Firestore (soft-deleted ones included) for an account migrated from Supabase (the caller may still try the legacy route); an empty array = nothing to show. */
   async listSessions(): Promise<LiveSession[] | null> {
@@ -62,19 +80,6 @@ export const dashboardOps = {
   async eventPasses(): Promise<EventPass[] | null> {
     if (!dashboardEnabled()) return null
     const user = await account(); if (!user) return null
-    const db = getFirebaseDb()
-    const [profile, passes] = await Promise.all([getUser(db, user.uid), listEventPasses(db, user.uid)])
-    return passes.slice(0, 10).map((p) => ({
-      id: p.legacySupabaseId ?? p.id,
-      user_id: profile?.legacySupabaseId ?? user.uid,
-      session_id: p.legacySessionId ?? p.eventId ?? null,
-      stripe_payment_intent_id: p.stripePaymentIntentId ?? null,
-      amount_cents: p.amountCents,
-      currency: p.currency,
-      valid_until: p.validUntil.toISOString(),
-      status: p.status,
-      created_at: iso(p.createdAt),
-      updated_at: iso(p.updatedAt ?? p.createdAt),
-    }))
+    return eventPassesFor(user.uid)
   },
 }

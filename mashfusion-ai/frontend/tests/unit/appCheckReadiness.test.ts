@@ -10,7 +10,7 @@ const walk = (d: string): string[] => readdirSync(d).flatMap((f) => { const p = 
 
 test('every callable declares enforceAppCheck from its own parameter; none hard-codes false or reads the token by hand', () => {
   const callables = Array.from(fnSrc.matchAll(/export const (\w+)\s*=\s*(onCall|ownerCall)/g)).map((m) => m[1])
-  assert.deepEqual(callables.sort(), ['commitAvatar', 'createDedication', 'createEvent', 'createMusicRequest', 'createPhotoUpload', 'createPoll', 'deleteEvent', 'finalizePhoto', 'getPublicEvent', 'moderateDedication', 'moderatePhoto', 'moderateRequest', 'ownerGameAction', 'removeAvatar', 'restoreEvent', 'setGameConfig', 'setPollStatus', 'updateEventConfig', 'votePoll'])
+  assert.deepEqual(callables.sort(), ['commitAvatar', 'createCheckoutSession', 'createDedication', 'createEvent', 'createMusicRequest', 'createPhotoUpload', 'createPoll', 'createPortalSession', 'deleteEvent', 'finalizePhoto', 'getPublicEvent', 'moderateDedication', 'moderatePhoto', 'moderateRequest', 'ownerGameAction', 'removeAvatar', 'restoreEvent', 'setGameConfig', 'setPollStatus', 'updateEventConfig', 'votePoll'])
   assert.ok(!/enforceAppCheck:\s*(false|true)\b/.test(fnSrc), 'enforceAppCheck must come from a parameter (default false, flipped per environment), never a literal')
   assert.ok(!/consumeAppCheckToken|verifyToken|appCheck\(\)\.verify/.test(fnSrc), 'no manual token handling / bypass')
   assert.match(fnSrc, /const ENFORCE_OWNER\s*=\s*defineBoolean\('APPCHECK_ENFORCE_OWNER',\s*\{ default: false \}\)/)
@@ -18,6 +18,9 @@ test('every callable declares enforceAppCheck from its own parameter; none hard-
   for (const fn of ['createPoll', 'setPollStatus', 'moderateRequest', 'moderateDedication', 'updateEventConfig', 'createEvent', 'deleteEvent', 'restoreEvent', 'ownerGameAction', 'setGameConfig', 'moderatePhoto', 'commitAvatar', 'removeAvatar']) assert.match(fnSrc, new RegExp(`export const ${fn}\\s*=\\s*ownerCall\\('${fn}'`))
   assert.match(fnSrc, /const ENFORCE_PHOTO\s*=\s*defineBoolean\('APPCHECK_ENFORCE_PHOTO',\s*\{ default: false \}\)/)
   assert.match(fnSrc, /photoCallOptions = \{ \.\.\.guestCallOptions\(ENFORCE_PHOTO\)/)
+  assert.match(fnSrc, /const ENFORCE_BILLING\s*=\s*defineBoolean\('APPCHECK_ENFORCE_BILLING',\s*\{ default: false \}\)/)
+  assert.match(fnSrc, /billingCallOptions = \{ \.\.\.guestCallOptions\(ENFORCE_BILLING\)/)
+  assert.match(fnSrc, /defineSecret\('STRIPE_SECRET_KEY'\)/); assert.match(fnSrc, /defineSecret\('STRIPE_WEBHOOK_SECRET'\)/)
   assert.match(fnSrc, /ownerCallOptions = \{ \.\.\.guestCallOptions\(ENFORCE_OWNER\)/)
   assert.match(fnSrc, /onCall\(\{ \.\.\.guestCallOptions\(ENFORCE_PUBLIC_EVENT\)/)
   assert.equal(Array.from(fnSrc.matchAll(/observeAppCheck\(/g)).length >= 3, true, 'each callable logs app_check valid|absent')
@@ -36,4 +39,14 @@ test('the client calls callables ONLY through getFirebaseFunctions() (the app th
     if (/cloudfunctions\.net|\/europe-west1\/(createMusicRequest|createDedication|votePoll|moderate|createPoll|setPollStatus|updateEventConfig|getPublicEvent)/.test(s)) offenders.push(`${f}: raw callable URL`)
   }
   assert.deepEqual(offenders, [])
+})
+
+test('billing: no Stripe secret / webhook secret / live key anywhere in the Functions source or deploy env (Secret Manager only)', () => {
+  const root = join(__dirname, '..', '..', '..', '..', 'firebase', 'functions')
+  const files = [...walk(join(root, 'src')), join(root, '.env.iomixo-494817'), join(root, '.env.example')]
+  for (const f of files) {
+    const t = readFileSync(f, 'utf8')
+    assert.ok(!/sk_(live|test)_[A-Za-z0-9]{8,}|rk_(live|test)_[A-Za-z0-9]{8,}|whsec_[A-Za-z0-9]{16,}/.test(t), `secret-looking value in ${f}`)
+    assert.ok(!/^STRIPE_(SECRET_KEY|WEBHOOK_SECRET)\s*=/m.test(t), `secret assigned in ${f}`)
+  }
 })

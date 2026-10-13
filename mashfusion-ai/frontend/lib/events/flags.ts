@@ -6,3 +6,5 @@ export const publicReadFlag = () => on(process.env.NEXT_PUBLIC_FIRESTORE_PUBLIC_
 export const dashboardFlag = () => on(process.env.NEXT_PUBLIC_FIRESTORE_DASHBOARD)
 /** Owner callables are used when EITHER owner-ops or the dashboard switch is on (the dashboard switch is a superset). */
 export const ownerCallablesFlag = () => ownerOpsFlag() || dashboardFlag()
+/** Billing (checkout, portal, subscription, payments, Event Passes) served by Firebase: callables + Firestore. Off → legacy Express /stripe routes. NEVER on in production before the Stripe cutover. */
+export const billingFlag = () => on(process.env.NEXT_PUBLIC_FIREBASE_BILLING)

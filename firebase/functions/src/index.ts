@@ -1,5 +1,5 @@
 import { setGlobalOptions } from 'firebase-functions/v2'
-import { onCall, HttpsError } from 'firebase-functions/v2/https'
+import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https'
 import { defineSecret, defineBoolean } from 'firebase-functions/params'
 import { logger } from 'firebase-functions/logger'
 import { initializeApp, getApps } from 'firebase-admin/app'
@@ -18,6 +18,10 @@ import { parseCreateEventInput, parseEventRefInput, createEvent as createEventIm
 import { parseGameActionInput, parseGameConfigInput, gameAction as gameActionImpl, setGameConfig as setGameConfigImpl } from './owner/games'
 import { parseCreatePhotoUploadInput, parsePhotoRefInput, parseModeratePhotoInput, createPhotoUpload as createPhotoUploadImpl, finalizePhoto as finalizePhotoImpl, moderatePhoto as moderatePhotoImpl } from './photos/photos'
 import { parseCommitAvatarInput, parseRemoveAvatarInput, commitAvatar as commitAvatarImpl, removeAvatar as removeAvatarImpl } from './profile/avatar'
+import { buildPriceTable } from './billing/prices'
+import { makeStripe } from './billing/stripeApi'
+import { parseCheckoutInput, createCheckoutSession as createCheckoutSessionImpl, createPortalSession as createPortalSessionImpl } from './billing/checkout'
+import { handleStripeWebhook } from './billing/webhook'
 import { parseSlug, getPublicEvent as getPublicEventImpl } from './owner/publicEvent'
 
 // Cost baseline: europe-west1, scale to zero, bounded concurrency.
@@ -48,6 +52,11 @@ const ENFORCE_PHOTO      = defineBoolean('APPCHECK_ENFORCE_PHOTO',      { defaul
 // Owner-side callables (moderation, polls, event settings) and the public event lookup: same convention, default false (observe only).
 const ENFORCE_OWNER        = defineBoolean('APPCHECK_ENFORCE_OWNER',        { default: false })
 const ENFORCE_PUBLIC_EVENT = defineBoolean('APPCHECK_ENFORCE_PUBLIC_EVENT', { default: false })
+// Billing callables (checkout / portal): same convention, default false (observe only) until App Check is verified on the web client.
+const ENFORCE_BILLING      = defineBoolean('APPCHECK_ENFORCE_BILLING',      { default: false })
+// Stripe secrets live ONLY in Secret Manager (`firebase functions:secrets:set STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET`); the webhook secret belongs to THIS endpoint.
+const STRIPE_SECRET_KEY    = defineSecret('STRIPE_SECRET_KEY')
+const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET')
 const observeAppCheck = (
   fn: string, enforced: { value(): boolean },
   request: { app?: unknown; auth?: { token?: { firebase?: { sign_in_provider?: string } } } },
@@ -140,3 +149,33 @@ export const getPublicEvent = onCall({ ...guestCallOptions(ENFORCE_PUBLIC_EVENT)
   if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign in required', { reason: 'unauthenticated' })
   return getPublicEventImpl(getFirestore(), parseSlug(request.data))
 })
+
+// ── Billing (Stripe stays the payment provider; Firestore + these Functions replace Render/Supabase) ───────────────────────────
+// Prices are server-side (billing/prices.ts, ids from the non-secret deploy env). The client sends a price id, a trial flag and an optional event id only.
+const billingCallOptions = { ...guestCallOptions(ENFORCE_BILLING), secrets: [STRIPE_SECRET_KEY] }
+const billingConfig = () => ({ baseUrl: process.env.APP_BASE_URL || 'https://www.iomixo.com' })
+
+/** Callable: starts a Stripe Checkout (subscription / trial / Event Pass) for the signed-in account. */
+export const createCheckoutSession = onCall(billingCallOptions, async (request) => {
+  observeAppCheck('createCheckoutSession', ENFORCE_BILLING, request)
+  return createCheckoutSessionImpl(getFirestore(), makeStripe(STRIPE_SECRET_KEY.value()), buildPriceTable(), billingConfig(), request.auth as any, parseCheckoutInput(request.data))
+})
+
+/** Callable: Stripe Billing Portal for the signed-in account's customer. */
+export const createPortalSession = onCall(billingCallOptions, async (request) => {
+  observeAppCheck('createPortalSession', ENFORCE_BILLING, request)
+  return createPortalSessionImpl(getFirestore(), makeStripe(STRIPE_SECRET_KEY.value()), billingConfig(), request.auth as any)
+})
+
+/** HTTPS: Stripe webhook. Raw body + signature, idempotent per event id; any handler failure answers non-2xx so Stripe retries. */
+export const stripeWebhook = onRequest(
+  { cors: false, secrets: [STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET], serviceAccount: SERVICE_ACCOUNT },
+  async (req, res) => {
+    if (req.method !== 'POST') { res.status(405).json({ error: 'method_not_allowed' }); return }
+    const r = await handleStripeWebhook(
+      { db: getFirestore(), stripe: makeStripe(STRIPE_SECRET_KEY.value()), prices: buildPriceTable() },
+      { rawBody: req.rawBody, signature: req.header('stripe-signature'), secret: STRIPE_WEBHOOK_SECRET.value() },
+    )
+    res.status(r.status).json(r.body)
+  },
+)
