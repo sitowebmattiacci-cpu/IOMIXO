@@ -67,7 +67,7 @@ const observeAppCheck = (
 
 const guestCallOptions = (enforceAppCheck: typeof ENFORCE_VOTE) => ({
   enforceAppCheck,
-  cors: ['https://www.iomixo.com', 'https://iomixo.com', 'http://localhost:3000', 'http://localhost:3100'],
+  cors: ['https://www.iomixo.com', 'https://iomixo.com', 'https://iomixo-web--iomixo-494817.europe-west4.hosted.app', 'http://localhost:3000', 'http://localhost:3100'],
   secrets: SECRETS,
   serviceAccount: SERVICE_ACCOUNT,
 })

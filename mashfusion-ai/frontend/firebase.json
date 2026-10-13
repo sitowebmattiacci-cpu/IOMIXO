@@ -1,0 +1,9 @@
+{
+  "apphosting": [
+    {
+      "backendId": "iomixo-web",
+      "rootDir": ".",
+      "ignore": ["node_modules", ".git", ".next", ".vercel", "tests", "firebase-debug.log", "firestore-debug.log", ".env.local*", ".env.production.local", "tsconfig.tsbuildinfo"]
+    }
+  ]
+}
