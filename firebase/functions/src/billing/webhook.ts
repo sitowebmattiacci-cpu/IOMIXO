@@ -27,6 +27,8 @@ const RANK: Record<Exclude<PlanTier, 'free'>, number> = { pro: 1, wedding: 2 }
 const ts = (sec?: number | null): Timestamp | null => (typeof sec === 'number' ? Timestamp.fromMillis(sec * 1000) : null)
 const str = (v: unknown): string | null => (typeof v === 'string' ? v : v && typeof v === 'object' && typeof (v as { id?: unknown }).id === 'string' ? (v as { id: string }).id : null)
 const safeId = (v: string) => v.replace(/\//g, '_')
+/** Payment doc id of an invoice with no payment intent: the Stripe invoice id already starts with `in_`, so it is used as is (never `in_in_…`). */
+export const invoicePaymentId = (invoiceId: string) => { const s = safeId(invoiceId); return s.startsWith('in_') ? s : `in_${s}` }
 
 export interface WebhookDeps { db: Firestore; stripe: StripeApi; prices: PriceTable; now?: () => Date }
 export interface WebhookResult { status: number; body: Record<string, unknown> }
@@ -97,6 +99,10 @@ async function dispatch(deps: WebhookDeps, event: Stripe.Event, now: Date): Prom
   }
 }
 
+/** Billing period of a subscription: top-level on API versions up to 2024-04-10, on the first item on newer ones (the webhook endpoint may use a newer version than the pinned client). */
+const periodOf = (sub: Stripe.Subscription, k: 'current_period_start' | 'current_period_end'): number | null | undefined =>
+  sub[k] ?? (sub.items.data[0] as unknown as Record<string, number | undefined> | undefined)?.[k]
+
 // ── subscriptions ────────────────────────────────────────────────────────────────────────────────
 async function upsertSubscription(deps: WebhookDeps, uid: string, sub: Stripe.Subscription, eventCreated: number, now: Date): Promise<'live' | 'other'> {
   const live = LIVE_STATUSES.includes(sub.status)
@@ -109,7 +115,7 @@ async function upsertSubscription(deps: WebhookDeps, uid: string, sub: Stripe.Su
     if (cur.exists && typeof cur.data()!.lastEventCreated === 'number' && cur.data()!.lastEventCreated > eventCreated) return          // an older event never overwrites a newer state
     tx.set(ref, {
       stripeSubscriptionId: sub.id, stripeCustomerId: str(sub.customer), priceId: priceId ?? null, tier, status: sub.status,
-      currentPeriodStart: ts(sub.current_period_start), currentPeriodEnd: ts(sub.current_period_end), cancelAtPeriodEnd: sub.cancel_at_period_end === true,
+      currentPeriodStart: ts(periodOf(sub, 'current_period_start')), currentPeriodEnd: ts(periodOf(sub, 'current_period_end')), cancelAtPeriodEnd: sub.cancel_at_period_end === true,
       canceledAt: ts(sub.canceled_at), trialStart: ts(sub.trial_start), trialEnd: ts(sub.trial_end),
       historical: false, stale: false, source: 'stripe', lastEventCreated: eventCreated, uid, updatedAt: Timestamp.fromDate(now),
       ...(cur.exists ? {} : { createdAt: ts(sub.created) ?? Timestamp.fromDate(now) }),
@@ -126,7 +132,7 @@ async function recomputePlan(deps: WebhookDeps, uid: string, customerId: string 
     for (const s of subs.data) {
       if (!LIVE_STATUSES.includes(s.status)) continue
       const tier = priceInfo(deps.prices, s.items.data[0]?.price.id).tier!
-      if (!best || RANK[tier] >= RANK[best.tier]) best = { tier, end: s.current_period_end }
+      if (!best || RANK[tier] >= RANK[best.tier]) best = { tier, end: periodOf(s, 'current_period_end') ?? 0 }
     }
   }
   const ref = deps.db.doc(`users/${uid}`)
@@ -173,7 +179,7 @@ async function onInvoice(deps: WebhookDeps, event: Stripe.Event, inv: Stripe.Inv
   const customerId = str(inv.customer)
   const uid = await resolveUid(deps.db, { customerId, firebaseUid: inv.subscription_details?.metadata?.firebaseUid, legacyUserId: inv.subscription_details?.metadata?.user_id })
   const pi = str(inv.payment_intent)
-  const id = outcome === 'succeeded' ? (pi ?? `in_${safeId(inv.id!)}`) : `in_${safeId(inv.id!)}`
+  const id = outcome === 'succeeded' ? (pi ?? invoicePaymentId(inv.id!)) : invoicePaymentId(inv.id!)
   await createOnce(deps.db.doc(`users/${uid}/payments/${id}`), {
     stripePaymentIntentId: pi, stripeInvoiceId: inv.id, stripeCheckoutSessionId: null, amountCents: outcome === 'succeeded' ? inv.amount_paid : inv.amount_due,
     currency: inv.currency, status: outcome, description: 'Subscription payment', kind: 'subscription', historical: false, source: 'stripe', uid,

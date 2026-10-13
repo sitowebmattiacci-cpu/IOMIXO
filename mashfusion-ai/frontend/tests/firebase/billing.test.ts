@@ -267,10 +267,22 @@ test('W8. invoices: paid + payment_succeeded of the same invoice make ONE paymen
   const pd = (await get(`users/${uid}/payments/${inv.payment_intent}`))!; assert.deepEqual([pd.amountCents, pd.status, pd.kind, pd.stripeInvoiceId, pd.historical], [999, 'succeeded', 'subscription', inv.id, false])
   const bad = { ...inv, id: id('in_'), payment_intent: id('pi_'), amount_paid: 0 }
   await deliver(fs, evt('invoice.payment_failed', bad, { created: sec(NOW) + 5 }))
-  assert.equal((await get(`users/${uid}/payments/in_${bad.id}`))!.status, 'failed'); assert.ok((await get(`users/${uid}/subscriptions/${s.id}`))!.lastPaymentFailedAt)
+  assert.equal((await get(`users/${uid}/payments/${bad.id}`))!.status, 'failed'); assert.ok((await get(`users/${uid}/subscriptions/${s.id}`))!.lastPaymentFailedAt)
   assert.equal((await get(`users/${uid}`))!.plan.tier, 'pro', 'a failed invoice alone does not change the plan (the subscription event does)')
   const noPi = { ...inv, id: id('in_'), payment_intent: null, amount_paid: 0 }                                    // 0 € invoice: no payment intent
-  await deliver(fs, evt('invoice.paid', noPi)); assert.ok((await db.doc(`users/${uid}/payments/in_${noPi.id}`).get()).exists)
+  await deliver(fs, evt('invoice.paid', noPi)); assert.ok((await db.doc(`users/${uid}/payments/${noPi.id}`).get()).exists)
+  assert.ok(!(await db.doc(`users/${uid}/payments/in_${noPi.id}`).get()).exists, 'regression: the invoice id must not be prefixed twice (in_in_…)')
+  assert.ok(!(await db.collection(`users/${uid}/payments`).get()).docs.some((d) => d.id.startsWith('in_in_')))
+})
+
+test('W8b. a newer-API subscription event (period on the item, not on the subscription) still stores the billing period', async () => {
+  const fs = fakeStripe(); const { uid } = await mkUser(); const cust = id('cus_'); await seedSet(`stripeCustomers/${cust}`, { uid })
+  const s = sub(cust, P.PRO); const end = sec(NOW) + 30 * 86400
+  const { current_period_start, current_period_end, ...rest } = s as Record<string, unknown>; void current_period_start; void current_period_end
+  const newer = { ...rest, items: { data: [{ price: { id: P.PRO }, current_period_start: sec(NOW), current_period_end: end }] } }
+  fs.st.subs.set(s.id, s); await deliver(fs, evt('customer.subscription.updated', newer))
+  const d = (await get(`users/${uid}/subscriptions/${s.id}`))!
+  assert.equal(d.currentPeriodEnd.toMillis(), end * 1000); assert.equal(d.currentPeriodStart.toMillis(), sec(NOW) * 1000)
 })
 
 test('W9. refund revokes the Event Pass (monotonic: never resurrected by a late completed event) and marks the payment; replays are harmless', async () => {
