@@ -20,7 +20,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import {
   WeddingGuestHome, WeddingGuestTopBar, WeddingGuestBackButton, WeddingGuestPanel, WeddingGuestButton,
   WeddingGuestInput, WeddingGuestTextarea, getWeddingGuestActionKeys, buildWeddingGuestActions,
-  formatWeddingGuestDate, type WeddingGuestActionKey,
+  formatWeddingGuestDate, WEDDING_GUEST_TOAST, type WeddingGuestActionKey,
 } from '@/components/wedding/guest/WeddingGuestUI'
 
 const STATUS_STYLE: Record<LiveRequestStatus, string> = {
@@ -74,11 +74,11 @@ export default function PublicLivePage() {
       }
       if (!liveEvent) throw new Error(t('live.notFound'))
       await sendMusicRequest({ eventId: liveEvent.id, songTitle: payload.track_title, artist: payload.artist, message: payload.message })
-      toast.success(t('live.requestSent'))
+      toast.success(t('live.requestSent'), data?.session.session_type === 'wedding' ? WEDDING_GUEST_TOAST : undefined)
       setForm({ track_title: '', artist: '', message: '' })
       await mutate(['public-live', slug])
     } catch (err: any) {
-      toast.error(err?.message ?? t('common.errorGeneric'))
+      toast.error(err?.message ?? t('common.errorGeneric'), data?.session.session_type === 'wedding' ? WEDDING_GUEST_TOAST : undefined)
     } finally { setSending(false) }
   }
 
@@ -746,8 +746,8 @@ function PollPublic({ slug: _slug, eventId }: { slug: string; eventId?: string }
     try {
       await castVote({ eventId, pollId: poll.id, index: i })
       setVoted(i)
-      toast.success(t('wedding.polls.voted'))
-    } catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric')) }
+      toast.success(t('wedding.polls.voted'), WEDDING_GUEST_TOAST)
+    } catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric'), WEDDING_GUEST_TOAST) }
   }
   const total = (poll.tally ?? []).reduce((a, b) => a + b, 0) || 0
   return (
@@ -794,9 +794,9 @@ function DedicationsPublic({ slug: _slug, eventId }: { slug: string; eventId?: s
     try {
       if (!eventId) throw new Error(t('live.notFound'))
       await sendDedication({ eventId, senderName: form.guest_name.trim() || undefined, message: form.message })
-      toast.success(t('wedding.dedications.submitted'))
+      toast.success(t('wedding.dedications.submitted'), WEDDING_GUEST_TOAST)
       setForm({ guest_name: '', message: '' })
-    } catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric')) }
+    } catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric'), WEDDING_GUEST_TOAST) }
     finally { setSending(false) }
   }
   return (
@@ -824,60 +824,6 @@ function DedicationsPublic({ slug: _slug, eventId }: { slug: string; eventId?: s
             </div>
           ))}
         </div>
-      )}
-    </LocalCard>
-  )
-}
-
-function PhotosPublic({ slug }: { slug: string }) {
-  const { t } = useI18n()
-  const { data, mutate: refresh } = useSWR<LivePhoto[]>(
-    ['public-photos', slug], () => livePhotos.publicListApproved(slug),
-    { refreshInterval: 10_000 },
-  )
-  const [form, setForm] = useState({ guest_name: '', caption: '' })
-  const [file, setFile] = useState<File | null>(null)
-  const [uploading, setUploading] = useState(false)
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!file) return
-    setUploading(true)
-    try {
-      await livePhotos.publicUpload(slug, file, { guest_name: form.guest_name || undefined, caption: form.caption || undefined })
-      toast.success(t('wedding.photos.submitted'))
-      setForm({ guest_name: '', caption: '' }); setFile(null)
-      refresh()
-    } catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric')) }
-    finally { setUploading(false) }
-  }
-  return (
-    <LocalCard title={t('wedding.photos.publicTitle')} icon={<Camera className="h-5 w-5" />}>
-      <form onSubmit={submit} className="space-y-2.5 mb-4">
-        <WeddingGuestInput value={form.guest_name} onChange={(e) => setForm({ ...form, guest_name: e.target.value })}
-          placeholder={t('wedding.photos.guestName')} />
-        <WeddingGuestInput value={form.caption} onChange={(e) => setForm({ ...form, caption: e.target.value })}
-          placeholder={t('wedding.photos.caption')} />
-        <label className="block">
-          <input type="file" accept="image/jpeg,image/png,image/webp"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="block w-full text-sm text-wedding-ink/70 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-wedding-champagne/40 file:text-wedding-ink hover:file:bg-wedding-champagne/60 cursor-pointer" />
-        </label>
-        <p className="text-[11px] text-wedding-ink/50">{t('wedding.photos.limits')}</p>
-        <WeddingGuestButton type="submit" disabled={uploading || !file} loading={uploading}
-          icon={<Camera className="h-4 w-4" />}>
-          {t('wedding.photos.choose')}
-        </WeddingGuestButton>
-      </form>
-      {(data ?? []).length > 0 ? (
-        <div className="grid grid-cols-3 gap-2">
-          {(data ?? []).map((p) => (
-            <div key={p.id} className="aspect-square rounded-xl overflow-hidden bg-wedding-champagne/20 border border-wedding-champagne/40">
-              {p.url ? <img src={p.url} alt={p.caption ?? ''} className="w-full h-full object-cover" /> : <ImageIcon className="h-6 w-6 text-wedding-taupe m-auto" />}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-xs text-wedding-ink/50 text-center">{t('wedding.photos.empty')}</p>
       )}
     </LocalCard>
   )

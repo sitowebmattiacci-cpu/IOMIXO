@@ -1,6 +1,8 @@
 'use client'
 import type { ReactNode, ButtonHTMLAttributes, InputHTMLAttributes, TextareaHTMLAttributes } from 'react'
-import { Music2, Camera, Heart, Gamepad2, BarChart3, ChevronRight, ChevronLeft } from 'lucide-react'
+import Link from 'next/link'
+import type { ToastOptions } from 'react-hot-toast'
+import { Music2, Camera, Heart, Gamepad2, BarChart3, ChevronRight, ChevronLeft, ArrowLeft, CheckCircle2, AlertTriangle, Info } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
@@ -214,4 +216,66 @@ export function WeddingGuestInput({ className, ...rest }: InputHTMLAttributes<HT
 
 export function WeddingGuestTextarea({ className, ...rest }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <textarea {...rest} className={cn(FIELD, 'resize-none', className)} />
+}
+
+// ── Page-level shared pieces (secondary guest pages such as /booth/[slug]) ──
+
+/** Toast style matching the Wedding guest palette (the global Toaster is dark). */
+export const WEDDING_GUEST_TOAST: ToastOptions = {
+  position: 'bottom-center',
+  style: { background: '#FFFFFF', color: '#1F2028', border: '1px solid #F3D7E1', borderRadius: '16px', fontSize: '15px' },
+  iconTheme: { primary: '#F06A9B', secondary: '#FFFFFF' },
+}
+
+export function WeddingGuestShell({ children, languageSlot, centered = false }: { children: ReactNode; languageSlot?: ReactNode; centered?: boolean }) {
+  return (
+    <div className="min-h-screen w-full bg-wd-bg font-sans text-wd-ink antialiased">
+      <div className={cn('mx-auto flex min-h-screen w-full max-w-[520px] flex-col px-5 pb-12 pt-5', centered && 'justify-center')}>
+        <WeddingGuestTopBar languageSlot={languageSlot} />
+        <div className="pt-6">{children}</div>
+        <p className="mt-12 text-center text-[12px] tracking-wide text-wd-muted">
+          Powered by <span className="font-semibold text-wd-pink">IOMIXO Live Hub</span>
+        </p>
+      </div>
+    </div>
+  )
+}
+
+export function WeddingGuestPageTitle({ eyebrow, title, subtitle }: { eyebrow?: string; title: string; subtitle?: string }) {
+  return (
+    <header className="px-2 pb-7 pt-4 text-center">
+      {eyebrow && <p className="text-[12px] font-semibold uppercase tracking-[0.28em] text-wd-pink">{eyebrow}</p>}
+      <h1 className="mt-4 break-words text-[32px] font-bold leading-[1.1] tracking-tight text-wd-ink">{title}</h1>
+      {subtitle && <p className="mt-3 text-[17px] font-medium text-wd-ink">{subtitle}</p>}
+    </header>
+  )
+}
+
+export function WeddingGuestHelper({ children, tone = 'muted' }: { children: ReactNode; tone?: 'muted' | 'pink' }) {
+  return <p className={cn('text-center text-[14px] leading-snug', tone === 'pink' ? 'text-wd-pink' : 'text-wd-muted')}>{children}</p>
+}
+
+export function WeddingGuestNotice({ tone = 'info', title, children, action }: { tone?: 'info' | 'success' | 'error'; title?: string; children: ReactNode; action?: ReactNode }) {
+  const Icon = tone === 'success' ? CheckCircle2 : tone === 'error' ? AlertTriangle : Info
+  return (
+    <div className="rounded-[18px] border border-wd-border bg-wd-active px-4 py-3.5 text-left text-[15px] text-wd-ink">
+      <div className="flex items-start gap-3">
+        <Icon className="mt-0.5 h-5 w-5 shrink-0 text-wd-pink" />
+        <div className="min-w-0 flex-1">
+          {title && <p className="font-semibold">{title}</p>}
+          <div className={title ? 'mt-1 text-wd-muted' : ''}>{children}</div>
+        </div>
+      </div>
+      {action && <div className="mt-3">{action}</div>}
+    </div>
+  )
+}
+
+export function WeddingGuestBackLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link href={href} className="mx-auto mt-8 inline-flex min-h-[44px] items-center gap-2 text-[15px] font-semibold text-wd-pink hover:text-wd-pink-hover">
+      <ArrowLeft className="h-5 w-5" />
+      {label}
+    </Link>
+  )
 }

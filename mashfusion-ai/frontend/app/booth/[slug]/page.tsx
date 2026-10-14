@@ -7,7 +7,10 @@ import { Camera, X, RotateCw, Check, Sparkles, ArrowLeft, RefreshCw, ImagePlus, 
 import { livePhotos } from '@/lib/api'
 import { fetchPublicLive } from '@/lib/events/publicEventService'
 import { compressImage } from '@/lib/imageCompress'
-import { WeddingShell, WeddingButton } from '@/components/wedding/WeddingUI'
+import {
+  WeddingGuestShell, WeddingGuestPageTitle, WeddingGuestPanel, WeddingGuestButton, WeddingGuestHelper,
+  WeddingGuestNotice, WeddingGuestBackLink, formatWeddingGuestDate, WEDDING_GUEST_TOAST,
+} from '@/components/wedding/guest/WeddingGuestUI'
 import {
   PartyShell, PartyButton, PartyCard, PartyEyebrow, PartyDivider,
 } from '@/components/party/PartyUI'
@@ -118,11 +121,10 @@ export default function LiveBoothPage() {
 
   if (!session.is_active) {
     return isWedding ? (
-      <WeddingShell>
-        <div className="min-h-screen flex items-center justify-center px-6">
-          <p className="text-wedding-taupe text-center">{t('booth.sessionEnded')}</p>
-        </div>
-      </WeddingShell>
+      <WeddingGuestShell languageSlot={<LanguageSwitcher variant="wedding" />}>
+        <WeddingGuestNotice tone="info">{t('booth.sessionEnded')}</WeddingGuestNotice>
+        <div className="flex justify-center"><WeddingGuestBackLink href={`/live/${slug}`} label={t('booth.backToMain')} /></div>
+      </WeddingGuestShell>
     ) : (
       <PartyShell>
         <div className="min-h-screen flex items-center justify-center px-6">
@@ -313,16 +315,16 @@ export default function LiveBoothPage() {
       await livePhotos.boothUpload(slug!, optimized, {})
       toast.success(isWedding
         ? t('booth.uploadedWedding')
-        : t('booth.uploadedParty'))
+        : t('booth.uploadedParty'), isWedding ? WEDDING_GUEST_TOAST : undefined)
       if (photo && photo.startsWith('blob:')) URL.revokeObjectURL(photo)
       pendingFileRef.current = null
       setPhoto(null)
     } catch (err: any) {
       const msg = err?.message ?? t('booth.uploadError')
       if (msg.includes('Advance') || msg.includes('Pass') || msg.includes('sospese')) {
-        toast.error(t('booth.uploadAccessError'))
+        toast.error(t('booth.uploadAccessError'), isWedding ? WEDDING_GUEST_TOAST : undefined)
       } else {
-        toast.error(msg)
+        toast.error(msg, isWedding ? WEDDING_GUEST_TOAST : undefined)
       }
     } finally { setUploading(false) }
   }
@@ -506,147 +508,105 @@ export default function LiveBoothPage() {
     )
   }
 
-  // ─── WEDDING UI (unchanged behaviour) ────────────────────────
+  // ─── WEDDING UI ──────────────────────────────────────────────
+  const names = session.couple_names ?? session.event_name
+  const weddingDate = formatWeddingGuestDate(session.wedding_date)
+  const languageSlot = <LanguageSwitcher variant="wedding" />
+  const frame = 'overflow-hidden rounded-[20px] border border-wd-border bg-white'
+
   if (photo) {
     return (
-      <WeddingShell>
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 space-y-6">
-          <div className="relative max-w-2xl w-full rounded-2xl overflow-hidden shadow-wedding-lg border-4 border-wedding-gold/30">
-            {photo === 'pending' ? (
-              <div className="w-full aspect-square flex items-center justify-center bg-wedding-ink/10 text-wedding-taupe text-sm">
-                {t('booth.uploadPhoto')}
-              </div>
-            ) : (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={photo} alt="Preview" className="w-full h-auto" />
-            )}
-          </div>
-          <div className="flex gap-4">
-            <WeddingButton onClick={retakePhoto} disabled={uploading} icon={<RotateCw className="h-5 w-5" />} size="lg">{t('booth.retake')}</WeddingButton>
-            <WeddingButton onClick={uploadPhoto} disabled={uploading} loading={uploading} icon={<Check className="h-5 w-5" />} size="lg">{t('booth.send')}</WeddingButton>
-          </div>
+      <WeddingGuestShell languageSlot={languageSlot}>
+        <WeddingGuestPageTitle eyebrow="Live Booth" title={names} />
+        <div className={`${frame} p-2`}>
+          {photo === 'pending' ? (
+            <div className="flex aspect-square w-full items-center justify-center rounded-2xl bg-wd-active text-[15px] text-wd-muted">
+              {t('booth.uploadPhoto')}
+            </div>
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={photo} alt="Preview" className="h-auto w-full rounded-2xl" />
+          )}
         </div>
-      </WeddingShell>
+        <div className="mt-5 space-y-3">
+          <WeddingGuestButton onClick={uploadPhoto} disabled={uploading} loading={uploading} icon={<Check className="h-5 w-5" />}>{t('booth.send')}</WeddingGuestButton>
+          <WeddingGuestButton variant="secondary" onClick={retakePhoto} disabled={uploading} icon={<RotateCw className="h-5 w-5" />}>{t('booth.retake')}</WeddingGuestButton>
+        </div>
+      </WeddingGuestShell>
     )
   }
 
   if (cameraActive) {
     return (
-      <WeddingShell>
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
-          <div className="relative max-w-2xl w-full rounded-2xl overflow-hidden shadow-wedding-lg border-4 border-wedding-gold/30">
-            <video ref={videoRef} autoPlay playsInline muted className={`w-full h-auto ${facingMode === 'user' ? 'mirror' : ''}`} />
-            {countdown !== null && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-wedding-ink/55 backdrop-blur-sm">
-                <p className="font-wedding-great-vibes text-white text-5xl sm:text-6xl mb-2 animate-pulse drop-shadow-[0_2px_16px_rgba(0,0,0,0.85)]">
-                  {t('booth.weddingPhotoMoment')}
-                </p>
-                <p key={countdown} className="font-wedding-cinzel text-white text-[10rem] sm:text-[14rem] font-normal leading-none drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
-                  {countdown}
-                </p>
-              </div>
-            )}
+      <WeddingGuestShell languageSlot={languageSlot}>
+        <WeddingGuestPageTitle eyebrow="Live Booth" title={names} />
+        <div className={`relative ${frame}`}>
+          <video ref={videoRef} autoPlay playsInline muted className={`h-auto w-full ${facingMode === 'user' ? 'mirror' : ''}`} />
+          {countdown !== null && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-wd-ink/55 backdrop-blur-sm">
+              <p className="mb-2 animate-pulse text-[20px] font-semibold text-white">{t('booth.weddingPhotoMoment')}</p>
+              <p key={countdown} className="text-[9rem] font-bold leading-none text-white">{countdown}</p>
+            </div>
+          )}
+        </div>
+        <canvas ref={canvasRef} className="hidden" />
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleNativePhotoSelected} className="hidden" />
+        <div className="mt-5 space-y-3">
+          <WeddingGuestButton onClick={startPhotoMoment} disabled={countdown !== null} icon={<Camera className="h-5 w-5" />}>
+            {countdown !== null ? `${countdown}…` : t('booth.takePhoto')}
+          </WeddingGuestButton>
+          <div className="grid grid-cols-2 gap-3">
+            <WeddingGuestButton variant="secondary" onClick={flipCamera} disabled={countdown !== null} icon={<RefreshCw className="h-4 w-4" />}>{t('booth.flip')}</WeddingGuestButton>
+            <WeddingGuestButton variant="secondary" onClick={stopCamera} disabled={countdown !== null} icon={<X className="h-4 w-4" />}>{t('booth.close')}</WeddingGuestButton>
           </div>
-          <canvas ref={canvasRef} className="hidden" />
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleNativePhotoSelected}
-            className="hidden"
-          />
-          <div className="flex gap-3 mt-6">
-            <WeddingButton onClick={stopCamera} disabled={countdown !== null} icon={<X className="h-4 w-4" />} size="md">{t('booth.close')}</WeddingButton>
-            <WeddingButton onClick={flipCamera} disabled={countdown !== null} icon={<RefreshCw className="h-4 w-4" />} size="md">{t('booth.flip')}</WeddingButton>
-            <WeddingButton onClick={startPhotoMoment} disabled={countdown !== null} icon={<Camera className="h-4 w-4" />} size="md">
-              {countdown !== null ? `${countdown}…` : t('booth.takePhoto')}
-            </WeddingButton>
-          </div>
-          <button
-            onClick={openFilePicker}
-            className="mt-4 inline-flex items-center gap-2 text-sm text-wedding-taupe hover:text-wedding-burgundy transition-colors"
-          >
+          <button type="button" onClick={openFilePicker} className="mx-auto flex min-h-[44px] items-center gap-2 text-[15px] font-semibold text-wd-pink hover:text-wd-pink-hover">
             <ImagePlus className="h-4 w-4" />
             {t('booth.uploadPhoto')}
           </button>
         </div>
         <style jsx global>{`.mirror { transform: scaleX(-1); }`}</style>
-      </WeddingShell>
+      </WeddingGuestShell>
     )
   }
 
   return (
-    <WeddingShell>
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center space-y-8">
-        <div className="flex justify-center">
-          <LanguageSwitcher variant="light" />
-        </div>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.4em] text-wedding-burgundy mb-4">
-            ✦ Live Booth ✦
-          </p>
-          <h1 className="font-wedding text-5xl sm:text-6xl text-wedding-ink leading-tight tracking-wide">
-            {session.couple_names ?? session.event_name}
-          </h1>
-          {session.wedding_date && (
-            <p className="font-wedding text-2xl italic text-wedding-taupe mt-4">
-              {new Date(session.wedding_date).toLocaleDateString('it-IT', { dateStyle: 'long' })}
-            </p>
-          )}
-        </div>
-        <div className="max-w-md w-full">
-          <p className="text-wedding-ink/70 mb-6">
-            {isIOS ? t('booth.iosIntro') : t('booth.weddingIntro')}
-          </p>
+    <WeddingGuestShell languageSlot={languageSlot}>
+      <WeddingGuestPageTitle eyebrow="Live Booth" title={names} subtitle={weddingDate ?? undefined} />
+      <WeddingGuestPanel>
+        <p className="mb-5 text-center text-[16px] leading-snug text-wd-muted">
+          {isIOS ? t('booth.iosIntro') : t('booth.weddingIntro')}
+        </p>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleNativePhotoSelected}
-            className="hidden"
-          />
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleNativePhotoSelected} className="hidden" />
 
-          {cameraError && (
-            <div className="mb-6 rounded-2xl border border-wedding-gold/30 bg-[#FBEAF0] p-5 text-left shadow-wedding">
-              <div className="flex items-center gap-2 text-wedding-burgundy mb-2">
-                <AlertTriangle className="h-4 w-4" />
-                <p className="text-sm font-semibold">{t('booth.cameraUnavailableTitle')}</p>
-              </div>
-              <p className="text-sm text-wedding-ink/70 mb-4">{t('booth.cameraUnavailableText')}</p>
-              <WeddingButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />} size="lg" className="w-full">
-                {t('booth.uploadPhoto')}
-              </WeddingButton>
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {isIOS ? (
-              <WeddingButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />} size="lg" className="w-full">
-                {t('booth.uploadPhoto')}
-              </WeddingButton>
-            ) : (
-              <>
-                <WeddingButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />} size="lg" className="w-full">
-                  {t('booth.openCamera')}
-                </WeddingButton>
-                <WeddingButton onClick={openFilePicker} variant="outline" icon={<ImagePlus className="h-5 w-5" />} size="lg" className="w-full">
-                  {t('booth.uploadPhoto')}
-                </WeddingButton>
-                <p className="text-xs text-wedding-taupe">{t('booth.cameraHint')}</p>
-              </>
-            )}
-            <p className="text-xs text-wedding-burgundy/80">{t('booth.weddingApprovalNote')}</p>
+        {cameraError && (
+          <div className="mb-5">
+            <WeddingGuestNotice
+              tone="error"
+              title={t('booth.cameraUnavailableTitle')}
+              action={<WeddingGuestButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />}>{t('booth.uploadPhoto')}</WeddingGuestButton>}
+            >
+              {t('booth.cameraUnavailableText')}
+            </WeddingGuestNotice>
           </div>
+        )}
+
+        <div className="space-y-3">
+          {isIOS ? (
+            <WeddingGuestButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />}>{t('booth.uploadPhoto')}</WeddingGuestButton>
+          ) : (
+            <>
+              <WeddingGuestButton onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />}>{t('booth.openCamera')}</WeddingGuestButton>
+              <WeddingGuestButton variant="secondary" onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />}>{t('booth.uploadPhoto')}</WeddingGuestButton>
+              <WeddingGuestHelper>{t('booth.cameraHint')}</WeddingGuestHelper>
+            </>
+          )}
+          <WeddingGuestHelper tone="pink">{t('booth.weddingApprovalNote')}</WeddingGuestHelper>
         </div>
-        <Link
-          href={`/live/${slug}`}
-          className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.25em] text-wedding-taupe hover:text-wedding-burgundy transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t('booth.backToMain')}
-        </Link>
+      </WeddingGuestPanel>
+      <div className="flex justify-center">
+        <WeddingGuestBackLink href={`/live/${slug}`} label={t('booth.backToMain')} />
       </div>
-    </WeddingShell>
+    </WeddingGuestShell>
   )
 }
