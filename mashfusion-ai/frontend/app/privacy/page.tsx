@@ -22,7 +22,7 @@ export default function PrivacyPage() {
 
       <header className="relative z-10 flex items-center justify-between px-6 py-5 max-w-4xl mx-auto">
         <Link href="/" className="flex items-center gap-2.5">
-          <Logo size={36} />
+          <Logo variant="party" size={36} />
           <span className="text-lg font-black tracking-tight text-white">
             IOMIXO<span className="text-purple-400"> Live Hub</span>
           </span>

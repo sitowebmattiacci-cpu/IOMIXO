@@ -148,11 +148,14 @@ function RemoteControl() {
     )
   }
 
+  const isPartySession = session.session_type !== 'wedding'
+
   return (
+    <div className={isPartySession ? 'party-remote' : undefined}>
     <WeddingShell className="pb-20">
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="flex justify-center mb-4">
-          <LanguageSwitcher variant="light" />
+          <LanguageSwitcher variant={isPartySession ? 'dark' : 'light'} />
         </div>
         {/* Header compatto */}
         <div className="mb-6 text-center">
@@ -163,7 +166,7 @@ function RemoteControl() {
             </span>
           </div>
           <h1 className="font-wedding text-2xl text-wedding-ink mb-1">{session.event_name}</h1>
-          {session.couple_names && (
+          {!isPartySession && session.couple_names && (
             <p className="font-wedding text-base italic text-wedding-muted">{session.couple_names}</p>
           )}
         </div>
@@ -182,12 +185,14 @@ function RemoteControl() {
             icon={<MessageSquare className="h-4 w-4" />}
             label={`${t('remote.tabRequests')} ${pending.length > 0 ? `(${pending.length})` : ''}`}
           />
+          {!isPartySession && (
           <TabButton
             active={tab === 'dedications'}
             onClick={() => setTab('dedications')}
             icon={<Heart className="h-4 w-4" />}
             label={t('remote.tabDedications')}
           />
+          )}
           <TabButton
             active={tab === 'photos'}
             onClick={() => setTab('photos')}
@@ -200,11 +205,12 @@ function RemoteControl() {
         <div className="space-y-4">
           {tab === 'games' && slug && <RemoteGamesPanel slug={slug} sessionType={session.session_type} />}
           {tab === 'requests' && slug && <RemoteRequestsPanel slug={slug} requests={requests ?? []} />}
-          {tab === 'dedications' && slug && <RemoteDedicationsPanel slug={slug} dedications={dedications ?? []} />}
+          {!isPartySession && tab === 'dedications' && slug && <RemoteDedicationsPanel slug={slug} dedications={dedications ?? []} />}
           {tab === 'photos' && slug && <RemotePhotosPanel slug={slug} photos={photos ?? []} />}
         </div>
       </div>
     </WeddingShell>
+    </div>
   )
 }
 
@@ -250,6 +256,7 @@ function RemoteGamesPanel({ slug, sessionType }: { slug: string; sessionType: st
         )}
       </WeddingCard>
 
+      {sessionType === 'wedding' && (
       <WeddingCard>
         <button
           onClick={() => setActiveGame(activeGame === 'shoe' ? null : 'shoe')}
@@ -269,6 +276,7 @@ function RemoteGamesPanel({ slug, sessionType }: { slug: string; sessionType: st
           </div>
         )}
       </WeddingCard>
+      )}
 
       {sessionType === 'wedding' && (
         <WeddingCard>

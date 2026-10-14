@@ -11,11 +11,11 @@ export function UpgradeGate({
 }: { title?: string; message?: string; compact?: boolean }) {
   return (
     <Card className={`text-center ${compact ? 'py-6' : 'py-12'}`}>
-      <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20 text-purple-300 mb-4">
+      <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#FF2D8D]/15 text-[#FF2D8D] mb-4">
         <Lock className="h-6 w-6" />
       </div>
       <h2 className="font-black text-white text-lg mb-2 flex items-center justify-center gap-2">
-        <Sparkles className="h-4 w-4 text-purple-300" /> {title}
+        <Sparkles className="h-4 w-4 text-[#FF2D8D]" /> {title}
       </h2>
       <p className="text-sm text-white/60 max-w-md mx-auto mb-5">{message}</p>
       <Link href="/billing">

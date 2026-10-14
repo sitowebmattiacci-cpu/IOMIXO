@@ -40,9 +40,9 @@ export function PartyPhotoGridWall({
   if (!hasPhotos) {
     return (
       <div
-        className={`rounded-2xl border-2 border-dashed border-[#FF3D8A]/30 bg-white/[0.02] h-full flex flex-col items-center justify-center text-center px-6 py-16 ${className}`}
+        className={`rounded-2xl border-2 border-dashed border-[#FF2D8D]/30 bg-white/[0.02] h-full flex flex-col items-center justify-center text-center px-6 py-16 ${className}`}
       >
-        <Camera className="h-14 w-14 text-[#FF3D8A]/40 mb-4" />
+        <Camera className="h-14 w-14 text-[#FF2D8D]/40 mb-4" />
         <p className="text-2xl font-bold text-white mb-2">Photo Moment in arrivo!</p>
         <p className="text-sm text-white/50">
           Scansiona il QR e scatta la prima foto della serata
@@ -62,8 +62,8 @@ export function PartyPhotoGridWall({
       <div className={`rounded-3xl bg-black/40 border border-white/10 p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)] w-full ${maxWidthClass} mx-auto`}>
         <div className="flex flex-col items-center gap-1.5 mb-5">
           <div className="flex items-center gap-2">
-            <Camera className="h-4 w-4 text-[#FF3D8A]" />
-            <span className="text-[11px] font-black uppercase tracking-[0.4em] text-[#FF7AB6]">
+            <Camera className="h-4 w-4 text-[#FF2D8D]" />
+            <span className="text-[11px] font-black uppercase tracking-[0.4em] text-[#FF2D8D]">
               Live Booth
             </span>
           </div>
@@ -152,7 +152,7 @@ function PartyPhotoRow({ photos }: { photos: PartySlidePhoto[] }) {
   if (!hasPhotos) {
     return (
       <div className="h-full w-full flex flex-col items-center justify-center text-center px-6">
-        <Camera className="h-14 w-14 text-[#FF3D8A]/40 mb-4" />
+        <Camera className="h-14 w-14 text-[#FF2D8D]/40 mb-4" />
         <p className="text-2xl font-bold text-white">Le foto degli ospiti appariranno qui</p>
       </div>
     )

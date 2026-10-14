@@ -332,7 +332,7 @@ export default function PublicLivePage() {
       <button
         type="submit"
         disabled={disabled || sending || !form.track_title.trim()}
-        className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white font-semibold py-3 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[#FF2D8D] hover:bg-[#E9207C] text-white font-semibold py-3 disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <Send className="h-4 w-4" />
         {sending ? t('live.sending') : t('live.submitRequest')}
@@ -387,7 +387,7 @@ export default function PublicLivePage() {
   const activeParty = partySections.find((s) => s.key === activeGuestSection) ?? null
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-purple-950/40 to-zinc-950 text-white">
+    <div className="min-h-screen bg-[#0A0A0D] text-white">
       <div className="max-w-md mx-auto px-5 py-8">
         <div className="flex justify-center mb-5">
           <LanguageSwitcher />
@@ -474,7 +474,7 @@ const inputCls =
   'w-full mt-1 rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:border-purple-400 disabled:opacity-50'
 
 function Center({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-screen flex items-center justify-center bg-zinc-950 px-6">{children}</div>
+  return <div className="min-h-screen flex items-center justify-center bg-[#0A0A0D] px-6">{children}</div>
 }
 function Banner({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -549,10 +549,10 @@ function SocialLinks({ profile, tone }: { profile: FollowProfile; tone: GuestTon
   if (items.length === 0) return null
 
   const cardCls = tone === 'party'
-    ? 'group flex items-center gap-3 rounded-2xl border border-[#7C3AED]/30 bg-white/[0.04] p-3.5 transition hover:border-[#A855F7]/70 hover:bg-white/[0.08] active:scale-[0.99]'
+    ? 'group flex items-center gap-3 rounded-2xl border border-[#2A2A33] bg-white/[0.04] p-3.5 transition hover:border-[#FF2D8D]/70 hover:bg-white/[0.08] active:scale-[0.99]'
     : 'group flex items-center gap-3 rounded-2xl border border-[#E2C4C9] bg-white/80 p-3.5 transition hover:border-wedding-gold hover:shadow-sm active:scale-[0.99]'
   const iconWrapCls = tone === 'party'
-    ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#7C3AED]/30 to-[#A855F7]/20 text-[#C9A6FF]'
+    ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FF2D8D]/15 text-[#FF2D8D]'
     : 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-wedding-champagne/50 text-[#8F1D2C]'
   const labelCls = tone === 'party' ? 'text-sm font-semibold text-white' : 'text-sm font-semibold text-[#2B2424]'
   const subCls   = tone === 'party' ? 'text-xs text-white/50 truncate' : 'text-xs text-[#6F6260] truncate'
@@ -617,7 +617,7 @@ function FollowDjSection({ tone, profile, events, t }: {
 
   return (
     <div className="mt-8">
-      <div className="rounded-2xl border border-[#7C3AED]/30 bg-gradient-to-br from-[#1A0B2E]/70 to-[#2D1B4E]/40 p-5 backdrop-blur">
+      <div className="rounded-2xl border border-[#2A2A33] bg-[#15151B] p-5 backdrop-blur">
         <div className="text-center mb-4">
           <h2 className="text-lg font-black text-white">{t('live.followDjTitle')}</h2>
           <p className="text-xs text-white/60 mt-1">{t('live.followDjSubtitleParty')}</p>
@@ -630,8 +630,8 @@ function FollowDjSection({ tone, profile, events, t }: {
         {evs.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-center gap-2 mb-1">
-              <CalendarDays className="h-4 w-4 text-[#A855F7]" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-[#A855F7]">{t('live.upcomingDates')}</span>
+              <CalendarDays className="h-4 w-4 text-[#FF2D8D]" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#FF2D8D]">{t('live.upcomingDates')}</span>
             </div>
             {evs.map((ev) => {
               const inner = (
@@ -709,9 +709,9 @@ function GuestMenuCard({ tone, icon, title, desc, onClick }: {
     return (
       <button
         onClick={onClick}
-        className="group flex flex-col items-center text-center gap-2 rounded-2xl border border-[#FF3D8A]/30 bg-gradient-to-br from-[#8B0E2F]/40 to-[#B82E54]/20 p-5 backdrop-blur transition hover:border-[#FF7AB6]/60 hover:shadow-[0_10px_30px_rgba(255,61,138,0.25)] active:scale-[0.98]"
+        className="group flex flex-col items-center text-center gap-2 rounded-2xl border border-[#FF2D8D]/30 bg-[#15151B] p-5 backdrop-blur transition hover:border-[#FF2D8D]/60 hover: active:scale-[0.98]"
       >
-        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-[#FF7AB6] group-hover:bg-white/25 transition">
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-[#FF2D8D] group-hover:bg-white/25 transition">
           {icon}
         </span>
         <span className="text-base font-black text-white leading-tight">{title}</span>
@@ -735,7 +735,7 @@ function GuestMenuCard({ tone, icon, title, desc, onClick }: {
 
 function GuestBackButton({ tone, label, onClick }: { tone: GuestTone; label: string; onClick: () => void }) {
   const cls = tone === 'party'
-    ? 'inline-flex items-center gap-1.5 text-sm font-medium text-[#FF7AB6] hover:text-white transition mb-4'
+    ? 'inline-flex items-center gap-1.5 text-sm font-medium text-[#FF2D8D] hover:text-white transition mb-4'
     : 'inline-flex items-center gap-1.5 text-sm font-medium text-[#8F1D2C] hover:text-[#741625] transition mb-5'
   return (
     <button onClick={onClick} className={cls}>
@@ -998,7 +998,7 @@ function PartyBoothCTA({ slug }: { slug: string }) {
   return (
     <a
       href={`/booth/${slug}`}
-      className="block rounded-2xl p-5 bg-gradient-to-br from-[#8B0E2F] via-[#B82E54] to-[#FF3D8A] shadow-[0_10px_40px_rgba(255,61,138,0.35)] border border-[#FF7AB6]/40 hover:scale-[1.01] transition active:scale-[0.99]"
+      className="block rounded-2xl p-5 bg-[#15151B] border border-[#FF2D8D]/40 hover:scale-[1.01] transition active:scale-[0.99]"
     >
       <div className="flex items-center gap-4">
         <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0">
@@ -1048,9 +1048,9 @@ function PartyMusicBattle({ slug: _slug, eventId }: { slug: string; eventId?: st
   }
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-black/60 to-[#8B0E2F]/30 border border-[#FF3D8A]/30 backdrop-blur p-5">
+    <div className="rounded-2xl bg-[#15151B] border border-[#FF2D8D]/30 backdrop-blur p-5">
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#FF7AB6]">{t('live.musicBattle')}</span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#FF2D8D]">{t('live.musicBattle')}</span>
         <span className="text-[10px] text-white/40">· {total} {total === 1 ? t('live.voteSingular') : t('live.votePlural')}</span>
       </div>
       <p className="text-lg font-bold text-white mb-4 leading-snug">{poll.question}</p>
@@ -1067,15 +1067,15 @@ function PartyMusicBattle({ slug: _slug, eventId }: { slug: string; eventId?: st
               onClick={() => vote(i)}
               disabled={voting || voted === i}
               className={`relative w-full rounded-xl overflow-hidden border h-14 transition ${
-                isMine ? 'border-[#FF3D8A] ring-2 ring-[#FF3D8A]/40' :
-                winning ? 'border-[#FF3D8A]/50' : 'border-white/15'
-              } ${voting ? 'cursor-default opacity-90' : 'hover:border-[#FF7AB6]/60 active:scale-[0.99]'} bg-white/[0.04]`}
+                isMine ? 'border-[#FF2D8D] ring-2 ring-[#FF2D8D]/40' :
+                winning ? 'border-[#FF2D8D]/50' : 'border-white/15'
+              } ${voting ? 'cursor-default opacity-90' : 'hover:border-[#FF2D8D]/60 active:scale-[0.99]'} bg-white/[0.04]`}
             >
               <div
                 className={`absolute inset-y-0 left-0 transition-all duration-700 ${
-                  isMine ? 'bg-gradient-to-r from-[#FF3D8A] to-[#FF7AB6]' :
-                  winning ? 'bg-gradient-to-r from-[#8B0E2F] to-[#B82E54]' :
-                  'bg-gradient-to-r from-[#8B0E2F]/40 to-[#B82E54]/30'
+                  isMine ? 'bg-[#FF2D8D]' :
+                  winning ? 'bg-[#F4FF3A]' :
+                  'bg-[#2A2A33]'
                 }`}
                 style={{ width: voted !== null || total > 0 ? `${pct}%` : '0%' }}
               />
@@ -1103,8 +1103,8 @@ function PartyRouletteResult({ slug: _slug, eventId }: { slug: string; eventId?:
   const r: LiveGameRound | null = useLatestGames(eventId)?.roulette ?? null
   if (!r || r.status !== 'completed' || !r.result?.slot_label) return null
   return (
-    <div className="rounded-2xl p-6 bg-gradient-to-br from-[#FF3D8A]/30 via-[#8B0E2F]/40 to-black/60 border border-[#FF3D8A]/40 text-center shadow-[0_10px_40px_rgba(255,61,138,0.25)]">
-      <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-[#FF7AB6] mb-3">
+    <div className="rounded-2xl p-6 bg-[#15151B] border border-[#FF2D8D]/40 text-center">
+      <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-[#FF2D8D] mb-3">
         {t('live.partyRoulette')}
       </p>
       <p className="text-2xl font-black text-white leading-tight">{r.result.slot_label}</p>
@@ -1120,8 +1120,8 @@ function PartyApprovedPhotos({ slug }: { slug: string }) {
   return (
     <div className="rounded-2xl bg-black/40 border border-white/10 backdrop-blur p-4">
       <div className="flex items-center gap-2 mb-3">
-        <Camera className="h-4 w-4 text-[#FF7AB6]" />
-        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#FF7AB6]">{t('live.publicBooth')}</span>
+        <Camera className="h-4 w-4 text-[#FF2D8D]" />
+        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#FF2D8D]">{t('live.publicBooth')}</span>
       </div>
       <div className="grid grid-cols-3 gap-2">
         {photos.map((p: any) => (

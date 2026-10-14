@@ -26,7 +26,7 @@ export function SessionLockScreen({
   return (
     <div className="flex-1 flex items-center justify-center px-6 py-12">
       <Card className="max-w-lg w-full text-center py-10 px-8">
-        <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 text-purple-200 mb-5">
+        <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-[#FF2D8D]/15 text-[#FF2D8D] mb-5">
           <Lock className="h-7 w-7" />
         </div>
 
@@ -36,7 +36,7 @@ export function SessionLockScreen({
               <Heart className="h-3 w-3" /> {t('sessions.typeWedding')}
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/15 text-purple-200 px-2.5 py-0.5">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#F4FF3A]/10 text-[#F4FF3A] px-2.5 py-0.5">
               <PartyPopper className="h-3 w-3" /> {t('sessions.typeParty')}
             </span>
           )}
@@ -44,7 +44,7 @@ export function SessionLockScreen({
         </div>
 
         <h1 className="text-xl font-black text-white mb-3 flex items-center justify-center gap-2">
-          <Sparkles className="h-4 w-4 text-purple-300" /> {t('sessions.locked.title')}
+          <Sparkles className="h-4 w-4 text-[#FF2D8D]" /> {t('sessions.locked.title')}
         </h1>
         <p className="text-sm text-white/60 max-w-md mx-auto mb-6 leading-relaxed">
           {t('sessions.locked.text')}

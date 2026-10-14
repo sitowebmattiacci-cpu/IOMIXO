@@ -21,8 +21,8 @@ export function Progress({
   const pct = Math.min(100, Math.max(0, value))
 
   const tracks = {
-    purple: 'from-purple-600 to-violet-500',
-    pink:   'from-pink-600 to-rose-500',
+    purple: 'from-[#FF2D8D] to-[#F4FF3A]',
+    pink:   'from-[#FF2D8D] to-[#F4FF3A]',
     cyan:   'from-cyan-500 to-sky-400',
     green:  'from-green-500 to-emerald-400',
   }
@@ -31,7 +31,7 @@ export function Progress({
 
   return (
     <div className={cn('w-full', className)}>
-      <div className={cn('w-full rounded-full overflow-hidden', heights[height], 'bg-white/5')}>
+      <div className={cn('w-full rounded-full overflow-hidden', heights[height], 'bg-[#2A2A33]')}>
         <div
           className={cn(
             'h-full rounded-full bg-gradient-to-r transition-all duration-500 ease-out',

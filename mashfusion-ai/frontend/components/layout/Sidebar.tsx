@@ -7,7 +7,7 @@ import Image from 'next/image'
 import useSWR from 'swr'
 import {
   LayoutDashboard, Radio, UserCircle, CalendarDays, CreditCard,
-  LogOut, Settings, PanelLeftClose, PanelLeftOpen, Lock,
+  LogOut, Settings, PanelLeftClose, PanelLeftOpen, Lock, Menu, X,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
@@ -34,6 +34,7 @@ export function Sidebar() {
   const { t } = useI18n()
 
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
     try {
@@ -53,6 +54,8 @@ export function Sidebar() {
   )
   const wedding = currentSession?.session_type === 'wedding'
 
+  useEffect(() => { setMobileOpen(false) }, [pathname])
+
   const handleLogout = async () => {
     await auth.logout()
     toast.success(t('sidebar.loggedOut'))
@@ -70,11 +73,80 @@ export function Sidebar() {
   // Wedding sessions render their own full-screen layout (WeddingAdminShell).
   if (wedding) return null
 
+  const mobileNav = (
+    <div className="md:hidden">
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-[#2A2A33] bg-[#0A0A0D] px-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <Logo variant="party" size={28} className="shrink-0" />
+          <p className="truncate text-sm font-bold text-white">
+            {currentSession?.event_name ?? 'IOMIXO'}
+          </p>
+          {currentSession?.is_active && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#F4FF3A] px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-[#0A0A0D]"><span className="h-1 w-1 rounded-full bg-[#0A0A0D] animate-pulse" />Live</span>
+          )}
+        </div>
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Menu"
+          aria-expanded={mobileOpen}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#2A2A33] bg-[#15151B] text-white"
+        >
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </header>
+      {mobileOpen && (
+        <div className="fixed inset-x-0 bottom-0 top-14 z-40">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
+          <nav className="absolute inset-y-0 left-0 flex w-[300px] max-w-[88vw] flex-col overflow-y-auto border-r border-[#2A2A33] bg-[#0A0A0D] p-3" aria-label="Menu">
+            <div className="flex-1 space-y-1.5">
+              {NAV_ITEMS.map(({ href, key, icon: Icon, proOnly }) => {
+                const active = pathname === href || (href !== '/dashboard' && pathname?.startsWith(href))
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                      'flex min-h-[48px] items-center gap-3 rounded-xl px-4 text-sm font-semibold',
+                      active ? 'bg-[#FF2D8D] text-white' : 'text-[#9A9AA3] hover:bg-white/5 hover:text-white',
+                    )}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    <span className="flex-1">{t(`sidebar.${key}`)}</span>
+                    {key === 'sessionsLive' && currentSession?.is_active && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#F4FF3A] px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-[#0A0A0D]">Live</span>
+                    )}
+                    {proOnly && isFree && <Lock className="h-3.5 w-3.5 text-white/30" />}
+                  </Link>
+                )
+              })}
+            </div>
+            <div className="mt-4 border-t border-[#2A2A33] pt-3">
+              <div className="flex items-center gap-3 px-2 pb-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#FF2D8D]/15 text-sm font-semibold text-[#FF2D8D]">
+                  {user?.avatar_url ? <Image src={user.avatar_url} alt="avatar" width={36} height={36} className="h-full w-full object-cover" /> : (user?.full_name?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? '?')}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-white">{user?.full_name ?? user?.email ?? '...'}</p>
+                  <p className="text-[11px] capitalize text-[#9A9AA3]">{effectiveLabel}</p>
+                </div>
+              </div>
+              <button onClick={handleLogout} className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-[#2A2A33] bg-[#15151B] text-sm font-semibold text-white">
+                <LogOut className="h-4 w-4" /> {t('sidebar.logout')}
+              </button>
+            </div>
+          </nav>
+        </div>
+      )}
+    </div>
+  )
+
   return (
+    <>
+    {mobileNav}
     <aside
       className={cn(
         'hidden md:flex flex-col min-h-screen transition-[width] duration-200 ease-out',
-        wedding ? 'border-r border-[#E8B7C8]' : 'border-r border-white/6 bg-surface-400',
+        wedding ? 'border-r border-[#E8B7C8]' : 'border-r border-[#2A2A33] bg-[#0A0A0D]',
         collapsed ? 'w-[76px]' : 'w-64',
       )}
       style={wedding ? { background: '#F7F4F3' } : undefined}
@@ -82,14 +154,14 @@ export function Sidebar() {
       {/* Logo */}
       <div className={cn(
         'flex items-center gap-3 py-5',
-        wedding ? 'border-b border-[#E8B7C8]' : 'border-b border-white/6',
+        wedding ? 'border-b border-[#E8B7C8]' : 'border-b border-[#2A2A33]',
         collapsed ? 'px-3' : 'px-6',
       )}>
-        <Logo size={36} className="shrink-0" />
+        <Logo variant="party" size={36} className="shrink-0" />
         {!collapsed && (
           <div className="min-w-0">
             <p className={cn('text-sm font-bold tracking-tight', wedding ? 'text-[#2B2424]' : 'text-white')}>IOMIXO</p>
-            <p className={cn('text-[10px] font-medium', wedding ? 'text-[#8F1D2C]' : 'text-purple-400')}>Live Hub</p>
+            <p className={cn('text-[10px] font-medium', wedding ? 'text-[#8F1D2C]' : 'text-[#FF2D8D]')}>Live Hub</p>
           </div>
         )}
         <button
@@ -126,8 +198,8 @@ export function Sidebar() {
                       ? 'bg-[#FBEAF0] text-[#8F1D2C]'
                       : 'text-[#6F6260] hover:text-[#2B2424] hover:bg-[#FBEAF0]/60'
                     : active
-                      ? 'bg-purple-500/15 text-white'
-                      : 'text-white/40 hover:text-white/70 hover:bg-white/4'
+                      ? 'bg-[#FF2D8D] text-white'
+                      : 'text-[#9A9AA3] hover:text-white hover:bg-white/5'
                 )}
                 title={collapsed ? label : undefined}
               >
@@ -136,15 +208,18 @@ export function Sidebar() {
                     layoutId="sidebar-active"
                     className={cn(
                       'absolute top-1/2 -translate-y-1/2 rounded-r',
-                      wedding ? 'bg-[#8F1D2C]' : 'bg-purple-400',
+                      wedding ? 'bg-[#8F1D2C]' : 'bg-[#F4FF3A]',
                       collapsed ? 'left-0 h-4 w-0.5' : 'left-0 h-5 w-0.5',
                     )}
                   />
                 )}
-                <Icon className={cn('h-4 w-4', active ? (wedding ? 'text-[#8F1D2C]' : 'text-purple-400') : '')} />
+                <Icon className={cn('h-4 w-4', active ? (wedding ? 'text-[#8F1D2C]' : 'text-white') : '')} />
                 {!collapsed && (
                   <span className="flex-1 flex items-center justify-between">
                     {label}
+                    {key === 'sessionsLive' && currentSession?.is_active && (
+                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[#F4FF3A] px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-[#0A0A0D]"><span className="h-1 w-1 rounded-full bg-[#0A0A0D] animate-pulse" />Live</span>
+                    )}
                     {locked && <Lock className={cn('h-3 w-3', wedding ? 'text-[#6F6260]/60' : 'text-white/30')} />}
                   </span>
                 )}
@@ -164,14 +239,14 @@ export function Sidebar() {
           <div className="flex items-center justify-between">
             <p className={cn('text-sm font-semibold', wedding ? 'text-[#2B2424]' : 'text-white')}>{effectiveLabel}</p>
             {isFree && (
-              <Link href="/billing" className={cn('text-[11px]', wedding ? 'text-[#8F1D2C] hover:text-[#741625]' : 'text-purple-300 hover:text-purple-200')}>
+              <Link href="/billing" className={cn('text-[11px]', wedding ? 'text-[#8F1D2C] hover:text-[#741625]' : 'text-[#FF2D8D] hover:text-[#E9207C]')}>
                 {t('sidebar.upgradeToPro')}
               </Link>
             )}
           </div>
           {hasActiveEventPass && activePass && (
-            <div className={cn('mt-2 pt-2 border-t', wedding ? 'border-[#E8B7C8]' : 'border-white/10')}>
-              <p className={cn('text-[11px] font-medium', wedding ? 'text-[#8F1D2C]' : 'text-pink-300')}>{t('sidebar.eventPassActive')}</p>
+            <div className={cn('mt-2 pt-2 border-t', wedding ? 'border-[#E8B7C8]' : 'border-[#2A2A33]')}>
+              <p className={cn('text-[11px] font-medium', wedding ? 'text-[#8F1D2C]' : 'text-[#F4FF3A]')}>{t('sidebar.eventPassActive')}</p>
               <p className={cn('text-[10px] mt-0.5', wedding ? 'text-[#6F6260]' : 'text-white/40')}>
                 {t('sidebar.expires')}: {format(new Date(activePass.valid_until), 'd MMM, HH:mm')}
               </p>
@@ -182,7 +257,7 @@ export function Sidebar() {
 
       {/* User + logout */}
       <div className={cn(
-        wedding ? 'border-t border-[#E8B7C8]' : 'border-t border-white/6',
+        wedding ? 'border-t border-[#E8B7C8]' : 'border-t border-[#2A2A33]',
         collapsed ? 'p-2' : 'p-3',
       )}>
         <div
@@ -193,7 +268,7 @@ export function Sidebar() {
         >
           <div className={cn(
             'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold overflow-hidden',
-            wedding ? 'bg-[#FBEAF0] text-[#8F1D2C]' : 'bg-purple-500/20 text-purple-300',
+            wedding ? 'bg-[#FBEAF0] text-[#8F1D2C]' : 'bg-[#FF2D8D]/15 text-[#FF2D8D]',
           )}>
             {user?.avatar_url ? (
               <Image src={user.avatar_url} alt="avatar" width={32} height={32} className="object-cover w-full h-full" />
@@ -217,5 +292,6 @@ export function Sidebar() {
         </div>
       </div>
     </aside>
+    </>
   )
 }

@@ -47,7 +47,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <Logo size={40} />
+            <Logo variant="party" size={40} />
             <span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">Live Hub</span></span>
           </Link>
           <h1 className="text-2xl font-bold text-white">Welcome back</h1>

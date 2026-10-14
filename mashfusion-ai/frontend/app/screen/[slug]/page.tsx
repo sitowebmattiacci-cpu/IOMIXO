@@ -777,8 +777,8 @@ function VideoLiveAudioUnlock({ theme }: { theme: 'wedding' | 'party' }) {
   const isWedding = theme === 'wedding'
   const card = isWedding
     ? 'rounded-2xl border border-wedding-gold/30 bg-black/70 backdrop-blur-md px-6 py-4 shadow-wedding-lg'
-    : 'rounded-2xl border border-[#FF3D8A]/40 bg-black/70 backdrop-blur-md px-6 py-4 shadow-[0_0_50px_rgba(255,61,138,0.25)]'
-  const iconColor = isWedding ? 'text-wedding-gold' : 'text-[#FF3D8A]'
+    : 'rounded-2xl border border-[#FF2D8D]/40 bg-black/70 backdrop-blur-md px-6 py-4'
+  const iconColor = isWedding ? 'text-wedding-gold' : 'text-[#FF2D8D]'
   const textColor = isWedding ? 'text-wedding-ivory' : 'text-white'
 
   return (
@@ -1037,7 +1037,7 @@ function PartyScreen({
     <PartyScreenPanel icon={<Sparkles className="h-5 w-5" />} title="Party Roulette">
       {roulette?.result ? (
         <div className="h-full flex items-center justify-center">
-          <div className="w-full rounded-2xl bg-gradient-to-br from-[#8B0E2F]/40 to-[#FF3D8A]/30 border border-[#FF3D8A]/40 py-6 px-6 text-center">
+          <div className="w-full rounded-2xl bg-[#15151B] border border-[#FF2D8D]/40 py-6 px-6 text-center">
             <p className="text-3xl xl:text-4xl font-black text-white leading-tight">
               {roulette.result.slot_label}
             </p>
@@ -1063,9 +1063,9 @@ function PartyScreen({
               const max = Math.max(...(active_poll.tally ?? [0]))
               const winning = total > 0 && tally === max && tally > 0
               return (
-                <div key={i} className={`relative rounded-xl overflow-hidden border flex-1 min-h-0 max-h-14 ${winning ? 'border-[#FF3D8A]/70 shadow-[0_0_20px_rgba(255,61,138,0.4)]' : 'border-white/15'} bg-white/[0.05]`}>
+                <div key={i} className={`relative rounded-xl overflow-hidden border flex-1 min-h-0 max-h-14 ${winning ? 'border-[#FF2D8D]/70' : 'border-white/15'} bg-white/[0.05]`}>
                   <div
-                    className={`absolute inset-y-0 left-0 transition-all duration-700 ${winning ? 'bg-gradient-to-r from-[#FF3D8A] to-[#8B0E2F]' : 'bg-gradient-to-r from-[#8B0E2F]/50 to-[#B82E54]/40'}`}
+                    className={`absolute inset-y-0 left-0 transition-all duration-700 ${winning ? 'bg-[#FF2D8D]' : 'bg-[#2A2A33]'}`}
                     style={{ width: `${pct}%` }}
                   />
                   <div className="relative flex items-center justify-between h-full px-4">
@@ -1099,7 +1099,7 @@ function PartyScreen({
             source={partyVideo}
             title={(cfg.video_title as string) || 'Video Live'}
             control={videoControl}
-            frameClass="border border-[#FF3D8A]/40 shadow-[0_0_40px_rgba(255,61,138,0.2)]"
+            frameClass="border border-[#FF2D8D]/40"
           />
         </div>
       </div>
@@ -1183,7 +1183,7 @@ function PartyScreen({
         {/* HEADER — sinistra: titolo evento + DJ · destra: modulo QR "scansiona & partecipa" */}
         <header className={`flex items-center justify-between gap-8 shrink-0 ${isCompact ? 'mb-5' : 'mb-7'}`}>
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.45em] text-[#FF7AB6] mb-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.45em] text-[#FF2D8D] mb-2">
               ✦ Party Mode Live ✦
             </p>
             <h1 className={`font-black text-white leading-[0.95] tracking-tight truncate ${isCompact ? 'text-4xl xl:text-5xl' : 'text-5xl xl:text-6xl'}`}>
@@ -1191,13 +1191,13 @@ function PartyScreen({
             </h1>
             {session.dj_name && (
               <p className={`text-white/55 ${isCompact ? 'text-lg mt-2' : 'text-xl mt-3'}`}>
-                DJ <span className="text-[#FF7AB6] font-semibold">{session.dj_name}</span>
+                DJ <span className="text-[#FF2D8D] font-semibold">{session.dj_name}</span>
               </p>
             )}
           </div>
           {/* Modulo "Scan & join": QR + etichetta in una card coerente, centrata e staccata dal bordo */}
           <div className="shrink-0 flex flex-col items-center gap-2.5 rounded-2xl bg-white/[0.05] border border-white/10 px-5 py-4 backdrop-blur-md">
-            <div className="bg-white p-3 rounded-xl shadow-[0_0_40px_rgba(255,61,138,0.35)] border-2 border-[#FF3D8A]/60">
+            <div className="bg-white p-3 rounded-xl border-2 border-[#FF2D8D]/60">
               <QRCodeSVG value={liveUrl} size={isCompact ? 124 : 150} level="M" includeMargin={false} />
             </div>
             <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-white text-center">
@@ -1220,7 +1220,7 @@ function PartyScreen({
         <footer className={`shrink-0 ${isCompact ? 'mt-4' : 'mt-6'}`}>
           <PartyDivider />
           <p className="text-center text-[11px] uppercase tracking-[0.4em] text-white/50 mt-3">
-            Powered by <span className="text-[#FF7AB6] font-bold">IOMIXO Live Hub</span>
+            Powered by <span className="text-[#FF2D8D] font-bold">IOMIXO Live Hub</span>
           </p>
         </footer>
       </div>
@@ -1232,9 +1232,9 @@ function PartyScreenPanel({
   icon, title, subtitle, children, className = '',
 }: { icon: React.ReactNode; title: string; subtitle?: string; children: React.ReactNode; className?: string }) {
   return (
-    <section className={`h-full rounded-2xl backdrop-blur-md bg-white/[0.04] border border-white/[0.1] p-4 flex flex-col min-h-0 shadow-[0_8px_40px_rgba(139,14,47,0.25)] ${className}`}>
+    <section className={`h-full rounded-2xl backdrop-blur-md bg-white/[0.04] border border-white/[0.1] p-4 flex flex-col min-h-0 ${className}`}>
       <div className="flex items-center gap-2.5 mb-3 pb-2.5 border-b border-white/10 shrink-0">
-        <span className="text-[#FF3D8A]">{icon}</span>
+        <span className="text-[#FF2D8D]">{icon}</span>
         <div className="flex-1 min-w-0">
           <h2 className="text-[13px] font-bold uppercase tracking-[0.22em] text-white leading-none">{title}</h2>
           {subtitle && <p className="text-[9px] uppercase tracking-[0.18em] text-white/40 mt-1">{subtitle}</p>}

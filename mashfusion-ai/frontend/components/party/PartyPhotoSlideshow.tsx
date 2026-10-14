@@ -36,9 +36,9 @@ export function PartyPhotoSlideshow({
   if (!hasPhotos) {
     return (
       <div
-        className={`rounded-2xl border-2 border-dashed border-[#FF3D8A]/20 bg-white/[0.02] h-full flex flex-col items-center justify-center text-center px-6 py-16 ${className}`}
+        className={`rounded-2xl border-2 border-dashed border-[#FF2D8D]/20 bg-white/[0.02] h-full flex flex-col items-center justify-center text-center px-6 py-16 ${className}`}
       >
-        <Camera className="h-14 w-14 text-[#FF3D8A]/40 mb-4" />
+        <Camera className="h-14 w-14 text-[#FF2D8D]/40 mb-4" />
         <p className="text-2xl font-bold text-white">Le foto degli ospiti appariranno qui</p>
       </div>
     )

@@ -193,8 +193,8 @@ export default function LiveBoothPage() {
   const drawPartyOverlay = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
     const pad = Math.min(w, h) * 0.04
     const grd = ctx.createLinearGradient(0, 0, w, 0)
-    grd.addColorStop(0, '#FF3D8A')
-    grd.addColorStop(1, '#8B0E2F')
+    grd.addColorStop(0, '#FF2D8D')
+    grd.addColorStop(1, '#E9207C')
     ctx.strokeStyle = grd
     ctx.lineWidth = Math.min(w, h) * 0.008
     ctx.strokeRect(pad, pad, w - pad * 2, h - pad * 2)
@@ -208,7 +208,7 @@ export default function LiveBoothPage() {
     ctx.textAlign = 'center'
     ctx.fillText(session.event_name, w / 2, h - pad - bandH * 0.55)
 
-    ctx.fillStyle = '#FF7AB6'
+    ctx.fillStyle = '#FF2D8D'
     ctx.font = `${Math.min(w, h) * 0.025}px Inter, sans-serif`
     ctx.fillText('IOMIXO LIVE BOOTH', w / 2, h - pad - bandH * 0.2)
   }
@@ -333,7 +333,7 @@ export default function LiveBoothPage() {
       return (
         <PartyShell>
           <div className="min-h-screen flex flex-col items-center justify-center p-6 space-y-6">
-            <div className="relative max-w-2xl w-full rounded-3xl overflow-hidden ring-2 ring-[#FF3D8A]/40 shadow-[0_25px_80px_rgba(255,61,138,0.35)]">
+            <div className="relative max-w-2xl w-full rounded-3xl overflow-hidden ring-2 ring-[#FF2D8D]/40">
               {photo === 'pending' ? (
                 <div className="w-full aspect-square flex items-center justify-center bg-black/40 text-white/70 text-sm">
                   {t('booth.uploadPhoto')}
@@ -360,14 +360,14 @@ export default function LiveBoothPage() {
       return (
         <PartyShell>
           <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
-            <div className="relative max-w-2xl w-full rounded-3xl overflow-hidden ring-2 ring-[#FF3D8A]/40 shadow-[0_25px_80px_rgba(255,61,138,0.35)]">
+            <div className="relative max-w-2xl w-full rounded-3xl overflow-hidden ring-2 ring-[#FF2D8D]/40">
               <video ref={videoRef} autoPlay playsInline muted className={`w-full h-auto ${facingMode === 'user' ? 'mirror' : ''}`} />
               {countdown !== null && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 backdrop-blur-sm">
-                  <p className="text-[#FF7AB6] text-2xl font-black tracking-[0.5em] uppercase mb-6 animate-pulse">
+                  <p className="text-[#FF2D8D] text-2xl font-black tracking-[0.5em] uppercase mb-6 animate-pulse">
                     {t('booth.photoMoment')}
                   </p>
-                  <p key={countdown} className="text-white text-[12rem] sm:text-[16rem] font-black leading-none drop-shadow-[0_0_40px_rgba(255,61,138,0.7)]">
+                  <p key={countdown} className="text-white text-[12rem] sm:text-[16rem] font-black leading-none drop-">
                     {countdown}
                   </p>
                 </div>
@@ -400,7 +400,7 @@ export default function LiveBoothPage() {
             </div>
             <button
               onClick={openFilePicker}
-              className="mt-4 inline-flex items-center gap-2 text-sm text-white/55 hover:text-[#FF7AB6] transition-colors"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-white/55 hover:text-[#FF2D8D] transition-colors"
             >
               <ImagePlus className="h-4 w-4" />
               {t('booth.uploadPhoto')}
@@ -437,14 +437,14 @@ export default function LiveBoothPage() {
           </div>
 
           <PartyCard tone="fuchsia" className="w-full">
-            <div className="flex items-center justify-center gap-2 text-[#FF7AB6] mb-3">
+            <div className="flex items-center justify-center gap-2 text-[#FF2D8D] mb-3">
               <Sparkles className="h-4 w-4" />
               <p className="text-[11px] uppercase tracking-[0.3em] font-semibold">{t('booth.howItWorks')}</p>
               <Sparkles className="h-4 w-4" />
             </div>
             <ol className="text-sm text-white/80 space-y-1.5 text-left list-decimal list-inside">
               <li>{t('booth.step1')}</li>
-              <li>{t('booth.step2')} <span className="text-[#FF7AB6] font-bold">3… 2… 1</span></li>
+              <li>{t('booth.step2')} <span className="text-[#FF2D8D] font-bold">3… 2… 1</span></li>
               <li>{t('booth.step3')}</li>
               <li>{t('booth.step4')}</li>
             </ol>
@@ -460,7 +460,7 @@ export default function LiveBoothPage() {
 
           {cameraError && (
             <PartyCard tone="wine" className="w-full text-left">
-              <div className="flex items-center gap-2 text-[#FF7AB6] mb-2">
+              <div className="flex items-center gap-2 text-[#FF2D8D] mb-2">
                 <AlertTriangle className="h-4 w-4" />
                 <p className="text-sm font-bold">{t('booth.cameraUnavailableTitle')}</p>
               </div>
@@ -487,19 +487,19 @@ export default function LiveBoothPage() {
                 <p className="text-xs text-white/45">{t('booth.cameraHint')}</p>
               </>
             )}
-            <p className="text-xs text-[#FF7AB6]/80">{t('booth.partyApprovalNote')}</p>
+            <p className="text-xs text-[#FF2D8D]/80">{t('booth.partyApprovalNote')}</p>
           </div>
 
           <Link
             href={`/live/${slug}`}
-            className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.25em] text-white/50 hover:text-[#FF7AB6] transition-colors"
+            className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.25em] text-white/50 hover:text-[#FF2D8D] transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             {t('booth.backToMain')}
           </Link>
 
           <p className="text-[10px] uppercase tracking-[0.32em] text-white/30">
-            Powered by <span className="text-[#FF7AB6]">IOMIXO Live Hub</span>
+            Powered by <span className="text-[#FF2D8D]">IOMIXO Live Hub</span>
           </p>
         </div>
       </PartyShell>

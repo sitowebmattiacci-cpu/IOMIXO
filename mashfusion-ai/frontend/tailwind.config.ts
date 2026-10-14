@@ -10,33 +10,60 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Brand
+        // Brand — Party/DJ pink scale (replaces the former violet)
         brand: {
-          50:  '#f0e7ff',
-          100: '#d9c4ff',
-          200: '#b896ff',
-          300: '#9666ff',
-          400: '#7c3aed',
-          500: '#6d28d9',
-          600: '#5b21b6',
-          700: '#4c1d95',
-          800: '#3b1577',
-          900: '#2c0e5e',
+          50:  '#FFE5F1',
+          100: '#FFC2DE',
+          200: '#FF9BC8',
+          300: '#FF74B3',
+          400: '#FF4DA0',
+          500: '#FF2D8D',
+          600: '#E9207C',
+          700: '#C21868',
+          800: '#8F124B',
+          900: '#5C0C31',
+        },
+        // Party/DJ identity palette
+        party: {
+          bg:       '#0A0A0D',
+          surface:  '#15151B',
+          surface2: '#1C1C23',
+          pink:     '#FF2D8D',
+          'pink-hover': '#E9207C',
+          yellow:   '#F4FF3A',
+          ink:      '#F8F8FA',
+          muted:    '#9A9AA3',
+          border:   '#2A2A33',
+          success:  '#43E08D',
+          danger:   '#FF5C75',
+        },
+        // Tailwind "purple" is remapped to the brand pink so legacy utilities follow the new identity
+        purple: {
+          50:  '#FFE5F1',
+          100: '#FFC2DE',
+          200: '#FF9BC8',
+          300: '#FF74B3',
+          400: '#FF4DA0',
+          500: '#FF2D8D',
+          600: '#E9207C',
+          700: '#C21868',
+          800: '#8F124B',
+          900: '#5C0C31',
         },
         // Neon accents
         neon: {
-          purple: '#a855f7',
+          purple: '#FF2D8D',
           pink:   '#ec4899',
           cyan:   '#22d3ee',
           green:  '#4ade80',
         },
         // Dark surface palette
         surface: {
-          50:  '#1a1a2e',
-          100: '#16213e',
-          200: '#0f3460',
-          300: '#0d0d1a',
-          400: '#080810',
+          50:  '#1C1C23',
+          100: '#15151B',
+          200: '#2A2A33',
+          300: '#0F0F14',
+          400: '#0A0A0D',
           500: '#050508',
         },
         // Glass
@@ -74,9 +101,9 @@ const config: Config = {
       },
       backgroundImage: {
         'gradient-radial':   'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-hero':     'linear-gradient(135deg, #0f0f23 0%, #1a0a2e 50%, #0a1628 100%)',
-        'gradient-brand':    'linear-gradient(135deg, #7c3aed, #ec4899, #22d3ee)',
-        'gradient-card':     'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(236,72,153,0.08))',
+        'gradient-hero':     'linear-gradient(180deg, #0A0A0D 0%, #15151B 100%)',
+        'gradient-brand':    'linear-gradient(135deg, #FF2D8D, #E9207C)',
+        'gradient-card':     'linear-gradient(135deg, rgba(255,45,141,0.10), rgba(255,45,141,0.03))',
         'gradient-wedding':  'linear-gradient(180deg, #FFFDFB 0%, #FBEAF0 45%, #E8DED6 100%)',
         'gradient-wedding-card': 'linear-gradient(140deg, rgba(255,255,255,0.85), rgba(245,215,161,0.18))',
         'noise':             "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E\")",
@@ -141,8 +168,8 @@ const config: Config = {
         xs: '2px',
       },
       boxShadow: {
-        'neon-purple': '0 0 20px rgba(124,58,237,0.5), 0 0 60px rgba(124,58,237,0.2)',
-        'neon-pink':   '0 0 20px rgba(236,72,153,0.5), 0 0 60px rgba(236,72,153,0.2)',
+        'neon-purple': '0 0 14px rgba(255,45,141,0.35)',
+        'neon-pink':   '0 0 14px rgba(255,45,141,0.35)',
         'neon-cyan':   '0 0 20px rgba(34,211,238,0.5), 0 0 60px rgba(34,211,238,0.2)',
         'glass':       '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
         'card':        '0 4px 24px rgba(0,0,0,0.3)',

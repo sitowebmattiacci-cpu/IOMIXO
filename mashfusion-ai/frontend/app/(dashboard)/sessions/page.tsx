@@ -126,7 +126,7 @@ export default function LiveSessionsPage() {
             <button
               type="button"
               onClick={() => pickExperience('party')}
-              className="text-left rounded-2xl border border-white/10 bg-gradient-to-br from-purple-600/15 to-fuchsia-600/5 hover:border-purple-400 hover:from-purple-600/25 transition p-5"
+              className="text-left rounded-2xl border border-white/10 bg-[#15151B] hover:border-purple-400 hover:from-purple-600/25 transition p-5"
             >
               <div className="flex items-center gap-3 mb-2">
                 <div className="h-10 w-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-300">
@@ -142,7 +142,7 @@ export default function LiveSessionsPage() {
             <button
               type="button"
               onClick={() => pickExperience('wedding')}
-              className="text-left rounded-2xl border border-white/10 bg-gradient-to-br from-pink-600/15 to-rose-600/5 hover:border-pink-400 hover:from-pink-600/25 transition p-5"
+              className="text-left rounded-2xl border border-white/10 bg-[#15151B] hover:border-pink-400 hover:from-pink-600/25 transition p-5"
             >
               <div className="flex items-center gap-3 mb-2">
                 <div className="h-10 w-10 rounded-xl bg-pink-500/20 flex items-center justify-center text-pink-300">

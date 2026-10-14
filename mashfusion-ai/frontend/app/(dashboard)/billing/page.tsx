@@ -185,11 +185,11 @@ export default function BillingPage() {
 
           <motion.div
             whileHover={{ y: -4 }}
-            className="relative rounded-2xl p-6 bg-gradient-to-br from-pink-600/20 to-rose-600/10 border-2 border-pink-500/40"
+            className="relative rounded-2xl p-6 bg-[#15151B] border-2 border-[#FF2D8D]"
           >
             {hasActivePass && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-1 text-[10px] font-semibold text-white flex items-center gap-1">
+                <span className="rounded-full bg-[#F4FF3A] px-3 py-1 text-[10px] font-semibold text-[#0A0A0D] flex items-center gap-1">
                   <Clock className="h-3 w-3" /> {t('billing.active')}
                 </span>
               </div>
@@ -198,7 +198,7 @@ export default function BillingPage() {
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-rose-500">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#FF2D8D]">
                     <Heart className="h-6 w-6 text-white" />
                   </div>
                   <div>
@@ -236,7 +236,7 @@ export default function BillingPage() {
                 {!hasActivePass ? (
                   <Button
                     variant="primary"
-                    className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
+                    className="w-full bg-[#FF2D8D] hover:bg-[#E9207C]"
                     loading={loading === 'event-pass'}
                     onClick={handleEventPass}
                   >
@@ -327,13 +327,13 @@ export default function BillingPage() {
               whileHover={canUpgrade ? { y: -4 } : {}}
               className={`relative rounded-2xl p-6 flex flex-col gap-4 ${
                 plan === 'pro'
-                  ? 'bg-gradient-to-b from-purple-600/20 to-pink-600/10 border border-purple-500/40'
+                  ? 'bg-[#15151B] border border-[#FF2D8D]/50'
                   : 'glass'
               }`}
             >
               {plan === 'pro' && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="rounded-full bg-gradient-brand px-3 py-1 text-[10px] font-semibold text-white">
+                  <span className="rounded-full bg-[#FF2D8D] px-3 py-1 text-[10px] font-semibold text-white">
                     {t('billing.mostChosen')}
                   </span>
                 </div>

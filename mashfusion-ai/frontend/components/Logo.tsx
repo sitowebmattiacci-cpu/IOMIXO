@@ -7,12 +7,13 @@ interface LogoProps {
   /**
    * 'default' → official IOMIXO logo (used everywhere).
    * 'wedding' → legacy red logo, kept only inside the Wedding Edition.
+   * 'party'   → same mark on the Party/DJ pink palette.
    */
-  variant?: 'default' | 'wedding'
+  variant?: 'default' | 'wedding' | 'party'
 }
 
 export function Logo({ size = 32, className, variant = 'default' }: LogoProps) {
-  const src = variant === 'wedding' ? '/logo.png' : '/iomixo-logo.png'
+  const src = variant === 'wedding' ? '/logo.png' : variant === 'party' ? '/iomixo-logo-party.png' : '/iomixo-logo.png'
   return (
     <div className={cn('relative shrink-0', className)} style={{ width: size, height: size }}>
       <Image

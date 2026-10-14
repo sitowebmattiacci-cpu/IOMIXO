@@ -37,7 +37,7 @@ function TopNav() {
     <header className="sticky top-0 z-50 backdrop-blur-md bg-[#0F0A0C]/85 border-b border-[#2B1B1F]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <Logo size={32} />
+          <Logo variant="party" size={32} />
           <div className="leading-tight">
             <p className="text-sm font-bold text-[#F7F4F3]">IOMIXO</p>
             <p className="text-[10px] text-[#E8B7C8] font-medium -mt-0.5">Live Hub</p>

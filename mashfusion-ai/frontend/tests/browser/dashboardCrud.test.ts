@@ -36,7 +36,12 @@ test('K1. create → list → detail → close/reopen → roulette → shoe → 
 
     // create (wedding) from the UI form
     await page.goto(`${app.url}/sessions`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
-    await page.getByRole('button', { name: /Nuova sessione/ }).first().click({ timeout: 90_000 })
+    // The create step depends on the plan having loaded when the button is clicked: retry until the Party/Wedding choice shows.
+    for (let attempt = 0; attempt < 4; attempt++) {
+      await page.getByRole('button', { name: /Nuova sessione/ }).first().click({ timeout: 90_000 })
+      if (await page.getByText('Wedding Edition').first().waitFor({ state: 'visible', timeout: 6_000 }).then(() => true, () => false)) break
+      await page.goto(`${app.url}/sessions`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
+    }
     await page.getByText('Wedding Edition').first().click()
     await page.locator('input[required]').first().fill('Matrimonio UI')
     await page.getByRole('button', { name: /Crea sessione/ }).click()

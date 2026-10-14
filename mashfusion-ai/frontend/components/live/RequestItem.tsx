@@ -67,21 +67,28 @@ export function RequestItem({ request, onUpdate, onDelete, busy, readOnly, weddi
     )
   }
 
+  const statusTone: Record<LiveRequestStatus, string> = {
+    pending:  'bg-[#F4FF3A]/10 text-[#F4FF3A] border-[#F4FF3A]/30',
+    approved: 'bg-[#43E08D]/10 text-[#43E08D] border-[#43E08D]/30',
+    rejected: 'bg-[#FF5C75]/10 text-[#FF5C75] border-[#FF5C75]/30',
+  }
   return (
-    <div className="glass rounded-xl p-4">
+    <div className={`rounded-2xl border bg-[#15151B] p-4 ${request.status === 'pending' ? 'border-[#F4FF3A]/25' : 'border-[#2A2A33]'}`}>
       <div className="flex items-start gap-3 mb-3">
-        <div className="h-9 w-9 shrink-0 rounded-lg bg-purple-500/15 text-purple-300 flex items-center justify-center">
+        <div className="h-10 w-10 shrink-0 rounded-xl bg-[#FF2D8D]/12 text-[#FF2D8D] flex items-center justify-center">
           <Music2 className="h-4 w-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-white truncate">{request.track_title}</p>
-          {request.artist && <p className="text-xs text-white/50 truncate">{request.artist}</p>}
+          <p className="font-bold text-[#F8F8FA] truncate">{request.track_title}</p>
+          {request.artist && <p className="text-xs text-[#9A9AA3] truncate">{request.artist}</p>}
           {request.message && (
-            <p className="text-xs text-white/60 italic mt-1 line-clamp-2">&ldquo;{request.message}&rdquo;</p>
+            <p className="text-xs text-[#F8F8FA]/70 italic mt-1 line-clamp-2">&ldquo;{request.message}&rdquo;</p>
           )}
-          <p className="text-[11px] text-white/30 mt-2">{formatRelativeTime(request.created_at)}</p>
+          <p className="text-[11px] text-[#9A9AA3] mt-2">{formatRelativeTime(request.created_at)}</p>
         </div>
-        <Badge variant={STATUS_VARIANT[request.status]}>{STATUS_LABEL[request.status]}</Badge>
+        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${statusTone[request.status]}`}>
+          {STATUS_LABEL[request.status]}
+        </span>
       </div>
       <div className="flex gap-2">
         {!readOnly && request.status !== 'approved' && (

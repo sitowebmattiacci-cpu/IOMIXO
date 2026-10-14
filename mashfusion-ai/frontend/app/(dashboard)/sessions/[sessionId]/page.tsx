@@ -1,7 +1,7 @@
 'use client'
 import { useParams, useRouter } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import {
   ArrowLeft, Trash2, Power, Heart, MessageSquare,
@@ -41,12 +41,12 @@ import {
 } from '@/components/wedding/admin/WeddingAdminUI'
 import { WinnerAnnouncementPanel } from '@/components/wedding/WinnerAnnouncementPanel'
 import {
-  PartyShell, PartyCard, PartyButton, PartyBadge, PartyInput, PartyTextarea,
+  PartyShell, PartyCard, PartyButton, PartyBadge, PartyLivePill, PartyInput, PartyTextarea,
   PartyDivider, PartyEyebrow, PartyPaywall, PARTY,
 } from '@/components/party/PartyUI'
 import { useI18n } from '@/lib/i18n'
 import { useEffectiveAccess, isPremiumSession } from '@/lib/access'
-import { resolveVideoSource } from '@/lib/utils'
+import { resolveVideoSource, formatRelativeTime } from '@/lib/utils'
 import type { VideoLiveCommand } from '@/lib/api'
 
 const newCommandId = () =>
@@ -221,10 +221,10 @@ function VideoLiveController({ session, theme }: { session: any; theme: 'wedding
   const isWedding = theme === 'wedding'
   const btn = isWedding
     ? 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-white text-[#8F1D2C] border border-[#E8B7C8] hover:bg-[#FBEAF0] disabled:opacity-50 transition'
-    : 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-black/30 text-white border border-white/15 hover:border-[#FF3D8A] disabled:opacity-50 transition'
+    : 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-black/30 text-white border border-white/15 hover:border-[#FF2D8D] disabled:opacity-50 transition'
   const activeBtn = isWedding
     ? 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-[#8F1D2C] text-white border border-[#8F1D2C] ring-2 ring-[#8F1D2C]/30 hover:bg-[#7a1726] disabled:opacity-50 transition'
-    : 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-[#FF3D8A] text-white border border-[#FF3D8A] ring-2 ring-[#FF3D8A]/40 hover:bg-[#e8327b] disabled:opacity-50 transition'
+    : 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-[#FF2D8D] text-white border border-[#FF2D8D] ring-2 ring-[#FF2D8D]/40 hover:bg-[#e8327b] disabled:opacity-50 transition'
   const dangerBtn = isWedding
     ? 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-white text-[#8F1D2C] border border-[#E8B7C8] hover:bg-[#FBEAF0] disabled:opacity-50 transition'
     : 'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-black/30 text-white border border-white/15 hover:border-white/40 disabled:opacity-50 transition'
@@ -232,7 +232,7 @@ function VideoLiveController({ session, theme }: { session: any; theme: 'wedding
     ? 'mt-3 rounded-lg border border-[#E8B7C8] bg-[#FBEAF0]/40 p-3'
     : 'mt-3 rounded-xl border border-white/10 bg-black/20 p-3'
   const subText = isWedding ? 'text-[#6F6260]' : 'text-white/60'
-  const accent = isWedding ? 'text-[#8F1D2C]' : 'text-[#FF3D8A]'
+  const accent = isWedding ? 'text-[#8F1D2C]' : 'text-[#FF2D8D]'
 
   return (
     <div className={wrap}>
@@ -269,7 +269,7 @@ function VideoLiveController({ session, theme }: { session: any; theme: 'wedding
           onChange={(e) => setVolume(Number(e.target.value))}
           onPointerUp={() => commitVolume(volume)}
           onKeyUp={() => commitVolume(volume)}
-          className="flex-1 accent-[#FF3D8A]"
+          className="flex-1 accent-[#FF2D8D]"
           aria-label={t('weddingPanels.videoVolume')}
         />
         <span className={`text-xs tabular-nums w-9 text-right ${subText}`}>{volume}</span>
@@ -1050,17 +1050,17 @@ function GuestVisibilityPanel({
           {items.map((it) => (
             <label
               key={it.key}
-              className="flex items-center gap-2.5 cursor-pointer select-none rounded-xl bg-white/5 border border-white/10 px-4 py-3 hover:border-[#FF7AB6]/50 transition"
+              className="flex items-center gap-2.5 cursor-pointer select-none rounded-xl bg-white/5 border border-white/10 px-4 py-3 hover:border-[#FF2D8D]/50 transition"
             >
               <input
                 type="checkbox"
                 checked={isOn(it.key)}
                 onChange={() => toggle(it.key)}
                 disabled={saving}
-                className="rounded border-white/20 bg-transparent text-[#FF3D8A] focus:ring-[#FF3D8A]"
+                className="rounded border-white/20 bg-transparent text-[#FF2D8D] focus:ring-[#FF2D8D]"
               />
               <span className="text-sm text-white flex items-center gap-1.5">
-                <span className="text-[#FF7AB6]">{it.icon}</span>
+                <span className="text-[#FF2D8D]">{it.icon}</span>
                 {it.label}
               </span>
             </label>
@@ -2083,20 +2083,19 @@ function PartyDashboard({
           </Link>
         </div>
 
-        {/* HEADER */}
+        {/* TOP BAR */}
         <PartyCard tone="hi" className="mb-5">
-          <div className="flex items-start justify-between flex-wrap gap-4">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="min-w-0">
-              <PartyEyebrow>Party Mode</PartyEyebrow>
-              <h1 className="text-3xl sm:text-4xl font-black text-white mt-2 leading-tight">{session.event_name}</h1>
-              <div className="flex items-center gap-3 mt-3 flex-wrap">
-                <PartyBadge tone={session.is_active ? 'fuchsia' : 'soft'}>
-                  {session.is_active ? '● LIVE' : 'CHIUSA'}
-                </PartyBadge>
-                {session.dj_name && <span className="text-sm text-white/60">DJ {session.dj_name}</span>}
+              <div className="flex items-center gap-3 flex-wrap">
+                <PartyLivePill live={session.is_active} label={session.is_active ? 'LIVE' : 'CHIUSA'} />
+                <PartyEyebrow>Party Mode</PartyEyebrow>
               </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-[#F8F8FA] mt-2 leading-tight truncate">{session.event_name}</h1>
+              {session.dj_name && <p className="text-sm text-[#9A9AA3] mt-1">DJ {session.dj_name}</p>}
             </div>
             <div className="flex gap-2 flex-wrap">
+              <PartyButton variant="outline" size="sm" onClick={() => copy(liveUrl)} icon={<Copy className="h-3.5 w-3.5" />}>Copia link</PartyButton>
               <PartyButton variant="outline" size="sm" loading={togglingActive} onClick={onToggleActive}
                 icon={<Power className="h-3.5 w-3.5" />}>
                 {session.is_active ? t('common.close') : t('common.open')}
@@ -2104,6 +2103,9 @@ function PartyDashboard({
               <PartyButton variant="ghost" size="sm" onClick={onDeleteSession} icon={<Trash2 className="h-3.5 w-3.5" />}>
                 {t('common.delete')}
               </PartyButton>
+              <a href={screenUrl} target="_blank" rel="noreferrer">
+                <PartyButton variant="fuchsia" size="sm" icon={<Tv className="h-3.5 w-3.5" />}>Apri Schermo</PartyButton>
+              </a>
             </div>
           </div>
 
@@ -2117,15 +2119,16 @@ function PartyDashboard({
         </PartyCard>
 
         {/* STATS */}
-        <div className="grid grid-cols-3 gap-3 mb-5">
-          <PartyStat icon={<Music2 className="h-4 w-4" />} label="Richieste" value={(pending.length + approved.length).toString()} pulse={pending.length > 0} />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+          <PartyStat icon={<Music2 className="h-4 w-4" />} label="In attesa" value={pending.length.toString()} pulse={pending.length > 0} accent={pending.length > 0} />
+          <PartyStat icon={<Music2 className="h-4 w-4" />} label="Richieste" value={(pending.length + approved.length + rejected.length).toString()} />
           <PartyStatPhotos sessionId={session.id} />
           <PartyStatPolls sessionId={session.id} />
         </div>
 
         {/* TABS */}
         <div className="flex gap-2 mb-4 flex-wrap">
-          <PartyTabBtn active={tab === 'requests'} onClick={() => setTab('requests')} icon={<Music2 className="h-3.5 w-3.5" />}>Richieste {pending.length > 0 && <span className="ml-1 text-[10px] text-[#FF7AB6]">({pending.length})</span>}</PartyTabBtn>
+          <PartyTabBtn active={tab === 'requests'} onClick={() => setTab('requests')} icon={<Music2 className="h-3.5 w-3.5" />}>Richieste {pending.length > 0 && <span className="ml-1 text-[10px] text-[#FF2D8D]">({pending.length})</span>}</PartyTabBtn>
           <PartyTabBtn active={tab === 'booth'} onClick={() => setTab('booth')} icon={<Camera className="h-3.5 w-3.5" />}>Live Booth</PartyTabBtn>
           <PartyTabBtn active={tab === 'battle'} onClick={() => setTab('battle')} icon={<ListChecks className="h-3.5 w-3.5" />}>Music Battle</PartyTabBtn>
           <PartyTabBtn active={tab === 'games'} onClick={() => setTab('games')} icon={<Sparkles className="h-3.5 w-3.5" />}>Party Games</PartyTabBtn>
@@ -2136,7 +2139,7 @@ function PartyDashboard({
         {/* QR card on the right (visible on requests tab only, to keep things focused) */}
         {tab === 'requests' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 space-y-5">
               <PartyCard>
                 <PartyEyebrow>QR per i guests</PartyEyebrow>
                 <div className="bg-white p-3 rounded-2xl mt-3 mx-auto w-fit">
@@ -2147,6 +2150,7 @@ function PartyDashboard({
                   Copia link
                 </PartyButton>
               </PartyCard>
+              <PartyActivity items={[...pending, ...approved, ...rejected]} />
             </div>
             <div className="lg:col-span-2">
               <RequestsPanel
@@ -2168,12 +2172,35 @@ function PartyDashboard({
   )
 }
 
+function PartyActivity({ items }: { items: any[] }) {
+  const recent = [...items].sort((x, y) => +new Date(y.created_at) - +new Date(x.created_at)).slice(0, 6)
+  const dot: Record<string, string> = { pending: 'bg-[#F4FF3A]', approved: 'bg-[#43E08D]', rejected: 'bg-[#FF5C75]' }
+  return (
+    <PartyCard>
+      <PartyEyebrow>Attività live</PartyEyebrow>
+      {recent.length === 0 ? (
+        <p className="mt-3 text-sm text-[#9A9AA3]">Nessuna attività ancora.</p>
+      ) : (
+        <ul className="mt-3 space-y-2.5">
+          {recent.map((r) => (
+            <li key={r.id} className="flex items-center gap-2.5 text-sm">
+              <span className={`h-2 w-2 shrink-0 rounded-full ${dot[r.status] ?? 'bg-[#9A9AA3]'}`} />
+              <span className="min-w-0 flex-1 truncate text-[#F8F8FA]">{r.track_title}</span>
+              <span className="shrink-0 text-[11px] text-[#9A9AA3]">{formatRelativeTime(r.created_at)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </PartyCard>
+  )
+}
+
 function PartyTabBtn({ active, onClick, icon, children }: any) {
   return (
     <button onClick={onClick}
-      className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 transition border ${
-        active ? 'bg-gradient-to-r from-[#8B0E2F] to-[#FF3D8A] text-white border-transparent shadow-[0_4px_20px_rgba(255,61,138,0.35)]'
-               : 'bg-white/[0.04] text-white/70 border-white/10 hover:bg-white/[0.08] hover:text-white'
+      className={`px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 transition-colors border ${
+        active ? 'bg-[#FF2D8D] text-white border-transparent'
+               : 'bg-[#15151B] text-[#9A9AA3] border-[#2A2A33] hover:text-white hover:border-[#FF2D8D]/50'
       }`}>
       {icon}{children}
     </button>
@@ -2182,15 +2209,15 @@ function PartyTabBtn({ active, onClick, icon, children }: any) {
 
 function PartyLinkRow({ label, desc, url, onCopy, external }: { label: string; desc: string; url: string; onCopy: () => void; external?: boolean }) {
   return (
-    <div className="rounded-xl bg-black/30 border border-white/10 p-3">
-      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#FF7AB6]">{label}</p>
+    <div className="rounded-xl bg-[#0A0A0D] border border-[#2A2A33] p-3">
+      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#FF2D8D]">{label}</p>
       <p className="text-xs text-white/60 mt-1">{desc}</p>
       <div className="flex gap-1.5 mt-2">
         <button onClick={onCopy} className="text-[10px] px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 inline-flex items-center gap-1">
           <Copy className="h-3 w-3" /> Copia
         </button>
         {external && (
-          <a href={url} target="_blank" rel="noreferrer" className="text-[10px] px-2.5 py-1 rounded-md bg-[#FF3D8A]/20 border border-[#FF3D8A]/40 text-[#FF7AB6] hover:bg-[#FF3D8A]/30 inline-flex items-center gap-1">
+          <a href={url} target="_blank" rel="noreferrer" className="text-[10px] px-2.5 py-1 rounded-md bg-[#FF2D8D]/20 border border-[#FF2D8D]/40 text-[#FF2D8D] hover:bg-[#FF2D8D]/30 inline-flex items-center gap-1">
             <Tv className="h-3 w-3" /> Apri
           </a>
         )}
@@ -2199,12 +2226,12 @@ function PartyLinkRow({ label, desc, url, onCopy, external }: { label: string; d
   )
 }
 
-function PartyStat({ icon, label, value, hint, pulse }: { icon: React.ReactNode; label: string; value: string; hint?: string; pulse?: boolean }) {
+function PartyStat({ icon, label, value, hint, pulse, accent }: { icon: React.ReactNode; label: string; value: string; hint?: string; pulse?: boolean; accent?: boolean }) {
   return (
-    <div className={`relative rounded-2xl bg-white/[0.04] border p-4 backdrop-blur ${pulse ? 'notify-pulse-party border-[#FF3D8A]' : 'border-white/10'}`}>
-      <div className="flex items-center gap-2 text-[#FF7AB6]">{icon}<span className="text-[10px] font-bold uppercase tracking-wider">{label}</span></div>
-      <p className="text-2xl font-black text-white mt-1">{value}</p>
-      {hint && <p className="text-[10px] text-white/40 mt-0.5">{hint}</p>}
+    <div className={`relative rounded-2xl bg-[#15151B] border p-5 ${pulse ? 'notify-pulse-party border-[#FF2D8D]' : 'border-[#2A2A33]'}`}>
+      <div className="flex items-center gap-2 text-[#9A9AA3]">{icon}<span className="text-[11px] font-semibold uppercase tracking-wider">{label}</span></div>
+      <p className={`text-4xl font-black mt-2 tabular-nums ${accent ? 'text-[#F4FF3A]' : 'text-[#F8F8FA]'}`}>{value}</p>
+      {hint && <p className="text-[11px] text-[#9A9AA3] mt-1">{hint}</p>}
     </div>
   )
 }
@@ -2299,13 +2326,13 @@ function PartyPhotoTile({ photo, onApprove, onReject, onRemove, onFeature, appro
         {photo.url && <img src={photo.url} alt="" className="w-full h-full object-cover [object-position:center_35%]" />}
       </div>
       {photo.is_featured && (
-        <span className="absolute top-1.5 left-1.5 bg-[#FF3D8A] text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
+        <span className="absolute top-1.5 left-1.5 bg-[#FF2D8D] text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
           <Star className="h-2.5 w-2.5 fill-current" /> Top
         </span>
       )}
       <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/90 to-transparent flex gap-1">
         {onApprove && <button onClick={onApprove} title="Approva" className="flex-1 p-1.5 rounded bg-emerald-500/80 text-white hover:bg-emerald-500"><Check className="h-3 w-3 mx-auto" /></button>}
-        {onFeature && <button onClick={onFeature} title="In evidenza" className={`flex-1 p-1.5 rounded ${photo.is_featured ? 'bg-[#FF3D8A]' : 'bg-white/20 hover:bg-white/30'} text-white`}><Star className="h-3 w-3 mx-auto" /></button>}
+        {onFeature && <button onClick={onFeature} title="In evidenza" className={`flex-1 p-1.5 rounded ${photo.is_featured ? 'bg-[#FF2D8D]' : 'bg-white/20 hover:bg-white/30'} text-white`}><Star className="h-3 w-3 mx-auto" /></button>}
         {onReject && <button onClick={onReject} title={approved ? 'Rifiuta' : 'Scarta'} className="flex-1 p-1.5 rounded bg-amber-500/80 text-white hover:bg-amber-500"><X className="h-3 w-3 mx-auto" /></button>}
         {onRemove && <button onClick={onRemove} title="Elimina" className="flex-1 p-1.5 rounded bg-red-500/80 text-white hover:bg-red-500"><Trash2 className="h-3 w-3 mx-auto" /></button>}
       </div>
@@ -2347,9 +2374,9 @@ function PartyBattlePanel({ sessionId, isFree }: { sessionId: string; isFree: bo
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {PARTY_PRESETS.map((p) => (
             <button key={p.q} disabled={creating} onClick={() => create(p.q, p.opts)}
-              className="text-left rounded-xl bg-black/30 hover:bg-black/50 border border-[#FF3D8A]/30 hover:border-[#FF3D8A]/60 p-3 transition disabled:opacity-50">
+              className="text-left rounded-xl bg-black/30 hover:bg-black/50 border border-[#FF2D8D]/30 hover:border-[#FF2D8D]/60 p-3 transition disabled:opacity-50">
               <p className="text-sm font-bold text-white">{p.q}</p>
-              <p className="text-[11px] text-[#FF7AB6] mt-0.5">{p.opts.join(' · ')}</p>
+              <p className="text-[11px] text-[#FF2D8D] mt-0.5">{p.opts.join(' · ')}</p>
             </button>
           ))}
         </div>
@@ -2379,36 +2406,40 @@ function PartyBattlePanel({ sessionId, isFree }: { sessionId: string; isFree: bo
             {polls.map((p) => {
               const total = (p.tally ?? []).reduce((a, b) => a + b, 0)
               return (
-                <div key={p.id} className="rounded-xl bg-black/30 border border-white/10 p-3">
+                <div key={p.id} className={`rounded-xl bg-[#0A0A0D] border p-3 ${p.is_active ? 'border-[#FF2D8D]/50' : 'border-[#2A2A33]'}`}>
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="min-w-0 flex-1">
                       <p className="font-bold text-white text-sm">{p.question}</p>
                       <p className="text-[11px] text-white/50 mt-0.5">{p.options.join(' vs ')} · {total} {total === 1 ? 'voto' : 'voti'}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <PartyBadge tone={p.is_active ? 'fuchsia' : 'soft'}>{p.is_active ? 'ATTIVA' : 'CHIUSA'}</PartyBadge>
+                      <PartyBadge tone={p.is_active ? 'gold' : 'soft'}>{p.is_active ? 'ATTIVA' : 'CHIUSA'}</PartyBadge>
                       <button onClick={() => toggle(p.id, !p.is_active)} className="text-[10px] px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-white hover:bg-white/10">
                         {p.is_active ? 'Chiudi' : 'Riapri'}
                       </button>
                     </div>
                   </div>
-                  {total > 0 && (
-                    <div className="mt-2 space-y-1">
-                      {p.options.map((opt, i) => {
-                        const tally = p.tally?.[i] ?? 0
-                        const pct = total > 0 ? Math.round((tally / total) * 100) : 0
-                        return (
-                          <div key={i} className="flex items-center gap-2 text-xs">
-                            <span className="text-white/70 w-32 truncate">{opt}</span>
-                            <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
-                              <div className="h-full bg-gradient-to-r from-[#8B0E2F] to-[#FF3D8A]" style={{ width: `${pct}%` }} />
-                            </div>
-                            <span className="text-white font-bold tabular-nums w-10 text-right">{pct}%</span>
+                  <div className="mt-3 space-y-2">
+                    {p.options.map((opt, i) => {
+                      const tally = p.tally?.[i] ?? 0
+                      const pct = total > 0 ? Math.round((tally / total) * 100) : 0
+                      const lead = total > 0 && tally === Math.max(...(p.tally ?? [0]))
+                      return (
+                        <div key={i} className="flex items-center gap-2 text-xs">
+                          <span className={`w-24 sm:w-32 truncate font-semibold ${lead ? 'text-[#F4FF3A]' : 'text-[#F8F8FA]/80'}`}>{opt}</span>
+                          <div className="flex-1 h-3 rounded-full bg-[#2A2A33] overflow-hidden">
+                            <div className={`h-full rounded-full transition-all duration-500 ${lead ? 'bg-[#F4FF3A]' : 'bg-[#FF2D8D]'}`} style={{ width: `${pct}%` }} />
                           </div>
-                        )
-                      })}
-                    </div>
-                  )}
+                          <span className="w-14 text-right font-bold tabular-nums text-[#F8F8FA]">{tally} <span className="text-[#9A9AA3] font-medium">({pct}%)</span></span>
+                        </div>
+                      )
+                    })}
+                    {total > 0 && (
+                      <p className="pt-1 text-[11px] font-semibold uppercase tracking-wider text-[#F4FF3A]">
+                        {p.is_active ? 'In testa' : 'Vincitore'}: {p.options[(p.tally ?? []).indexOf(Math.max(...(p.tally ?? [0])))]}
+                      </p>
+                    )}
+                  </div>
                 </div>
               )
             })}
@@ -2426,7 +2457,7 @@ function PartyGamesPanel({ session, isFree, onJumpToBattle }: any) {
       <PartyRouletteCard session={session} isFree={isFree} />
       <PartyCard tone="wine">
         <div className="flex items-center gap-3">
-          <ListChecks className="h-6 w-6 text-[#FF7AB6]" />
+          <ListChecks className="h-6 w-6 text-[#FF2D8D]" />
           <h3 className="text-lg font-black text-white">Music Battle</h3>
         </div>
         <p className="text-sm text-white/70 mt-2">Sondaggi musicali live con voto dal telefono.</p>
@@ -2436,12 +2467,12 @@ function PartyGamesPanel({ session, isFree, onJumpToBattle }: any) {
       </PartyCard>
 
       <PartyComingSoonCard
-        icon={<Users className="h-6 w-6 text-[#FF7AB6]" />}
+        icon={<Users className="h-6 w-6 text-[#FF2D8D]" />}
         title="Top Fan"
         description="Classifica del pubblico più attivo della serata. Vincono richieste, voti e foto."
       />
       <PartyComingSoonCard
-        icon={<Music2 className="h-6 w-6 text-[#FF7AB6]" />}
+        icon={<Music2 className="h-6 w-6 text-[#FF2D8D]" />}
         title="Indovina la Canzone"
         description="Mini-quiz musicale live: chi indovina per primo vince un premio dal DJ."
       />
@@ -2552,7 +2583,7 @@ function PartyRouletteCard({ session, isFree }: any) {
         <>
           {round?.result?.slot_label ? (
             <div className="mt-4 rounded-2xl bg-black/40 border-2 border-white/20 p-5 text-center">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-[#FF7AB6] mb-2">Risultato</p>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-[#FF2D8D] mb-2">Risultato</p>
               <p className="text-2xl font-black text-white">{round.result.slot_label}</p>
             </div>
           ) : (
@@ -2618,15 +2649,25 @@ function PartyScreenPanel({ session, screenUrl }: any) {
   return (
     <div className="space-y-5">
       <PartyCard tone="hi">
-        <PartyEyebrow>Schermo TV / Proiettore</PartyEyebrow>
-        <p className="text-sm text-white/70 mt-2">Apri sul TV o proiettore della serata.</p>
-        <div className="flex gap-2 mt-3 flex-wrap">
-          <a href={screenUrl} target="_blank" rel="noreferrer">
-            <PartyButton variant="fuchsia" size="sm" icon={<Tv className="h-3.5 w-3.5" />}>Apri Schermo</PartyButton>
-          </a>
-          <PartyButton variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(screenUrl); toast.success('Link copiato') }} icon={<Copy className="h-3.5 w-3.5" />}>
-            Copia link
-          </PartyButton>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <PartyEyebrow>Schermo TV / Proiettore</PartyEyebrow>
+            <PartyLivePill live={session.is_active} label={session.is_active ? 'IN ONDA' : 'SPENTO'} />
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <a href={screenUrl} target="_blank" rel="noreferrer">
+              <PartyButton variant="fuchsia" size="sm" icon={<Tv className="h-3.5 w-3.5" />}>Apri Schermo</PartyButton>
+            </a>
+            <PartyButton variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(screenUrl); toast.success('Link copiato') }} icon={<Copy className="h-3.5 w-3.5" />}>
+              Copia link
+            </PartyButton>
+          </div>
+        </div>
+        <PartyScreenPreview session={session} show={{ photos: draft.show_photos, polls: draft.show_polls }} />
+        <div className="mt-3 flex flex-wrap gap-2">
+          {([['Foto', draft.show_photos], ['Music Battle', draft.show_polls], ['Roulette', draft.show_roulette], ['Video', draft.show_video_live]] as const).map(([l, on]) => (
+            <PartyBadge key={l} tone={on ? 'success' : 'soft'}>{on ? '● ' : '○ '}{l}</PartyBadge>
+          ))}
         </div>
       </PartyCard>
 
@@ -2641,7 +2682,7 @@ function PartyScreenPanel({ session, screenUrl }: any) {
 
         {draft.show_photos && (
           <div className="mt-3 rounded-xl bg-black/20 border border-white/10 p-3">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#FF7AB6] mb-2.5">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#FF2D8D] mb-2.5">
               Come mostrare le foto
             </p>
             <div className="grid grid-cols-3 gap-2">
@@ -2656,8 +2697,8 @@ function PartyScreenPanel({ session, screenUrl }: any) {
                   onClick={() => setDraft({ ...draft, live_booth_layout: val })}
                   className={`rounded-lg px-2 py-2 text-xs font-semibold transition border ${
                     draft.live_booth_layout === val
-                      ? 'bg-[#FF3D8A] text-white border-[#FF3D8A] shadow-[0_0_16px_rgba(255,61,138,0.4)]'
-                      : 'bg-black/30 text-white/70 border-white/10 hover:border-[#FF3D8A]/40'
+                      ? 'bg-[#FF2D8D] text-white border-[#FF2D8D]'
+                      : 'bg-black/30 text-white/70 border-white/10 hover:border-[#FF2D8D]/40'
                   }`}
                 >
                   {label}
@@ -2670,24 +2711,24 @@ function PartyScreenPanel({ session, screenUrl }: any) {
         {draft.show_video_live && (
           <div className="mt-3 space-y-2.5 rounded-xl bg-black/20 border border-white/10 p-3">
             <p className="text-[11px] text-white/50 inline-flex items-center gap-1.5">
-              <Youtube className="h-3.5 w-3.5 text-[#FF3D8A]" /> Mostra un video YouTube o un file (mp4) nella schermata live
+              <Youtube className="h-3.5 w-3.5 text-[#FF2D8D]" /> Mostra un video YouTube o un file (mp4) nella schermata live
             </p>
             <input
               type="url"
               value={draft.video_url}
               onChange={(e) => setDraft({ ...draft, video_url: e.target.value })}
               placeholder="https://youtube.com/watch?v=...  oppure  https://.../video.mp4"
-              className="w-full rounded-lg bg-black/30 border border-white/15 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#FF3D8A]"
+              className="w-full rounded-lg bg-black/30 border border-white/15 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#FF2D8D]"
             />
             <input
               type="text"
               value={draft.video_title}
               onChange={(e) => setDraft({ ...draft, video_title: e.target.value })}
               placeholder="Titolo video (opzionale)"
-              className="w-full rounded-lg bg-black/30 border border-white/15 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#FF3D8A]"
+              className="w-full rounded-lg bg-black/30 border border-white/15 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#FF2D8D]"
             />
             {videoLinkInvalid && (
-              <p className="text-[11px] text-[#FF7AB6]">Link non valido (usa YouTube o un file .mp4/.webm)</p>
+              <p className="text-[11px] text-[#FF2D8D]">Link non valido (usa YouTube o un file .mp4/.webm)</p>
             )}
             {videoPreview ? (
               <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-white/15 bg-black">
@@ -2727,12 +2768,55 @@ function PartyScreenPanel({ session, screenUrl }: any) {
   )
 }
 
+// Pages are served with X-Frame-Options: DENY, so the preview is rendered from the same data the TV reads.
+function PartyScreenPreview({ session, show }: { session: any; show: { photos: boolean; polls: boolean } }) {
+  const { data: photos } = useSWR(['booth-photos', session.id], () => livePhotos.listBoothPhotos(session.id).catch(() => []), { refreshInterval: 8_000 })
+  const { data: polls } = useSWR(['polls', session.id], () => livePolls.list(session.id).catch(() => []), { refreshInterval: 8_000 })
+  const photo = (photos ?? []).find((p: any) => p.status === 'approved' && p.url) ?? (photos ?? []).find((p: any) => p.url)
+  const poll = (polls ?? []).find((p) => p.is_active)
+  const total = (poll?.tally ?? []).reduce((x: number, y: number) => x + y, 0)
+  return (
+    <div className="relative mt-4 aspect-video w-full overflow-hidden rounded-2xl border border-[#2A2A33] bg-[#0A0A0D]">
+      {show.photos && photo?.url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={photo.url} alt="" className="absolute inset-0 h-full w-full object-contain" />
+      )}
+      <div className="absolute inset-x-0 top-0 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
+        <p className="truncate text-sm font-black text-[#F8F8FA] sm:text-lg">{session.event_name}</p>
+        <PartyLivePill live={session.is_active} label={session.is_active ? 'IN ONDA' : 'SPENTO'} />
+      </div>
+      {show.polls && poll && (
+        <div className="absolute inset-x-3 bottom-3 rounded-xl border border-[#2A2A33] bg-[#15151B]/95 p-3 sm:inset-x-6 sm:bottom-5 sm:p-4">
+          <p className="truncate text-xs font-bold text-[#F8F8FA] sm:text-sm">{poll.question}</p>
+          <div className="mt-2 space-y-1.5">
+            {poll.options.map((opt: string, i: number) => {
+              const t = poll.tally?.[i] ?? 0
+              const pct = total > 0 ? Math.round((t / total) * 100) : 0
+              const lead = total > 0 && t === Math.max(...(poll.tally ?? [0]))
+              return (
+                <div key={i} className="flex items-center gap-2 text-[11px]">
+                  <span className="w-20 truncate text-[#F8F8FA]/80">{opt}</span>
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#2A2A33]"><div className={`h-full rounded-full ${lead ? 'bg-[#F4FF3A]' : 'bg-[#FF2D8D]'}`} style={{ width: `${pct}%` }} /></div>
+                  <span className="w-8 text-right font-bold tabular-nums text-[#F8F8FA]">{pct}%</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+      {!(show.photos && photo?.url) && !(show.polls && poll) && (
+        <div className="absolute inset-0 flex items-center justify-center text-sm text-[#9A9AA3]">Nessun contenuto attivo sullo schermo</div>
+      )}
+    </div>
+  )
+}
+
 function ScreenToggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label className="flex items-center justify-between rounded-xl bg-black/30 border border-white/10 px-4 py-3 cursor-pointer hover:bg-black/40">
+    <label className="flex min-h-[48px] items-center justify-between rounded-xl bg-[#0A0A0D] border border-[#2A2A33] px-4 py-3 cursor-pointer hover:border-[#FF2D8D]/40">
       <span className="text-sm text-white">{label}</span>
       <button type="button" onClick={() => onChange(!value)}
-        className={`relative w-11 h-6 rounded-full transition ${value ? 'bg-[#FF3D8A]' : 'bg-white/15'}`}>
+        className={`relative w-11 h-6 rounded-full transition ${value ? 'bg-[#FF2D8D]' : 'bg-white/15'}`}>
         <span className={`absolute top-0.5 left-0.5 h-5 w-5 bg-white rounded-full transition ${value ? 'translate-x-5' : ''}`} />
       </button>
     </label>
