@@ -2,11 +2,13 @@
 import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import { QRCodeSVG } from 'qrcode.react'
-import { Heart, CalendarDays, Copy, Check, Download, Power, Maximize2, Plus, ExternalLink, Image as ImageIcon } from 'lucide-react'
+import { Heart, CalendarDays, Copy, Check, Download, Power, Maximize2, ExternalLink, Image as ImageIcon } from 'lucide-react'
 import { liveDedications, livePhotos, livePolls, type LivePoll } from '@/lib/api'
 import { useDedicationsSignal } from '@/lib/events/useDedications'
 import { usePollsSignal } from '@/lib/events/usePolls'
 import { useI18n } from '@/lib/i18n'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { WeddingGuestHome, getWeddingGuestActionKeys, buildWeddingGuestActions } from '../guest/WeddingGuestUI'
 import { WdPage, WdCard, WdButton, WdLinkButton } from './WeddingAdminUI'
 
 export const isVideoUrl = (u: string | null | undefined) => !!u && /\.(mp4|mov|webm|m4v|ogv)(\?|#|$)/i.test(u)
@@ -71,10 +73,8 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
   const videoCount = all.filter((p) => isVideoUrl(p.url)).length
   const stills = all.filter((p) => p.url && !isVideoUrl(p.url) && p.status !== 'rejected')
   const hero = stills[0]?.url ?? null
-  const thumbs = stills.slice(1, 7)
 
-  const guestCfg: Record<string, boolean | undefined> = session.guest_config ?? {}
-  const requestsOn = guestCfg.requests !== false
+  const guestItems = buildWeddingGuestActions(getWeddingGuestActionKeys(session.guest_config), t)
 
   return (
     <WdPage
@@ -121,7 +121,7 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
         </WdButton>
         <WdLinkButton href={url} variant="primary" icon={<ExternalLink className="h-4 w-4" />}>{t('wdAdmin.home.openShort')}</WdLinkButton>
       </div>
-
+40px] lg:grid-cols-[210px_24
       <div className="grid gap-8 pt-3 md:grid-cols-[210px_210px] lg:grid-cols-[210px_210px_minmax(0,1fr)]">
         <div>
           <div className="rounded-[28px] border-2 border-wd-pink bg-white p-5">
@@ -137,24 +137,17 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
           </label>
         </div>
 
-        <div className="mx-auto w-[210px]">
-          <div className="overflow-hidden rounded-[30px] border-[5px] border-wd-ink bg-white">
-            <div className="relative h-[170px] bg-wd-active">
-              {hero && /* eslint-disable-next-line @next/next/no-img-element */ <img src={hero} alt="" className="h-full w-full object-cover" />}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-3 pb-2.5 pt-8 text-center text-sm font-bold text-white">{names}</div>
-            </div>
-            <div className="px-3 py-3 text-center">
-              <span className="inline-flex items-center gap-1 rounded-full bg-wd-pink px-3 py-1.5 text-[11px] font-bold text-white">
-                <Plus className="h-3 w-3" /> {requestsOn ? t('guestVisibility.requests') : t('guestVisibility.liveBooth')}
-              </span>
-              <p className="mt-1.5 text-[10px] text-wd-muted">{all.length} {t('wdAdmin.home.photosAndVideos')}</p>
-            </div>
-            <div className="grid grid-cols-3 gap-1 px-1.5 pb-1.5">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="aspect-square overflow-hidden rounded-md bg-wd-active">
-                  {thumbs[i]?.url && /* eslint-disable-next-line @next/next/no-img-element */ <img src={thumbs[i].url!} alt="" className="h-full w-full object-cover" loading="lazy" />}
-                </div>
-              ))}
+        <div className="mx-auto w-[240px]" data-testid="wd-guest-preview">
+          <div className="relative h-[500px] overflow-hidden rounded-[34px] border-[5px] border-wd-ink bg-wd-bg">
+            {/* Real guest components rendered at 390px and scaled down: faithful, non-interactive. */}
+            <div className="pointer-events-none absolute left-0 top-0 w-[390px] origin-top-left select-none px-5 pb-8 pt-5" style={{ transform: `scale(${230 / 390})` }} aria-hidden>
+              <WeddingGuestHome
+                names={names}
+                date={dateLabel}
+                venue={session.venue_name}
+                items={guestItems}
+                languageSlot={<LanguageSwitcher variant="wedding" />}
+              />
             </div>
           </div>
         </div>

@@ -11,14 +11,15 @@ export function LanguageSwitcher({
   variant = 'dark',
 }: {
   className?: string
-  variant?: 'dark' | 'light'
+  variant?: 'dark' | 'light' | 'wedding'
 }) {
   const { locale, setLocale } = useI18n()
-  const isLight = variant === 'light'
+  const isWd = variant === 'wedding'
+  const isLight = variant === 'light' || isWd
   return (
     <div
       className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 ${
-        isLight ? 'border-black/10 bg-black/5' : 'border-white/10 bg-white/5'
+        isWd ? 'border-wd-border bg-white' : isLight ? 'border-black/10 bg-black/5' : 'border-white/10 bg-white/5'
       } ${className}`}
     >
       <Globe className={`h-3.5 w-3.5 ${isLight ? 'text-black/40' : 'text-white/40'}`} />
@@ -28,7 +29,9 @@ export function LanguageSwitcher({
           onClick={() => setLocale(l)}
           className={`text-xs font-semibold px-2 py-0.5 rounded-full transition ${
             locale === l
-              ? isLight
+              ? isWd
+                ? 'bg-wd-pink text-white'
+                : isLight
                 ? 'bg-wedding-gold text-white'
                 : 'bg-purple-500 text-white'
               : isLight

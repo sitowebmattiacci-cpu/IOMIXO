@@ -18,9 +18,10 @@ import { votePoll } from '@/lib/events/pollService'
 import { eventToPublicSession } from '@/lib/events/eventService'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import {
-  WeddingShell, WeddingCard, WeddingButton, WeddingSection, WeddingBadge,
-  WeddingDivider, WeddingInput, WeddingTextarea,
-} from '@/components/wedding/WeddingUI'
+  WeddingGuestHome, WeddingGuestTopBar, WeddingGuestBackButton, WeddingGuestPanel, WeddingGuestButton,
+  WeddingGuestInput, WeddingGuestTextarea, getWeddingGuestActionKeys, buildWeddingGuestActions,
+  formatWeddingGuestDate, type WeddingGuestActionKey,
+} from '@/components/wedding/guest/WeddingGuestUI'
 
 const STATUS_STYLE: Record<LiveRequestStatus, string> = {
   pending:  'bg-amber-500/15 text-amber-300 border-amber-500/30',
@@ -110,33 +111,26 @@ export default function PublicLivePage() {
   const guestOn = (key: string) => (key === 'requests' ? gc.requests !== false : (gc as Record<string, boolean | undefined>)[key] === true)
 
   if (isWedding) {
-    const weddingSections: GuestSection[] = []
-    if (guestOn('requests')) {
-      weddingSections.push({
-        key: 'requests',
-        icon: <Music2 className="h-6 w-6" />,
-        title: t('guestMenu.requests'),
-        desc: t('guestMenu.requestsDesc'),
-        node: (
-          <WeddingCard tone="ivory">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8F1D2C] mb-5 text-center">
-              {t('live.title')}
-            </p>
-            <form onSubmit={submit} className="space-y-4">
-              <WeddingInput
+    const weddingKeys = getWeddingGuestActionKeys(gc as Record<string, boolean | undefined>, features)
+    const weddingItems = buildWeddingGuestActions(weddingKeys, t)
+    const weddingNodes: Record<WeddingGuestActionKey, React.ReactNode> = {
+      requests: (
+          <WeddingGuestPanel title={t('live.title')} icon={<Music2 className="h-5 w-5" />}>
+            <form onSubmit={submit} className="space-y-3.5">
+              <WeddingGuestInput
                 value={form.track_title}
                 onChange={(e) => setForm({ ...form, track_title: e.target.value })}
                 placeholder={t('live.trackTitle')}
                 required
                 disabled={disabled}
               />
-              <WeddingInput
+              <WeddingGuestInput
                 value={form.artist}
                 onChange={(e) => setForm({ ...form, artist: e.target.value })}
                 placeholder={t('live.artist')}
                 disabled={disabled}
               />
-              <WeddingTextarea
+              <WeddingGuestTextarea
                 value={form.message}
                 onChange={(e) => setForm({ ...form, message: e.target.value })}
                 rows={2}
@@ -144,145 +138,84 @@ export default function PublicLivePage() {
                 placeholder={t('live.messageForDj')}
                 disabled={disabled}
               />
-              <WeddingButton
+              <WeddingGuestButton
                 type="submit"
                 disabled={disabled || sending || !form.track_title.trim()}
                 loading={sending}
                 icon={<Send className="h-4 w-4" />}
-                className="w-full"
-                size="lg"
               >
                 {t('live.submitRequest')}
-              </WeddingButton>
+              </WeddingGuestButton>
             </form>
-          </WeddingCard>
-        ),
-      })
+          </WeddingGuestPanel>
+      ),
+      photos: <LiveBoothCard slug={slug!} session={session} />,
+      dedications: <DedicationsPublic slug={slug!} eventId={liveEvent?.id} />,
+      games: <ShoeGamePublic slug={slug!} eventId={liveEvent?.id} />,
+      polls: <PollPublic slug={slug!} eventId={liveEvent?.id} />,
     }
-    if (features.guestPhotoAlbum && guestOn('live_booth')) {
-      weddingSections.push({
-        key: 'photos',
-        icon: <Camera className="h-6 w-6" />,
-        title: t('guestMenu.photos'),
-        desc: t('guestMenu.photosDesc'),
-        node: <LiveBoothCard slug={slug!} session={session} />,
-      })
-    }
-    if (features.weddingDedications && guestOn('dedications')) {
-      weddingSections.push({
-        key: 'dedications',
-        icon: <Heart className="h-6 w-6" />,
-        title: t('guestMenu.dedications'),
-        desc: t('guestMenu.dedicationsDesc'),
-        node: <DedicationsPublic slug={slug!} eventId={liveEvent?.id} />,
-      })
-    }
-    if (features.weddingGames && guestOn('shoe_game')) {
-      weddingSections.push({
-        key: 'games',
-        icon: <Gamepad2 className="h-6 w-6" />,
-        title: t('guestMenu.games'),
-        desc: t('guestMenu.gamesDesc'),
-        node: <ShoeGamePublic slug={slug!} eventId={liveEvent?.id} />,
-      })
-    }
-    if (features.livePolls && guestOn('polls')) {
-      weddingSections.push({
-        key: 'polls',
-        icon: <BarChart3 className="h-6 w-6" />,
-        title: t('guestMenu.polls'),
-        desc: t('guestMenu.pollsDesc'),
-        node: <PollPublic slug={slug!} eventId={liveEvent?.id} />,
-      })
-    }
-    const activeWedding = weddingSections.find((s) => s.key === activeGuestSection) ?? null
+    const activeWeddingKey = weddingKeys.find((k) => k === activeGuestSection) ?? null
+
+    const names = session.couple_names ?? session.event_name
+    const notice = (closed || limitReached) ? (
+      <div className="mb-5 flex items-center gap-3 rounded-[18px] border border-wd-border bg-wd-active px-4 py-3.5 text-[15px] text-wd-ink">
+        {closed ? <Lock className="h-5 w-5 shrink-0 text-wd-pink" /> : <AlertTriangle className="h-5 w-5 shrink-0 text-wd-pink" />}
+        <span>{closed ? t('live.endedSession') : t('live.limitReached')}</span>
+      </div>
+    ) : undefined
+    const languageSlot = <LanguageSwitcher variant="wedding" />
 
     return (
-      <WeddingShell>
-        <div className="max-w-lg mx-auto px-6 py-16">
-          <div className="flex justify-center mb-6">
-            <LanguageSwitcher variant="light" />
-          </div>
-          {/* Wedding header */}
-          <div className="text-center mb-12">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.4em] text-[#8F1D2C] mb-4">
-              ✦ Wedding Edition ✦
-            </p>
-            <h1 className="font-wedding text-5xl sm:text-6xl text-[#2B2424] leading-[1.1] tracking-wide">
-              {session.couple_names ?? session.event_name}
-            </h1>
-            <WeddingDivider className="my-7" />
-            {session.wedding_date && (
-              <p className="font-wedding text-xl italic text-[#6F6260]">
-                {new Date(session.wedding_date).toLocaleDateString('it-IT', { dateStyle: 'long' })}
-              </p>
-            )}
-            {session.venue_name && (
-              <p className="text-[11px] uppercase tracking-[0.3em] text-[#6F6260] mt-3">
-                {session.venue_name}
-              </p>
-            )}
-          </div>
-
-          {closed && (
-            <WeddingCard tone="cream" className="mb-6 flex items-center gap-3 text-sm">
-              <Lock className="h-4 w-4 text-wedding-gold" />
-              <span>{t('live.endedSession')}</span>
-            </WeddingCard>
-          )}
-          {!closed && limitReached && (
-            <WeddingCard tone="cream" className="mb-6 flex items-center gap-3 text-sm">
-              <AlertTriangle className="h-4 w-4 text-wedding-gold" />
-              <span>{t('live.limitReached')}</span>
-            </WeddingCard>
-          )}
-
-          {/* Compact guest menu — show only DJ-enabled functions */}
-          {weddingSections.length === 0 ? (
-            <WeddingCard tone="cream" className="mb-8 text-center text-sm text-[#6F6260]">
-              {t('guestVisibility.emptyState')}
-            </WeddingCard>
-          ) : activeWedding ? (
-            <div className="mb-8">
-              <GuestBackButton tone="wedding" label={t('guestMenu.back')} onClick={() => setActiveGuestSection(null)} />
-              {activeWedding.node}
-            </div>
+      <div className="min-h-screen w-full bg-wd-bg font-sans text-wd-ink antialiased">
+        <div className="mx-auto w-full max-w-[520px] px-5 pb-12 pt-5">
+          {activeWeddingKey ? (
+            <>
+              <WeddingGuestTopBar languageSlot={languageSlot} />
+              <div className="pt-6">
+                {notice}
+                <WeddingGuestBackButton label={t('guestMenu.back')} onClick={() => setActiveGuestSection(null)} />
+                {weddingNodes[activeWeddingKey]}
+              </div>
+            </>
           ) : (
-            <div className="mb-8">
-              <GuestMenuIntro tone="wedding" t={t} />
-              <GuestMenuGrid tone="wedding" sections={weddingSections} onSelect={setActiveGuestSection} />
-            </div>
+            <WeddingGuestHome
+              names={names}
+              date={formatWeddingGuestDate(session.wedding_date)}
+              venue={session.venue_name}
+              items={weddingItems}
+              onSelect={setActiveGuestSection}
+              languageSlot={languageSlot}
+              notice={notice}
+            />
           )}
 
-          {!activeWedding && myRequests && myRequests.length > 0 && (
-            <WeddingSection
-              eyebrow={t('live.myRequests')}
-              className="mt-12"
-            >
+          {!activeWeddingKey && myRequests && myRequests.length > 0 && (
+            <section className="mt-10">
+              <h2 className="mb-3 text-[13px] font-semibold uppercase tracking-[0.18em] text-wd-muted">{t('live.myRequests')}</h2>
               <div className="space-y-3">
                 {myRequests.map((r) => (
-                  <WeddingCard key={r.id} tone="ivory" className="p-4 flex items-center gap-3">
-                    <Music2 className="h-4 w-4 text-[#8F1D2C] shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#2B2424] truncate">{r.track_title}</p>
-                      {r.artist && <p className="text-xs text-[#6F6260] truncate">{r.artist}</p>}
+                  <div key={r.id} className="flex items-center gap-3 rounded-[18px] border border-wd-border bg-white p-4">
+                    <Music2 className="h-5 w-5 shrink-0 text-wd-pink" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[15px] font-semibold text-wd-ink">{r.track_title}</p>
+                      {r.artist && <p className="truncate text-[14px] text-wd-muted">{r.artist}</p>}
                     </div>
-                    <WeddingBadge tone={r.status === 'approved' ? 'sage' : r.status === 'rejected' ? 'taupe' : 'gold'}>
+                    <span className="shrink-0 rounded-full border border-wd-border bg-wd-active px-3 py-1 text-[12px] font-semibold text-wd-ink">
                       {r.status === 'approved' ? t('common.approved') : r.status === 'rejected' ? t('common.rejected') : t('common.pending')}
-                    </WeddingBadge>
-                  </WeddingCard>
+                    </span>
+                  </div>
                 ))}
               </div>
-            </WeddingSection>
+            </section>
           )}
 
           <FollowDjSection tone="wedding" profile={profile} events={events} t={t} />
 
-          <p className="text-center mt-14 text-[10px] uppercase tracking-[0.32em] text-[#6F6260]">
-            Powered by <span className="text-[#8F1D2C]">IOMIXO Live Hub</span>
+          <p className="mt-12 text-center text-[12px] tracking-wide text-wd-muted">
+            Powered by <span className="font-semibold text-wd-pink">IOMIXO Live Hub</span>
           </p>
         </div>
-      </WeddingShell>
+      </div>
     )
   }
 
@@ -550,12 +483,12 @@ function SocialLinks({ profile, tone }: { profile: FollowProfile; tone: GuestTon
 
   const cardCls = tone === 'party'
     ? 'group flex items-center gap-3 rounded-2xl border border-[#2A2A33] bg-white/[0.04] p-3.5 transition hover:border-[#FF2D8D]/70 hover:bg-white/[0.08] active:scale-[0.99]'
-    : 'group flex items-center gap-3 rounded-2xl border border-[#E2C4C9] bg-white/80 p-3.5 transition hover:border-wedding-gold hover:shadow-sm active:scale-[0.99]'
+    : 'group flex min-h-[56px] items-center gap-3 rounded-2xl border border-wd-border bg-white p-3.5 transition hover:border-wd-pink/50 active:scale-[0.99]'
   const iconWrapCls = tone === 'party'
     ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FF2D8D]/15 text-[#FF2D8D]'
-    : 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-wedding-champagne/50 text-[#8F1D2C]'
-  const labelCls = tone === 'party' ? 'text-sm font-semibold text-white' : 'text-sm font-semibold text-[#2B2424]'
-  const subCls   = tone === 'party' ? 'text-xs text-white/50 truncate' : 'text-xs text-[#6F6260] truncate'
+    : 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-wd-active text-wd-pink'
+  const labelCls = tone === 'party' ? 'text-sm font-semibold text-white' : 'text-[15px] font-semibold text-wd-ink'
+  const subCls   = tone === 'party' ? 'text-xs text-white/50 truncate' : 'text-[13px] text-wd-muted truncate'
 
   return (
     <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2.5">
@@ -600,13 +533,12 @@ function FollowDjSection({ tone, profile, events, t }: {
 
   if (tone === 'wedding') {
     return (
-      <div className="mt-12">
-        <WeddingDivider className="mb-7" />
+      <div className="mt-10">
         <div className="text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8F1D2C] mb-1.5">
+          <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-wd-pink mb-1.5">
             {t('live.followDjTitle')}
           </p>
-          <p className="font-wedding text-base italic text-[#6F6260] mb-5">
+          <p className="text-[15px] text-wd-muted mb-5">
             {t('live.followDjSubtitleWedding')}
           </p>
           <SocialLinks profile={profile} tone="wedding" />
@@ -769,13 +701,9 @@ function GuestMenuGrid({ tone, sections, onSelect }: {
 
 function LocalCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <WeddingCard tone="ivory" className="mt-6">
-      <h2 className="font-wedding text-2xl mb-4 inline-flex items-center gap-2.5 text-[#2B2424] tracking-wide">
-        <span className="text-[#8F1D2C]">{icon}</span>{title}
-      </h2>
-      <div className="h-px bg-gradient-to-r from-transparent via-[#E8B7C8] to-transparent mb-5" />
+    <WeddingGuestPanel title={title} icon={icon}>
       {children}
-    </WeddingCard>
+    </WeddingGuestPanel>
   )
 }
 
@@ -790,11 +718,11 @@ function ShoeGamePublic({ slug, eventId }: { slug: string; eventId?: string }) {
   if (!q) return null
   return (
     <LocalCard title={t('live.shoeGameTitle')} icon={<Sparkles className="h-5 w-5" />}>
-      <div className="rounded-xl bg-gradient-to-br from-wedding-champagne/40 to-wedding-blush/30 border border-wedding-gold/30 p-6 text-center">
-        <p className="text-[11px] uppercase tracking-[0.22em] text-[#8F1D2C] mb-3">
+      <div className="rounded-2xl bg-wd-active border border-wd-border p-6 text-center">
+        <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-wd-pink mb-3">
           {t('live.question')} {idx + 1}/{questions.length}
         </p>
-        <p className="font-wedding text-2xl text-[#2B2424] leading-snug">{q}</p>
+        <p className="text-[22px] font-bold text-wd-ink leading-snug">{q}</p>
       </div>
     </LocalCard>
   )
@@ -824,7 +752,7 @@ function PollPublic({ slug: _slug, eventId }: { slug: string; eventId?: string }
   const total = (poll.tally ?? []).reduce((a, b) => a + b, 0) || 0
   return (
     <LocalCard title={t('wedding.polls.title')} icon={<Sparkles className="h-5 w-5" />}>
-      <p className="text-base text-wedding-ink mb-3">{poll.question}</p>
+      <p className="text-[17px] font-semibold text-wd-ink mb-4">{poll.question}</p>
       <div className="space-y-2">
         {poll.options.map((opt, i) => {
           const tally = poll.tally?.[i] ?? 0
@@ -835,12 +763,12 @@ function PollPublic({ slug: _slug, eventId }: { slug: string; eventId?: string }
               key={i}
               onClick={() => voted === null && vote(i)}
               disabled={voted !== null}
-              className="w-full text-left rounded-xl border border-wedding-champagne bg-white px-4 py-3 text-sm relative overflow-hidden hover:border-wedding-gold transition disabled:cursor-default"
+              className={`w-full min-h-[52px] text-left rounded-2xl border bg-white px-4 py-3 text-[16px] relative overflow-hidden hover:border-wd-pink/50 transition disabled:cursor-default ${mine ? 'border-wd-pink' : 'border-wd-border'}`}
             >
-              <div className="absolute inset-y-0 left-0 bg-wedding-gold/25 transition-all" style={{ width: `${pct}%` }} />
-              <div className="relative flex items-center justify-between">
-                <span className={mine ? 'font-semibold text-wedding-ink' : 'text-wedding-ink/85'}>{opt}</span>
-                <span className="text-xs text-wedding-ink/50 font-medium">{pct}%</span>
+              <div className="absolute inset-y-0 left-0 bg-wd-active transition-all" style={{ width: `${pct}%` }} />
+              <div className="relative flex items-center justify-between gap-3">
+                <span className={mine ? 'font-semibold text-wd-ink' : 'text-wd-ink'}>{opt}</span>
+                <span className="text-[14px] text-wd-muted font-medium">{pct}%</span>
               </div>
             </button>
           )
@@ -873,24 +801,24 @@ function DedicationsPublic({ slug: _slug, eventId }: { slug: string; eventId?: s
   }
   return (
     <LocalCard title={t('wedding.dedications.publicTitle')} icon={<Heart className="h-5 w-5" />}>
-      <form onSubmit={send} className="space-y-2.5 mb-4">
-        <WeddingInput value={form.guest_name} onChange={(e) => setForm({ ...form, guest_name: e.target.value })}
+      <form onSubmit={send} className="space-y-3.5 mb-5">
+        <WeddingGuestInput value={form.guest_name} onChange={(e) => setForm({ ...form, guest_name: e.target.value })}
           placeholder={t('wedding.dedications.guestName')} />
-        <WeddingTextarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })}
+        <WeddingGuestTextarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })}
           rows={3} maxLength={300} placeholder={t('wedding.dedications.message')} required />
-        <WeddingButton type="submit" disabled={sending || !form.message.trim()} loading={sending}
-          icon={<Send className="h-4 w-4" />} className="w-full">
+        <WeddingGuestButton type="submit" disabled={sending || !form.message.trim()} loading={sending}
+          icon={<Send className="h-4 w-4" />}>
           {t('wedding.dedications.send')}
-        </WeddingButton>
+        </WeddingGuestButton>
       </form>
       {(data ?? []).length > 0 && (
-        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+        <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
           {(data ?? []).map((d) => (
-            <div key={d.id} className="rounded-xl border border-wedding-border bg-white px-5 py-4">
-              <p className="font-wedding text-lg italic text-wedding-ink leading-snug whitespace-pre-line">
+            <div key={d.id} className="rounded-2xl border border-wd-border bg-wd-bg px-4 py-3.5">
+              <p className="text-[16px] text-wd-ink leading-snug whitespace-pre-line break-words">
                 "{d.message}"
               </p>
-              <p className="text-[11px] uppercase tracking-[0.25em] text-wedding-gold mt-2.5">
+              <p className="text-[13px] font-semibold text-wd-pink mt-2">
                 — {d.guest_name ?? t('common.anonymous')}
               </p>
             </div>
@@ -925,9 +853,9 @@ function PhotosPublic({ slug }: { slug: string }) {
   return (
     <LocalCard title={t('wedding.photos.publicTitle')} icon={<Camera className="h-5 w-5" />}>
       <form onSubmit={submit} className="space-y-2.5 mb-4">
-        <WeddingInput value={form.guest_name} onChange={(e) => setForm({ ...form, guest_name: e.target.value })}
+        <WeddingGuestInput value={form.guest_name} onChange={(e) => setForm({ ...form, guest_name: e.target.value })}
           placeholder={t('wedding.photos.guestName')} />
-        <WeddingInput value={form.caption} onChange={(e) => setForm({ ...form, caption: e.target.value })}
+        <WeddingGuestInput value={form.caption} onChange={(e) => setForm({ ...form, caption: e.target.value })}
           placeholder={t('wedding.photos.caption')} />
         <label className="block">
           <input type="file" accept="image/jpeg,image/png,image/webp"
@@ -935,10 +863,10 @@ function PhotosPublic({ slug }: { slug: string }) {
             className="block w-full text-sm text-wedding-ink/70 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-wedding-champagne/40 file:text-wedding-ink hover:file:bg-wedding-champagne/60 cursor-pointer" />
         </label>
         <p className="text-[11px] text-wedding-ink/50">{t('wedding.photos.limits')}</p>
-        <WeddingButton type="submit" disabled={uploading || !file} loading={uploading}
-          icon={<Camera className="h-4 w-4" />} className="w-full">
+        <WeddingGuestButton type="submit" disabled={uploading || !file} loading={uploading}
+          icon={<Camera className="h-4 w-4" />}>
           {t('wedding.photos.choose')}
-        </WeddingButton>
+        </WeddingGuestButton>
       </form>
       {(data ?? []).length > 0 ? (
         <div className="grid grid-cols-3 gap-2">
@@ -961,27 +889,23 @@ function LiveBoothCard({ slug, session }: { slug: string; session: any }) {
   return (
     <LocalCard title={t('live.booth.title')} icon={<Camera className="h-5 w-5" />}>
       <div className="text-center space-y-4">
-        <p className="text-sm text-[#6F6260]">
+        <p className="text-[15px] text-wd-muted">
           {t('live.booth.intro')}
         </p>
-        <div className="bg-gradient-to-br from-wedding-champagne/40 to-wedding-blush/30 rounded-2xl border-2 border-[#E8B7C8] p-6">
+        <div className="bg-wd-bg rounded-2xl border border-wd-border p-5">
           <div className="flex items-center justify-center gap-2 mb-3">
-            <Camera className="h-6 w-6 text-[#8F1D2C]" />
-            <p className="font-wedding text-xl text-[#2B2424]">
+            <Camera className="h-6 w-6 shrink-0 text-wd-pink" />
+            <p className="text-[18px] font-bold text-wd-ink break-words">
               {session.couple_names ?? session.event_name}
             </p>
           </div>
-          <p className="text-xs text-[#6F6260] mb-4 italic">
+          <p className="text-[14px] text-wd-muted mb-4">
             {t('live.booth.withFrame')}
           </p>
-          <a href={boothUrl}>
-            <WeddingButton
-              icon={<Camera className="h-5 w-5" />}
-              size="lg"
-              className="w-full"
-            >
+          <a href={boothUrl} className="block">
+            <WeddingGuestButton icon={<Camera className="h-5 w-5" />}>
               {t('live.booth.open')}
-            </WeddingButton>
+            </WeddingGuestButton>
           </a>
         </div>
       </div>
