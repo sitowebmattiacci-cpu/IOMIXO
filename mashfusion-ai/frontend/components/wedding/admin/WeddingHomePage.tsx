@@ -7,6 +7,7 @@ import { liveDedications, livePhotos, livePolls, type LivePoll } from '@/lib/api
 import { useDedicationsSignal } from '@/lib/events/useDedications'
 import { usePollsSignal } from '@/lib/events/usePolls'
 import { useI18n } from '@/lib/i18n'
+import { WEDDING_BRAND_FILE_PREFIX } from '@/lib/brand/wedding'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { WeddingGuestHome, getWeddingGuestActionKeys, buildWeddingGuestActions } from '../guest/WeddingGuestUI'
 import { WdPage, WdCard, WdButton, WdLinkButton } from './WeddingAdminUI'
@@ -121,14 +122,14 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
         </WdButton>
         <WdLinkButton href={url} variant="primary" icon={<ExternalLink className="h-4 w-4" />}>{t('wdAdmin.home.openShort')}</WdLinkButton>
       </div>
-40px] lg:grid-cols-[210px_24
-      <div className="grid gap-8 pt-3 md:grid-cols-[210px_210px] lg:grid-cols-[210px_210px_minmax(0,1fr)]">
+
+      <div className="grid gap-8 pt-3 md:grid-cols-[210px_240px] lg:grid-cols-[210px_240px_minmax(0,1fr)]">
         <div>
           <div className="rounded-[28px] border-2 border-wd-pink bg-white p-5">
             <QRCodeSVG id="wd-qrcode-svg" value={url} size={170} level="M" bgColor="#ffffff" includeMargin={false} className="h-auto w-full" />
           </div>
           <WdButton className="mt-4 w-full" variant="secondary" icon={<Download className="h-4 w-4" />}
-            onClick={() => downloadQrPng('wd-qrcode-svg', `iomixo-${slug}.png`, transparentQr)}>
+            onClick={() => downloadQrPng('wd-qrcode-svg', `${WEDDING_BRAND_FILE_PREFIX}-${slug}.png`, transparentQr)}>
             {t('wdAdmin.home.downloadQr')}
           </WdButton>
           <label className="mt-3 flex items-center gap-2 text-xs text-wd-muted cursor-pointer">

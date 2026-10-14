@@ -4,6 +4,8 @@ import Link from 'next/link'
 import type { ToastOptions } from 'react-hot-toast'
 import { Music2, Camera, Heart, Gamepad2, BarChart3, ChevronRight, ChevronLeft, ArrowLeft, CheckCircle2, AlertTriangle, Info } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
+import { MioloveLogo, useWeddingTitle } from '@/components/brand/MioloveLogo'
+import { WEDDING_BRAND_NAME } from '@/lib/brand/wedding'
 import { cn } from '@/lib/utils'
 
 // Shared Wedding guest UI. Used by the real guest page (/live/[slug]) AND by the
@@ -69,10 +71,7 @@ export function formatWeddingGuestDate(raw: string | null | undefined): string |
 export function WeddingGuestTopBar({ languageSlot }: { languageSlot?: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold tracking-wide text-wd-ink">
-        <Heart className="h-4 w-4 fill-wd-pink text-wd-pink" />
-        IOMIXO <span className="text-wd-pink">Wedding</span>
-      </span>
+      <MioloveLogo height={30} className="text-wd-ink" />
       {languageSlot}
     </div>
   )
@@ -227,15 +226,20 @@ export const WEDDING_GUEST_TOAST: ToastOptions = {
   iconTheme: { primary: '#F06A9B', secondary: '#FFFFFF' },
 }
 
+/** Renders nothing; sets the tab title to the Wedding brand. */
+export function WeddingGuestTitle({ prefix }: { prefix?: string }) {
+  useWeddingTitle(prefix)
+  return null
+}
+
 export function WeddingGuestShell({ children, languageSlot, centered = false }: { children: ReactNode; languageSlot?: ReactNode; centered?: boolean }) {
   return (
     <div className="min-h-screen w-full bg-wd-bg font-sans text-wd-ink antialiased">
+      <WeddingGuestTitle />
       <div className={cn('mx-auto flex min-h-screen w-full max-w-[520px] flex-col px-5 pb-12 pt-5', centered && 'justify-center')}>
         <WeddingGuestTopBar languageSlot={languageSlot} />
         <div className="pt-6">{children}</div>
-        <p className="mt-12 text-center text-[12px] tracking-wide text-wd-muted">
-          Powered by <span className="font-semibold text-wd-pink">IOMIXO Live Hub</span>
-        </p>
+        <p className="mt-12 text-center text-[12px] font-semibold tracking-wide text-wd-muted">{WEDDING_BRAND_NAME}</p>
       </div>
     </div>
   )

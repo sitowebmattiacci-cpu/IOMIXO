@@ -20,8 +20,9 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import {
   WeddingGuestHome, WeddingGuestTopBar, WeddingGuestBackButton, WeddingGuestPanel, WeddingGuestButton,
   WeddingGuestInput, WeddingGuestTextarea, getWeddingGuestActionKeys, buildWeddingGuestActions,
-  formatWeddingGuestDate, WEDDING_GUEST_TOAST, type WeddingGuestActionKey,
+  formatWeddingGuestDate, WEDDING_GUEST_TOAST, WeddingGuestTitle, type WeddingGuestActionKey,
 } from '@/components/wedding/guest/WeddingGuestUI'
+import { WEDDING_BRAND_NAME } from '@/lib/brand/wedding'
 
 const STATUS_STYLE: Record<LiveRequestStatus, string> = {
   pending:  'bg-amber-500/15 text-amber-300 border-amber-500/30',
@@ -211,9 +212,8 @@ export default function PublicLivePage() {
 
           <FollowDjSection tone="wedding" profile={profile} events={events} t={t} />
 
-          <p className="mt-12 text-center text-[12px] tracking-wide text-wd-muted">
-            Powered by <span className="font-semibold text-wd-pink">IOMIXO Live Hub</span>
-          </p>
+          <WeddingGuestTitle prefix={names} />
+          <p className="mt-12 text-center text-[12px] font-semibold tracking-wide text-wd-muted">{WEDDING_BRAND_NAME}</p>
         </div>
       </div>
     )

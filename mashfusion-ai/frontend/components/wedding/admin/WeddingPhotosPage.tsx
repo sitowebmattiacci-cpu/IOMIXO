@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { Download, Check, X, Trash2, Star, Copy, Camera, Play, CheckCircle2, Image as ImageIcon, Video } from 'lucide-react'
 import { livePhotos, type LivePhoto } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
+import { WEDDING_BRAND_FILE_PREFIX } from '@/lib/brand/wedding'
 import { cn } from '@/lib/utils'
 import { WdPage, WdCard, WdButton, wdStatusLabel } from './WeddingAdminUI'
 import { publicOrigin, isVideoUrl } from './WeddingHomePage'
@@ -60,7 +61,7 @@ export function WeddingPhotosPage({ session, initialSource = 'album' }: { sessio
       if (!p.url) return
       setTimeout(() => {
         const a = document.createElement('a')
-        a.href = p.url!; a.download = `iomixo-${p.id}`; a.target = '_blank'; a.rel = 'noopener noreferrer'
+        a.href = p.url!; a.download = `${WEDDING_BRAND_FILE_PREFIX}-${p.id}`; a.target = '_blank'; a.rel = 'noopener noreferrer'
         document.body.appendChild(a); a.click(); a.remove()
       }, i * 250)
     })

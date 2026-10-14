@@ -11,7 +11,7 @@ import {
 import { auth } from '@/lib/api'
 import { useI18n, SUPPORTED_LOCALES, type Locale } from '@/lib/i18n'
 import { useEffectiveAccess } from '@/lib/access'
-import { Logo } from '@/components/Logo'
+import { MioloveLogo, useWeddingTitle } from '@/components/brand/MioloveLogo'
 import { cn } from '@/lib/utils'
 
 export type WeddingNavKey = 'home' | 'photos' | 'requests' | 'dedications' | 'games' | 'booth' | 'screen' | 'privacy' | 'poster' | 'settings'
@@ -49,6 +49,7 @@ export function WeddingAdminShell({ eventName, active, onSelect, badges, childre
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const { user } = useEffectiveAccess()
+  useWeddingTitle()
 
   const displayName = user?.full_name ?? user?.email?.split('@')[0] ?? ''
 
@@ -131,8 +132,7 @@ export function WeddingAdminShell({ eventName, active, onSelect, badges, childre
           <button onClick={() => setOpen(!open)} aria-label="Menu" className="md:hidden rounded-lg p-2 text-wd-ink hover:bg-wd-active">
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-          <Logo size={38} />
-          <span className="text-xl sm:text-[22px] font-bold tracking-tight text-wd-ink">IOMIXO <span className="text-wd-pink">Wedding</span></span>
+          <MioloveLogo height={36} className="text-wd-ink" />
         </div>
         <div className="flex items-center gap-2.5">
           {displayName && (

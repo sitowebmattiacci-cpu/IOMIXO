@@ -11,6 +11,7 @@ import { useActivePoll, toLegacyPoll } from '@/lib/events/usePolls'
 import { useLatestGames } from '@/lib/events/useGames'
 import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
+import { WEDDING_BRAND_NAME } from '@/lib/brand/wedding'
 import { WeddingPhotoDisplay } from '@/components/wedding/WeddingPhotoGridWall'
 import { RouletteWheel } from '@/components/wedding/RouletteWheel'
 import { WinnerAnnouncementStage } from '@/components/wedding/WinnerAnnouncementStage'
@@ -320,7 +321,7 @@ export default function ScreenModePage() {
               )}
             </div>
             <footer className="absolute bottom-8 text-xs uppercase tracking-[0.3em] text-wedding-taupe">
-              Powered by <span className="text-wedding-gold">IOMIXO Live Hub</span>
+              <span className="text-wedding-gold">{WEDDING_BRAND_NAME}</span>
             </footer>
           </div>
         )}
@@ -447,7 +448,7 @@ export default function ScreenModePage() {
             </div>
 
             <footer className="mt-12 text-xs uppercase tracking-[0.3em] text-wedding-taupe">
-              Powered by <span className="text-wedding-gold">IOMIXO Live Hub</span>
+              <span className="text-wedding-gold">{WEDDING_BRAND_NAME}</span>
             </footer>
           </div>
         )}
@@ -504,7 +505,7 @@ export default function ScreenModePage() {
             </div>
 
             <footer className="absolute bottom-8 text-xs uppercase tracking-[0.3em] text-wedding-taupe">
-              Powered by <span className="text-wedding-gold">IOMIXO Live Hub</span>
+              <span className="text-wedding-gold">{WEDDING_BRAND_NAME}</span>
             </footer>
           </div>
         )}
@@ -639,7 +640,7 @@ export default function ScreenModePage() {
           </div>
 
           <footer className="mt-8 text-center text-xs uppercase tracking-[0.3em] text-wedding-taupe">
-            Powered by <span className="text-wedding-gold">IOMIXO Live Hub</span>
+            <span className="text-wedding-gold">{WEDDING_BRAND_NAME}</span>
           </footer>
           </div>
         )}

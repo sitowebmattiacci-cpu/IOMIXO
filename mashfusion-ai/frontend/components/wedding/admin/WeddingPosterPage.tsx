@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { Printer, Pencil, Download } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
+import { WEDDING_BRAND_FILE_PREFIX } from '@/lib/brand/wedding'
 import { WdPage, WdButton, WdField, WdInput, WdToggleRow, WdSectionCard } from './WeddingAdminUI'
 import { publicOrigin, downloadQrPng } from './WeddingHomePage'
 
@@ -38,7 +39,7 @@ export function WeddingPosterPage({ session }: { session: any }) {
           <WdButton className="!rounded-2xl !px-6 !py-3.5" icon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>{t('wdAdmin.poster.print')}</WdButton>
           <WdButton className="!rounded-2xl !py-3.5" variant="secondary" icon={<Pencil className="h-4 w-4" />} onClick={() => setEditing(!editing)}>{t('wdAdmin.poster.edit')}</WdButton>
           <WdButton className="!rounded-2xl !py-3.5" variant="secondary" icon={<Download className="h-4 w-4" />}
-            onClick={() => downloadQrPng('wd-poster-qr', `iomixo-poster-qr-${session.public_slug}.png`)}>{t('wdAdmin.home.downloadQr')}</WdButton>
+            onClick={() => downloadQrPng('wd-poster-qr', `${WEDDING_BRAND_FILE_PREFIX}-poster-qr-${session.public_slug}.png`)}>{t('wdAdmin.home.downloadQr')}</WdButton>
         </div>
       </div>
 
