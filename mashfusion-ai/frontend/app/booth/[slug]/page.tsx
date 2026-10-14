@@ -26,6 +26,7 @@ export default function LiveBoothPage() {
     () => fetchPublicLive(slug!),
     { refreshInterval: 3_000 },
   )
+  const wdToast = () => (data?.session.session_type === 'wedding' ? WEDDING_GUEST_TOAST : undefined)
 
   const [cameraActive, setCameraActive] = useState(false)
   const [cameraError, setCameraError] = useState(false)
@@ -82,7 +83,7 @@ export default function LiveBoothPage() {
       if (v && (v.videoWidth === 0 || v.videoHeight === 0)) {
         stopCamera()
         setCameraError(true)
-        toast.error(t('booth.cameraDenied'))
+        toast.error(t('booth.cameraDenied'), wdToast())
       }
     }, 2000)
 
@@ -145,7 +146,7 @@ export default function LiveBoothPage() {
     }
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
-        toast.error(t('booth.cameraHttps'))
+        toast.error(t('booth.cameraHttps'), wdToast())
         return
       }
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -159,7 +160,7 @@ export default function LiveBoothPage() {
       setCameraActive(true)
     } catch {
       setCameraError(true)
-      toast.error(t('booth.cameraDenied'))
+      toast.error(t('booth.cameraDenied'), wdToast())
     }
   }
 
@@ -178,7 +179,7 @@ export default function LiveBoothPage() {
         videoRef.current.play().catch(() => {})
       }
     } catch {
-      toast.error(t('booth.flipError'))
+      toast.error(t('booth.flipError'), wdToast())
     }
   }
 
@@ -278,7 +279,7 @@ export default function LiveBoothPage() {
     e.target.value = '' // consente di riselezionare lo stesso file
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      toast.error(t('booth.notImage'))
+      toast.error(t('booth.notImage'), wdToast())
       return
     }
     // Ferma qualsiasi stream/anteprima live: nessuna dipendenza da video/canvas.
