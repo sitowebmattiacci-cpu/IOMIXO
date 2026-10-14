@@ -4,8 +4,8 @@ import useSWR from 'swr'
 import { useState } from 'react'
 import {
   Heart, MessageSquare, Sparkles, Image as ImageIcon,
-  Play, RotateCw, SkipForward, Check, X, Trash2, ListChecks,
-  Footprints, Wifi, Users,
+  Play, RotateCw, SkipForward, Check, X,
+  Footprints, Users,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { live, liveDedications, liveGames, livePhotos, type LiveRequestStatus } from '@/lib/api'
@@ -13,8 +13,8 @@ import { eventIdForSlug } from '@/lib/events/photoService'
 import { resolveOwnerEvent } from '@/lib/events/ownerService'
 import { AuthGate } from '@/lib/auth/AuthProvider'
 import {
-  WeddingShell, WeddingCard, WeddingButton, WeddingBadge,
-} from '@/components/wedding/WeddingUI'
+  RemoteShell, RemoteHeader, RemoteTab, RemoteCard, RemoteButton, RemoteStatus, RemoteEmpty, RemoteAccordion,
+} from '@/components/remote/RemoteUI'
 import { useI18n } from '@/lib/i18n'
 import { useLiveEvent } from '@/lib/events/useLiveEvent'
 import { useLatestGames, preferRealtime } from '@/lib/events/useGames'
@@ -136,168 +136,71 @@ function RemoteControl() {
 
   if (error || !session) {
     return (
-      <WeddingShell>
-        <div className="flex items-center justify-center min-h-screen p-6">
-          <WeddingCard className="text-center max-w-md">
-            <p className="text-wedding-ink/70 mb-4">
-              {error ? t('remote.notFound') : t('remote.loading')}
-            </p>
-          </WeddingCard>
+      <RemoteShell theme="party">
+        <div className="flex min-h-[70vh] items-center justify-center">
+          <RemoteCard className="max-w-md text-center">
+            <p className="text-[16px] text-[#9A9AA3]">{error ? t('remote.notFound') : t('remote.loading')}</p>
+          </RemoteCard>
         </div>
-      </WeddingShell>
+      </RemoteShell>
     )
   }
 
   const isPartySession = session.session_type !== 'wedding'
 
   return (
-    <div className={isPartySession ? 'party-remote' : undefined}>
-    <WeddingShell className="pb-20">
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <div className="flex justify-center mb-4">
-          <LanguageSwitcher variant={isPartySession ? 'dark' : 'light'} />
-        </div>
-        {/* Header compatto */}
-        <div className="mb-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-wedding-gold/10 border border-wedding-gold/30 mb-3">
-            <Wifi className="h-4 w-4 text-wedding-gold animate-pulse" />
-            <span className="text-xs uppercase tracking-wider text-wedding-gold font-semibold">
-              {t('remote.djRemote')}
-            </span>
-          </div>
-          <h1 className="font-wedding text-2xl text-wedding-ink mb-1">{session.event_name}</h1>
-          {!isPartySession && session.couple_names && (
-            <p className="font-wedding text-base italic text-wedding-muted">{session.couple_names}</p>
-          )}
-        </div>
+    <RemoteShell theme={isPartySession ? 'party' : 'wedding'}>
+      <RemoteHeader
+        title={session.event_name}
+        subtitle={!isPartySession ? session.couple_names : null}
+        live={session.is_active}
+        liveLabel={session.is_active ? t('sessions.active') : t('sessions.closed')}
+        remoteLabel={t('remote.djRemote')}
+        languageSlot={<LanguageSwitcher large variant={isPartySession ? 'party' : 'wedding'} />}
+      />
 
-        {/* Tab navigation */}
-        <div className="mb-4 flex overflow-x-auto gap-2 pb-2">
-          <TabButton
-            active={tab === 'games'}
-            onClick={() => setTab('games')}
-            icon={<Sparkles className="h-4 w-4" />}
-            label={t('remote.tabGames')}
-          />
-          <TabButton
-            active={tab === 'requests'}
-            onClick={() => setTab('requests')}
-            icon={<MessageSquare className="h-4 w-4" />}
-            label={`${t('remote.tabRequests')} ${pending.length > 0 ? `(${pending.length})` : ''}`}
-          />
-          {!isPartySession && (
-          <TabButton
-            active={tab === 'dedications'}
-            onClick={() => setTab('dedications')}
-            icon={<Heart className="h-4 w-4" />}
-            label={t('remote.tabDedications')}
-          />
-          )}
-          <TabButton
-            active={tab === 'photos'}
-            onClick={() => setTab('photos')}
-            icon={<ImageIcon className="h-4 w-4" />}
-            label={t('remote.tabPhotos')}
-          />
-        </div>
-
-        {/* Content panels */}
-        <div className="space-y-4">
-          {tab === 'games' && slug && <RemoteGamesPanel slug={slug} sessionType={session.session_type} />}
-          {tab === 'requests' && slug && <RemoteRequestsPanel slug={slug} requests={requests ?? []} />}
-          {!isPartySession && tab === 'dedications' && slug && <RemoteDedicationsPanel slug={slug} dedications={dedications ?? []} />}
-          {tab === 'photos' && slug && <RemotePhotosPanel slug={slug} photos={photos ?? []} />}
-        </div>
+      {/* Tab navigation */}
+      <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-2">
+        <RemoteTab active={tab === 'games'} onClick={() => setTab('games')} icon={<Sparkles className="h-4 w-4" />} label={t('remote.tabGames')} />
+        <RemoteTab active={tab === 'requests'} onClick={() => setTab('requests')} icon={<MessageSquare className="h-4 w-4" />} label={t('remote.tabRequests')} badge={pending.length} />
+        {!isPartySession && (
+          <RemoteTab active={tab === 'dedications'} onClick={() => setTab('dedications')} icon={<Heart className="h-4 w-4" />} label={t('remote.tabDedications')} />
+        )}
+        <RemoteTab active={tab === 'photos'} onClick={() => setTab('photos')} icon={<ImageIcon className="h-4 w-4" />} label={t('remote.tabPhotos')} />
       </div>
-    </WeddingShell>
-    </div>
-  )
-}
 
-function TabButton({ active, onClick, icon, label }: any) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition whitespace-nowrap ${
-        active
-          ? 'bg-wedding-gold text-white shadow-wedding'
-          : 'bg-white border border-wedding-champagne text-wedding-ink hover:bg-wedding-blush/20'
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
+      {/* Content panels */}
+      <div className="space-y-4">
+        {tab === 'games' && slug && <RemoteGamesPanel slug={slug} sessionType={session.session_type} />}
+        {tab === 'requests' && slug && <RemoteRequestsPanel slug={slug} requests={requests ?? []} />}
+        {!isPartySession && tab === 'dedications' && slug && <RemoteDedicationsPanel slug={slug} dedications={dedications ?? []} />}
+        {tab === 'photos' && slug && <RemotePhotosPanel slug={slug} photos={photos ?? []} />}
+      </div>
+    </RemoteShell>
   )
 }
 
 function RemoteGamesPanel({ slug, sessionType }: { slug: string; sessionType: string }) {
   const { t } = useI18n()
   const [activeGame, setActiveGame] = useState<'roulette' | 'shoe' | 'standup' | null>(null)
+  const toggle = (g: 'roulette' | 'shoe' | 'standup') => setActiveGame(activeGame === g ? null : g)
 
   return (
     <div className="space-y-3">
-      <WeddingCard>
-        <button
-          onClick={() => setActiveGame(activeGame === 'roulette' ? null : 'roulette')}
-          className="w-full flex items-center justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <Sparkles className="h-5 w-5 text-wedding-gold" />
-            <span className="font-wedding text-xl text-wedding-ink">{t('remote.roulettePenalties')}</span>
-          </div>
-          <span className="text-wedding-gold">
-            {activeGame === 'roulette' ? '−' : '+'}
-          </span>
-        </button>
-        {activeGame === 'roulette' && (
-          <div className="mt-4 pt-4 border-t border-wedding-champagne">
-            <RemoteRouletteControls slug={slug} />
-          </div>
-        )}
-      </WeddingCard>
+      <RemoteAccordion icon={<Sparkles className="h-5 w-5" />} title={t('remote.roulettePenalties')} open={activeGame === 'roulette'} onToggle={() => toggle('roulette')}>
+        <RemoteRouletteControls slug={slug} />
+      </RemoteAccordion>
 
       {sessionType === 'wedding' && (
-      <WeddingCard>
-        <button
-          onClick={() => setActiveGame(activeGame === 'shoe' ? null : 'shoe')}
-          className="w-full flex items-center justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <Footprints className="h-5 w-5 text-wedding-gold" />
-            <span className="font-wedding text-xl text-wedding-ink">{t('remote.shoeGame')}</span>
-          </div>
-          <span className="text-wedding-gold">
-            {activeGame === 'shoe' ? '−' : '+'}
-          </span>
-        </button>
-        {activeGame === 'shoe' && (
-          <div className="mt-4 pt-4 border-t border-wedding-champagne">
-            <RemoteShoeControls slug={slug} />
-          </div>
-        )}
-      </WeddingCard>
+        <RemoteAccordion icon={<Footprints className="h-5 w-5" />} title={t('remote.shoeGame')} open={activeGame === 'shoe'} onToggle={() => toggle('shoe')}>
+          <RemoteShoeControls slug={slug} />
+        </RemoteAccordion>
       )}
 
       {sessionType === 'wedding' && (
-        <WeddingCard>
-          <button
-            onClick={() => setActiveGame(activeGame === 'standup' ? null : 'standup')}
-            className="w-full flex items-center justify-between"
-          >
-            <div className="flex items-center gap-3">
-              <Users className="h-5 w-5 text-wedding-gold" />
-              <span className="font-wedding text-xl text-wedding-ink">{t('weddingPanels.standUpGuessName')}</span>
-            </div>
-            <span className="text-wedding-gold">
-              {activeGame === 'standup' ? '−' : '+'}
-            </span>
-          </button>
-          {activeGame === 'standup' && (
-            <div className="mt-4 pt-4 border-t border-wedding-champagne">
-              <RemoteStandUpGuessControls slug={slug} />
-            </div>
-          )}
-        </WeddingCard>
+        <RemoteAccordion icon={<Users className="h-5 w-5" />} title={t('weddingPanels.standUpGuessName')} open={activeGame === 'standup'} onToggle={() => toggle('standup')}>
+          <RemoteStandUpGuessControls slug={slug} />
+        </RemoteAccordion>
       )}
     </div>
   )
@@ -345,73 +248,75 @@ function RemoteStandUpGuessControls({ slug }: { slug: string }) {
     })
   }
 
+  const status = String(cfg?.status ?? 'idle')
+  const isOn = (s: string) => status === s
+
   return (
     <div className="space-y-3">
-      <div className="rounded-xl bg-wedding-gold/10 border border-wedding-gold/30 p-4 text-center">
-        <p className="text-xs uppercase tracking-wider text-wedding-gold mb-1">{t('weddingPanels.standUpGuessStatus')}</p>
-        <p className="text-sm text-wedding-ink mb-2">{String(cfg?.status ?? 'idle')}</p>
+      <RemoteStatus label={t('weddingPanels.standUpGuessStatus')}>
+        <p className="text-[15px] uppercase tracking-wide">{status}</p>
         {currentRound ? (
           <>
-            <p className="text-xs uppercase tracking-wider text-wedding-gold mb-1">{t('weddingPanels.standUpGuessGuestInstructionLabel')}</p>
-            <p className="font-wedding text-lg text-wedding-ink">{currentRound.guest_instruction}</p>
+            <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.14em] opacity-70">{t('weddingPanels.standUpGuessGuestInstructionLabel')}</p>
+            <p className="mt-1">{currentRound.guest_instruction}</p>
           </>
         ) : (
-          <p className="text-sm text-wedding-muted">{t('weddingPanels.standUpGuessNoRounds')}</p>
+          <p className="mt-2 text-[15px] font-normal opacity-70">{t('weddingPanels.standUpGuessNoRounds')}</p>
         )}
-      </div>
+      </RemoteStatus>
 
       <div className="grid grid-cols-2 gap-2">
-        <WeddingButton onClick={() => save({ status: 'instruction' })} variant="outline" loading={busy}>
+        <RemoteButton onClick={() => save({ status: 'instruction' })} variant={isOn('instruction') ? 'primary' : 'secondary'} loading={busy}>
           {t('weddingPanels.standUpGuessShowInstruction')}
-        </WeddingButton>
-        <WeddingButton onClick={() => save({ status: 'guessing' })} variant="outline" loading={busy}>
+        </RemoteButton>
+        <RemoteButton onClick={() => save({ status: 'guessing' })} variant={isOn('guessing') ? 'primary' : 'secondary'} loading={busy}>
           {t('weddingPanels.standUpGuessGoGuessing')}
-        </WeddingButton>
-        <WeddingButton onClick={() => save({ status: 'reveal' })} variant="gold" loading={busy}>
+        </RemoteButton>
+        <RemoteButton onClick={() => save({ status: 'reveal' })} variant={isOn('reveal') ? 'primary' : 'secondary'} loading={busy}>
           {t('weddingPanels.standUpGuessRevealAnswer')}
-        </WeddingButton>
-        <WeddingButton onClick={() => save({ status: 'finished' })} variant="ghost" loading={busy}>
+        </RemoteButton>
+        <RemoteButton onClick={() => save({ status: 'finished' })} variant={isOn('finished') ? 'primary' : 'secondary'} loading={busy}>
           {t('weddingPanels.standUpGuessFinished')}
-        </WeddingButton>
+        </RemoteButton>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <WeddingButton
+        <RemoteButton
           onClick={() => save({ score: { guessed: Number(cfg?.score?.guessed ?? 0) + 1, missed: Number(cfg?.score?.missed ?? 0) } })}
-          variant="outline"
+          variant="secondary"
           loading={busy}
-          icon={<Check className="h-4 w-4" />}
+          icon={<Check className="h-5 w-5" />}
         >
           {t('weddingPanels.standUpGuessCorrect')}
-        </WeddingButton>
-        <WeddingButton
+        </RemoteButton>
+        <RemoteButton
           onClick={() => save({ score: { guessed: Number(cfg?.score?.guessed ?? 0), missed: Number(cfg?.score?.missed ?? 0) + 1 } })}
-          variant="ghost"
+          variant="secondary"
           loading={busy}
-          icon={<X className="h-4 w-4" />}
+          icon={<X className="h-5 w-5" />}
         >
           {t('weddingPanels.standUpGuessWrong')}
-        </WeddingButton>
+        </RemoteButton>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <WeddingButton onClick={() => moveRound(-1)} variant="outline" loading={busy}>
+        <RemoteButton onClick={() => moveRound(-1)} variant="secondary" loading={busy}>
           {t('weddingPanels.standUpGuessPrevRound')}
-        </WeddingButton>
-        <WeddingButton onClick={() => moveRound(1)} variant="outline" loading={busy}>
+        </RemoteButton>
+        <RemoteButton onClick={() => moveRound(1)} variant="secondary" loading={busy}>
           {t('weddingPanels.standUpGuessNextRound')}
-        </WeddingButton>
+        </RemoteButton>
       </div>
 
-      <WeddingButton
+      <RemoteButton
         onClick={() => save({ status: 'idle', current_index: 0, current_round_id: rounds[0]?.id ?? null, score: { guessed: 0, missed: 0 } }, t('weddingPanels.standUpGuessResetDone'))}
         variant="ghost"
-        icon={<RotateCw className="h-4 w-4" />}
+        icon={<RotateCw className="h-5 w-5" />}
         className="w-full"
         loading={busy}
       >
         {t('weddingPanels.standUpGuessReset')}
-      </WeddingButton>
+      </RemoteButton>
     </div>
   )
 }
@@ -451,25 +356,14 @@ function RemoteRouletteControls({ slug }: { slug: string }) {
 
   return (
     <div className="space-y-3">
-      {result && (
-        <div className="rounded-xl bg-wedding-gold/10 border border-wedding-gold/30 p-4 text-center">
-          <p className="text-xs uppercase tracking-wider text-wedding-gold mb-1">{t('remote.penalty')}</p>
-          <p className="font-wedding text-2xl text-wedding-ink">{result}</p>
-        </div>
-      )}
+      {result && <RemoteStatus label={t('remote.penalty')}>{result}</RemoteStatus>}
       <div className="flex gap-2">
-        <WeddingButton
-          onClick={start}
-          variant="gold"
-          loading={running}
-          icon={<Play className="h-4 w-4" />}
-          className="flex-1"
-        >
+        <RemoteButton onClick={start} variant="primary" loading={running} icon={<Play className="h-5 w-5" />} className="flex-1">
           {t('remote.spin')}
-        </WeddingButton>
-        <WeddingButton onClick={reset} variant="outline" icon={<RotateCw className="h-4 w-4" />}>
+        </RemoteButton>
+        <RemoteButton onClick={reset} variant="secondary" icon={<RotateCw className="h-5 w-5" />}>
           {t('remote.reset')}
-        </WeddingButton>
+        </RemoteButton>
       </div>
     </div>
   )
@@ -532,37 +426,37 @@ function RemoteShoeControls({ slug }: { slug: string }) {
   return (
     <div className="space-y-3">
       {isActive && questions.length > 0 && (
-        <div className="rounded-xl bg-wedding-gold/10 border border-wedding-gold/30 p-4 text-center">
-          <p className="text-xs uppercase tracking-wider text-wedding-gold mb-1">
-            {t('remote.question')} {currentIndex + 1}/{questions.length}
-          </p>
-          <p className="font-wedding text-xl text-wedding-ink">{questions[currentIndex]}</p>
-        </div>
+        <RemoteStatus label={`${t('remote.question')} ${currentIndex + 1}/${questions.length}`}>{questions[currentIndex]}</RemoteStatus>
       )}
       <div className="flex gap-2">
-        <WeddingButton
-          onClick={start}
-          variant="outline"
-          loading={busy}
-          icon={<Play className="h-4 w-4" />}
-          className="flex-1"
-        >
+        <RemoteButton onClick={start} variant={isActive ? 'secondary' : 'primary'} loading={busy} icon={<Play className="h-5 w-5" />} className="flex-1">
           {isActive ? t('remote.restart') : t('remote.start')}
-        </WeddingButton>
-        <WeddingButton
+        </RemoteButton>
+        <RemoteButton
           onClick={next}
-          variant="gold"
+          variant="primary"
           loading={busy}
           disabled={!isActive || currentIndex >= questions.length - 1}
-          icon={<SkipForward className="h-4 w-4" />}
+          icon={<SkipForward className="h-5 w-5" />}
           className="flex-1"
         >
           {t('remote.next')}
-        </WeddingButton>
+        </RemoteButton>
       </div>
-      <WeddingButton onClick={reset} variant="ghost" icon={<RotateCw className="h-4 w-4" />} className="w-full">
+      <RemoteButton onClick={reset} variant="ghost" icon={<RotateCw className="h-5 w-5" />} className="w-full">
         {t('remote.reset')}
-      </WeddingButton>
+      </RemoteButton>
+    </div>
+  )
+}
+
+/** Approve / reject pair: labelled, 52px touch targets. */
+function ModerationButtons({ busy, onApprove, onReject }: { busy: boolean; onApprove: () => void; onReject: () => void }) {
+  const { t } = useI18n()
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      <RemoteButton variant="primary" onClick={onApprove} disabled={busy} icon={<Check className="h-5 w-5" />}>{t('common.approve')}</RemoteButton>
+      <RemoteButton variant="secondary" onClick={onReject} disabled={busy} icon={<X className="h-5 w-5" />}>{t('common.reject')}</RemoteButton>
     </div>
   )
 }
@@ -585,47 +479,23 @@ function RemoteRequestsPanel({ slug, requests }: { slug: string; requests: any[]
 
   const pending = requests.filter((r) => r.status === 'pending')
 
-  if (pending.length === 0) {
-    return (
-      <WeddingCard className="text-center py-8">
-        <p className="text-wedding-muted">{t('remote.noRequests')}</p>
-      </WeddingCard>
-    )
-  }
+  if (pending.length === 0) return <RemoteEmpty>{t('remote.noRequests')}</RemoteEmpty>
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {pending.map((req) => (
-        <WeddingCard key={req.id} tone="ivory">
+        <RemoteCard key={req.id}>
           <div className="flex items-start gap-3">
-            <MessageSquare className="h-4 w-4 text-wedding-gold mt-1 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-wedding-ink">{req.song_title}</p>
-              {req.artist_name && (
-                <p className="text-xs text-wedding-muted">{req.artist_name}</p>
-              )}
-              {req.guest_name && (
-                <p className="text-xs text-wedding-gold mt-1">— {req.guest_name}</p>
-              )}
-            </div>
-            <div className="flex gap-1 shrink-0">
-              <button
-                onClick={() => updateRequest(req.id, 'approved')}
-                disabled={busy === req.id}
-                className="p-2 rounded-full bg-wedding-sage/30 text-[#5f6f59] hover:bg-wedding-sage/50 disabled:opacity-50"
-              >
-                <Check className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => updateRequest(req.id, 'rejected')}
-                disabled={busy === req.id}
-                className="p-2 rounded-full bg-wedding-taupe/20 text-wedding-ink/70 hover:bg-wedding-taupe/40 disabled:opacity-50"
-              >
-                <X className="h-4 w-4" />
-              </button>
+            <MessageSquare className="mt-1 h-5 w-5 shrink-0 opacity-70" />
+            <div className="min-w-0 flex-1">
+              <p className="break-words text-[17px] font-semibold leading-snug">{req.track_title ?? req.song_title}</p>
+              {(req.artist ?? req.artist_name) && <p className="text-[15px] opacity-70">{req.artist ?? req.artist_name}</p>}
+              {req.message && <p className="mt-1 break-words text-[14px] opacity-70">“{req.message}”</p>}
+              {req.guest_name && <p className="mt-1 text-[14px] opacity-70">— {req.guest_name}</p>}
             </div>
           </div>
-        </WeddingCard>
+          <ModerationButtons busy={busy === req.id} onApprove={() => updateRequest(req.id, 'approved')} onReject={() => updateRequest(req.id, 'rejected')} />
+        </RemoteCard>
       ))}
     </div>
   )
@@ -649,42 +519,21 @@ function RemoteDedicationsPanel({ slug, dedications }: { slug: string; dedicatio
 
   const pending = dedications.filter((d) => d.status === 'pending')
 
-  if (pending.length === 0) {
-    return (
-      <WeddingCard className="text-center py-8">
-        <p className="text-wedding-muted">{t('remote.noDedications')}</p>
-      </WeddingCard>
-    )
-  }
+  if (pending.length === 0) return <RemoteEmpty>{t('remote.noDedications')}</RemoteEmpty>
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {pending.map((ded) => (
-        <WeddingCard key={ded.id} tone="ivory">
+        <RemoteCard key={ded.id}>
           <div className="flex items-start gap-3">
-            <Heart className="h-4 w-4 text-wedding-gold mt-1 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="font-wedding text-base italic text-wedding-ink leading-snug">"{ded.message}"</p>
-              <p className="text-xs text-wedding-gold mt-2">— {ded.guest_name ?? t('common.anonymous')}</p>
-            </div>
-            <div className="flex gap-1 shrink-0">
-              <button
-                onClick={() => setStatus(ded.id, 'approved')}
-                disabled={busy === ded.id}
-                className="p-2 rounded-full bg-wedding-sage/30 text-[#5f6f59] hover:bg-wedding-sage/50 disabled:opacity-50"
-              >
-                <Check className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setStatus(ded.id, 'rejected')}
-                disabled={busy === ded.id}
-                className="p-2 rounded-full bg-wedding-taupe/20 text-wedding-ink/70 hover:bg-wedding-taupe/40 disabled:opacity-50"
-              >
-                <X className="h-4 w-4" />
-              </button>
+            <Heart className="mt-1 h-5 w-5 shrink-0 opacity-70" />
+            <div className="min-w-0 flex-1">
+              <p className="whitespace-pre-line break-words text-[17px] leading-snug">"{ded.message}"</p>
+              <p className="mt-2 text-[14px] opacity-70">— {ded.guest_name ?? t('common.anonymous')}</p>
             </div>
           </div>
-        </WeddingCard>
+          <ModerationButtons busy={busy === ded.id} onApprove={() => setStatus(ded.id, 'approved')} onReject={() => setStatus(ded.id, 'rejected')} />
+        </RemoteCard>
       ))}
     </div>
   )
@@ -708,47 +557,25 @@ function RemotePhotosPanel({ slug, photos }: { slug: string; photos: any[] }) {
 
   const pending = photos.filter((p) => p.status === 'pending')
 
-  if (pending.length === 0) {
-    return (
-      <WeddingCard className="text-center py-8">
-        <p className="text-wedding-muted">{t('remote.noPhotos')}</p>
-      </WeddingCard>
-    )
-  }
+  if (pending.length === 0) return <RemoteEmpty>{t('remote.noPhotos')}</RemoteEmpty>
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
       {pending.map((photo) => (
-        <WeddingCard key={photo.id} className="p-0 overflow-hidden">
+        <RemoteCard key={photo.id} className="overflow-hidden p-0">
           {photo.url ? (
-            <img src={photo.url} alt={photo.caption ?? ''} className="w-full aspect-square object-cover" />
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photo.url} alt={photo.caption ?? ''} className="aspect-square w-full object-cover" />
           ) : (
-            <div className="w-full aspect-square bg-wedding-champagne/20 flex items-center justify-center">
-              <ImageIcon className="h-8 w-8 text-wedding-muted" />
+            <div className="flex aspect-square w-full items-center justify-center opacity-50">
+              <ImageIcon className="h-8 w-8" />
             </div>
           )}
           <div className="p-3">
-            {photo.caption && (
-              <p className="text-xs text-wedding-ink line-clamp-2 mb-2">{photo.caption}</p>
-            )}
-            <div className="flex gap-1">
-              <button
-                onClick={() => setStatus(photo.id, 'approved')}
-                disabled={busy === photo.id}
-                className="flex-1 p-2 rounded-lg bg-wedding-sage/30 text-[#5f6f59] hover:bg-wedding-sage/50 disabled:opacity-50"
-              >
-                <Check className="h-4 w-4 mx-auto" />
-              </button>
-              <button
-                onClick={() => setStatus(photo.id, 'rejected')}
-                disabled={busy === photo.id}
-                className="flex-1 p-2 rounded-lg bg-wedding-taupe/20 text-wedding-ink/70 hover:bg-wedding-taupe/40 disabled:opacity-50"
-              >
-                <X className="h-4 w-4 mx-auto" />
-              </button>
-            </div>
+            {photo.caption && <p className="line-clamp-2 text-[14px] opacity-80">{photo.caption}</p>}
+            <ModerationButtons busy={busy === photo.id} onApprove={() => setStatus(photo.id, 'approved')} onReject={() => setStatus(photo.id, 'rejected')} />
           </div>
-        </WeddingCard>
+        </RemoteCard>
       ))}
     </div>
   )

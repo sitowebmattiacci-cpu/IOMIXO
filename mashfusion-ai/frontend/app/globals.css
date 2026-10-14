@@ -570,25 +570,6 @@ body.iomixo-dragging .clip-block {
 .wedding-admin input[type="checkbox"]:checked { background: var(--wd-pink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E") center/80% no-repeat; border-color: var(--wd-pink); }
 .wedding-admin input[type="checkbox"]:focus-visible { outline: 2px solid rgba(240,106,155,.4); outline-offset: 2px; }
 
-/* ── Party remote: dark, touch-friendly skin over the shared remote markup (Wedding remote untouched) ── */
-.party-remote > div { background: #0A0A0D !important; color: #F8F8FA !important; }
-.party-remote .font-wedding { font-family: inherit; font-style: normal; letter-spacing: normal; }
-.party-remote [class*="bg-gradient-to-"] { background-image: none; }
-.party-remote .text-wedding-ink, .party-remote .text-\[\#2B2424\] { color: #F8F8FA; }
-.party-remote [class*="text-wedding-ink/"] { color: #9A9AA3; }
-.party-remote .text-wedding-muted, .party-remote .text-wedding-taupe, .party-remote .text-\[\#6F6260\] { color: #9A9AA3; }
-.party-remote .text-wedding-gold, .party-remote .text-\[\#8F1D2C\] { color: #FF2D8D; }
-.party-remote .bg-wedding-gold, .party-remote .bg-\[\#8F1D2C\] { background-color: #FF2D8D; color: #fff; }
-.party-remote .bg-\[\#F7F4F3\], .party-remote .bg-\[\#FBEAF0\], .party-remote .bg-\[\#FFFDFB\], .party-remote .bg-white,
-.party-remote [class*="bg-wedding-blush"], .party-remote [class*="bg-wedding-champagne"] { background-color: #15151B; }
-.party-remote [class*="bg-wedding-gold/"] { background-color: rgba(255,45,141,.12); }
-.party-remote [class*="border-wedding"], .party-remote .border-\[\#E8B7C8\], .party-remote .border-\[\#E7D8D2\] { border-color: #2A2A33; }
-.party-remote [class*="bg-wedding-sage/"] { background-color: #43E08D; color: #0A0A0D; }
-.party-remote [class*="bg-wedding-taupe/"] { background-color: #1C1C23; color: #F8F8FA; }
-.party-remote .shadow-wedding, .party-remote .shadow-wedding-lg { box-shadow: none; }
-.party-remote button { min-height: 44px; }
-.party-remote input, .party-remote textarea, .party-remote select { background: #15151B; color: #F8F8FA; border-color: #2A2A33; }
-
 @media print {
   body * { visibility: hidden !important; }
   .wd-poster-print, .wd-poster-print * { visibility: visible !important; }
