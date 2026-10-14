@@ -886,5 +886,130 @@
       "privacy": "Privacy",
       "terms": "Termini"
     }
+  },
+  "wdAdmin": {
+    "allEvents": "Tutti gli eventi",
+    "currentEvent": "Evento corrente",
+    "nav": {
+      "home": "Home",
+      "photos": "Foto",
+      "requests": "Richieste",
+      "dedications": "Dediche",
+      "games": "Giochi",
+      "privacy": "Privacy",
+      "poster": "Poster",
+      "settings": "Impostazioni",
+      "booth": "Live Booth",
+      "screen": "Schermo"
+    },
+    "home": {
+      "subtitle": "Tutto sotto controllo per il vostro grande giorno.",
+      "publicLink": "Link pubblico",
+      "publicLinkDesc": "Condividi questo link o il QR Code con gli invitati.",
+      "qrHint": "Gli ospiti inquadrano il QR per partecipare.",
+      "downloadQr": "Scarica QR",
+      "guestPreview": "Anteprima ospiti",
+      "guestPreviewDesc": "Come vedono l'evento gli invitati dal telefono.",
+      "openGuest": "Apri pagina ospiti",
+      "screenPreview": "Anteprima schermo",
+      "screenPreviewDesc": "La vista live per il maxischermo.",
+      "openScreen": "Apri Screen Mode",
+      "screenOff": "Screen Mode non attivo per questo evento.",
+      "copy": "Copia",
+      "openShort": "Apri",
+      "transparentBg": "Sfondo trasparente (PNG)",
+      "photosAndVideos": "foto e video",
+      "live": "IN DIRETTA",
+      "fullscreen": "Schermo intero"
+    },
+    "photos": {
+      "subtitle": "Le foto e i video condivisi dai vostri ospiti.",
+      "upload": "Carica foto e video",
+      "uploaded": "Caricamento completato",
+      "download": "Scarica",
+      "downloadAll": "Scarica tutto",
+      "all": "Tutto",
+      "photos": "Foto",
+      "videos": "Video",
+      "select": "Seleziona",
+      "selectAll": "Seleziona tutto",
+      "deselectAll": "Deseleziona",
+      "selected": "selezionati",
+      "confirmDelete": "Eliminare definitivamente gli elementi?"
+    },
+    "requests": {
+      "subtitle": "Gestisci le canzoni richieste dagli invitati."
+    },
+    "dedications": {
+      "subtitle": "I messaggi degli ospiti per gli sposi."
+    },
+    "games": {
+      "subtitle": "Avvia i giochi e coinvolgi gli invitati."
+    },
+    "privacy": {
+      "requestsDesc": "Gli invitati possono richiedere canzoni.",
+      "dedicationsDesc": "Gli invitati possono scrivere dediche agli sposi.",
+      "shoeGameDesc": "Mostra il Gioco della Scarpa agli invitati.",
+      "pollsDesc": "Gli invitati possono votare ai sondaggi.",
+      "liveBoothDesc": "Gli invitati possono scattare e caricare foto.",
+      "pageTitle": "Privacy e sicurezza",
+      "on": "Attivata",
+      "off": "Disattivata"
+    },
+    "poster": {
+      "subtitle": "Personalizza il tuo poster A4 con il QR Code e stampalo o salvalo in PDF.",
+      "controls": "Personalizza",
+      "headline": "Titolo",
+      "subline": "Sottotitolo",
+      "showNames": "Mostra nomi",
+      "showDate": "Mostra data",
+      "print": "Stampa",
+      "defaultHeadline": "Condividi",
+      "defaultSubline": "l'amore",
+      "title": "Poster di nozze",
+      "previewA4": "Anteprima A4",
+      "edit": "Modifica il poster",
+      "caption": "Testo sotto il QR",
+      "defaultCaption": "Condividi le tue foto! Scansiona il QR Code e partecipa"
+    },
+    "settings": {
+      "subtitle": "Dettagli dell'evento e opzioni dello schermo.",
+      "eventDetails": "Dettagli evento",
+      "eventDetailsDesc": "Le informazioni principali mostrate agli ospiti.",
+      "eventName": "Nome evento",
+      "coupleNames": "Nomi degli sposi",
+      "date": "Data",
+      "venue": "Location",
+      "description": "Descrizione",
+      "save": "Salva modifiche",
+      "nameRequired": "Il nome evento è obbligatorio",
+      "screenDesc": "Scegli cosa mostrare sul maxischermo.",
+      "namesStyle": "Stile dei nomi",
+      "namesStyleDesc": "Carattere e dimensione dei nomi sullo schermo.",
+      "eventStatus": "Stato evento",
+      "eventStatusDesc": "Apri o chiudi l'evento, oppure eliminalo.",
+      "pageTitle": "Impostazioni evento",
+      "eventNameDesc": "Verrà mostrato ai tuoi ospiti sulla pagina dell'evento.",
+      "coupleNamesDesc": "I nomi mostrati su schermo e sul poster.",
+      "dateDesc": "Imposta quando è programmato il tuo evento.",
+      "venueDesc": "Il luogo in cui si svolge la festa.",
+      "descriptionDesc": "Un breve testo di benvenuto per gli ospiti."
+    },
+    "welcome": "Benvenuto",
+    "manageEvents": "Gestisci i tuoi eventi",
+    "group": {
+      "couple": "Per gli sposi",
+      "dj": "Regia DJ"
+    },
+    "status": {
+      "pending": "IN ATTESA",
+      "approved": "APPROVATA",
+      "rejected": "RIFIUTATA"
+    },
+    "screen": {
+      "subtitle": "Schermo, video, nomi degli sposi e controlli live durante la serata.",
+      "namesTitle": "Nomi degli sposi sullo schermo",
+      "namesDesc": "Il nome si modifica in Impostazioni; qui scegli carattere e dimensione."
+    }
   }
 }

@@ -69,19 +69,22 @@ test('H1. guest uploads from the Live Booth → pending → owner approves in th
     await s.page.goto(`${app.url}/sessions/${s.id}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
     await s.page.getByRole('button', { name: /Foto/ }).first().click({ timeout: 90_000 })
     await s.page.locator('img[src*="127.0.0.1:9199"]').first().waitFor({ timeout: 60_000 })                  // the owner sees the pending photo (read-all rule)
-    await s.page.locator('button.bg-wedding-sage\\/30').first().click()
+    await s.page.locator('div.group', { has: s.page.locator('img') }).first().hover()
+    await s.page.locator('button[title="Approva"]').first().click()
     await until(async () => (await fsDoc(`events/${s.id}/photos/${photoId}`)).fields.status.stringValue === 'approved', 20_000, 'approved')
     await until(async () => (await storageImgs(tv)) >= 1, 45_000, 'the approved photo appears on the TV (realtime)')
 
     // reject → disappears from the TV; token rotated
     const tokenBefore = (await objMeta(f.storagePath.stringValue)).downloadTokens
-    await s.page.locator('button.bg-wedding-taupe\\/20').first().click()
+    await s.page.locator('div.group', { has: s.page.locator('img') }).first().hover()
+    await s.page.locator('button[title="Rifiuta"]').first().click()
     await until(async () => (await fsDoc(`events/${s.id}/photos/${photoId}`)).fields.status.stringValue === 'rejected', 20_000, 'rejected')
     await until(async () => (await storageImgs(tv)) === 0, 45_000, 'the rejected photo leaves the TV')
     assert.notEqual((await objMeta(f.storagePath.stringValue)).downloadTokens, tokenBefore, 'the download links were invalidated')
 
     // delete → file and document gone
-    await s.page.locator('button.bg-wedding-blush\\/40').first().click()
+    await s.page.locator('div.group', { has: s.page.locator('img') }).first().hover()
+    await s.page.locator('button[title="Elimina"]').first().click()
     await until(async () => (await fsList(`events/${s.id}/photos`)).length === 0, 20_000, 'doc deleted')
     assert.equal(await objMeta(f.storagePath.stringValue), null, 'file deleted')
 

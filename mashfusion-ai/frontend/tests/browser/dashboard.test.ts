@@ -101,6 +101,7 @@ test('D3. detail on a 503 Render: moderate request + dedication, create/close po
   try {
     render.calls.length = 0
     await s.page.goto(`${app.url}/sessions/${ev.legacy}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
+    await s.page.getByRole('button', { name: /Richieste/ }).first().click()
     await s.page.getByText('Canzone da moderare').first().waitFor({ timeout: 90_000 })
     await s.page.getByRole('button', { name: /Approva/ }).first().click()
     await until(async () => (await fsDoc(`events/${ev.id}/requests/rq1`)).fields?.status?.stringValue === 'approved', 20_000, 'request approved')
@@ -118,10 +119,10 @@ test('D3. detail on a 503 Render: moderate request + dedication, create/close po
     await s.page.getByRole('button', { name: 'Chiudi sondaggio' }).first().click()
     await until(async () => (await fsList(`events/${ev.id}/polls`))[0]?.fields.status.stringValue === 'closed', 20_000, 'poll closed')
 
-    await s.page.getByRole('button', { name: /Schermo live/ }).first().click({ timeout: 60_000 })
-    const box = s.page.locator('label', { hasText: 'Sondaggi' }).locator('input[type="checkbox"]').first()
-    await box.waitFor({ timeout: 60_000, state: 'attached' })
-    await box.check({ force: true }).catch(async () => { await box.click({ force: true }) })
+    await s.page.getByRole('button', { name: 'Schermo', exact: true }).first().click({ timeout: 60_000 })
+    const box = s.page.getByRole('switch', { name: 'Sondaggi' }).first()
+    await box.waitFor({ timeout: 60_000 })
+    await box.click()
     await until(async () => (await fsDoc(`events/${ev.id}`)).fields?.screenConfig?.mapValue?.fields?.show_polls?.booleanValue === true, 20_000, 'screenConfig.show_polls')
     assert.deepEqual(nonGet(), [], 'no write reached Render')
     assert.deepEqual(mandatory(), [])

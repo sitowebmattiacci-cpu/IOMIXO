@@ -51,6 +51,7 @@ const shot = (page: Page, name: string) => page.screenshot({ path: `/tmp/claude-
 test('O1. owner moderates a music request from the dashboard: Firestore status changes, nothing is written to Render', async () => {
   const s = await ownerSession()
   try {
+    await s.page.getByRole('button', { name: /Richieste/ }).first().click({ timeout: 90_000 })
     await s.page.getByText('Canzone da moderare').first().waitFor({ timeout: 90_000 })
     await s.page.getByRole('button', { name: /Approva/ }).first().click()
     await until(async () => (await fsDoc(`events/${s.id}/requests/rq1`)).fields?.status?.stringValue === 'approved', 20_000, 'request approved')
@@ -98,16 +99,16 @@ test('O3. owner creates a poll, then closes it, from the dashboard (Firestore-na
 test('O4. owner toggles a TV section: screenConfig is written to Firestore ONLY (no PATCH to Render) and the dashboard keeps showing it', async () => {
   const s = await ownerSession()
   try {
-    await s.page.getByRole('button', { name: /Schermo live/ }).first().click({ timeout: 90_000 })      // opens the TV visibility panel
-    const box = s.page.locator('label', { hasText: 'Sondaggi' }).locator('input[type="checkbox"]').first()
-    await box.waitFor({ timeout: 90_000, state: 'attached' })
-    await box.check({ force: true }).catch(async () => { await box.click({ force: true }) })
+    await s.page.getByRole('button', { name: 'Schermo', exact: true }).first().click({ timeout: 90_000 })      // settings page holds the TV visibility toggles
+    const box = s.page.getByRole('switch', { name: 'Sondaggi' }).first()
+    await box.waitFor({ timeout: 90_000 })
+    await box.click()
     const cfg = await until(async () => {
       const f = (await fsDoc(`events/${s.id}`)).fields?.screenConfig?.mapValue?.fields
       return f?.show_polls?.booleanValue === true ? f : undefined
     }, 20_000, 'screenConfig.show_polls = true')
     assert.equal(cfg.show_dedications.booleanValue, false, 'the other toggles keep their value')
     assert.deepEqual(writes(), [], 'config is Firestore-authoritative: Render must not receive the PATCH')
-    await until(async () => await box.isChecked(), 20_000, 'dashboard shows the saved toggle (Firestore overlay on the legacy session)')
+    await until(async () => (await box.getAttribute('aria-checked')) === 'true', 20_000, 'dashboard shows the saved toggle (Firestore overlay on the legacy session)')
   } catch (e) { await shot(s.page, 'o4'); throw e } finally { await s.ctx.close() }
 })

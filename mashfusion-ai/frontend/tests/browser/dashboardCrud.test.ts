@@ -81,6 +81,7 @@ test('K1. create → list → detail → close/reopen → roulette → shoe → 
     assert.deepEqual(render.calls.filter((c) => (c.path === '/api/live/sessions' || c.path === '/user/me' || c.path.includes(eventId)) && !outOfScope.test(c.path)), [], 'no list/detail/plan/games call to Render for the native event')
 
     // delete from the dashboard → back to the list, gone, slug unresolvable, guest page gone
+    await page.getByRole('button', { name: /Impostazioni/ }).first().click()
     await page.getByRole('button', { name: 'Elimina', exact: true }).first().click({ timeout: 30_000 })
     await page.waitForURL(/\/sessions$/, { timeout: 30_000 })
     await until(async () => !(await fsGet(`eventSlugs/${slug}`)).fields, 20_000, 'slug removed')

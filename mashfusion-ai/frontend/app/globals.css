@@ -508,3 +508,79 @@ body.iomixo-dragging .clip-block {
     animation: none;
   }
 }
+
+/* ── Wedding admin theme (scoped to .wedding-admin; Party/DJ untouched) ──
+   Remaps the legacy burgundy/ivory utility colors used by shared wedding panels
+   (games, requests, dedications) to the light pink wedding-admin palette. */
+.wedding-admin { --wd-pink:#F06A9B; --wd-pink-hover:#E8538A; --wd-active:#FCE8F0; --wd-border:#F3D7E1; --wd-ink:#1F2028; --wd-muted:#85858C; }
+.wedding-admin .font-wedding { font-family: inherit; font-style: normal; letter-spacing: normal; }
+.wedding-admin [class*="bg-gradient-to-"] { background-image: none; }
+.wedding-admin .bg-\[\#F7F4F3\],
+.wedding-admin .bg-\[\#FFFDFB\] { background-color:#fff; }
+.wedding-admin .bg-\[\#FBEAF0\],
+.wedding-admin .bg-wedding-blush\/40,
+.wedding-admin .bg-wedding-champagne\/40 { background-color: var(--wd-active); }
+.wedding-admin .border-\[\#E8B7C8\],
+.wedding-admin .border-\[\#E7D8D2\],
+.wedding-admin .border-wedding-champagne,
+.wedding-admin .border-wedding-champagne\/60,
+.wedding-admin .border-wedding-gold\/30 { border-color: var(--wd-border); }
+.wedding-admin .text-\[\#2B2424\],
+.wedding-admin .text-wedding-ink { color: var(--wd-ink); }
+.wedding-admin .text-\[\#6F6260\],
+.wedding-admin .text-wedding-taupe,
+.wedding-admin .text-wedding-muted { color: var(--wd-muted); }
+.wedding-admin .text-\[\#8F1D2C\],
+.wedding-admin .text-wedding-gold,
+.wedding-admin .text-wedding-burgundy { color: var(--wd-pink-hover); }
+.wedding-admin .bg-\[\#8F1D2C\],
+.wedding-admin .from-\[\#8F1D2C\] { background-color: var(--wd-pink); color:#fff; }
+.wedding-admin .hover\:bg-\[\#741625\]:hover,
+.wedding-admin .hover\:bg-\[\#8F1D2C\]:hover { background-color: var(--wd-pink-hover); }
+.wedding-admin .hover\:bg-\[\#FBEAF0\]:hover,
+.wedding-admin .hover\:bg-\[\#E8B7C8\]\/50:hover { background-color: var(--wd-active); }
+.wedding-admin .border-\[\#8F1D2C\]:focus,
+.wedding-admin .focus\:border-\[\#8F1D2C\]:focus { border-color: var(--wd-pink); }
+.wedding-admin .focus\:ring-\[\#8F1D2C\]\/20:focus,
+.wedding-admin .focus\:ring-\[\#8F1D2C\]:focus { --tw-ring-color: rgba(240,106,155,.28); }
+.wedding-admin input[type="checkbox"] { accent-color: var(--wd-pink); color: var(--wd-pink); }
+.wedding-admin .shadow-wedding,
+.wedding-admin .shadow-wedding-lg { box-shadow: 0 1px 3px rgba(240,106,155,.08); }
+.wedding-admin .hover\:-translate-y-0\.5:hover,
+.wedding-admin .hover\:scale-\[1\.03\]:hover { transform: none; }
+.wedding-admin [class*="rounded-[18px]"] { border-radius: 20px; }
+
+.wedding-admin [class*="text-wedding-ink/"] { color: var(--wd-muted); }
+.wedding-admin [class*="border-wedding-gold"] { border-color: var(--wd-border); }
+.wedding-admin [class*="border-wedding-champagne"] { border-color: var(--wd-border); }
+.wedding-admin [class*="bg-wedding-champagne/"],
+.wedding-admin [class*="bg-wedding-blush/"],
+.wedding-admin [class*="bg-wedding-gold/"] { background-color: var(--wd-active); }
+.wedding-admin .bg-wedding-gold { background-color: var(--wd-pink); }
+.wedding-admin [class*="ring-wedding-gold"] { --tw-ring-color: rgba(240,106,155,.35); }
+.wedding-admin [class*="bg-wedding-sage/"] { background-color: #ecf7ef; }
+.wedding-admin [class*="bg-wedding-taupe/"] { background-color: #f3f3f5; }
+
+/* Legacy panel cards (games / requests / dedications): white with a soft border */
+.wedding-admin [class*="rounded-[18px]"].bg-\[\#FBEAF0\],
+.wedding-admin [class*="rounded-[18px]"].bg-\[\#F3DCE3\],
+.wedding-admin [class*="rounded-[18px]"].bg-\[\#F7F4F3\],
+.wedding-admin [class*="rounded-[18px]"][class*="bg-wedding"] { background-color: #fff; border-color: var(--wd-border); box-shadow: none; }
+/* Moderation buttons: approve = primary pink, reject/delete = white outline */
+.wedding-admin button[class*="bg-wedding-sage/"] { background-color: var(--wd-pink); color: #fff; }
+.wedding-admin button[class*="bg-wedding-sage/"]:hover { background-color: var(--wd-pink-hover); }
+.wedding-admin button[class*="bg-wedding-taupe/"],
+.wedding-admin button[class*="bg-wedding-blush/"] { background-color: #fff; color: var(--wd-muted); box-shadow: inset 0 0 0 1px var(--wd-border); }
+.wedding-admin button[class*="bg-wedding-taupe/"]:hover,
+.wedding-admin button[class*="bg-wedding-blush/"]:hover { background-color: var(--wd-active); color: var(--wd-pink-hover); }
+.wedding-admin button.bg-\[\#FBEAF0\]:not([class*="rounded-[18px]"]) { background-color: #fff; border-color: var(--wd-border); }
+/* Checkboxes in legacy panels */
+.wedding-admin input[type="checkbox"] { appearance: none; -webkit-appearance: none; width: 1.125rem; height: 1.125rem; flex-shrink: 0; border: 1.5px solid var(--wd-border); border-radius: 6px; background: #fff; display: inline-grid; place-content: center; cursor: pointer; transition: background-color .15s, border-color .15s; }
+.wedding-admin input[type="checkbox"]:checked { background: var(--wd-pink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E") center/80% no-repeat; border-color: var(--wd-pink); }
+.wedding-admin input[type="checkbox"]:focus-visible { outline: 2px solid rgba(240,106,155,.4); outline-offset: 2px; }
+
+@media print {
+  body * { visibility: hidden !important; }
+  .wd-poster-print, .wd-poster-print * { visibility: visible !important; }
+  .wd-poster-print { position: fixed !important; left: 50%; top: 50%; transform: translate(-50%, -50%); box-shadow: none !important; width: 70vw; max-width: none; }
+}

@@ -67,6 +67,9 @@ export function Sidebar() {
     })
   }
 
+  // Wedding sessions render their own full-screen layout (WeddingAdminShell).
+  if (wedding) return null
+
   return (
     <aside
       className={cn(

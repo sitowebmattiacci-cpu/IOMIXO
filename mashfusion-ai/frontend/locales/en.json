@@ -851,5 +851,130 @@
       "privacy": "Privacy",
       "terms": "Terms"
     }
+  },
+  "wdAdmin": {
+    "allEvents": "All events",
+    "currentEvent": "Current event",
+    "nav": {
+      "home": "Home",
+      "photos": "Photos",
+      "requests": "Requests",
+      "dedications": "Dedications",
+      "games": "Games",
+      "privacy": "Privacy",
+      "poster": "Poster",
+      "settings": "Settings",
+      "booth": "Live Booth",
+      "screen": "Screen"
+    },
+    "home": {
+      "subtitle": "Everything under control for your big day.",
+      "publicLink": "Public link",
+      "publicLinkDesc": "Share this link or the QR code with your guests.",
+      "qrHint": "Guests scan the QR code to join.",
+      "downloadQr": "Download QR",
+      "guestPreview": "Guest preview",
+      "guestPreviewDesc": "How guests see the event on their phone.",
+      "openGuest": "Open guest page",
+      "screenPreview": "Screen preview",
+      "screenPreviewDesc": "The live view for the big screen.",
+      "openScreen": "Open Screen Mode",
+      "screenOff": "Screen Mode is not enabled for this event.",
+      "copy": "Copy",
+      "openShort": "Open",
+      "transparentBg": "Transparent background (PNG)",
+      "photosAndVideos": "photos and videos",
+      "live": "LIVE",
+      "fullscreen": "Fullscreen"
+    },
+    "photos": {
+      "subtitle": "Photos and videos shared by your guests.",
+      "upload": "Upload photos & videos",
+      "uploaded": "Upload complete",
+      "download": "Download",
+      "downloadAll": "Download all",
+      "all": "All",
+      "photos": "Photos",
+      "videos": "Videos",
+      "select": "Select",
+      "selectAll": "Select all",
+      "deselectAll": "Deselect",
+      "selected": "selected",
+      "confirmDelete": "Permanently delete the selected items?"
+    },
+    "requests": {
+      "subtitle": "Manage the songs requested by guests."
+    },
+    "dedications": {
+      "subtitle": "Guest messages for the couple."
+    },
+    "games": {
+      "subtitle": "Start games and engage your guests."
+    },
+    "privacy": {
+      "requestsDesc": "Guests can request songs.",
+      "dedicationsDesc": "Guests can write dedications to the couple.",
+      "shoeGameDesc": "Show the Shoe Game to guests.",
+      "pollsDesc": "Guests can vote in polls.",
+      "liveBoothDesc": "Guests can take and upload photos.",
+      "pageTitle": "Privacy and security",
+      "on": "On",
+      "off": "Off"
+    },
+    "poster": {
+      "subtitle": "Customize your A4 poster with the QR code, then print it or save it as PDF.",
+      "controls": "Customize",
+      "headline": "Headline",
+      "subline": "Subline",
+      "showNames": "Show names",
+      "showDate": "Show date",
+      "print": "Print",
+      "defaultHeadline": "Share",
+      "defaultSubline": "the love",
+      "title": "Wedding poster",
+      "previewA4": "A4 preview",
+      "edit": "Edit poster",
+      "caption": "Text under the QR",
+      "defaultCaption": "Share your photos! Scan the QR code and join in"
+    },
+    "settings": {
+      "subtitle": "Event details and screen options.",
+      "eventDetails": "Event details",
+      "eventDetailsDesc": "The main information shown to guests.",
+      "eventName": "Event name",
+      "coupleNames": "Couple names",
+      "date": "Date",
+      "venue": "Venue",
+      "description": "Description",
+      "save": "Save changes",
+      "nameRequired": "Event name is required",
+      "screenDesc": "Choose what to show on the big screen.",
+      "namesStyle": "Names style",
+      "namesStyleDesc": "Font and size of the names on screen.",
+      "eventStatus": "Event status",
+      "eventStatusDesc": "Open or close the event, or delete it.",
+      "pageTitle": "Event settings",
+      "eventNameDesc": "Shown to your guests on the event page.",
+      "coupleNamesDesc": "The names shown on screen and on the poster.",
+      "dateDesc": "Set when your event is scheduled.",
+      "venueDesc": "Where the celebration takes place.",
+      "descriptionDesc": "A short welcome text for guests."
+    },
+    "welcome": "Welcome",
+    "manageEvents": "Manage your events",
+    "group": {
+      "couple": "For the couple",
+      "dj": "DJ control"
+    },
+    "status": {
+      "pending": "PENDING",
+      "approved": "APPROVED",
+      "rejected": "REJECTED"
+    },
+    "screen": {
+      "subtitle": "Screen, video, couple names and live controls during the event.",
+      "namesTitle": "Couple names on screen",
+      "namesDesc": "Edit the names in Settings; here you choose font and size."
+    }
   }
 }

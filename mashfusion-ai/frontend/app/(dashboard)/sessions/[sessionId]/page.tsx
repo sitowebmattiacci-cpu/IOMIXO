@@ -32,7 +32,13 @@ import { SessionLockScreen } from '@/components/live/SessionLockScreen'
 import {
   WeddingCard, WeddingButton, WeddingBadge, WeddingInput, WeddingTextarea, WeddingDivider,
 } from '@/components/wedding/WeddingUI'
-import { WeddingPhotoFrame } from '@/components/wedding/WeddingPhotoFrame'
+import { WeddingAdminShell, type WeddingNavKey } from '@/components/wedding/admin/WeddingAdminShell'
+import { WeddingHomePage, publicOrigin } from '@/components/wedding/admin/WeddingHomePage'
+import { WeddingPhotosPage } from '@/components/wedding/admin/WeddingPhotosPage'
+import { WeddingPosterPage } from '@/components/wedding/admin/WeddingPosterPage'
+import {
+  WdPage, WdCard, WdSectionCard, WdSection, WdButton, WdLinkButton, wdStatusLabel, WdToggleRow, WdDivided, WdPills, WdInput, WdSelect, WdField,
+} from '@/components/wedding/admin/WeddingAdminUI'
 import { WinnerAnnouncementPanel } from '@/components/wedding/WinnerAnnouncementPanel'
 import {
   PartyShell, PartyCard, PartyButton, PartyBadge, PartyInput, PartyTextarea,
@@ -296,7 +302,7 @@ export default function SessionDetailPage() {
 
   const [busyId, setBusyId] = useState<string | null>(null)
   const [togglingActive, setTogglingActive] = useState(false)
-  const [tab, setTab] = useState<'requests' | 'dedications' | 'games' | 'photos' | 'guests'>('requests')
+  const [tab, setTab] = useState<WeddingNavKey>('home')
 
   if (sessionErr) {
     return (
@@ -431,80 +437,88 @@ export default function SessionDetailPage() {
     )
   }
 
-  // ── Wedding — compact, romantic dashboard ──────────────────────
+  // ── Wedding — dedicated light platform layout ──────────────────
+  const dashSection = (
+    <>
+      {tab === 'home' && (
+        <WeddingHomePage session={session} pendingRequests={pending.length} togglingActive={togglingActive} onToggleActive={toggleActive} />
+      )}
+      {tab === 'photos' && <WeddingPhotosPage session={session} />}
+      {tab === 'requests' && (
+        <WdPage title={t('wdAdmin.nav.requests')} subtitle={t('wdAdmin.requests.subtitle')}>
+          <RequestsPanel
+            pending={pending} approved={approved} rejected={rejected}
+            busyId={busyId} isFree={isFree}
+            onUpdate={updateRequest} onDelete={deleteRequest}
+            wedding
+          />
+        </WdPage>
+      )}
+      {tab === 'dedications' && (
+        <WdPage title={t('wdAdmin.nav.dedications')} subtitle={t('wdAdmin.dedications.subtitle')}>
+          <DedicationsPanel sessionId={session.id} />
+        </WdPage>
+      )}
+      {tab === 'games' && (
+        <WdPage title={t('wdAdmin.nav.games')} subtitle={t('wdAdmin.games.subtitle')}>
+          <GamesPanel sessionId={session.id} session={session} />
+        </WdPage>
+      )}
+      {tab === 'privacy' && <GuestVisibilityPanel sessionId={session.id} session={session} sessionType="wedding" hasAccess={hasAdvanceAccess} />}
+      {tab === 'poster' && <WeddingPosterPage session={session} />}
+      {tab === 'booth' && <WeddingPhotosPage session={session} initialSource="booth" />}
+      {(tab === 'settings' || tab === 'screen') && (
+        <WeddingSettingsPage key={tab} mode={tab === 'screen' ? 'screen' : 'event'} session={session} togglingActive={togglingActive} onToggle={toggleActive} onDelete={removeSession} />
+      )}
+    </>
+  )
+
   return (
-    <div className="flex-1 overflow-y-auto min-h-screen" style={{ background: '#FFFDFB', color: '#2B2424' }}>
-      <div className="max-w-5xl mx-auto px-6 py-6 w-full">
-        {/* Back link */}
-        <div className="mb-4">
-          <Link href="/sessions" className="inline-flex items-center gap-1.5 text-xs text-[#6F6260] hover:text-[#2B2424]">
-            <ArrowLeft className="h-3 w-3" /> {t('common.back')}
-          </Link>
-        </div>
-
-        {/* Header compatto */}
-        <WeddingHeader
-          session={session}
-          slug={session.public_slug}
-          togglingActive={togglingActive}
-          onToggle={toggleActive}
-          onDelete={removeSession}
-        />
-
-        {/* Riga superiore: QR + Riepilogo */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
-          <div className="md:col-span-1">
-            <WeddingQRCompact slug={session.public_slug} />
-          </div>
-          <div className="md:col-span-2">
-            <WeddingStats sessionId={session.id} pendingCount={pending.length} />
-          </div>
-        </div>
-
-        {/* Tab compatte */}
-        <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-white p-1.5 border border-[#E8B7C8] shadow-sm">
-          <WeddingTabBtn active={tab === 'requests'}    onClick={() => setTab('requests')}    icon={<MessageSquare className="h-3.5 w-3.5" />} label={t('wedding.tabRequests')} />
-          <WeddingTabBtn active={tab === 'dedications'} onClick={() => setTab('dedications')} icon={<Heart className="h-3.5 w-3.5" />}          label={t('wedding.tabDedications')} />
-          <WeddingTabBtn active={tab === 'games'}       onClick={() => setTab('games')}       icon={<Sparkles className="h-3.5 w-3.5" />}       label={t('wedding.tabGames')} />
-          <WeddingTabBtn active={tab === 'photos'}      onClick={() => setTab('photos')}      icon={<ImageIcon className="h-3.5 w-3.5" />}      label={t('wedding.tabPhotos')} />
-          <WeddingTabBtn active={tab === 'guests'}      onClick={() => setTab('guests')}      icon={<Users className="h-3.5 w-3.5" />}          label={t('guestVisibility.tab')} />
-        </div>
-
-        {/* Pannello attivo */}
-        <div className="mt-6 space-y-5">
-          {tab === 'requests' && (
-            <RequestsPanel
-              pending={pending} approved={approved} rejected={rejected}
-              busyId={busyId} isFree={isFree}
-              onUpdate={updateRequest} onDelete={deleteRequest}
-              wedding
-            />
-          )}
-          {tab === 'dedications' && <DedicationsPanel sessionId={session.id} />}
-          {tab === 'games'       && <GamesPanel       sessionId={session.id} session={session} />}
-          {tab === 'photos'      && <PhotosPanel      sessionId={session.id} session={session} />}
-          {tab === 'guests'      && <GuestVisibilityPanel sessionId={session.id} session={session} sessionType="wedding" hasAccess={hasAdvanceAccess} />}
-        </div>
-
-        <p className="text-center mt-10 text-[10px] uppercase tracking-[0.32em] text-[#B8A89A] font-medium">
-          {t('weddingPanels.poweredBy')} <span className="text-[#8F1D2C] font-semibold">IOMIXO Live Hub</span>
-        </p>
-      </div>
-    </div>
+    <WeddingAdminShell
+      eventName={session.event_name}
+      active={tab}
+      onSelect={setTab}
+      badges={{ requests: pending.length }}
+    >
+      {dashSection}
+    </WeddingAdminShell>
   )
 }
 
-function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
-  session: any; slug: string; togglingActive: boolean; onToggle: () => void; onDelete: () => void;
+function WeddingSettingsPage({ session, togglingActive, onToggle, onDelete, mode }: {
+  session: any; togglingActive: boolean; onToggle: () => void; onDelete: () => void; mode: 'event' | 'screen';
 }) {
   const { t } = useI18n()
-  const envBase = process.env.NEXT_PUBLIC_PUBLIC_BASE_URL
-  const origin = envBase || (typeof window !== 'undefined' ? window.location.origin : 'https://www.iomixo.com')
-  const url = `${origin}/live/${slug}`
-  const [copied, setCopied] = useState(false)
-  const [showScreenConfig, setShowScreenConfig] = useState(false)
+  const slug: string = session.public_slug
   const [saving, setSaving] = useState(false)
 
+  // ── Event details ─────────────────────────────────────────────
+  const [details, setDetails] = useState({
+    event_name: session.event_name ?? '',
+    couple_names: session.couple_names ?? '',
+    wedding_date: (session.wedding_date ?? '').slice(0, 10),
+    venue_name: session.venue_name ?? '',
+    description: session.description ?? '',
+  })
+  const saveDetails = async () => {
+    if (!details.event_name.trim()) { toast.error(t('wdAdmin.settings.nameRequired')); return }
+    setSaving(true)
+    try {
+      await live.updateSession(session.id, {
+        event_name: details.event_name.trim(),
+        couple_names: details.couple_names.trim() || null,
+        wedding_date: details.wedding_date || null,
+        venue_name: details.venue_name.trim() || null,
+        description: details.description.trim() || null,
+      })
+      await mutate(['session', session.id])
+      toast.success(t('weddingPanels.updated'))
+    } catch (e: any) {
+      toast.error(e?.message ?? t('common.errorGeneric'))
+    } finally { setSaving(false) }
+  }
+
+  // ── Screen config (same persistence logic as before) ──────────
   const screenConfig = session?.screen_config ?? {
     show_photos: false,
     show_dedications: false,
@@ -537,564 +551,218 @@ function WeddingHeader({ session, slug, togglingActive, onToggle, onDelete }: {
     ...overrides,
   })
 
-  const toggleScreenSection = async (key: keyof typeof screenConfig) => {
+  const saveConfig = async (config: Record<string, any>, okMsg = t('weddingPanels.updated')) => {
     setSaving(true)
     try {
-      // Crea config completo con TUTTI i valori espliciti (incluso il font!)
-      const newConfig: any = buildFullConfig()
-      // Toggle solo il valore selezionato (solo per campi boolean)
-      if (typeof newConfig[key] === 'boolean') {
-        newConfig[key] = !newConfig[key]
-      }
-
-      console.log('📝 Saving config:', JSON.stringify(newConfig))
-      await live.updateSession(session.id, { screen_config: newConfig })
+      await live.updateSession(session.id, { screen_config: config as any })
       await mutate(['session', session.id])
-      toast.success(t('weddingPanels.updated'))
+      toast.success(okMsg)
     } catch (e: any) {
       toast.error(e?.message ?? t('common.errorGeneric'))
-    } finally {
-      setSaving(false)
-    }
+    } finally { setSaving(false) }
   }
 
-  const toggleStandUpGuessVisibility = async () => {
-    setSaving(true)
-    try {
-      const current = normalizeStandUpGuessConfig((screenConfig as any).stand_up_guess)
-      const next = {
-        ...current,
-        enabled: !current.enabled,
-        updated_at: new Date().toISOString(),
-      }
-      await live.updateSession(session.id, { screen_config: buildFullConfig({ stand_up_guess: next }) })
-      await mutate(['session', session.id])
-      toast.success(t('weddingPanels.updated'))
-    } catch (e: any) {
-      toast.error(e?.message ?? t('common.errorGeneric'))
-    } finally {
-      setSaving(false)
-    }
+  const toggleScreenSection = async (key: string) => {
+    const newConfig: any = buildFullConfig()
+    if (typeof newConfig[key] === 'boolean') newConfig[key] = !newConfig[key]
+    await saveConfig(newConfig)
   }
+  const toggleStandUpGuessVisibility = () => {
+    const current = normalizeStandUpGuessConfig((screenConfig as any).stand_up_guess)
+    return saveConfig(buildFullConfig({ stand_up_guess: { ...current, enabled: !current.enabled, updated_at: new Date().toISOString() } }))
+  }
+  const saveVideoFields = () => saveConfig(buildFullConfig({ video_url: videoUrlDraft.trim(), video_title: videoTitleDraft.trim() }))
+  const saveBoothLayout = (layout: 'single' | 'grid' | 'auto') => saveConfig(buildFullConfig({ live_booth_layout: layout }))
+  const resetScreen = () => saveConfig(buildFullConfig({
+    show_photos: false,
+    show_dedications: false,
+    show_roulette: false,
+    show_shoe_game: false,
+    show_polls: false,
+    stand_up_guess: {
+      ...standUpGuessConfig,
+      enabled: false,
+      status: 'idle',
+      current_index: 0,
+      current_round_id: standUpGuessConfig.rounds.find((r) => r.enabled)?.id ?? standUpGuessConfig.rounds[0]?.id ?? null,
+      score: { guessed: 0, missed: 0 },
+      updated_at: new Date().toISOString(),
+    },
+    show_video_live: false,
+  }), t('weddingPanels.resetDone'))
+  const saveFontField = (field: 'couple_font' | 'couple_font_size', value: string) =>
+    saveConfig({ ...screenConfig, [field]: value }, t('weddingPanels.fontUpdated'))
 
-  const saveVideoFields = async () => {
-    setSaving(true)
-    try {
-      const newConfig = buildFullConfig({
-        video_url: videoUrlDraft.trim(),
-        video_title: videoTitleDraft.trim(),
-      })
-      await live.updateSession(session.id, { screen_config: newConfig })
-      await mutate(['session', session.id])
-      toast.success(t('weddingPanels.updated'))
-    } catch (e: any) {
-      toast.error(e?.message ?? t('common.errorGeneric'))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const saveBoothLayout = async (layout: 'single' | 'grid' | 'auto') => {
-    setSaving(true)
-    try {
-      const newConfig = buildFullConfig({ live_booth_layout: layout })
-      await live.updateSession(session.id, { screen_config: newConfig })
-      await mutate(['session', session.id])
-      toast.success(t('weddingPanels.updated'))
-    } catch (e: any) {
-      toast.error(e?.message ?? t('common.errorGeneric'))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const copy = async () => {
-    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch {}
-  }
-  const download = () => {
-    const svg = document.getElementById('qrcode-svg') as SVGSVGElement | null
-    if (!svg) return
-    const xml = new XMLSerializer().serializeToString(svg)
-    const img = new Image()
-    const blob = new Blob([xml], { type: 'image/svg+xml' })
-    const objectUrl = URL.createObjectURL(blob)
-    img.onload = () => {
-      const c = document.createElement('canvas'); const s = 512
-      c.width = s; c.height = s
-      const ctx = c.getContext('2d')!; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, s, s); ctx.drawImage(img, 0, 0, s, s)
-      const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = `iomixo-${slug}.png`; a.click()
-      URL.revokeObjectURL(objectUrl)
-    }
-    img.src = objectUrl
-  }
-  const btnOutline = 'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold bg-[#FBEAF0] text-[#8F1D2C] border border-[#E8B7C8] hover:bg-[#E8B7C8]/50 hover:scale-[1.03] transition-all duration-150'
-  const btnGhost   = 'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-[#6F6260] hover:text-[#2B2424] hover:bg-[#FBEAF0] hover:scale-[1.03] transition-all duration-150'
-
-  const [showGuestQR, setShowGuestQR] = useState(false)
+  const screenToggles: Array<{ key: string; icon: React.ReactNode; label: string }> = [
+    { key: 'show_photos',     icon: <ImageIcon className="h-[18px] w-[18px]" />,  label: t('weddingPanels.photos') },
+    { key: 'show_dedications', icon: <Heart className="h-[18px] w-[18px]" />,      label: t('weddingPanels.dedications') },
+    { key: 'show_roulette',   icon: <Sparkles className="h-[18px] w-[18px]" />,   label: t('weddingPanels.roulette') },
+    { key: 'show_shoe_game',  icon: <Footprints className="h-[18px] w-[18px]" />, label: t('weddingPanels.shoeGame') },
+    { key: 'show_polls',      icon: <ListChecks className="h-[18px] w-[18px]" />, label: t('weddingPanels.polls') },
+  ]
+  const boothLayout = ((screenConfig as any).live_booth_layout ?? 'single') as 'single' | 'grid' | 'auto'
 
   return (
-    <div className="rounded-[18px] border border-[#E8B7C8] bg-[#F7F4F3] p-5 shadow-md">
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2.5 flex-wrap mb-2">
-            <Heart className="h-5 w-5 text-[#8F1D2C] shrink-0" />
-            <h1 className="font-wedding text-[2.2rem] sm:text-[2.5rem] font-semibold text-[#2B2424] leading-tight tracking-wide">
-              {session.event_name}
-            </h1>
-          </div>
-          {session.couple_names && (
-            <p className="font-wedding text-lg italic text-[#8F1D2C] mt-2 mb-3">
-              {t('weddingPanels.welcome')} {session.couple_names}
-            </p>
-          )}
-          <div className="flex items-center gap-2.5 flex-wrap mb-3">
-            <span className="inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wider bg-emerald-50 border-emerald-200 text-emerald-700">
-              {session.is_active ? t('sessions.active') : t('sessions.closed')}
-            </span>
-            <span className="inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wider bg-[#FBEAF0] border-[#E8B7C8] text-[#8F1D2C]">
-              {t('weddingPanels.proWeddingBadge')}
-            </span>
-            {/* QR Ospiti badge - apre popup con QR grande */}
-            <div className="relative">
-              <button
-                onClick={() => setShowGuestQR(!showGuestQR)}
-                className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wider bg-white border-[#E8B7C8] text-[#8F1D2C] hover:bg-[#FBEAF0] transition"
-              >
-                {t('weddingPanels.guestQR')}
-              </button>
-              {showGuestQR && (
-                <>
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setShowGuestQR(false)}
-                  />
-                  <div className="absolute right-0 mt-2 w-64 rounded-xl border border-[#E8B7C8] bg-white shadow-lg z-20 p-4">
-                    <div className="flex flex-col items-center">
-                      <p className="text-xs uppercase tracking-wider text-[#8F1D2C] mb-3 font-semibold">
-                        {t('weddingPanels.guestQRCodeTitle')}
-                      </p>
-                      <div className="bg-white p-2 rounded-lg border border-[#E8B7C8]">
-                        <QRCodeSVG value={url} size={180} level="M" includeMargin={false} />
+    <WdPage width="narrow" title={mode === 'screen' ? t('wdAdmin.nav.screen') : t('wdAdmin.settings.pageTitle')} subtitle={mode === 'screen' ? t('wdAdmin.screen.subtitle') : undefined}>
+      {(mode === 'event' || session.screen_mode_enabled) && (
+      <WdSectionCard>
+        {mode === 'event' && (<>
+        <WdSection title={t('wdAdmin.settings.eventName')} description={t('wdAdmin.settings.eventNameDesc')}>
+          <WdInput value={details.event_name} maxLength={200} onChange={(e) => setDetails({ ...details, event_name: e.target.value })} />
+        </WdSection>
+        <WdSection title={t('wdAdmin.settings.coupleNames')} description={t('wdAdmin.settings.coupleNamesDesc')}>
+          <WdInput value={details.couple_names} maxLength={200} onChange={(e) => setDetails({ ...details, couple_names: e.target.value })} />
+        </WdSection>
+        <WdSection title={t('wdAdmin.settings.date')} description={t('wdAdmin.settings.dateDesc')}>
+          <WdInput type="date" value={details.wedding_date} onChange={(e) => setDetails({ ...details, wedding_date: e.target.value })} />
+        </WdSection>
+        <WdSection title={t('wdAdmin.settings.venue')} description={t('wdAdmin.settings.venueDesc')}>
+          <WdInput value={details.venue_name} maxLength={200} onChange={(e) => setDetails({ ...details, venue_name: e.target.value })} />
+        </WdSection>
+        <WdSection title={t('wdAdmin.settings.description')} description={t('wdAdmin.settings.descriptionDesc')}>
+          <WdInput value={details.description} maxLength={2000} onChange={(e) => setDetails({ ...details, description: e.target.value })} />
+          <WdButton className="mt-5" onClick={saveDetails} disabled={saving}>{t('wdAdmin.settings.save')}</WdButton>
+        </WdSection>
+
+        </>)}
+
+        {mode === 'screen' && session.screen_mode_enabled && (
+          <>
+            <WdSection title={t('wdAdmin.screen.namesTitle')} description={t('wdAdmin.screen.namesDesc')}>
+              <p className="rounded-xl border border-wd-border bg-wd-bg px-4 py-3 text-base font-bold text-wd-ink">{session.couple_names ?? session.event_name}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <WdLinkButton href={`/screen/${slug}`} size="sm" icon={<Tv className="h-3.5 w-3.5" />}>{t('wdAdmin.home.openScreen')}</WdLinkButton>
+                <WdLinkButton href={`${publicOrigin()}/remote/${slug}`} size="sm" icon={<Users className="h-3.5 w-3.5" />}>{t('weddingPanels.djRemoteCtrl')}</WdLinkButton>
+              </div>
+            </WdSection>
+            <WdSection
+              title={t('weddingPanels.screenVisibility')}
+              description={t('wdAdmin.settings.screenDesc')}
+              action={
+                <div className="flex shrink-0 items-center gap-2">
+                  <WdButton size="sm" variant="ghost" onClick={resetScreen} disabled={saving}>{t('weddingPanels.reset')}</WdButton>
+                  <WdLinkButton href={`/screen/${slug}`} size="sm" icon={<Tv className="h-3.5 w-3.5" />}>{t('weddingPanels.open')}</WdLinkButton>
+                </div>
+              }
+            >
+              <WdDivided>
+                {screenToggles.map((s) => (
+                  <div key={s.key}>
+                    <WdToggleRow
+                      icon={s.icon}
+                      title={s.label}
+                      checked={Boolean((screenConfig as any)[s.key])}
+                      onChange={() => toggleScreenSection(s.key)}
+                      disabled={saving}
+                    />
+                    {s.key === 'show_photos' && Boolean(screenConfig.show_photos) && (
+                      <div className="pb-4 pl-8">
+                        <p className="mb-2 text-xs font-medium text-wd-muted">{t('weddingPanels.boothLayout')}</p>
+                        <WdPills
+                          value={boothLayout}
+                          onChange={saveBoothLayout}
+                          options={[
+                            { value: 'single', label: t('weddingPanels.boothSingle') },
+                            { value: 'grid', label: t('weddingPanels.boothGrid') },
+                            { value: 'auto', label: t('weddingPanels.boothAuto') },
+                          ]}
+                        />
                       </div>
-                      <p className="text-[10px] text-[#6F6260] mt-3 text-center break-all">
-                        {url}
-                      </p>
-                    </div>
+                    )}
                   </div>
-                </>
-              )}
-            </div>
-          </div>
-          {session.couple_names && (
-            <p className="font-wedding text-base italic text-[#6F6260] mt-1">{session.couple_names}</p>
-          )}
-          <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.22em] text-[#6F6260] mt-2">
-            {session.wedding_date && (
-              <span className="inline-flex items-center gap-1">
-                <CalendarDays className="h-3 w-3 text-[#8F1D2C]" />
-                {new Date(session.wedding_date).toLocaleDateString('it-IT')}
-              </span>
-            )}
-            {session.venue_name && (
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="h-3 w-3 text-[#8F1D2C]" /> {session.venue_name}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={copy} className={btnOutline}>
-            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-            {copied ? t('weddingPanels.copied') : t('weddingPanels.copyLink')}
-          </button>
-          <button onClick={download} className={btnOutline}>
-            <Download className="h-3.5 w-3.5" /> QR
-          </button>
-          {session.screen_mode_enabled && (
-            <div className="relative">
-              <button
-                onClick={() => setShowScreenConfig(!showScreenConfig)}
-                className={btnGhost}
-              >
-                <Tv className="h-3.5 w-3.5" /> {t('wedding.screen.title')}
-              </button>
-              {showScreenConfig && (
-                <>
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setShowScreenConfig(false)}
-                  />
-                  <div className="absolute right-0 mt-2 w-80 rounded-xl border border-[#E8B7C8] bg-white shadow-lg z-20 p-4">
-                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#E8B7C8]">
-                      <h3 className="text-xs font-semibold uppercase tracking-wider text-[#8F1D2C]">
-                        {t('weddingPanels.screenVisibility')}
-                      </h3>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={async () => {
-                            setSaving(true)
-                            try {
-                              const resetConfig = buildFullConfig({
-                                show_photos: false,
-                                show_dedications: false,
-                                show_roulette: false,
-                                show_shoe_game: false,
-                                show_polls: false,
-                                stand_up_guess: {
-                                  ...standUpGuessConfig,
-                                  enabled: false,
-                                  status: 'idle',
-                                  current_index: 0,
-                                  current_round_id: standUpGuessConfig.rounds.find((r) => r.enabled)?.id ?? standUpGuessConfig.rounds[0]?.id ?? null,
-                                  score: { guessed: 0, missed: 0 },
-                                  updated_at: new Date().toISOString(),
-                                },
-                                show_video_live: false,
-                              })
-                              await live.updateSession(session.id, { screen_config: resetConfig })
-                              await mutate(['session', session.id])
-                              toast.success(t('weddingPanels.resetDone'))
-                            } catch (e: any) {
-                              toast.error(t('weddingPanels.genericError'))
-                            } finally {
-                              setSaving(false)
-                            }
-                          }}
-                          className="text-[10px] text-[#8F1D2C] hover:underline uppercase tracking-wider"
-                        >
-                          {t('weddingPanels.reset')}
-                        </button>
-                        <Link
-                          href={`/screen/${slug}`}
-                          target="_blank"
-                          className="text-xs text-[#8F1D2C] hover:underline"
-                        >
-                          {t('weddingPanels.open')}
-                        </Link>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 cursor-pointer select-none p-2 rounded-lg hover:bg-[#FBEAF0] transition">
-                        <input
-                          type="checkbox"
-                          checked={screenConfig.show_photos ?? false}
-                          onChange={() => toggleScreenSection('show_photos')}
-                          disabled={saving}
-                          className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
-                        />
-                        <ImageIcon className="h-3.5 w-3.5 text-[#8F1D2C]" />
-                        <span className="text-sm text-[#2B2424]">{t('weddingPanels.photos')}</span>
-                      </label>
-                      {(screenConfig.show_photos ?? false) && (
-                        <div className="ml-1 pl-3 border-l-2 border-[#E8B7C8] py-1">
-                          <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8F1D2C] mb-1.5">
-                            {t('weddingPanels.boothLayout')}
-                          </p>
-                          <div className="grid grid-cols-3 gap-1.5">
-                            {([
-                              ['single', t('weddingPanels.boothSingle')],
-                              ['grid', t('weddingPanels.boothGrid')],
-                              ['auto', t('weddingPanels.boothAuto')],
-                            ] as const).map(([val, label]) => {
-                              const active = ((screenConfig as any).live_booth_layout ?? 'single') === val
-                              return (
-                                <button
-                                  key={val}
-                                  type="button"
-                                  onClick={() => saveBoothLayout(val)}
-                                  disabled={saving}
-                                  className={`rounded-lg px-2 py-1.5 text-[11px] font-semibold transition border ${
-                                    active
-                                      ? 'bg-[#8F1D2C] text-white border-[#8F1D2C]'
-                                      : 'bg-white text-[#6F6260] border-[#E8B7C8] hover:border-[#8F1D2C]/50'
-                                  }`}
-                                >
-                                  {label}
-                                </button>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )}
-                      <label className="flex items-center gap-2 cursor-pointer select-none p-2 rounded-lg hover:bg-[#FBEAF0] transition">
-                        <input
-                          type="checkbox"
-                          checked={screenConfig.show_dedications ?? false}
-                          onChange={() => toggleScreenSection('show_dedications')}
-                          disabled={saving}
-                          className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
-                        />
-                        <Heart className="h-3.5 w-3.5 text-[#8F1D2C]" />
-                        <span className="text-sm text-[#2B2424]">{t('weddingPanels.dedications')}</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer select-none p-2 rounded-lg hover:bg-[#FBEAF0] transition">
-                        <input
-                          type="checkbox"
-                          checked={screenConfig.show_roulette ?? false}
-                          onChange={() => toggleScreenSection('show_roulette')}
-                          disabled={saving}
-                          className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
-                        />
-                        <Sparkles className="h-3.5 w-3.5 text-[#8F1D2C]" />
-                        <span className="text-sm text-[#2B2424]">{t('weddingPanels.roulette')}</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer select-none p-2 rounded-lg hover:bg-[#FBEAF0] transition">
-                        <input
-                          type="checkbox"
-                          checked={screenConfig.show_shoe_game ?? false}
-                          onChange={() => toggleScreenSection('show_shoe_game')}
-                          disabled={saving}
-                          className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
-                        />
-                        <Footprints className="h-3.5 w-3.5 text-[#8F1D2C]" />
-                        <span className="text-sm text-[#2B2424]">{t('weddingPanels.shoeGame')}</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer select-none p-2 rounded-lg hover:bg-[#FBEAF0] transition">
-                        <input
-                          type="checkbox"
-                          checked={screenConfig.show_polls ?? false}
-                          onChange={() => toggleScreenSection('show_polls')}
-                          disabled={saving}
-                          className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
-                        />
-                        <ListChecks className="h-3.5 w-3.5 text-[#8F1D2C]" />
-                        <span className="text-sm text-[#2B2424]">{t('weddingPanels.polls')}</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer select-none p-2 rounded-lg hover:bg-[#FBEAF0] transition">
-                        <input
-                          type="checkbox"
-                          checked={standUpGuessConfig.enabled === true}
-                          onChange={toggleStandUpGuessVisibility}
-                          disabled={saving}
-                          className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
-                        />
-                        <Users className="h-3.5 w-3.5 text-[#8F1D2C]" />
-                        <span className="text-sm text-[#2B2424]">{t('weddingPanels.standUpGuessName')}</span>
-                      </label>
-                    </div>
+                ))}
+                <WdToggleRow
+                  icon={<Users className="h-[18px] w-[18px]" />}
+                  title={t('weddingPanels.standUpGuessName')}
+                  checked={standUpGuessConfig.enabled === true}
+                  onChange={toggleStandUpGuessVisibility}
+                  disabled={saving}
+                />
+              </WdDivided>
+            </WdSection>
 
-                    {/* Video Live */}
-                    <div className="mt-4 pt-3 border-t border-[#E8B7C8]">
-                      <label className="flex items-center gap-2 cursor-pointer select-none p-2 rounded-lg hover:bg-[#FBEAF0] transition">
-                        <input
-                          type="checkbox"
-                          checked={(screenConfig as any).show_video_live ?? false}
-                          onChange={() => toggleScreenSection('show_video_live' as any)}
-                          disabled={saving}
-                          className="rounded border-[#E8B7C8] text-[#8F1D2C] focus:ring-[#8F1D2C]"
-                        />
-                        <Youtube className="h-3.5 w-3.5 text-[#8F1D2C]" />
-                        <span className="text-sm text-[#2B2424]">{t('weddingPanels.videoLive')}</span>
-                      </label>
-                      <p className="text-[11px] text-[#6F6260] px-2 mb-2">{t('weddingPanels.videoLiveHint')}</p>
-                      <input
-                        type="url"
-                        value={videoUrlDraft}
-                        onChange={(e) => setVideoUrlDraft(e.target.value)}
-                        onBlur={saveVideoFields}
-                        placeholder={t('weddingPanels.videoUrlPlaceholder')}
-                        disabled={saving}
-                        className="w-full rounded-lg border border-[#E8B7C8] bg-white px-3 py-2 text-sm text-[#2B2424] focus:border-[#8F1D2C] focus:ring-1 focus:ring-[#8F1D2C]"
-                      />
-                      <input
-                        type="text"
-                        value={videoTitleDraft}
-                        onChange={(e) => setVideoTitleDraft(e.target.value)}
-                        onBlur={saveVideoFields}
-                        placeholder={t('weddingPanels.videoTitlePlaceholder')}
-                        disabled={saving}
-                        className="mt-2 w-full rounded-lg border border-[#E8B7C8] bg-white px-3 py-2 text-sm text-[#2B2424] focus:border-[#8F1D2C] focus:ring-1 focus:ring-[#8F1D2C]"
-                      />
-                      {videoLinkInvalid && (
-                        <p className="text-[11px] text-[#8F1D2C] mt-1.5 px-1">{t('weddingPanels.videoInvalid')}</p>
-                      )}
-                      {videoPreview ? (
-                        <div className="mt-2 relative w-full aspect-video rounded-lg overflow-hidden border border-[#E8B7C8] bg-black">
-                          {videoPreview.kind === 'youtube' ? (
-                            <iframe
-                              src={videoPreview.embedUrl}
-                              title="preview"
-                              className="absolute inset-0 w-full h-full"
-                              allow="encrypted-media; picture-in-picture"
-                              referrerPolicy="strict-origin-when-cross-origin"
-                            />
-                          ) : (
-                            // eslint-disable-next-line jsx-a11y/media-has-caption
-                            <video
-                              src={videoPreview.url}
-                              className="absolute inset-0 w-full h-full object-contain"
-                              muted
-                              loop
-                              playsInline
-                              controls
-                            />
-                          )}
-                        </div>
-                      ) : (screenConfig as any).show_video_live && !videoUrlDraft.trim() ? (
-                        <div className="mt-2 rounded-lg border border-dashed border-[#E8B7C8] bg-[#FBEAF0]/40 py-4 text-center">
-                          <p className="text-[11px] text-[#6F6260]">{t('weddingPanels.videoNoLink')}</p>
-                        </div>
-                      ) : null}
+            <WdSection title={t('weddingPanels.videoLive')} description={t('weddingPanels.videoLiveHint')}>
+              <WdToggleRow
+                icon={<Youtube className="h-[18px] w-[18px]" />}
+                title={t('weddingPanels.videoLive')}
+                checked={Boolean((screenConfig as any).show_video_live)}
+                onChange={() => toggleScreenSection('show_video_live')}
+                disabled={saving}
+              />
+              <div className="mt-4 grid gap-4">
+                <WdField label={t('weddingPanels.videoUrlPlaceholder')}>
+                  <WdInput type="url" value={videoUrlDraft} onChange={(e) => setVideoUrlDraft(e.target.value)} onBlur={saveVideoFields} disabled={saving} />
+                </WdField>
+                <WdField label={t('weddingPanels.videoTitlePlaceholder')}>
+                  <WdInput value={videoTitleDraft} onChange={(e) => setVideoTitleDraft(e.target.value)} onBlur={saveVideoFields} disabled={saving} />
+                </WdField>
+              </div>
+              {videoLinkInvalid && <p className="mt-2 text-xs text-red-600">{t('weddingPanels.videoInvalid')}</p>}
+              {videoPreview ? (
+                <div className="mt-4 relative w-full aspect-video rounded-2xl overflow-hidden border border-wd-border bg-black">
+                  {videoPreview.kind === 'youtube' ? (
+                    <iframe
+                      src={videoPreview.embedUrl}
+                      title="preview"
+                      className="absolute inset-0 w-full h-full"
+                      allow="encrypted-media; picture-in-picture"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                    />
+                  ) : (
+                    // eslint-disable-next-line jsx-a11y/media-has-caption
+                    <video src={videoPreview.url} className="absolute inset-0 w-full h-full object-contain" muted loop playsInline controls />
+                  )}
+                </div>
+              ) : (screenConfig as any).show_video_live && !videoUrlDraft.trim() ? (
+                <div className="mt-4 rounded-2xl border border-dashed border-wd-border bg-wd-bg py-5 text-center">
+                  <p className="text-sm text-wd-muted">{t('weddingPanels.videoNoLink')}</p>
+                </div>
+              ) : null}
+              <VideoLiveController session={session} theme="wedding" />
+            </WdSection>
 
-                      <VideoLiveController session={session} theme="wedding" />
-                    </div>
+            <WdSection title={t('wdAdmin.settings.namesStyle')} description={t('wdAdmin.settings.namesStyleDesc')}>
+              <div className="grid gap-4">
+                <WdField label={t('weddingPanels.coupleFont')}>
+                  <WdSelect value={screenConfig.couple_font ?? 'cormorant'} disabled={saving} onChange={(e) => saveFontField('couple_font', e.target.value)}>
+                    <option value="cormorant">{t('weddingPanels.fontCormorant')}</option>
+                    <option value="playfair">{t('weddingPanels.fontPlayfair')}</option>
+                    <option value="great-vibes">{t('weddingPanels.fontGreatVibes')}</option>
+                    <option value="dancing">{t('weddingPanels.fontDancing')}</option>
+                    <option value="cinzel">{t('weddingPanels.fontCinzel')}</option>
+                    <option value="tangerine">{t('weddingPanels.fontTangerine')}</option>
+                  </WdSelect>
+                </WdField>
+                <WdField label={t('weddingPanels.coupleFontSize')}>
+                  <WdSelect value={screenConfig.couple_font_size ?? 'medium'} disabled={saving} onChange={(e) => saveFontField('couple_font_size', e.target.value)}>
+                    <option value="small">{t('weddingPanels.fontSizeSmall')}</option>
+                    <option value="medium">{t('weddingPanels.fontSizeMedium')}</option>
+                    <option value="large">{t('weddingPanels.fontSizeLarge')}</option>
+                    <option value="xlarge">{t('weddingPanels.fontSizeXlarge')}</option>
+                  </WdSelect>
+                </WdField>
+              </div>
+            </WdSection>
+          </>
+        )}
+      </WdSectionCard>
+      )}
 
-                    <div className="mt-4 pt-3 border-t border-[#E8B7C8]">
-                      <label className="block mb-2">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-[#8F1D2C]">
-                          {t('weddingPanels.coupleFont')}
-                        </span>
-                      </label>
-                      <select
-                        value={screenConfig.couple_font ?? 'cormorant'}
-                        onChange={async (e) => {
-                          setSaving(true)
-                          try {
-                            const newConfig = { ...screenConfig, couple_font: e.target.value as any }
-                            await live.updateSession(session.id, { screen_config: newConfig })
-                            await mutate(['session', session.id])
-                            toast.success(t('weddingPanels.fontUpdated'))
-                          } catch (err: any) {
-                            toast.error(err?.message ?? t('weddingPanels.genericError'))
-                          } finally {
-                            setSaving(false)
-                          }
-                        }}
-                        disabled={saving}
-                        className="w-full rounded-lg border border-[#E8B7C8] bg-white px-3 py-2 text-sm text-[#2B2424] focus:border-[#8F1D2C] focus:ring-1 focus:ring-[#8F1D2C]"
-                      >
-                        <option value="cormorant">{t('weddingPanels.fontCormorant')}</option>
-                        <option value="playfair">{t('weddingPanels.fontPlayfair')}</option>
-                        <option value="great-vibes">{t('weddingPanels.fontGreatVibes')}</option>
-                        <option value="dancing">{t('weddingPanels.fontDancing')}</option>
-                        <option value="cinzel">{t('weddingPanels.fontCinzel')}</option>
-                        <option value="tangerine">{t('weddingPanels.fontTangerine')}</option>
-                      </select>
-                    </div>
+      {mode === 'screen' && !session.screen_mode_enabled && (
+        <WdCard><p className="text-sm text-wd-muted">{t('wdAdmin.home.screenOff')}</p></WdCard>
+      )}
 
-                    <div className="mt-4 pt-3 border-t border-[#E8B7C8]">
-                      <label className="block mb-2">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-[#8F1D2C]">
-                          {t('weddingPanels.coupleFontSize')}
-                        </span>
-                      </label>
-                      <select
-                        value={screenConfig.couple_font_size ?? 'medium'}
-                        onChange={async (e) => {
-                          setSaving(true)
-                          try {
-                            const newConfig = { ...screenConfig, couple_font_size: e.target.value as any }
-                            await live.updateSession(session.id, { screen_config: newConfig })
-                            await mutate(['session', session.id])
-                            toast.success(t('weddingPanels.fontUpdated'))
-                          } catch (err: any) {
-                            toast.error(err?.message ?? t('weddingPanels.genericError'))
-                          } finally {
-                            setSaving(false)
-                          }
-                        }}
-                        disabled={saving}
-                        className="w-full rounded-lg border border-[#E8B7C8] bg-white px-3 py-2 text-sm text-[#2B2424] focus:border-[#8F1D2C] focus:ring-1 focus:ring-[#8F1D2C]"
-                      >
-                        <option value="small">{t('weddingPanels.fontSizeSmall')}</option>
-                        <option value="medium">{t('weddingPanels.fontSizeMedium')}</option>
-                        <option value="large">{t('weddingPanels.fontSizeLarge')}</option>
-                        <option value="xlarge">{t('weddingPanels.fontSizeXlarge')}</option>
-                      </select>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-          <button onClick={onToggle} disabled={togglingActive} className={btnGhost}>
-            <Power className="h-3.5 w-3.5" />
+      {mode === 'event' && (
+      <WdCard title={t('wdAdmin.settings.eventStatus')} description={t('wdAdmin.settings.eventStatusDesc')}>
+        <div className="flex flex-wrap gap-3">
+          <WdButton variant="secondary" onClick={onToggle} disabled={togglingActive} icon={<Power className="h-4 w-4" />}>
             {session.is_active ? t('common.close') : t('common.open')}
-          </button>
-          <button onClick={onDelete} className={btnGhost}>
-            <Trash2 className="h-3.5 w-3.5" /> {t('common.delete')}
-          </button>
+          </WdButton>
+          <WdButton variant="danger" onClick={onDelete} icon={<Trash2 className="h-4 w-4" />}>{t('common.delete')}</WdButton>
         </div>
-      </div>
-    </div>
-  )
-}
-
-function WeddingQRCompact({ slug }: { slug: string }) {
-  const { t } = useI18n()
-  const envBase = process.env.NEXT_PUBLIC_PUBLIC_BASE_URL
-  const origin = envBase || (typeof window !== 'undefined' ? window.location.origin : 'https://www.iomixo.com')
-  const remoteUrl = `${origin}/remote/${slug}`
-  return (
-    <div className="rounded-[18px] border border-[#E8B7C8] bg-[#F7F4F3] p-5 flex flex-col gap-3 h-full">
-      <div className="flex items-start gap-3">
-        <div className="bg-white p-2 rounded-lg border border-[#E8B7C8] shrink-0">
-          <QRCodeSVG id="qrcode-remote-svg" value={remoteUrl} size={80} level="M" includeMargin={false} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold uppercase tracking-wider text-[#8F1D2C] mb-1">
-            {t('weddingPanels.djRemoteCtrl')}
-          </p>
-          <p className="text-xs text-[#6F6260]">
-            {t('weddingPanels.qrRemoteHint')}
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function WeddingStats({ sessionId, pendingCount }: { sessionId: string; pendingCount: number }) {
-  const { t } = useI18n()
-  // Realtime change signal (Firestore) → re-fetch of the authoritative legacy list; slow safety poll while live.
-  const dedSignal = useDedicationsSignal(sessionId)
-  const { data: dedications, mutate: refreshDedications } = useSWR(['dedications', sessionId], () => liveDedications.listForDj(sessionId), { refreshInterval: dedSignal.live ? 60_000 : 8_000 })
-  useEffect(() => { if (dedSignal.tick > 0) refreshDedications() }, [dedSignal.tick, refreshDedications])
-  const { data: photos }      = useSWR(['photos', sessionId],      () => livePhotos.listForDj(sessionId),      { refreshInterval: 8_000 })
-  const pollSignal = usePollsSignal(sessionId)
-  const { data: polls, mutate: refreshPolls } = useSWR(['polls', sessionId], () => livePolls.list(sessionId), { refreshInterval: pollSignal.live ? 60_000 : 8_000 })
-  useEffect(() => { if (pollSignal.tick > 0) refreshPolls() }, [pollSignal.tick, refreshPolls])
-  const activeGames = (polls ?? []).filter((p: LivePoll) => p.is_active).length
-
-  // Notifiche live: pulsano solo se ci sono elementi realmente da gestire (pending).
-  // Smettono quando vengono approvati/rifiutati (pending torna a 0).
-  const pendingDedications = (dedications ?? []).filter((d) => d.status === 'pending').length
-  const pendingPhotos      = (photos ?? []).filter((p) => p.status === 'pending').length
-  return (
-    <div className="rounded-[18px] border border-[#E8B7C8] bg-[#F7F4F3] p-4 h-full grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <StatTile label={t('weddingPanels.statRequests')} value={pendingCount} icon={<MessageSquare className="h-4 w-4" />} pulse={pendingCount > 0} />
-      <StatTile label={t('weddingPanels.statDedications')}   value={(dedications ?? []).length} icon={<Heart className="h-4 w-4" />} pulse={pendingDedications > 0} />
-      <StatTile label={t('weddingPanels.statPhotos')}      value={(photos ?? []).length}      icon={<ImageIcon className="h-4 w-4" />} pulse={pendingPhotos > 0} />
-      {/* Giochi: nessuno stato "pending" da gestire → solo il numero, niente pulse */}
-      <StatTile label={t('weddingPanels.statGames')}    value={activeGames}                icon={<Sparkles className="h-4 w-4" />} />
-    </div>
-  )
-}
-
-function StatTile({ label, value, icon, pulse }: { label: string; value: number; icon: React.ReactNode; pulse?: boolean }) {
-  return (
-    <div className={`relative rounded-xl bg-white border px-3 py-3 transition-all duration-150 hover:shadow-md hover:-translate-y-0.5 ${pulse ? 'notify-pulse-wedding border-[#8F1D2C]' : 'border-[#E8B7C8]'}`}>
-      <div className="flex items-center gap-1.5 text-[#8F1D2C] mb-1.5">
-        {icon}
-        <span className="text-[10px] uppercase tracking-[0.24em] font-semibold">{label}</span>
-      </div>
-      <p className="text-3xl font-bold text-[#2B2424] leading-none tabular-nums">{value}</p>
-    </div>
-  )
-}
-
-function WeddingTabBtn({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-150 ${
-        active
-          ? 'bg-[#8F1D2C] text-white shadow-md'
-          : 'bg-transparent text-[#6F6260] border border-[#E8B7C8] hover:text-[#2B2424] hover:bg-[#FBEAF0]'
-      }`}
-    >
-      {icon}{label}
-    </button>
+      </WdCard>
+      )}
+    </WdPage>
   )
 }
 
@@ -1183,7 +851,7 @@ function DedicationsPanel({ sessionId }: { sessionId: string }) {
                 — {d.guest_name ?? t('weddingPanels.anonymous')}
                 <span className="ml-2 normal-case tracking-normal">
                   <WeddingBadge tone={d.status === 'approved' ? 'sage' : d.status === 'rejected' ? 'taupe' : 'gold'}>
-                    {d.status}
+                    {wdStatusLabel(t, d.status)}
                   </WeddingBadge>
                 </span>
               </p>
@@ -1403,46 +1071,36 @@ function GuestVisibilityPanel({
   }
 
   // ── Wedding theme ────────────────────────────────────────────
-  if (!hasAccess) {
-    return (
-      <WeddingCard tone="cream">
-        <h2 className="font-wedding text-2xl text-wedding-ink mb-2 inline-flex items-center gap-2">
-          <Users className="h-5 w-5 text-wedding-gold" /> {t('guestVisibility.title')}
-        </h2>
-        <p className="text-sm text-wedding-ink/70 mb-4">{t('guestVisibility.lockedMsg')}</p>
-        <Link href="/billing">
-          <WeddingButton>{t('guestVisibility.lockedCta')}</WeddingButton>
-        </Link>
-      </WeddingCard>
-    )
+  const weddingDescKey: Record<string, string> = {
+    requests: 'wdAdmin.privacy.requestsDesc',
+    dedications: 'wdAdmin.privacy.dedicationsDesc',
+    shoe_game: 'wdAdmin.privacy.shoeGameDesc',
+    polls: 'wdAdmin.privacy.pollsDesc',
+    live_booth: 'wdAdmin.privacy.liveBoothDesc',
   }
   return (
-    <WeddingCard tone="cream">
-      <h2 className="font-wedding text-2xl text-wedding-ink mb-2 inline-flex items-center gap-2">
-        <Users className="h-5 w-5 text-wedding-gold" /> {t('guestVisibility.title')}
-      </h2>
-      <p className="text-xs text-wedding-ink/60 mb-5">{t('guestVisibility.desc')}</p>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {items.map((it) => (
-          <label
-            key={it.key}
-            className="flex items-center gap-2.5 cursor-pointer select-none rounded-xl bg-white border border-wedding-champagne px-4 py-3 hover:border-wedding-gold/50 transition"
-          >
-            <input
-              type="checkbox"
+    <WdPage width="narrow" title={t('wdAdmin.privacy.pageTitle')}>
+      {!hasAccess ? (
+        <WdCard title={t('guestVisibility.lockedTitle')} description={t('guestVisibility.lockedMsg')}>
+          <Link href="/billing"><WdButton>{t('guestVisibility.lockedCta')}</WdButton></Link>
+        </WdCard>
+      ) : (
+        <WdSectionCard>
+          {items.map((it) => (
+            <WdToggleRow
+              key={it.key}
+              section
+              title={it.label}
+              description={t(weddingDescKey[it.key] ?? '')}
+              status={isOn(it.key) ? t('wdAdmin.privacy.on') : t('wdAdmin.privacy.off')}
               checked={isOn(it.key)}
               onChange={() => toggle(it.key)}
               disabled={saving}
-              className="rounded border-wedding-champagne text-wedding-gold focus:ring-wedding-gold"
             />
-            <span className="text-sm text-wedding-ink flex items-center gap-1.5">
-              <span className="text-wedding-gold">{it.icon}</span>
-              {it.label}
-            </span>
-          </label>
-        ))}
-      </div>
-    </WeddingCard>
+          ))}
+        </WdSectionCard>
+      )}
+    </WdPage>
   )
 }
 
@@ -2371,163 +2029,6 @@ function PollsPanel({ sessionId }: { sessionId: string }) {
         ))}
       </div>
     </WeddingCard>
-  )
-}
-
-function PhotosPanel({ sessionId, session }: { sessionId: string; session: any }) {
-  const { t } = useI18n()
-  const [photoTab, setPhotoTab] = useState<'album' | 'booth'>('album')
-  const { data, mutate: refresh } = useSWR(
-    ['photos', sessionId],
-    () => livePhotos.listForDj(sessionId),
-    { refreshInterval: 6_000 },
-  )
-  const { data: boothPhotos, mutate: refreshBooth } = useSWR(
-    ['booth-photos', sessionId],
-    () => livePhotos.listBoothPhotos(sessionId),
-    { refreshInterval: 4_000 },
-  )
-  const setStatus = async (id: string, status: 'approved' | 'rejected') => {
-    try { await livePhotos.setStatus(id, status); refresh(); refreshBooth() }
-    catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric')) }
-  }
-  const toggleFeatured = async (id: string, current: boolean) => {
-    try { await livePhotos.setFeatured(id, !current); refreshBooth() }
-    catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric')) }
-  }
-  const approvePhoto = async (id: string) => {
-    try { await livePhotos.approve(id); refreshBooth() }
-    catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric')) }
-  }
-  const remove = async (id: string) => {
-    try { await livePhotos.remove(id); refresh(); refreshBooth() }
-    catch (e: any) { toast.error(e?.message ?? t('common.errorGeneric')) }
-  }
-
-  const envBase = process.env.NEXT_PUBLIC_PUBLIC_BASE_URL
-  const origin = envBase || (typeof window !== 'undefined' ? window.location.origin : 'https://www.iomixo.com')
-  const boothUrl = `${origin}/booth/${session?.public_slug ?? sessionId}`
-  const [copiedBooth, setCopiedBooth] = useState(false)
-  const copyBoothUrl = async () => {
-    try { await navigator.clipboard.writeText(boothUrl); setCopiedBooth(true); setTimeout(() => setCopiedBooth(false), 1500) } catch {}
-  }
-
-  const items = photoTab === 'album' ? (data ?? []) : (boothPhotos ?? [])
-  const showBoothQR = photoTab === 'booth'
-
-  return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="font-wedding text-2xl font-semibold text-[#2B2424]">{t('wedding.tabPhotos')}</h2>
-        <div className="inline-flex items-center gap-1 rounded-full bg-white p-1 border border-[#E8B7C8] shadow-sm">
-          <button
-            onClick={() => setPhotoTab('album')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-full transition ${
-              photoTab === 'album'
-                ? 'bg-[#8F1D2C] text-white'
-                : 'text-[#6F6260] hover:text-[#2B2424]'
-            }`}
-          >
-            {t('weddingPanels.guestAlbum')}
-          </button>
-          <button
-            onClick={() => setPhotoTab('booth')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-full transition inline-flex items-center gap-1.5 ${
-              photoTab === 'booth'
-                ? 'bg-[#8F1D2C] text-white'
-                : 'text-[#6F6260] hover:text-[#2B2424]'
-            }`}
-          >
-            <Camera className="h-3.5 w-3.5" /> {t('weddingPanels.liveBooth')}
-          </button>
-        </div>
-      </div>
-
-      {showBoothQR && (
-        <WeddingCard tone="ivory" className="p-4 flex items-center gap-4">
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-wedding-ink mb-1">{t('weddingPanels.liveBoothActive')}</p>
-            <p className="text-xs text-wedding-taupe">{t('weddingPanels.liveBoothDesc')}</p>
-            <button
-              onClick={copyBoothUrl}
-              className="mt-2 inline-flex items-center gap-1.5 text-xs text-wedding-burgundy hover:underline"
-            >
-              {copiedBooth ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-              {copiedBooth ? t('weddingPanels.linkCopied') : t('weddingPanels.copyLink')}
-            </button>
-          </div>
-          <div className="bg-white p-3 rounded-xl border-2 border-wedding-gold/30">
-            <QRCodeSVG value={boothUrl} size={80} level="M" />
-          </div>
-        </WeddingCard>
-      )}
-
-      {items.length === 0 && (
-        <WeddingCard tone="ivory" className="text-center py-8 text-sm text-wedding-ink/50">
-          {photoTab === 'booth' ? t('weddingPanels.noBoothPhotos') : t('wedding.photos.empty')}
-        </WeddingCard>
-      )}
-
-      {items.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {items.map((p: any) => (
-            <div key={p.id} className={`rounded-2xl overflow-hidden border bg-white/80 shadow-wedding relative ${
-              p.is_featured ? 'border-wedding-gold/80 ring-2 ring-wedding-gold/40' : 'border-wedding-champagne/60'
-            }`}>
-              <div className="p-2">
-                <WeddingPhotoFrame
-                  url={p.url}
-                  caption={p.caption}
-                  coupleNames={session?.couple_names ?? session?.event_name}
-                  weddingDate={session?.wedding_date}
-                  featured={p.is_featured}
-                  variant="compact"
-                />
-              </div>
-              <div className="p-3 pt-1">
-                <p className="text-xs text-wedding-ink/70 line-clamp-2">{p.caption ?? '—'}</p>
-                <p className="text-[10px] uppercase tracking-[0.22em] text-wedding-gold mt-2 flex items-center gap-2">
-                  <span>— {p.guest_name ?? t('weddingPanels.anonymous')}</span>
-                  <span className="normal-case tracking-normal">
-                    <WeddingBadge tone={p.status === 'approved' ? 'sage' : p.status === 'rejected' ? 'taupe' : 'gold'}>
-                      {p.status}
-                    </WeddingBadge>
-                  </span>
-                </p>
-                <div className="flex gap-1 mt-2">
-                  {photoTab === 'booth' && (
-                    <button
-                      onClick={() => toggleFeatured(p.id, p.is_featured)}
-                      className={`p-2 rounded-full flex-1 transition ${
-                        p.is_featured
-                          ? 'bg-wedding-gold/40 text-wedding-ink hover:bg-wedding-gold/60'
-                          : 'bg-wedding-champagne/40 text-wedding-taupe hover:bg-wedding-champagne/60'
-                      }`}
-                      title={t('weddingPanels.toggleFeatured')}
-                    >
-                      <Star className={`h-4 w-4 mx-auto ${p.is_featured ? 'fill-current' : ''}`} />
-                    </button>
-                  )}
-                  {p.status !== 'approved' && (
-                    <button onClick={() => approvePhoto(p.id)} className="p-2 rounded-full bg-wedding-sage/30 text-[#5f6f59] flex-1 hover:bg-wedding-sage/50 transition">
-                      <Check className="h-4 w-4 mx-auto" />
-                    </button>
-                  )}
-                  {p.status !== 'rejected' && (
-                    <button onClick={() => setStatus(p.id, 'rejected')} className="p-2 rounded-full bg-wedding-taupe/20 text-wedding-ink/70 flex-1 hover:bg-wedding-taupe/40 transition">
-                      <X className="h-4 w-4 mx-auto" />
-                    </button>
-                  )}
-                  <button onClick={() => remove(p.id)} className="p-2 rounded-full bg-wedding-blush/40 text-[#8a4f4a] flex-1 hover:bg-wedding-blush/60 transition">
-                    <Trash2 className="h-4 w-4 mx-auto" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
   )
 }
 

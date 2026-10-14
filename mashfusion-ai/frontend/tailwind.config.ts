@@ -44,6 +44,16 @@ const config: Config = {
           white: 'rgba(255,255,255,0.05)',
           border: 'rgba(255,255,255,0.08)',
         },
+        // Wedding admin (dashboard) palette — light pink platform theme
+        wd: {
+          pink:    '#F06A9B',
+          'pink-hover': '#E8538A',
+          bg:      '#FFF7FA',
+          active:  '#FCE8F0',
+          border:  '#F3D7E1',
+          ink:     '#1F2028',
+          muted:   '#85858C',
+        },
         // Wedding Edition palette — romantic red/blush/taupe
         wedding: {
           ivory:     '#FFFDFB',  // page background (warm white)
