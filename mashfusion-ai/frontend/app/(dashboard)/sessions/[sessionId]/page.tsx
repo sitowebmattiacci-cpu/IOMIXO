@@ -33,7 +33,8 @@ import {
   WeddingCard, WeddingButton, WeddingBadge, WeddingInput, WeddingTextarea, WeddingDivider,
 } from '@/components/wedding/WeddingUI'
 import { WeddingAdminShell, type WeddingNavKey } from '@/components/wedding/admin/WeddingAdminShell'
-import { WeddingHomePage, publicOrigin } from '@/components/wedding/admin/WeddingHomePage'
+import { WeddingHomePage } from '@/components/wedding/admin/WeddingHomePage'
+import { publicOriginFor, djToolsOrigin } from '@/lib/portalLinks'
 import { WeddingPhotosPage } from '@/components/wedding/admin/WeddingPhotosPage'
 import { WeddingPosterPage } from '@/components/wedding/admin/WeddingPosterPage'
 import {
@@ -641,7 +642,7 @@ function WeddingSettingsPage({ session, togglingActive, onToggle, onDelete, mode
               <p className="rounded-xl border border-wd-border bg-wd-bg px-4 py-3 text-base font-bold text-wd-ink">{session.couple_names ?? session.event_name}</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <WdLinkButton href={`/screen/${slug}`} size="sm" icon={<Tv className="h-3.5 w-3.5" />}>{t('wdAdmin.home.openScreen')}</WdLinkButton>
-                <WdLinkButton href={`${publicOrigin()}/remote/${slug}`} size="sm" icon={<Users className="h-3.5 w-3.5" />}>{t('weddingPanels.djRemoteCtrl')}</WdLinkButton>
+                <WdLinkButton href={`${djToolsOrigin()}/remote/${slug}`} size="sm" icon={<Users className="h-3.5 w-3.5" />}>{t('weddingPanels.djRemoteCtrl')}</WdLinkButton>
               </div>
             </WdSection>
             <WdSection
@@ -2074,8 +2075,7 @@ function PartyDashboard({
   const { t } = useI18n()
   const [tab, setTab] = useState<'requests' | 'booth' | 'battle' | 'games' | 'screen' | 'guests'>('requests')
 
-  const envBase = process.env.NEXT_PUBLIC_PUBLIC_BASE_URL
-  const origin = envBase || (typeof window !== 'undefined' ? window.location.origin : 'https://www.iomixo.com')
+  const origin = publicOriginFor('party')
   const liveUrl = `${origin}/live/${session.public_slug}`
   const boothUrl = `${origin}/booth/${session.public_slug}`
   const screenUrl = `${origin}/screen/${session.public_slug}`

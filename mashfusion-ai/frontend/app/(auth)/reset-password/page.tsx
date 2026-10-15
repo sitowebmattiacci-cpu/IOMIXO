@@ -1,4 +1,5 @@
 'use client'
+import { PortalBrand } from '@/components/portal/PortalBrand'
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -62,12 +63,7 @@ function ResetPasswordContent() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">AI</span></span>
-          </Link>
+          <Link href="/" className="inline-flex items-center gap-2 mb-6"><PortalBrand onDark /></Link>
           <h1 className="text-2xl font-bold text-white">
             {done ? 'Password updated!' : 'Set new password'}
           </h1>

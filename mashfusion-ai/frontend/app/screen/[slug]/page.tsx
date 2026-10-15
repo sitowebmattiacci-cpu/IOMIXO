@@ -18,6 +18,7 @@ import { WinnerAnnouncementStage } from '@/components/wedding/WinnerAnnouncement
 import { PartyShell, PartyDivider, PARTY } from '@/components/party/PartyUI'
 import { PartyPhotoDisplay, type LiveBoothLayout } from '@/components/party/PartyPhotoGridWall'
 import { resolveVideoSource, type VideoLiveSource } from '@/lib/utils'
+import { publicOriginFor } from '@/lib/portalLinks'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 /** Remote-control state read from screen_config.video_live and applied by the
@@ -992,9 +993,7 @@ function PartyScreen({
   active_poll: any
   photos: any[]
 }) {
-  const envBase = process.env.NEXT_PUBLIC_PUBLIC_BASE_URL
-  const origin = envBase || (typeof window !== 'undefined' ? window.location.origin : 'https://www.iomixo.com')
-  const liveUrl = `${origin}/live/${slug}`
+  const liveUrl = `${publicOriginFor('party')}/live/${slug}`
 
   const total = (active_poll?.tally ?? []).reduce((a: number, b: number) => a + b, 0) || 0
 

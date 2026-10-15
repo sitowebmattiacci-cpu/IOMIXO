@@ -5,6 +5,7 @@ import {
   type User, type Unsubscribe,
 } from 'firebase/auth'
 import { getFirebaseAuth } from './client'
+import { getPortalFromHostname, PORTAL_CONFIG } from '../portal'
 
 /**
  * Centralised Firebase Auth service. UI code must go through this module (or
@@ -14,7 +15,11 @@ import { getFirebaseAuth } from './client'
 
 export type { User as FirebaseUser }
 
-const actionSettings = () => ({ url: `${window.location.origin}/login` })
+/** Verification / reset emails send the user back to the portal they signed up on (its canonical origin on a real portal host, the current origin elsewhere). */
+const actionSettings = () => {
+  const portal = getPortalFromHostname(window.location.hostname)
+  return { url: `${portal ? PORTAL_CONFIG[portal].baseUrl : window.location.origin}/login` }
+}
 
 export async function signInWithEmail(email: string, password: string): Promise<User> {
   const cred = await signInWithEmailAndPassword(getFirebaseAuth(), email, password)

@@ -9,7 +9,13 @@ import { checkoutPrice, type PriceTable } from './prices'
  */
 const fail = (code: FunctionsErrorCode, reason: string): never => { throw new HttpsError(code, reason, { reason }) }
 
-export interface BillingConfig { baseUrl: string }
+/** baseUrl = IOMIXO (DJ accounts); coupleBaseUrl = MIOLOVE, set at go-live (MIOLOVE_BASE_URL). Unset → every account keeps returning to baseUrl. */
+export interface BillingConfig { baseUrl: string; coupleBaseUrl?: string }
+/** Return origin by the account's role (server-side data, never client input): Sposi → MIOLOVE, everyone else → IOMIXO. */
+const returnBase = (cfg: BillingConfig, accountType: unknown): { base: string; couple: boolean } => {
+  const couple = accountType === 'couple' && !!cfg.coupleBaseUrl
+  return { base: (couple ? cfg.coupleBaseUrl! : cfg.baseUrl).replace(/\/+$/, ''), couple }
+}
 export interface AuthLike { uid: string; token: { email?: string; firebase?: { sign_in_provider?: string } } }
 const account = (auth: AuthLike | undefined): AuthLike => {
   if (!auth?.uid || auth.token.firebase?.sign_in_provider === 'anonymous') return fail('unauthenticated', 'account_required')
@@ -76,11 +82,11 @@ export async function createCheckoutSession(
   if (legacyId) metadata.legacySupabaseId = legacyId
   if (eventId) metadata.eventId = eventId
 
-  const base = cfg.baseUrl.replace(/\/+$/, '')
+  const { base, couple } = returnBase(cfg, user.data()!.accountType)
   const params: Parameters<StripeApi['checkout']['sessions']['create']>[0] = {
     customer, mode: price.mode, line_items: [{ price: input.priceId, quantity: 1 }],
     payment_method_types: ['card', 'paypal'], allow_promotion_codes: true, metadata,
-    success_url: `${base}/dashboard?upgraded=true&session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${base}/billing`,
+    success_url: `${base}/${couple ? 'billing' : 'dashboard'}?upgraded=true&session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${base}/billing`,
   }
   if (price.mode === 'subscription') {
     params.subscription_data = { metadata, ...(trial ? { trial_period_days: 7, trial_settings: { end_behavior: { missing_payment_method: 'cancel' } } } : {}) }
@@ -101,10 +107,11 @@ export async function createCheckoutSession(
 
 export async function createPortalSession(db: Firestore, stripe: StripeApi, cfg: BillingConfig, authIn: AuthLike | undefined): Promise<{ url: string }> {
   const auth = account(authIn)
-  const customer = (await db.doc(`users/${auth.uid}`).get()).data()?.stripeCustomerId
+  const userData = (await db.doc(`users/${auth.uid}`).get()).data()
+  const customer = userData?.stripeCustomerId
   if (typeof customer !== 'string' || !customer) return fail('failed-precondition', 'no_billing_account')
   try {
-    const s = await stripe.billingPortal.sessions.create({ customer, return_url: `${cfg.baseUrl.replace(/\/+$/, '')}/billing` })
+    const s = await stripe.billingPortal.sessions.create({ customer, return_url: `${returnBase(cfg, userData?.accountType).base}/billing` })
     return { url: s.url }
   } catch (e) {
     if (isStripeError(e)) return fail('failed-precondition', 'portal_failed')

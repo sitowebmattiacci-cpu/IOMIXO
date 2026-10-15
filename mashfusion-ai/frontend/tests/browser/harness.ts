@@ -33,7 +33,7 @@ export async function startFakeRender(): Promise<FakeRender> {
 
 const freePort = () => new Promise<number>((resolve) => { const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const p = (s.address() as net.AddressInfo).port; s.close(() => resolve(p)) }) })
 
-export interface App { url: string; stop(): Promise<void> }
+export interface App { url: string; port: number; stop(): Promise<void> }
 export async function startNext(render: FakeRender, extraEnv: Record<string, string> = {}): Promise<App> {
   const port = await freePort()
   const env: NodeJS.ProcessEnv = {
@@ -51,7 +51,20 @@ export async function startNext(render: FakeRender, extraEnv: Record<string, str
     if (Date.now() - t0 > 90_000) throw new Error('next dev did not start: ' + log.slice(-800))
     await new Promise((r) => setTimeout(r, 300))
   }
-  return { url: `http://127.0.0.1:${port}`, stop: async () => { child.kill('SIGTERM'); await new Promise((r) => setTimeout(r, 500)); child.kill('SIGKILL') } }
+  return { url: `http://127.0.0.1:${port}`, port, stop: async () => { child.kill('SIGTERM'); await new Promise((r) => setTimeout(r, 500)); child.kill('SIGKILL') } }
 }
 
 export const launch = (): Promise<Browser> => chromium.launch({ executablePath: CHROME, headless: true, args: ['--no-sandbox'] })
+
+// ── Host simulation: the real portal hostnames resolve to the local dev server, so hostname detection, redirects and metadata run for real ──
+export const PORTAL_HOSTS = ['iomixo.com', 'www.iomixo.com', 'miolovealbum.com', 'www.miolovealbum.com'] as const
+/** http://<portal host>:<dev port> — the same Next dev server answers as iomixo.com or miolovealbum.com. */
+export const portalUrl = (app: App, host: (typeof PORTAL_HOSTS)[number]) => `http://${host}:${app.port}`
+export const launchPortals = (app: App): Promise<Browser> => chromium.launch({
+  executablePath: CHROME, headless: true,
+  args: [
+    '--no-sandbox',
+    `--host-resolver-rules=${PORTAL_HOSTS.map((h) => `MAP ${h} 127.0.0.1`).join(', ')}`,
+    `--unsafely-treat-insecure-origin-as-secure=${PORTAL_HOSTS.map((h) => portalUrl(app, h)).join(',')}`,
+  ],
+})

@@ -340,3 +340,23 @@ test('W11. clients can neither read nor write stripeEvents (rules deny-all); the
   const doc = (await get(`stripeEvents/${e.id}`))!
   assert.deepEqual(Object.keys(doc).sort(), ['attempts', 'created', 'livemode', 'processedAt', 'receivedAt', 'status', 'type'].sort()); assert.equal(JSON.stringify(doc).includes('secret@example.com'), false)
 })
+
+test('C-portal. Stripe return URLs follow the account role: Sposi → MIOLOVE once configured, DJ → IOMIXO, unset → IOMIXO for everybody; nothing else changes', async () => {
+  const both = { baseUrl: 'https://www.iomixo.com/', coupleBaseUrl: 'https://miolovealbum.com/' }
+  const couple = await mkUser({ accountType: 'couple', stripeCustomerId: 'cus_couplePortal' }), dj = await mkUser({ accountType: 'dj', stripeCustomerId: 'cus_djPortal' }), legacy = await mkUser({ stripeCustomerId: 'cus_legacyPortal' })
+  const fs = fakeStripe(); for (const c of ['cus_couplePortal', 'cus_djPortal', 'cus_legacyPortal']) fs.st.customers.set(c, true)
+  const sessionFor = async (uid: string, cfg: typeof both | typeof CFG) => { fs.st.created.length = 0; await createCheckoutSession(db, fs.api, PRICES, cfg, auth(uid), { priceId: P.PRO, trial: false, eventId: null }); return fs.st.created.find((c) => c.kind === 'session') }
+
+  let s = await sessionFor(couple.uid, both)
+  assert.equal(s.success_url, 'https://miolovealbum.com/billing?upgraded=true&session_id={CHECKOUT_SESSION_ID}'); assert.equal(s.cancel_url, 'https://miolovealbum.com/billing')
+  s = await sessionFor(dj.uid, both)
+  assert.equal(s.success_url, 'https://www.iomixo.com/dashboard?upgraded=true&session_id={CHECKOUT_SESSION_ID}'); assert.equal(s.cancel_url, 'https://www.iomixo.com/billing')
+  s = await sessionFor(legacy.uid, both)
+  assert.equal(s.success_url, 'https://www.iomixo.com/dashboard?upgraded=true&session_id={CHECKOUT_SESSION_ID}', 'no accountType = legacy DJ')
+  s = await sessionFor(couple.uid, CFG)
+  assert.equal(s.success_url, 'https://www.iomixo.com/dashboard?upgraded=true&session_id={CHECKOUT_SESSION_ID}', 'MIOLOVE_BASE_URL unset: the couple keeps today\'s URLs')
+
+  fs.st.portal.length = 0
+  await createPortalSession(db, fs.api, both, auth(couple.uid)); await createPortalSession(db, fs.api, both, auth(dj.uid)); await createPortalSession(db, fs.api, CFG, auth(couple.uid))
+  assert.deepEqual(fs.st.portal.map((p: any) => p.return_url), ['https://miolovealbum.com/billing', 'https://www.iomixo.com/billing', 'https://www.iomixo.com/billing'])
+})

@@ -999,7 +999,9 @@
       "couplePerk4": "Live Booth and slideshow",
       "couplePerk5": "Simple, no app to install",
       "neutralSub": "Events, requests and guest photos in one platform.",
-      "loginSubtitle": "Sign in to manage your events and albums."
+      "loginSubtitle": "Sign in to manage your events and albums.",
+      "loginSubtitleDj": "Sign in to manage your events, requests and live direction.",
+      "loginSubtitleCouple": "Sign in to manage your wedding album."
     },
     "question": "How do you want to use the platform?",
     "djTitle": "DJ / Event professional",

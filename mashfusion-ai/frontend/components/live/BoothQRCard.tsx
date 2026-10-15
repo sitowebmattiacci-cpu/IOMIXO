@@ -1,10 +1,9 @@
 'use client'
 import { QRCodeSVG } from 'qrcode.react'
+import { publicOriginFor } from '@/lib/portalLinks'
 
-export function BoothQRCard({ slug }: { slug: string }) {
-  const envBase = process.env.NEXT_PUBLIC_PUBLIC_BASE_URL
-  const origin = envBase || (typeof window !== 'undefined' ? window.location.origin : 'https://www.iomixo.com')
-  const url = `${origin}/booth/${slug}`
+export function BoothQRCard({ slug, eventType }: { slug: string; eventType?: string }) {
+  const url = `${publicOriginFor(eventType)}/booth/${slug}`
 
   return (
     <div className="flex flex-col items-center">

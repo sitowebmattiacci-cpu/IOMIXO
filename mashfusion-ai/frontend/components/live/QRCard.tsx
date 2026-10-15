@@ -3,11 +3,10 @@ import { QRCodeSVG } from 'qrcode.react'
 import { useState } from 'react'
 import { Copy, Check, Download } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { publicOriginFor } from '@/lib/portalLinks'
 
-export function QRCard({ slug }: { slug: string }) {
-  const envBase = process.env.NEXT_PUBLIC_PUBLIC_BASE_URL
-  const origin = envBase || (typeof window !== 'undefined' ? window.location.origin : 'https://www.iomixo.com')
-  const url    = `${origin}/live/${slug}`
+export function QRCard({ slug, eventType }: { slug: string; eventType?: string }) {
+  const url    = `${publicOriginFor(eventType)}/live/${slug}`
   const [copied, setCopied] = useState(false)
 
   const copy = async () => {

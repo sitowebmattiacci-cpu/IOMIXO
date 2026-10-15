@@ -4,6 +4,8 @@ import { Toaster } from 'react-hot-toast'
 import { I18nProvider } from '@/lib/i18n'
 import { AuthProvider } from '@/lib/auth/AuthProvider'
 import './globals.css'
+import { getRequestPortal } from '@/lib/portalServer'
+import { PortalProvider } from '@/components/portal/PortalProvider'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -53,52 +55,57 @@ const tangerine = Tangerine({
   display: 'swap',
 })
 
-export const metadata: Metadata = {
-  title: {
-    default: 'IOMIXO Live Hub — Interactive platform for DJs, weddings and events',
-    template: '%s | IOMIXO Live Hub',
-  },
-  description:
-    'Create live QR sessions, receive music requests, run wedding games, collect guest photos and manage interactive event experiences.',
-  keywords: ['Live Hub', 'DJ', 'Weddings', 'Events', 'Music Requests', 'Interactive DJ', 'Wedding Roulette', 'QR Sessions', 'Guest Photos'],
-  manifest: '/site.webmanifest',
-  icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
-      { url: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
-      { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
-      { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
-    ],
-    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
-    shortcut: ['/favicon.ico'],
-  },
-  openGraph: {
-    type: 'website',
-    locale: 'it_IT',
-    url: 'https://iomixo.ai',
-    siteName: 'IOMIXO Live Hub',
-    title: 'IOMIXO Live Hub — Interactive platform for DJs, weddings and events',
-    description: 'Create live QR sessions, receive music requests, run wedding games, collect guest photos and manage interactive event experiences.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'IOMIXO Live Hub',
-    description: 'Interactive platform for DJs, weddings and events.',
-    images: ['/og-image.png'],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
-  },
+// Per-portal metadata: the host of the request decides (IOMIXO vs MIOLOVE); unknown hosts (localhost, hosted.app) get the safe default portal.
+export function generateMetadata(): Metadata {
+  const { config } = getRequestPortal()
+  const miolove = config.id === 'miolove'
+  const image = miolove ? '/brand/miolove/miolove-album-logo.png' : '/og-image.png'
+  return {
+    metadataBase: new URL(config.baseUrl),
+    title: miolove ? { default: config.meta.title, template: '%s' } : { default: config.meta.title, template: '%s | IOMIXO Live Hub' },
+    description: config.meta.description,
+    keywords: miolove
+      ? ['MIOLOVE ALBUM', 'album matrimonio', 'foto invitati', 'QR code matrimonio', 'Live Booth', 'album digitale']
+      : ['Live Hub', 'DJ', 'Weddings', 'Events', 'Music Requests', 'Interactive DJ', 'Wedding Roulette', 'QR Sessions', 'Guest Photos'],
+    manifest: '/site.webmanifest',
+    alternates: { canonical: config.baseUrl },
+    // Favicons are shared for now: swap the set per portal here once MIOLOVE has its own assets.
+    icons: {
+      icon: [
+        { url: '/favicon.ico', sizes: 'any' },
+        { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+        { url: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
+        { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
+        { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
+      ],
+      apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+      shortcut: ['/favicon.ico'],
+    },
+    openGraph: {
+      type: 'website',
+      locale: config.meta.locale,
+      url: config.baseUrl,
+      siteName: config.meta.siteName,
+      title: config.meta.ogTitle,
+      description: config.meta.description,
+      images: [{ url: image, ...(miolove ? {} : { width: 1200, height: 630 }) }],
+    },
+    twitter: {
+      card: miolove ? 'summary' : 'summary_large_image',
+      title: miolove ? 'MIOLOVE ALBUM' : 'IOMIXO Live Hub',
+      description: miolove ? config.meta.description : 'Interactive platform for DJs, weddings and events.',
+      images: [image],
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
+    },
+  }
 }
 
-export const viewport: Viewport = {
-  themeColor: '#8F1D2C',
-  width: 'device-width',
-  initialScale: 1,
+export function generateViewport(): Viewport {
+  return { themeColor: getRequestPortal().config.id === 'miolove' ? '#F06A9B' : '#8F1D2C', width: 'device-width', initialScale: 1 }
 }
 
 // Preconnect hint only (never a request): composed so the "no raw callable URL" guard test keeps meaning real fetches.
@@ -113,6 +120,7 @@ const FIREBASE_ORIGINS = process.env.NEXT_PUBLIC_FIREBASE_USE_EMULATORS === 'tru
 ]
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const { config, matched } = getRequestPortal()
   return (
     <html lang="it" className={`${inter.variable} ${cormorant.variable} ${playfair.variable} ${greatVibes.variable} ${dancingScript.variable} ${cinzel.variable} ${tangerine.variable} dark`} suppressHydrationWarning>
       <head>
@@ -121,7 +129,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-surface-400 text-white antialiased" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false">
         <I18nProvider>
+          <PortalProvider portalId={config.id} matched={matched}>
           <AuthProvider>{children}</AuthProvider>
+          </PortalProvider>
           <Toaster
           position="top-right"
           toastOptions={{

@@ -3,6 +3,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { confirmEmailVerification, mapAuthError } from '@/lib/firebase/auth'
+import { actionHopOrigin } from '@/lib/portal'
 
 /**
  * Firebase email action handler (set as the custom action URL in the Firebase
@@ -16,6 +17,10 @@ function ActionContent() {
   useEffect(() => {
     const mode = params.get('mode')
     const oobCode = params.get('oobCode')
+    // The Firebase console has ONE action URL per project: a link requested from the other portal lands here first and is handed over to its own domain
+    // (only to a known portal origin taken from continueUrl, never an arbitrary URL).
+    const hop = actionHopOrigin(params.get('continueUrl'), window.location.hostname)
+    if (hop) { window.location.replace(`${hop}/auth/action?${params.toString()}`); return }
     if (!oobCode) { setError('This link is invalid or has expired'); return }
     if (mode === 'resetPassword') { router.replace(`/reset-password?oobCode=${encodeURIComponent(oobCode)}`); return }
     if (mode === 'verifyEmail') {

@@ -67,7 +67,10 @@ const observeAppCheck = (
 
 const guestCallOptions = (enforceAppCheck: typeof ENFORCE_VOTE) => ({
   enforceAppCheck,
-  cors: ['https://www.iomixo.com', 'https://iomixo.com', 'https://iomixo-web--iomixo-494817.europe-west4.hosted.app', 'http://localhost:3000', 'http://localhost:3100'],
+  cors: [
+    'https://www.iomixo.com', 'https://iomixo.com', 'https://miolovealbum.com', 'https://www.miolovealbum.com',
+    'https://iomixo-web--iomixo-494817.europe-west4.hosted.app', 'http://localhost:3000', 'http://localhost:3100',
+  ],
   secrets: SECRETS,
   serviceAccount: SERVICE_ACCOUNT,
 })
@@ -153,7 +156,7 @@ export const getPublicEvent = onCall({ ...guestCallOptions(ENFORCE_PUBLIC_EVENT)
 // ── Billing (Stripe stays the payment provider; Firestore + these Functions replace Render/Supabase) ───────────────────────────
 // Prices are server-side (billing/prices.ts, ids from the non-secret deploy env). The client sends a price id, a trial flag and an optional event id only.
 const billingCallOptions = { ...guestCallOptions(ENFORCE_BILLING), secrets: [STRIPE_SECRET_KEY] }
-const billingConfig = () => ({ baseUrl: process.env.APP_BASE_URL || 'https://www.iomixo.com' })
+const billingConfig = () => ({ baseUrl: process.env.APP_BASE_URL || 'https://www.iomixo.com', coupleBaseUrl: process.env.MIOLOVE_BASE_URL || undefined })
 
 /** Callable: starts a Stripe Checkout (subscription / trial / Event Pass) for the signed-in account. */
 export const createCheckoutSession = onCall(billingCallOptions, async (request) => {

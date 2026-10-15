@@ -7,6 +7,7 @@ import { liveDedications, livePhotos, livePolls, type LivePoll } from '@/lib/api
 import { useDedicationsSignal } from '@/lib/events/useDedications'
 import { usePollsSignal } from '@/lib/events/usePolls'
 import { usePhotosSignal } from '@/lib/events/usePhotos'
+import { publicOriginFor, djToolsOrigin } from '@/lib/portalLinks'
 import { useI18n } from '@/lib/i18n'
 import { WEDDING_BRAND_FILE_PREFIX } from '@/lib/brand/wedding'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -15,10 +16,8 @@ import { WdPage, WdCard, WdButton, WdLinkButton } from './WeddingAdminUI'
 
 export const isVideoUrl = (u: string | null | undefined) => !!u && /\.(mp4|mov|webm|m4v|ogv)(\?|#|$)/i.test(u)
 
-export function publicOrigin() {
-  const envBase = process.env.NEXT_PUBLIC_PUBLIC_BASE_URL
-  return envBase || (typeof window !== 'undefined' ? window.location.origin : 'https://www.iomixo.com')
-}
+/** Guest-facing origin of a Wedding album (MIOLOVE once its domain is live). */
+export const publicOrigin = () => publicOriginFor('wedding')
 
 export function downloadQrPng(svgId: string, filename: string, transparent = false) {
   const svg = document.getElementById(svgId) as SVGSVGElement | null
@@ -188,9 +187,9 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
       {!couple && <WdCard title={t('weddingPanels.djRemoteCtrl')} description={t('weddingPanels.qrRemoteHint')} className="!mt-8">
         <div className="flex items-center gap-5">
           <div className="shrink-0 rounded-xl border border-wd-border bg-white p-2">
-            <QRCodeSVG value={`${publicOrigin()}/remote/${slug}`} size={88} level="M" includeMargin={false} />
+            <QRCodeSVG value={`${djToolsOrigin()}/remote/${slug}`} size={88} level="M" includeMargin={false} />
           </div>
-          <WdLinkButton href={`${publicOrigin()}/remote/${slug}`} size="sm" icon={<ExternalLink className="h-4 w-4" />}>{t('weddingPanels.open')}</WdLinkButton>
+          <WdLinkButton href={`${djToolsOrigin()}/remote/${slug}`} size="sm" icon={<ExternalLink className="h-4 w-4" />}>{t('weddingPanels.open')}</WdLinkButton>
         </div>
       </WdCard>}
     </WdPage>

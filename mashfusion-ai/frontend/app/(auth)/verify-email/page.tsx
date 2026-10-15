@@ -1,4 +1,5 @@
 'use client'
+import { PortalBrand } from '@/components/portal/PortalBrand'
 import { motion } from 'framer-motion'
 import { Sparkles, Mail } from 'lucide-react'
 import Link from 'next/link'
@@ -22,12 +23,7 @@ export default function VerifyEmailPage() {
         className="relative w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">AI</span></span>
-          </Link>
+          <Link href="/" className="inline-flex items-center gap-2"><PortalBrand onDark /></Link>
         </div>
 
         <div className="glass rounded-2xl p-10 text-center space-y-5">

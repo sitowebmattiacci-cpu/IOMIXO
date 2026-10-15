@@ -876,7 +876,9 @@
       "couplePerk4": "Live Booth et slideshow",
       "couplePerk5": "Simple, sans application à installer",
       "neutralSub": "Événements, demandes et photos des invités sur une seule plateforme.",
-      "loginSubtitle": "Connectez-vous pour gérer vos événements et vos albums."
+      "loginSubtitle": "Connectez-vous pour gérer vos événements et vos albums.",
+      "loginSubtitleDj": "Connectez-vous pour gérer vos événements, demandes et régie en direct.",
+      "loginSubtitleCouple": "Connectez-vous pour gérer votre album de mariage."
     },
     "question": "Comment voulez-vous utiliser la plateforme ?",
     "djTitle": "DJ / Professionnel de l’événementiel",

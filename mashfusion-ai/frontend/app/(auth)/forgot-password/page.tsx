@@ -1,4 +1,5 @@
 'use client'
+import { PortalBrand } from '@/components/portal/PortalBrand'
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -40,12 +41,7 @@ export default function ForgotPasswordPage() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">AI</span></span>
-          </Link>
+          <Link href="/" className="inline-flex items-center gap-2 mb-6"><PortalBrand onDark /></Link>
           <h1 className="text-2xl font-bold text-white">Forgot your password?</h1>
           <p className="mt-1 text-sm text-white/40">
             {sent ? 'Check your inbox' : "No worries — we'll send you a reset link"}

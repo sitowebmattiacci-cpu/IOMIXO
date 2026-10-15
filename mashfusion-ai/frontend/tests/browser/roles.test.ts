@@ -1,7 +1,7 @@
 import { test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Browser, Page } from 'playwright-core'
-import { startFakeRender, startNext, launch, type FakeRender, type App } from './harness'
+import { startFakeRender, startNext, launchPortals, portalUrl, type FakeRender, type App } from './harness'
 import { newClient } from '../firebase/helpers'
 import { seedSet, eventFields } from '../firebase/seed'
 
@@ -10,7 +10,7 @@ import { seedSet, eventFields } from '../firebase/seed'
  * gets only the album area; direct URLs of DJ routes never render DJ UI.
  */
 let render: FakeRender, app: App, browser: Browser
-before(async () => { render = await startFakeRender(); app = await startNext(render, { NEXT_PUBLIC_FIRESTORE_DASHBOARD: 'true' }); browser = await launch() })
+before(async () => { render = await startFakeRender(); app = await startNext(render, { NEXT_PUBLIC_FIRESTORE_DASHBOARD: 'true' }); browser = await launchPortals(app) })
 after(async () => { await browser?.close(); await app?.stop(); await render?.close() })
 
 const fsGet = async (path: string) => (await (await fetch(`http://127.0.0.1:8080/v1/projects/demo-iomixo/databases/(default)/documents/${path}`, { headers: { authorization: 'Bearer owner' } })).json()) as any
@@ -78,23 +78,20 @@ test('D1. DJ (explicit accountType) and legacy owner (no field): full dashboard,
 })
 
 // ── Sposi ───────────────────────────────────────────────────────────────────
-test('S1. Sposi: sign-up with the choice (390px), only album UI, MIOLOVE brand, no Party / Regia DJ, DJ URLs bounced without a DJ flash', async () => {
+test('S1. Sposi on miolovealbum.com: sign-up WITHOUT any role choice (390px) saves accountType couple, only album UI, MIOLOVE brand, no Party / Regia DJ, DJ URLs bounced without a DJ flash', async () => {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const page = await ctx.newPage()
-  const email = `sposi${Date.now()}@example.com`
+  const email = `sposi${Date.now()}@example.com`; const M = portalUrl(app, 'miolovealbum.com')
   try {
-    await page.goto(`${app.url}/register`, { waitUntil: 'networkidle', timeout: 120_000 })
-    // the choice is mandatory and uses the approved copy
-    await page.getByText('Come vuoi usare la piattaforma?').first().waitFor({ timeout: 30_000 })
-    assert.ok(await page.getByText('Gestisci matrimoni ed eventi, richieste, giochi, schermo e regia.').isVisible())
-    assert.ok(await page.getByText('Crea il tuo album, raccogli le foto degli invitati e gestisci il tuo matrimonio.').isVisible())
-    assert.ok(await page.getByTestId('account-type-couple').getByText('Sposi', { exact: true }).isVisible())
-    assert.ok(!FORBIDDEN.test(await page.getByTestId('account-type-choice').innerText()))
+    await page.goto(`${M}/register`, { waitUntil: 'networkidle', timeout: 120_000 })
+    // the role comes from the DOMAIN: no choice exists in the UI, the page is MIOLOVE only
+    await page.locator(':visible', { hasText: /^Il tuo matrimonio, raccontato da chi lo vive\.$/ }).first().waitFor({ timeout: 30_000 })
+    for (const gone of ['account-type-choice', 'account-type-dj', 'account-type-couple']) assert.equal(await page.getByTestId(gone).count(), 0, gone)
+    assert.equal(await page.getByText('Come vuoi usare la piattaforma?').count(), 0)
+    assert.ok(await page.locator('[role="img"][aria-label="MIOLOVE ALBUM"]:visible').first().isVisible())
+    assert.doesNotMatch(await page.evaluate(() => document.body.innerText), /IOMIXO|Live Hub|Party|karaoke|Regia DJ|Remote Control|DJ Example/i, 'no IOMIXO / DJ element on the MIOLOVE register page')
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'no horizontal overflow at 390px')
     await page.locator('input[type="text"]').first().fill('Anna e Marco'); await page.locator('input[type="email"]').fill(email); await page.locator('input[type="password"]').fill('password123')
-    // no choice yet: refused client-side, nothing is created
     await page.locator('button[type="submit"]').click()
-    await page.getByText('Scegli come vuoi usare la piattaforma').first().waitFor({ timeout: 10_000 })
-    await page.getByTestId('account-type-couple').click(); await page.locator('button[type="submit"]').click()
     await page.getByTestId('register-continue').waitFor({ timeout: 60_000 })
     const u = await until(async () => { const l = (await fsGet('users')).documents ?? []; return l.find((d: any) => d.fields.email?.stringValue === email) }, 20_000, 'users doc')
     assert.equal(u.fields.accountType.stringValue, 'couple')
@@ -104,7 +101,7 @@ test('S1. Sposi: sign-up with the choice (390px), only album UI, MIOLOVE brand, 
     await watchForbidden(page, ['Regia DJ', 'Profilo DJ', 'Prossime date', 'Party Mode', 'Sessioni Live'])
     // direct DJ routes land on the album home
     for (const route of ['/dashboard', '/profile', '/events']) {
-      await page.goto(`${app.url}${route}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
+      await page.goto(`${M}${route}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
       await page.waitForURL(/\/sessions$/, { timeout: 60_000 })
     }
     // sidebar (mobile menu): albums / subscription / settings only, MIOLOVE brand
@@ -138,12 +135,12 @@ test('S1. Sposi: sign-up with the choice (390px), only album UI, MIOLOVE brand, 
     // a Party event can be seeded server-side only; the couple opening it never sees DJ UI
     const partyId = `cparty${Date.now()}`
     await seedSet(`events/${partyId}`, eventFields(uid, `cp${Date.now()}`, { type: 'party', title: 'Festa Segreta', legacySupabaseId: undefined }))
-    await page.goto(`${app.url}/sessions/${partyId}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
+    await page.goto(`${M}/sessions/${partyId}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
     await page.waitForURL(/\/sessions$/, { timeout: 60_000 })
     assert.equal(await page.getByText('Festa Segreta').count(), 0, 'party events are not listed for Sposi')
 
     // remote (and its slug) is bounced
-    await page.goto(`${app.url}/remote/${slug}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
+    await page.goto(`${M}/remote/${slug}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
     await page.waitForURL(/\/sessions$/, { timeout: 60_000 })
 
     // not a single DJ string was painted at any time of the whole journey
@@ -221,28 +218,4 @@ test('S4. a really legacy account (NO users document at all) is a DJ with the fu
     assert.equal(await page.locator('[data-role="dj"]').count() >= 0, true)
     assert.match(page.url(), /\/dashboard/)
   } finally { await ctx.close() }
-})
-
-test('A1. /login and /register: no legacy AI mashup copy or assets, DJ / MIOLOVE copy follows the account choice, no overflow at 390px and 1280px', async () => {
-  const LEGACY = /mashup|stem separation|demucs|BPM|key auto|producer|composer|studio-quality|free mashup|your studio/i
-  for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
-    const ctx = await browser.newContext({ viewport: vp }); const page = await ctx.newPage()
-    try {
-      for (const path of ['/login', '/register']) {
-        await page.goto(`${app.url}${path}`, { waitUntil: 'networkidle', timeout: 120_000 }); await page.waitForTimeout(800)
-        const html = await page.content()
-        assert.doesNotMatch(html, LEGACY, `${path} @${vp.width}: legacy copy in the DOM`)
-        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, `${path} @${vp.width}: horizontal overflow`)
-      }
-      await page.getByTestId('account-type-dj').click()
-      assert.ok(await page.getByText('Karaoke e modalità Party').first().count() > 0, 'DJ hero lists the Party / karaoke feature')
-      await page.locator(':visible', { hasText: /^Porta il tuo evento a un altro livello\.$/ }).first().waitFor({ timeout: 10_000 })
-      assert.equal(await page.locator('[role="img"][aria-label="MIOLOVE ALBUM"]').count(), 0, 'DJ choice keeps the IOMIXO brand')
-      await page.getByTestId('account-type-couple').click()
-      await page.locator(':visible', { hasText: /^Il tuo matrimonio, raccontato da chi lo vive\.$/ }).first().waitFor({ timeout: 10_000 })
-      await page.locator('[role="img"][aria-label="MIOLOVE ALBUM"]:visible').first().waitFor({ timeout: 10_000 })
-      assert.doesNotMatch(await page.content(), LEGACY)
-      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, `choice @${vp.width}: overflow`)
-    } finally { await ctx.close() }
-  }
 })
