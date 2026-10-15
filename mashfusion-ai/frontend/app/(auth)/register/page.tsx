@@ -6,6 +6,7 @@ import { Mail, Lock, User, Eye, EyeOff, ArrowRight, CheckCircle2, Send, Disc3, H
 import { signUp, resendVerification, authErrorMessage } from '@/lib/auth'
 import { Button } from '@/components/ui/Button'
 import { Logo } from '@/components/Logo'
+import { MioloveLogo } from '@/components/brand/MioloveLogo'
 import { useI18n } from '@/lib/i18n'
 import { COUPLE_HOME, type AccountType } from '@/lib/roles'
 import toast from 'react-hot-toast'
@@ -58,12 +59,18 @@ export default function RegisterPage() {
     }
   }
 
-  const perks = [
-    'AI stem separation (Demucs + MDX-Net)',
-    'BPM & key auto-detection',
-    'Professional mashup composer',
-    '1 free mashup included',
-  ]
+  const isCouple = accountType === 'couple'
+  const accent = isCouple ? 'text-wd-pink' : 'text-purple-400'
+  const headline = isCouple ? t('roles.authPage.coupleHeadline') : accountType === 'dj' ? t('roles.authPage.djHeadline') : null
+  const subline = isCouple ? t('roles.authPage.coupleSub') : accountType === 'dj' ? t('roles.authPage.djSub') : t('roles.authPage.neutralSub')
+  const perks = isCouple
+    ? [t('roles.billing.feat1'), t('roles.billing.feat2'), t('roles.billing.feat4')]
+    : accountType === 'dj'
+      ? [t('roles.authPage.djPerk1'), t('roles.authPage.djPerk2'), t('roles.authPage.djPerk3')]
+      : []
+  const brand = isCouple
+    ? <span className="inline-flex rounded-xl bg-white px-3 py-1.5"><MioloveLogo height={32} variant="onLight" /></span>
+    : (<><Logo variant="party" size={40} /><span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">Live Hub</span></span></>)
 
   return (
     <div className="min-h-screen bg-surface-400 flex items-center justify-center p-4">
@@ -115,33 +122,30 @@ export default function RegisterPage() {
           {/* Left – value prop */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="hidden md:block">
             <div className="flex items-center gap-2 mb-8">
-              <Logo variant="party" size={40} />
-              <span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">Live Hub</span></span>
+              {brand}
             </div>
-            <h1 className="text-4xl font-black text-white leading-tight mb-4">
-              Create <span className="text-gradient">professional</span> mashups with AI
-            </h1>
-            <p className="text-white/40 mb-8 leading-relaxed">
-              Join thousands of DJs and producers who are already using IOMIXO to create
-              studio-quality mashups in minutes.
-            </p>
-            <ul className="space-y-3">
-              {perks.map((p) => (
-                <li key={p} className="flex items-center gap-3 text-sm text-white/60">
-                  <CheckCircle2 className="h-4 w-4 text-purple-400 flex-shrink-0" />
-                  {p}
-                </li>
-              ))}
-            </ul>
+            {headline && <h1 className="text-3xl font-black text-white leading-tight mb-4">{headline}</h1>}
+            <p className="text-white/50 mb-8 leading-relaxed">{subline}</p>
+            {perks.length > 0 && (
+              <ul className="space-y-3">
+                {perks.map((p) => (
+                  <li key={p} className="flex items-center gap-3 text-sm text-white/60">
+                    <CheckCircle2 className={`h-4 w-4 flex-shrink-0 ${accent}`} />
+                    {p}
+                  </li>
+                ))}
+              </ul>
+            )}
           </motion.div>
 
           {/* Right – form */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="text-center mb-6 md:hidden">
+            <div className="text-center mb-6 pt-10 md:hidden">
               <Link href="/" className="inline-flex items-center gap-2">
-                <Logo variant="party" size={36} />
-                <span className="font-black text-white">IOMIXO</span>
+                {brand}
               </Link>
+              {headline && <p className="mx-auto mt-3 max-w-xs text-base font-bold leading-snug text-white">{headline}</p>}
+              <p className="mx-auto mt-1 max-w-xs text-sm leading-relaxed text-white/50">{subline}</p>
             </div>
 
             <div className="glass rounded-2xl p-8 space-y-5">
@@ -165,7 +169,7 @@ export default function RegisterPage() {
                           key={value} type="button" role="radio" aria-checked={selected}
                           data-testid={`account-type-${value}`}
                           onClick={() => setAccountType(value)}
-                          className={`flex w-full min-h-[64px] items-start gap-3 rounded-xl border p-3.5 text-left transition ${selected ? 'border-purple-400 bg-purple-500/15' : 'border-white/10 bg-white/5 hover:border-white/25'}`}
+                          className={`flex w-full min-h-[64px] items-start gap-3 rounded-xl border p-3.5 text-left transition ${selected ? (value === 'couple' ? 'border-wd-pink bg-wd-pink/15' : 'border-purple-400 bg-purple-500/15') : 'border-white/10 bg-white/5 hover:border-white/25'}`}
                         >
                           <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${selected ? 'text-purple-300' : 'text-white/40'}`} />
                           <span className="min-w-0">

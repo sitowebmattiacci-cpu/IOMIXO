@@ -859,6 +859,17 @@
     }
   },
   "roles": {
+    "authPage": {
+      "djHeadline": "Gestiona eventos, peticiones, juegos y dirección en vivo.",
+      "djSub": "Una única plataforma para controlar tu experiencia de evento.",
+      "djPerk1": "Peticiones musicales y dedicatorias en tiempo real",
+      "djPerk2": "Juegos, encuestas y pantalla en vivo",
+      "djPerk3": "Live Booth y álbum de fotos de los invitados",
+      "coupleHeadline": "Crea tu álbum y reúne las fotos de tus invitados.",
+      "coupleSub": "Gestiona tu boda con MIOLOVE ALBUM.",
+      "neutralSub": "Eventos, peticiones y fotos de los invitados en una sola plataforma.",
+      "loginSubtitle": "Inicia sesión para gestionar tus eventos y álbumes."
+    },
     "question": "¿Cómo quieres usar la plataforma?",
     "djTitle": "DJ / Profesional de eventos",
     "djDesc": "Gestiona bodas y eventos, peticiones, juegos, pantalla y control en vivo.",

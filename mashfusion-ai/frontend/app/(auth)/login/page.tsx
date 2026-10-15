@@ -7,10 +7,12 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { signIn, authErrorMessage } from '@/lib/auth'
 import { Button } from '@/components/ui/Button'
 import { Logo } from '@/components/Logo'
+import { useI18n } from '@/lib/i18n'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { t } = useI18n()
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
   const [showPw,   setShowPw]   = useState(false)
@@ -51,7 +53,7 @@ export default function LoginPage() {
             <span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">Live Hub</span></span>
           </Link>
           <h1 className="text-2xl font-bold text-white">Welcome back</h1>
-          <p className="mt-1 text-sm text-white/40">Sign in to your studio</p>
+          <p className="mt-1 text-sm text-white/40">{t('roles.authPage.loginSubtitle')}</p>
         </div>
 
         {/* Form */}

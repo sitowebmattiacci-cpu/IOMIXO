@@ -222,3 +222,26 @@ test('S4. a really legacy account (NO users document at all) is a DJ with the fu
     assert.match(page.url(), /\/dashboard/)
   } finally { await ctx.close() }
 })
+
+test('A1. /login and /register: no legacy AI mashup copy or assets, DJ / MIOLOVE copy follows the account choice, no overflow at 390px and 1280px', async () => {
+  const LEGACY = /mashup|stem separation|demucs|BPM|key auto|producer|composer|studio-quality|free mashup|your studio/i
+  for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
+    const ctx = await browser.newContext({ viewport: vp }); const page = await ctx.newPage()
+    try {
+      for (const path of ['/login', '/register']) {
+        await page.goto(`${app.url}${path}`, { waitUntil: 'networkidle', timeout: 120_000 }); await page.waitForTimeout(800)
+        const html = await page.content()
+        assert.doesNotMatch(html, LEGACY, `${path} @${vp.width}: legacy copy in the DOM`)
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, `${path} @${vp.width}: horizontal overflow`)
+      }
+      await page.getByTestId('account-type-dj').click()
+      await page.locator(':visible', { hasText: /^Gestisci eventi, richieste, giochi e regia live\.$/ }).first().waitFor({ timeout: 10_000 })
+      assert.equal(await page.locator('[role="img"][aria-label="MIOLOVE ALBUM"]').count(), 0, 'DJ choice keeps the IOMIXO brand')
+      await page.getByTestId('account-type-couple').click()
+      await page.locator(':visible', { hasText: /^Gestisci il tuo matrimonio con MIOLOVE ALBUM\.$/ }).first().waitFor({ timeout: 10_000 })
+      await page.locator('[role="img"][aria-label="MIOLOVE ALBUM"]:visible').first().waitFor({ timeout: 10_000 })
+      assert.doesNotMatch(await page.content(), LEGACY)
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, `choice @${vp.width}: overflow`)
+    } finally { await ctx.close() }
+  }
+})
