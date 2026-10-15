@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, CheckCircle2, Send, Disc3, Heart } from 'lucide-react'
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Send, Disc3, Heart, Music2, Mic, Gamepad2, Camera, Smartphone, QrCode, BookHeart, Presentation, type LucideIcon } from 'lucide-react'
 import { signUp, resendVerification, authErrorMessage } from '@/lib/auth'
 import { Button } from '@/components/ui/Button'
 import { Logo } from '@/components/Logo'
@@ -60,17 +60,89 @@ export default function RegisterPage() {
   }
 
   const isCouple = accountType === 'couple'
-  const accent = isCouple ? 'text-wd-pink' : 'text-purple-400'
-  const headline = isCouple ? t('roles.authPage.coupleHeadline') : accountType === 'dj' ? t('roles.authPage.djHeadline') : null
-  const subline = isCouple ? t('roles.authPage.coupleSub') : accountType === 'dj' ? t('roles.authPage.djSub') : t('roles.authPage.neutralSub')
-  const perks = isCouple
-    ? [t('roles.billing.feat1'), t('roles.billing.feat2'), t('roles.billing.feat4')]
-    : accountType === 'dj'
-      ? [t('roles.authPage.djPerk1'), t('roles.authPage.djPerk2'), t('roles.authPage.djPerk3')]
-      : []
-  const brand = isCouple
-    ? <span className="inline-flex rounded-xl bg-white px-3 py-1.5"><MioloveLogo height={32} variant="onLight" /></span>
-    : (<><Logo variant="party" size={40} /><span className="text-xl font-black text-white">IOMIXO <span className="text-purple-400">Live Hub</span></span></>)
+  const isDj = accountType === 'dj'
+  const subline = isCouple ? t('roles.authPage.coupleSub') : isDj ? t('roles.authPage.djSub') : t('roles.authPage.neutralSub')
+  const djPerks: { icon: LucideIcon; text: string }[] = [
+    { icon: Music2, text: t('roles.authPage.djPerk1') }, { icon: Mic, text: t('roles.authPage.djPerk2') }, { icon: Gamepad2, text: t('roles.authPage.djPerk3') },
+    { icon: Camera, text: t('roles.authPage.djPerk4') }, { icon: Smartphone, text: t('roles.authPage.djPerk5') },
+  ]
+  const couplePerks: { icon: LucideIcon; text: string }[] = [
+    { icon: Camera, text: t('roles.authPage.couplePerk1') }, { icon: QrCode, text: t('roles.authPage.couplePerk2') }, { icon: BookHeart, text: t('roles.authPage.couplePerk3') },
+    { icon: Presentation, text: t('roles.authPage.couplePerk4') }, { icon: Smartphone, text: t('roles.authPage.couplePerk5') },
+  ]
+  const djMark = (size: number, text: string) => (
+    <span className="inline-flex items-center gap-3">
+      <Logo variant="party" size={size} />
+      <span className={`${text} font-black tracking-tight text-white`}>IOMIXO <span className="text-[#FF2D8D]">Live Hub</span></span>
+    </span>
+  )
+  const grad = 'bg-gradient-to-r from-[#FF2D8D] via-[#FF6A3D] to-[#FFC93C] bg-clip-text text-transparent'
+
+  // Desktop hero (left column)
+  const desktopHero = isCouple ? (
+    <div className="rounded-3xl border border-wd-border bg-gradient-to-b from-white to-wd-active p-8 shadow-xl">
+      <MioloveLogo height={44} variant="onLight" />
+      <h1 className="mt-7 font-wedding text-4xl font-semibold leading-[1.1] text-wd-ink">{t('roles.authPage.coupleHeadline')}</h1>
+      <p className="mt-4 leading-relaxed text-wd-muted">{t('roles.authPage.coupleSub')}</p>
+      <ul className="mt-7 space-y-3">
+        {couplePerks.map(({ icon: Icon, text }) => (
+          <li key={text} className="flex items-center gap-3 text-[15px] text-wd-ink">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-wd-active text-wd-pink"><Icon className="h-4 w-4" /></span>
+            {text}
+          </li>
+        ))}
+      </ul>
+    </div>
+  ) : (
+    <div className="relative">
+      <div className="pointer-events-none absolute -left-16 -top-10 h-56 w-56 rounded-full bg-[#FF2D8D]/15 blur-3xl" aria-hidden />
+      <div className="pointer-events-none absolute -bottom-10 right-0 h-40 w-40 rounded-full bg-[#FFC93C]/10 blur-3xl" aria-hidden />
+      <div className="relative">
+        {djMark(52, 'text-2xl')}
+        {isDj ? (
+          <>
+            <h1 className="mt-8 text-5xl font-black leading-[1.05] text-white">
+              {t('roles.authPage.djHeadlineA')} <span className={grad}>{t('roles.authPage.djHeadlineB')}</span>
+            </h1>
+            <p className="mt-5 max-w-md leading-relaxed text-white/60">{t('roles.authPage.djSub')}</p>
+            <ul className="mt-8 space-y-2.5">
+              {djPerks.map(({ icon: Icon, text }) => (
+                <li key={text} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-sm text-white/80">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#FF2D8D]/15 text-[#FF2D8D]"><Icon className="h-4 w-4" /></span>
+                  {text}
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p className="mt-6 max-w-sm leading-relaxed text-white/50">{subline}</p>
+        )}
+      </div>
+    </div>
+  )
+
+  // Mobile hero: logo + short headline + 3 benefits, the form stays the priority
+  const mobilePerks = (isCouple ? couplePerks : djPerks).slice(0, 3)
+  const mobileHero = (
+    <div className="mb-6 pt-10 text-center md:hidden">
+      <Link href="/" className="inline-flex items-center justify-center">
+        {isCouple ? <span className="inline-flex rounded-xl bg-white px-3 py-1.5"><MioloveLogo height={30} variant="onLight" /></span> : djMark(36, 'text-lg')}
+      </Link>
+      {isCouple && <p className="mx-auto mt-3 max-w-xs font-wedding text-2xl font-semibold leading-tight text-white">{t('roles.authPage.coupleHeadline')}</p>}
+      {isDj && <p className="mx-auto mt-3 max-w-xs text-xl font-black leading-tight text-white">{t('roles.authPage.djHeadlineA')} <span className={grad}>{t('roles.authPage.djHeadlineB')}</span></p>}
+      {!isCouple && !isDj && <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-white/50">{subline}</p>}
+      {(isCouple || isDj) && (
+        <ul className="mx-auto mt-3 flex max-w-xs flex-col gap-1.5 text-left">
+          {mobilePerks.map(({ icon: Icon, text }) => (
+            <li key={text} className="flex items-center gap-2.5 text-[13px] text-white/70">
+              <Icon className={`h-4 w-4 shrink-0 ${isCouple ? 'text-wd-pink' : 'text-[#FF2D8D]'}`} />
+              {text}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-surface-400 flex items-center justify-center p-4">
@@ -121,32 +193,12 @@ export default function RegisterPage() {
         <div key="form" className="relative w-full max-w-4xl grid md:grid-cols-2 gap-8 items-center">
           {/* Left – value prop */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="hidden md:block">
-            <div className="flex items-center gap-2 mb-8">
-              {brand}
-            </div>
-            {headline && <h1 className="text-3xl font-black text-white leading-tight mb-4">{headline}</h1>}
-            <p className="text-white/50 mb-8 leading-relaxed">{subline}</p>
-            {perks.length > 0 && (
-              <ul className="space-y-3">
-                {perks.map((p) => (
-                  <li key={p} className="flex items-center gap-3 text-sm text-white/60">
-                    <CheckCircle2 className={`h-4 w-4 flex-shrink-0 ${accent}`} />
-                    {p}
-                  </li>
-                ))}
-              </ul>
-            )}
+            {desktopHero}
           </motion.div>
 
           {/* Right – form */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="text-center mb-6 pt-10 md:hidden">
-              <Link href="/" className="inline-flex items-center gap-2">
-                {brand}
-              </Link>
-              {headline && <p className="mx-auto mt-3 max-w-xs text-base font-bold leading-snug text-white">{headline}</p>}
-              <p className="mx-auto mt-1 max-w-xs text-sm leading-relaxed text-white/50">{subline}</p>
-            </div>
+            {mobileHero}
 
             <div className="glass rounded-2xl p-8 space-y-5">
               <div>
