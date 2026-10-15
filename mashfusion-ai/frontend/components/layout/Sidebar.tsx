@@ -16,6 +16,8 @@ import { useI18n } from '@/lib/i18n'
 import { useEffectiveAccess } from '@/lib/access'
 import toast from 'react-hot-toast'
 import { Logo } from '@/components/Logo'
+import { MioloveLogo } from '@/components/brand/MioloveLogo'
+import { useAccountRole } from '@/lib/roles'
 
 const NAV_ITEMS = [
   { href: '/dashboard', key: 'dashboard',     icon: LayoutDashboard, proOnly: false },
@@ -26,12 +28,21 @@ const NAV_ITEMS = [
   { href: '/settings',  key: 'settings',      icon: Settings,        proOnly: false },
 ] as const
 
+// Sposi: album tools only (the album itself opens on its Home tab).
+const COUPLE_NAV_ITEMS = [
+  { href: '/sessions', key: 'albums',       icon: LayoutDashboard, proOnly: false },
+  { href: '/billing',  key: 'subscription', icon: CreditCard,      proOnly: false },
+  { href: '/settings', key: 'settings',     icon: Settings,        proOnly: false },
+] as const
+
 const SIDEBAR_STORAGE_KEY = 'iomixo.sidebar.collapsed'
 
 export function Sidebar() {
   const pathname = usePathname()
   const router   = useRouter()
   const { t } = useI18n()
+  const { isCouple } = useAccountRole()
+  const NAV = isCouple ? COUPLE_NAV_ITEMS : NAV_ITEMS
 
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -52,7 +63,9 @@ export function Sidebar() {
     () => live.getSession(sessionId!),
     { revalidateOnFocus: false, dedupingInterval: 5_000 },
   )
-  const wedding = currentSession?.session_type === 'wedding'
+  const weddingPage = currentSession?.session_type === 'wedding'
+  // Sposi always get the light MIOLOVE look, even outside an album.
+  const wedding = weddingPage || isCouple
 
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
@@ -71,16 +84,17 @@ export function Sidebar() {
   }
 
   // Wedding sessions render their own full-screen layout (WeddingAdminShell).
-  if (wedding) return null
+  if (weddingPage) return null
 
   const mobileNav = (
     <div className="md:hidden">
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-[#2A2A33] bg-[#0A0A0D] px-3">
+      <header className={cn('sticky top-0 z-30 flex h-14 items-center justify-between border-b px-3', isCouple ? 'border-[#E8B7C8] bg-white' : 'border-[#2A2A33] bg-[#0A0A0D]')}>
         <div className="flex items-center gap-2.5 min-w-0">
+          {isCouple ? <MioloveLogo height={28} /> : (<>
           <Logo variant="party" size={28} className="shrink-0" />
           <p className="truncate text-sm font-bold text-white">
             {currentSession?.event_name ?? 'IOMIXO'}
-          </p>
+          </p></>)}
           {currentSession?.is_active && (
             <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#F4FF3A] px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-[#0A0A0D]"><span className="h-1 w-1 rounded-full bg-[#0A0A0D] animate-pulse" />Live</span>
           )}
@@ -89,7 +103,7 @@ export function Sidebar() {
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Menu"
           aria-expanded={mobileOpen}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#2A2A33] bg-[#15151B] text-white"
+          className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border', isCouple ? 'border-[#E8B7C8] bg-white text-[#2B2424]' : 'border-[#2A2A33] bg-[#15151B] text-white')}
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
@@ -97,9 +111,9 @@ export function Sidebar() {
       {mobileOpen && (
         <div className="fixed inset-x-0 bottom-0 top-14 z-40">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
-          <nav className="absolute inset-y-0 left-0 flex w-[300px] max-w-[88vw] flex-col overflow-y-auto border-r border-[#2A2A33] bg-[#0A0A0D] p-3" aria-label="Menu">
+          <nav className={cn('absolute inset-y-0 left-0 flex w-[300px] max-w-[88vw] flex-col overflow-y-auto border-r p-3', isCouple ? 'border-[#E8B7C8] bg-white' : 'border-[#2A2A33] bg-[#0A0A0D]')} aria-label="Menu">
             <div className="flex-1 space-y-1.5">
-              {NAV_ITEMS.map(({ href, key, icon: Icon, proOnly }) => {
+              {NAV.map(({ href, key, icon: Icon, proOnly }) => {
                 const active = pathname === href || (href !== '/dashboard' && pathname?.startsWith(href))
                 return (
                   <Link
@@ -107,11 +121,13 @@ export function Sidebar() {
                     href={href}
                     className={cn(
                       'flex min-h-[48px] items-center gap-3 rounded-xl px-4 text-sm font-semibold',
-                      active ? 'bg-[#FF2D8D] text-white' : 'text-[#9A9AA3] hover:bg-white/5 hover:text-white',
+                      isCouple
+                        ? (active ? 'bg-[#FBEAF0] text-[#8F1D2C]' : 'text-[#6F6260] hover:bg-[#FBEAF0]/60')
+                        : (active ? 'bg-[#FF2D8D] text-white' : 'text-[#9A9AA3] hover:bg-white/5 hover:text-white'),
                     )}
                   >
                     <Icon className="h-5 w-5 shrink-0" />
-                    <span className="flex-1">{t(`sidebar.${key}`)}</span>
+                    <span className="flex-1">{key === 'albums' ? t('roles.myAlbums') : t(`sidebar.${key}`)}</span>
                     {key === 'sessionsLive' && currentSession?.is_active && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-[#F4FF3A] px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-[#0A0A0D]">Live</span>
                     )}
@@ -120,17 +136,17 @@ export function Sidebar() {
                 )
               })}
             </div>
-            <div className="mt-4 border-t border-[#2A2A33] pt-3">
+            <div className={cn('mt-4 border-t pt-3', isCouple ? 'border-[#E8B7C8]' : 'border-[#2A2A33]')}>
               <div className="flex items-center gap-3 px-2 pb-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#FF2D8D]/15 text-sm font-semibold text-[#FF2D8D]">
                   {user?.avatar_url ? <Image src={user.avatar_url} alt="avatar" width={36} height={36} className="h-full w-full object-cover" /> : (user?.full_name?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? '?')}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-white">{user?.full_name ?? user?.email ?? '...'}</p>
-                  <p className="text-[11px] capitalize text-[#9A9AA3]">{effectiveLabel}</p>
+                  <p className={cn('truncate text-sm font-medium', isCouple ? 'text-[#2B2424]' : 'text-white')}>{user?.full_name ?? user?.email ?? '...'}</p>
+                  <p className={cn('text-[11px] capitalize', isCouple ? 'text-[#6F6260]' : 'text-[#9A9AA3]')}>{effectiveLabel}</p>
                 </div>
               </div>
-              <button onClick={handleLogout} className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-[#2A2A33] bg-[#15151B] text-sm font-semibold text-white">
+              <button onClick={handleLogout} className={cn('flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border text-sm font-semibold', isCouple ? 'border-[#E8B7C8] bg-white text-[#2B2424]' : 'border-[#2A2A33] bg-[#15151B] text-white')}>
                 <LogOut className="h-4 w-4" /> {t('sidebar.logout')}
               </button>
             </div>
@@ -157,13 +173,14 @@ export function Sidebar() {
         wedding ? 'border-b border-[#E8B7C8]' : 'border-b border-[#2A2A33]',
         collapsed ? 'px-3' : 'px-6',
       )}>
+        {isCouple ? (!collapsed && <MioloveLogo height={32} />) : (<>
         <Logo variant="party" size={36} className="shrink-0" />
         {!collapsed && (
           <div className="min-w-0">
             <p className={cn('text-sm font-bold tracking-tight', wedding ? 'text-[#2B2424]' : 'text-white')}>IOMIXO</p>
             <p className={cn('text-[10px] font-medium', wedding ? 'text-[#8F1D2C]' : 'text-[#FF2D8D]')}>Live Hub</p>
           </div>
-        )}
+        )}</>)}
         <button
           onClick={toggleCollapsed}
           className={cn(
@@ -182,10 +199,10 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className={cn('flex-1 py-5 space-y-1', collapsed ? 'px-2' : 'px-3')}>
-        {NAV_ITEMS.map(({ href, key, icon: Icon, proOnly }) => {
+        {NAV.map(({ href, key, icon: Icon, proOnly }) => {
           const active = pathname === href || (href !== '/dashboard' && pathname?.startsWith(href))
           const locked = proOnly && isFree
-          const label = t(`sidebar.${key}`)
+          const label = key === 'albums' ? t('roles.myAlbums') : t(`sidebar.${key}`)
           return (
             <Link key={href} href={href}>
               <motion.div

@@ -12,6 +12,7 @@ import { live, liveDedications, liveGames, livePhotos, type LiveRequestStatus } 
 import { eventIdForSlug } from '@/lib/events/photoService'
 import { resolveOwnerEvent } from '@/lib/events/ownerService'
 import { AuthGate } from '@/lib/auth/AuthProvider'
+import { DjOnly } from '@/components/auth/RoleGuard'
 import {
   RemoteShell, RemoteHeader, RemoteTab, RemoteCard, RemoteButton, RemoteStatus, RemoteEmpty, RemoteAccordion,
 } from '@/components/remote/RemoteUI'
@@ -96,8 +97,9 @@ const remoteApi = {
   },
 }
 
+// DJ-only: a Sposi account is redirected to its home before any remote UI (or data) is rendered.
 export default function RemoteControlPage() {
-  return <AuthGate><RemoteControl /></AuthGate>
+  return <AuthGate><DjOnly><RemoteControl /></DjOnly></AuthGate>
 }
 
 function RemoteControl() {

@@ -29,7 +29,7 @@ export function parseSetPollStatusInput(data: unknown): SetPollStatusInput {
 
 /** Polls exist only for Party / Wedding events (legacy isEventSession) and need the premium gate. */
 async function pollsGate(db: Firestore, request: CallerAuth, eventId: string, fn: string) {
-  const owner = await requireEventOwner(db, request, eventId)
+  const owner = await requireEventOwner(db, request, eventId, { djOnly: true })
   if (owner.data.type !== 'party' && owner.data.type !== 'wedding') throw fail('failed-precondition', 'Polls are for Party / Wedding events', 'polls_unavailable')
   await requireOwnerEventAccess(db, eventId, owner.data, fn)
   return owner

@@ -23,7 +23,7 @@ export interface ModerationResult { changed: boolean; status?: ModerationStatus;
 
 /** Music requests: approve / reject / reset to pending / delete. Idempotent. Deleting also frees one slot of the event counter. */
 export async function moderateRequest(db: Firestore, request: CallerAuth, input: ModerationInput): Promise<ModerationResult> {
-  const { ref: eventRef } = await requireEventOwner(db, request, input.eventId)
+  const { ref: eventRef } = await requireEventOwner(db, request, input.eventId, { djOnly: true })
   const reqRef = eventRef.collection('requests').doc(input.itemId)
   const counterRef = eventRef.collection('state').doc('requests')
   return db.runTransaction(async (tx) => {
@@ -45,7 +45,7 @@ export async function moderateRequest(db: Firestore, request: CallerAuth, input:
 
 /** Dedications: same actions. Changing the status needs the premium gate (like the legacy PATCH); deleting does not (like the legacy DELETE). */
 export async function moderateDedication(db: Firestore, request: CallerAuth, input: ModerationInput): Promise<ModerationResult> {
-  const { ref: eventRef, data } = await requireEventOwner(db, request, input.eventId)
+  const { ref: eventRef, data } = await requireEventOwner(db, request, input.eventId, { djOnly: true })
   if (input.action === 'set_status') await requireOwnerEventAccess(db, input.eventId, data, 'moderateDedication')
   const dedRef = eventRef.collection('dedications').doc(input.itemId)
   return db.runTransaction(async (tx) => {

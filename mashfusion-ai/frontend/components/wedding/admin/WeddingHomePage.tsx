@@ -44,9 +44,11 @@ interface Props {
   pendingRequests: number
   togglingActive: boolean
   onToggleActive: () => void
+  /** Sposi account: no DJ stats, no live screen preview, no DJ remote. */
+  couple?: boolean
 }
 
-export function WeddingHomePage({ session, pendingRequests, togglingActive, onToggleActive }: Props) {
+export function WeddingHomePage({ session, pendingRequests, togglingActive, onToggleActive, couple = false }: Props) {
   const { t } = useI18n()
   const sessionId: string = session.id
   const slug: string = session.public_slug
@@ -54,12 +56,13 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
   const [copied, setCopied] = useState(false)
   const [transparentQr, setTransparentQr] = useState(false)
 
-  const dedSignal = useDedicationsSignal(sessionId)
-  const { data: dedications, mutate: refreshDed } = useSWR(['dedications', sessionId], () => liveDedications.listForDj(sessionId), { refreshInterval: dedSignal.live ? 60_000 : 8_000 })
+  // DJ-only data (dedications, polls) is not even requested for a Sposi account.
+  const dedSignal = useDedicationsSignal(couple ? undefined : sessionId)
+  const { data: dedications, mutate: refreshDed } = useSWR(couple ? null : ['dedications', sessionId], () => liveDedications.listForDj(sessionId), { refreshInterval: dedSignal.live ? 60_000 : 8_000 })
   useEffect(() => { if (dedSignal.tick > 0) refreshDed() }, [dedSignal.tick, refreshDed])
   const { data: photos } = useSWR(['photos', sessionId], () => livePhotos.listForDj(sessionId), { refreshInterval: 8_000 })
-  const pollSignal = usePollsSignal(sessionId)
-  const { data: polls, mutate: refreshPolls } = useSWR(['polls', sessionId], () => livePolls.list(sessionId), { refreshInterval: pollSignal.live ? 60_000 : 8_000 })
+  const pollSignal = usePollsSignal(couple ? undefined : sessionId)
+  const { data: polls, mutate: refreshPolls } = useSWR(couple ? null : ['polls', sessionId], () => livePolls.list(sessionId), { refreshInterval: pollSignal.live ? 60_000 : 8_000 })
   useEffect(() => { if (pollSignal.tick > 0) refreshPolls() }, [pollSignal.tick, refreshPolls])
   const activeGames = (polls ?? []).filter((p: LivePoll) => p.is_active).length
 
@@ -102,7 +105,7 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-3 gap-4">
+      {!couple && <div className="grid grid-cols-3 gap-4">
         {[
           { v: pendingRequests, l: t('weddingPanels.statRequests') },
           { v: (dedications ?? []).length, l: t('weddingPanels.statDedications') },
@@ -113,7 +116,7 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
             <p className="mt-1.5 text-xs text-wd-muted">{s.l}</p>
           </div>
         ))}
-      </div>
+      </div>}
 
       <div className="flex flex-wrap items-stretch gap-3">
         <div className="min-w-0 flex-1 basis-[260px] truncate rounded-xl border border-wd-border bg-white px-4 py-3 font-mono text-[13px] text-wd-ink" title={url}>{url}</div>
@@ -153,7 +156,7 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
           </div>
         </div>
 
-        <div className="min-w-0 md:col-span-2 lg:col-span-1">
+        {!couple && <div className="min-w-0 md:col-span-2 lg:col-span-1">
           <h2 className="text-base font-bold text-wd-ink">{t('wdAdmin.home.screenPreview')}</h2>
           <p className="mt-1 mb-3 text-[13px] text-wd-muted">{t('wdAdmin.home.screenPreviewDesc')}</p>
           <div className="relative aspect-video overflow-hidden rounded-2xl border border-wd-border bg-wd-active">
@@ -176,17 +179,17 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
             </div>
           </div>
           {!session.screen_mode_enabled && <p className="mt-2 text-xs text-wd-muted">{t('wdAdmin.home.screenOff')}</p>}
-        </div>
+        </div>}
       </div>
 
-      <WdCard title={t('weddingPanels.djRemoteCtrl')} description={t('weddingPanels.qrRemoteHint')} className="!mt-8">
+      {!couple && <WdCard title={t('weddingPanels.djRemoteCtrl')} description={t('weddingPanels.qrRemoteHint')} className="!mt-8">
         <div className="flex items-center gap-5">
           <div className="shrink-0 rounded-xl border border-wd-border bg-white p-2">
             <QRCodeSVG value={`${publicOrigin()}/remote/${slug}`} size={88} level="M" includeMargin={false} />
           </div>
           <WdLinkButton href={`${publicOrigin()}/remote/${slug}`} size="sm" icon={<ExternalLink className="h-4 w-4" />}>{t('weddingPanels.open')}</WdLinkButton>
         </div>
-      </WdCard>
+      </WdCard>}
     </WdPage>
   )
 }

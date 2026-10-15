@@ -1,6 +1,7 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore'
 import { HttpsError } from 'firebase-functions/v2/https'
-import { idField, requireEventOwner, type CallerAuth } from './guard'
+import { idField, requireEventOwner, loadAccountType, type CallerAuth } from './guard'
+import { fail } from '../shared/guard'
 import { deleteObjects } from '../photos/storage'
 
 export const CONFIG_MAX_BYTES = 16_000
@@ -82,7 +83,12 @@ function checkWinnerPaths(eventId: string, legacyId: string | null, next: Record
 }
 
 export async function updateEventConfig(db: Firestore, request: CallerAuth, input: UpdateEventConfigInput): Promise<{ updated: string[] }> {
-  const { ref } = await requireEventOwner(db, request, input.eventId)
+  const { ref, uid } = await requireEventOwner(db, request, input.eventId)
+  // Screen Mode / winner announcement are live-control settings: DJ accounts only.
+  if ((input.screenConfig !== undefined || input.winnerAnnouncement !== undefined || input.screenModeEnabled !== undefined)
+    && (await loadAccountType(db, uid)) === 'couple') {
+    throw fail('permission-denied', 'DJ account required', 'dj_account_required')
+  }
   const stale: string[] = []
   const result = await db.runTransaction(async (tx) => {
     stale.length = 0

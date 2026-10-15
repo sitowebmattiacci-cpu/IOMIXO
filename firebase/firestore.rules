@@ -16,6 +16,14 @@ service cloud.firestore {
       return isAccount()
         && get(/databases/$(database)/documents/events/$(eventId)).data.ownerUid == request.auth.uid;
     }
+    // accountType 'couple' (Sposi) is a restricted role: no DJ live-control data. A missing users doc / field = legacy account = DJ (full access).
+    function isCouple() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('accountType', 'dj') == 'couple';
+    }
+    function isDjEventOwner(eventId) {
+      return isEventOwner(eventId) && !isCouple();
+    }
     function optStr(d, k, max) {
       return !(k in d) || d[k] == null || (d[k] is string && d[k].size() <= max);
     }
@@ -27,17 +35,18 @@ service cloud.firestore {
     // ── users/{uid}: account document ────────────────────────────────────────
     // avatarPath / avatarUrl are SERVER-ONLY (commitAvatar / removeAvatar callables): a client could otherwise point the public page at any URL.
     function validUserProfile(d) {
-      return optStr(d, 'displayName', 80);
+      return optStr(d, 'displayName', 80)
+        && (!('accountType' in d) || d.accountType in ['dj', 'couple']);
     }
 
     match /users/{uid} {
       allow get: if isOwner(uid);
       allow list: if false;
 
-      // The client may only create its own FREE, non-legacy document.
+      // The client may only create its own FREE, non-legacy document. accountType (chosen at sign-up) is optional here and IMMUTABLE afterwards.
       allow create: if isOwner(uid)
         && request.resource.data.keys().hasOnly(
-             ['uid', 'email', 'displayName', 'plan', 'createdAt', 'updatedAt'])
+             ['uid', 'email', 'displayName', 'accountType', 'plan', 'createdAt', 'updatedAt'])
         && request.resource.data.keys().hasAll(['uid', 'email', 'plan', 'createdAt', 'updatedAt'])
         && request.resource.data.uid == uid
         && request.resource.data.email == request.auth.token.email
@@ -151,7 +160,7 @@ service cloud.firestore {
 
       // Owner-only configuration that must never reach guests (e.g. game answers).
       match /private/{docId} {
-        allow get: if isEventOwner(eventId);
+        allow get: if isDjEventOwner(eventId);
         allow list, write: if false;
       }
 
@@ -160,9 +169,9 @@ service cloud.firestore {
       // Owner: reads all requests of the event. Guest: reads only the requests they sent
       // (queries must filter on guestUid == their uid).
       match /requests/{requestId} {
-        allow get:  if isEventOwner(eventId)
+        allow get:  if isDjEventOwner(eventId)
                     || (request.auth != null && resource.data.guestUid == request.auth.uid);
-        allow list: if isEventOwner(eventId)
+        allow list: if isDjEventOwner(eventId)
                     || (request.auth != null && resource.data.guestUid == request.auth.uid);
         allow write: if false;
       }
@@ -173,7 +182,7 @@ service cloud.firestore {
       // live page shows today) — queries must filter on status == 'approved'. Pending/rejected stay private.
       // dedicationGuests/{uid} (anti-spam) is server-only.
       match /dedications/{dedicationId} {
-        allow get, list: if isEventOwner(eventId)
+        allow get, list: if isDjEventOwner(eventId)
                          || (request.auth != null && resource.data.status == 'approved');
         allow write: if false;
       }

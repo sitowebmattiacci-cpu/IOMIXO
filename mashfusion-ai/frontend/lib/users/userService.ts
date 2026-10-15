@@ -1,7 +1,7 @@
 import { getFirebaseDb } from '../firebase/client'
 import { waitForAuthReady } from '../firebase/auth'
 import { createUser, getUser, updateUserProfile } from '../firebase/repositories/userRepository'
-import type { UserDoc, UserProfilePatch, PlanState } from '../firebase/models'
+import type { UserDoc, UserProfilePatch, PlanState, AccountType } from '../firebase/models'
 
 /**
  * Service layer for the signed-in account. UI calls this (or useUserProfile),
@@ -23,6 +23,14 @@ export async function getCurrentUserProfile(): Promise<UserDoc> {
   const created = await getUser(db, user.uid)
   if (!created) throw new Error('Profile creation failed')
   return created
+}
+
+/** Sign-up: writes the FREE profile with the chosen role (immutable afterwards, see firestore.rules). */
+export async function initAccountProfile(accountType: AccountType): Promise<void> {
+  const user = await currentAccount()
+  const db = getFirebaseDb()
+  if (await getUser(db, user.uid)) return
+  await createUser(db, { uid: user.uid, email: user.email ?? '', displayName: user.displayName, accountType })
 }
 
 export async function updateCurrentUserProfile(patch: UserProfilePatch): Promise<UserDoc> {

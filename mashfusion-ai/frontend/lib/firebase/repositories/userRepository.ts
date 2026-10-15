@@ -2,7 +2,7 @@ import {
   collection, doc, getDoc, getDocs, limit, setDoc, updateDoc, serverTimestamp, Timestamp, query,
   type Firestore, type DocumentData,
 } from 'firebase/firestore'
-import type { UserDoc, UserProfilePatch, PlanTier, EventPassDoc, SubscriptionDoc, PaymentDoc } from '../models'
+import type { UserDoc, UserProfilePatch, PlanTier, AccountType, EventPassDoc, SubscriptionDoc, PaymentDoc } from '../models'
 
 // Repository: the ONLY place that knows the users/{uid} path and field names.
 // Firestore instance is injected so it can be tested against the emulator.
@@ -14,6 +14,7 @@ function fromDoc(uid: string, d: DocumentData): UserDoc {
   const tier = tiers.includes(d.plan?.tier) ? d.plan.tier : 'free'
   return {
     uid,
+    ...(d.accountType === 'dj' || d.accountType === 'couple' ? { accountType: d.accountType as AccountType } : {}),
     email:       d.email ?? '',
     displayName: d.displayName ?? null,
     avatarUrl:   d.avatarUrl ?? null,
@@ -33,12 +34,13 @@ export async function getUser(db: Firestore, uid: string): Promise<UserDoc | nul
 /** Creates the FREE default document. Rules reject anything else from a client. */
 export async function createUser(
   db: Firestore,
-  input: { uid: string; email: string; displayName?: string | null },
+  input: { uid: string; email: string; displayName?: string | null; accountType?: AccountType },
 ): Promise<void> {
   await setDoc(doc(db, 'users', input.uid), {
     uid:   input.uid,
     email: input.email,
     ...(input.displayName ? { displayName: input.displayName } : {}),
+    ...(input.accountType ? { accountType: input.accountType } : {}),
     plan:  { tier: 'free', source: 'default' },
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),

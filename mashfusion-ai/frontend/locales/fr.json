@@ -853,5 +853,45 @@
       "privacy": "Confidentialité",
       "terms": "Conditions"
     }
+  },
+  "roles": {
+    "question": "Comment voulez-vous utiliser la plateforme ?",
+    "djTitle": "DJ / Professionnel de l’événementiel",
+    "djDesc": "Gérez mariages et événements, demandes, jeux, écran et régie.",
+    "coupleTitle": "Sposi",
+    "coupleDesc": "Créez votre album, collectez les photos des invités et gérez votre mariage.",
+    "required": "Choisissez comment utiliser la plateforme",
+    "myAlbums": "Mes albums",
+    "albumsTitle": "Vos albums",
+    "albumsSubtitle": "Créez et gérez votre album de mariage.",
+    "newAlbum": "Nouvel album",
+    "noAlbums": "Vous n’avez pas encore d’album.",
+    "createFirstAlbum": "Créez votre album",
+    "brand": "MIOLOVE ALBUM",
+    "weddingOnly": "Les comptes Sposi ne peuvent créer que des albums de mariage.",
+    "loadError": "Impossible de charger votre compte. Vérifiez votre connexion et réessayez.",
+    "retry": "Réessayer",
+    "billing": {
+      "subtitle": "Gérez votre offre MIOLOVE ALBUM.",
+      "eventPassSubtitle": "Accès complet à votre album de mariage pour un seul événement",
+      "feat1": "Album photo des invités",
+      "feat2": "Live Booth pour les invités",
+      "feat3": "Affiche QR à imprimer",
+      "feat4": "Lien et QR pour les invités",
+      "feat5": "Confidentialité de l'album",
+      "ideal1": "Le jour de votre mariage",
+      "ideal2": "Anniversaires et fêtes de famille",
+      "ideal3": "Essayer l'album sans abonnement",
+      "tipMsg": "Pour plusieurs albums, l'offre Advance mensuelle est plus avantageuse",
+      "allFeaturesAvailable": "Toutes les fonctions de l'album sont disponibles jusqu'à l'expiration",
+      "advTagline": "Pour votre album de mariage",
+      "free1": "1 album actif",
+      "free2": "QR code et lien pour les invités",
+      "free3": "Page d'album de base",
+      "adv1": "Album photo des invités avec modération",
+      "adv2": "Live Booth avec QR pour les invités",
+      "adv3": "Affiche QR à imprimer",
+      "adv4": "Plusieurs albums de mariage"
+    }
   }
 }

@@ -853,5 +853,45 @@
       "privacy": "Privacidad",
       "terms": "Términos"
     }
+  },
+  "roles": {
+    "question": "¿Cómo quieres usar la plataforma?",
+    "djTitle": "DJ / Profesional de eventos",
+    "djDesc": "Gestiona bodas y eventos, peticiones, juegos, pantalla y control en vivo.",
+    "coupleTitle": "Sposi",
+    "coupleDesc": "Crea tu álbum, recoge las fotos de los invitados y gestiona tu boda.",
+    "required": "Elige cómo quieres usar la plataforma",
+    "myAlbums": "Mis álbumes",
+    "albumsTitle": "Tus álbumes",
+    "albumsSubtitle": "Crea y gestiona tu álbum de boda.",
+    "newAlbum": "Nuevo álbum",
+    "noAlbums": "Todavía no tienes un álbum.",
+    "createFirstAlbum": "Crea tu álbum",
+    "brand": "MIOLOVE ALBUM",
+    "weddingOnly": "Las cuentas Sposi solo pueden crear álbumes de boda.",
+    "loadError": "No podemos cargar tu cuenta. Revisa tu conexión e inténtalo de nuevo.",
+    "retry": "Reintentar",
+    "billing": {
+      "subtitle": "Gestiona tu plan MIOLOVE ALBUM.",
+      "eventPassSubtitle": "Acceso completo a tu álbum de boda para un solo evento",
+      "feat1": "Álbum de fotos de los invitados",
+      "feat2": "Live Booth para los invitados",
+      "feat3": "Póster con QR para imprimir",
+      "feat4": "Enlace y QR para los invitados",
+      "feat5": "Privacidad del álbum",
+      "ideal1": "El día de tu boda",
+      "ideal2": "Aniversarios y fiestas familiares",
+      "ideal3": "Probar el álbum sin suscripción",
+      "tipMsg": "Para varios álbumes el plan Advance mensual es más conveniente",
+      "allFeaturesAvailable": "Todas las funciones del álbum están disponibles hasta la caducidad",
+      "advTagline": "Para tu álbum de boda",
+      "free1": "1 álbum activo",
+      "free2": "Código QR y enlace para los invitados",
+      "free3": "Página de álbum básica",
+      "adv1": "Álbum de fotos de los invitados con moderación",
+      "adv2": "Live Booth con QR para los invitados",
+      "adv3": "Póster con QR para imprimir",
+      "adv4": "Varios álbumes de boda"
+    }
   }
 }

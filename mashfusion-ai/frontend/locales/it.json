@@ -1011,5 +1011,45 @@
       "namesTitle": "Nomi degli sposi sullo schermo",
       "namesDesc": "Il nome si modifica in Impostazioni; qui scegli carattere e dimensione."
     }
+  },
+  "roles": {
+    "question": "Come vuoi usare la piattaforma?",
+    "djTitle": "DJ / Professionista eventi",
+    "djDesc": "Gestisci matrimoni ed eventi, richieste, giochi, schermo e regia.",
+    "coupleTitle": "Sposi",
+    "coupleDesc": "Crea il tuo album, raccogli le foto degli invitati e gestisci il tuo matrimonio.",
+    "required": "Scegli come vuoi usare la piattaforma",
+    "myAlbums": "I miei album",
+    "albumsTitle": "I tuoi album",
+    "albumsSubtitle": "Crea e gestisci il tuo album matrimonio.",
+    "newAlbum": "Nuovo album",
+    "noAlbums": "Non hai ancora un album.",
+    "createFirstAlbum": "Crea il tuo album",
+    "brand": "MIOLOVE ALBUM",
+    "weddingOnly": "Gli Sposi possono creare solo album matrimonio.",
+    "loadError": "Non riusciamo a caricare il tuo account. Controlla la connessione e riprova.",
+    "retry": "Riprova",
+    "billing": {
+      "subtitle": "Gestisci il tuo piano MIOLOVE ALBUM.",
+      "eventPassSubtitle": "Accesso completo al tuo album matrimonio per un singolo evento",
+      "feat1": "Album foto degli invitati",
+      "feat2": "Live Booth per gli invitati",
+      "feat3": "Poster con QR da stampare",
+      "feat4": "Link e QR per gli invitati",
+      "feat5": "Privacy dell'album",
+      "ideal1": "Il giorno del tuo matrimonio",
+      "ideal2": "Anniversari e feste di famiglia",
+      "ideal3": "Provare l'album senza abbonamento",
+      "tipMsg": "Per più album il piano Advance mensile è più conveniente",
+      "allFeaturesAvailable": "Tutte le funzioni dell'album sono disponibili fino alla scadenza",
+      "advTagline": "Per il tuo album matrimonio",
+      "free1": "1 album attivo",
+      "free2": "QR Code e link per gli invitati",
+      "free3": "Pagina album base",
+      "adv1": "Album foto degli invitati con moderazione",
+      "adv2": "Live Booth con QR per gli invitati",
+      "adv3": "Poster con QR da stampare",
+      "adv4": "Più album matrimonio"
+    }
   }
 }

@@ -10,6 +10,7 @@ import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { useState } from 'react'
 import { useI18n } from '@/lib/i18n'
+import { useAccountRole } from '@/lib/roles'
 import { normalisePlan as normalisePlanShared } from '@/lib/plan'
 import {
   currencyForLocale, formatPrice, planPriceId, eventPassPriceId,
@@ -35,6 +36,9 @@ function normalisePlan(p: string | undefined): Plan {
 
 export default function BillingPage() {
   const { t, locale } = useI18n()
+  const { isCouple } = useAccountRole()
+  // Sposi: wedding-album wording where one exists, the common text otherwise.
+  const tb = (k: string) => (isCouple ? t(`roles.billing.${k}`, t(`billing.${k}`)) : t(`billing.${k}`))
   const currency = currencyForLocale(locale)
   const { data: me, isLoading: loadingMe } = useSWR<User>('me', () => auth.me())
   const { data: subscription } = useSWR('subscription', () => billing.getSubscription())
@@ -117,7 +121,7 @@ export default function BillingPage() {
     <div className="flex-1 overflow-y-auto px-6 py-8 max-w-5xl mx-auto w-full">
       <div className="mb-8">
         <h1 className="text-2xl font-black text-white">{t('billing.title')}</h1>
-        <p className="text-sm text-white/40 mt-1">{t('billing.subtitle')}</p>
+        <p className="text-sm text-white/40 mt-1">{tb('subtitle')}</p>
       </div>
 
       {/* Current plan */}
@@ -179,7 +183,7 @@ export default function BillingPage() {
           <div className="mb-4">
             <h2 className="font-bold text-white">{t('billing.eventPassTitle')}</h2>
             <p className="text-sm text-white/40 mt-1">
-              {t('billing.eventPassSubtitle')}
+              {tb('eventPassSubtitle')}
             </p>
           </div>
 
@@ -213,23 +217,23 @@ export default function BillingPage() {
                 <ul className="space-y-2 mb-6">
                   <li className="flex items-start gap-2 text-sm text-white/80">
                     <CheckCircle2 className="h-4 w-4 text-pink-400 flex-shrink-0 mt-0.5" />
-                    <span>{t('billing.feat1')}</span>
+                    <span>{tb('feat1')}</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm text-white/80">
                     <CheckCircle2 className="h-4 w-4 text-pink-400 flex-shrink-0 mt-0.5" />
-                    <span>{t('billing.feat2')}</span>
+                    <span>{tb('feat2')}</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm text-white/80">
                     <CheckCircle2 className="h-4 w-4 text-pink-400 flex-shrink-0 mt-0.5" />
-                    <span>{t('billing.feat3')}</span>
+                    <span>{tb('feat3')}</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm text-white/80">
                     <CheckCircle2 className="h-4 w-4 text-pink-400 flex-shrink-0 mt-0.5" />
-                    <span>{t('billing.feat4')}</span>
+                    <span>{tb('feat4')}</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm text-white/80">
                     <CheckCircle2 className="h-4 w-4 text-pink-400 flex-shrink-0 mt-0.5" />
-                    <span>{t('billing.feat5')}</span>
+                    <span>{tb('feat5')}</span>
                   </li>
                 </ul>
 
@@ -276,7 +280,7 @@ export default function BillingPage() {
 
                   <div className="pt-3 border-t border-pink-500/20">
                     <p className="text-xs text-white/40 italic">
-                      {t('billing.allFeaturesAvailable')}
+                      {tb('allFeaturesAvailable')}
                     </p>
                   </div>
                 </div>
@@ -290,21 +294,21 @@ export default function BillingPage() {
                   <ul className="space-y-3 text-sm text-white/70">
                     <li className="flex items-start gap-2">
                       <span className="text-pink-400">•</span>
-                      <span>{t('billing.ideal1')}</span>
+                      <span>{tb('ideal1')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-pink-400">•</span>
-                      <span>{t('billing.ideal2')}</span>
+                      <span>{tb('ideal2')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-pink-400">•</span>
-                      <span>{t('billing.ideal3')}</span>
+                      <span>{tb('ideal3')}</span>
                     </li>
                   </ul>
 
                   <div className="mt-5 pt-4 border-t border-pink-500/20">
                     <p className="text-xs text-white/50">
-                      💡 <span className="font-medium">{t('billing.tip')}:</span> {t('billing.tipMsg')}
+                      💡 <span className="font-medium">{t('billing.tip')}:</span> {tb('tipMsg')}
                     </p>
                   </div>
                 </div>
@@ -315,9 +319,13 @@ export default function BillingPage() {
       )}
 
       {/* Plan cards */}
-      <div className="grid md:grid-cols-3 gap-4 mb-10">
-        {(Object.keys(PLAN_METADATA) as Plan[]).map((plan) => {
-          const meta       = PLAN_METADATA[plan]
+      <div className={`grid gap-4 mb-10 ${isCouple ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
+        {(Object.keys(PLAN_METADATA) as Plan[]).filter((p) => !isCouple || p !== 'pro').map((plan) => {
+          const base       = PLAN_METADATA[plan]
+          // Sposi see album-oriented plan copy (the DJ-oriented Pro plan is not offered).
+          const meta       = !isCouple ? base : plan === 'wedding'
+            ? { ...base, tagline: t('roles.billing.advTagline'), features: ['adv1', 'adv2', 'adv3', 'adv4'].map((k) => t(`roles.billing.${k}`)) }
+            : { ...base, features: ['free1', 'free2', 'free3'].map((k) => t(`roles.billing.${k}`)) }
           const isCurrent  = plan === currentPlan
           const canUpgrade = !isCurrent && plan !== 'free'
 

@@ -25,11 +25,26 @@ export function requireAccount(request: CallerAuth): string {
   return uid
 }
 
+export type AccountType = 'dj' | 'couple'
+
+/** users/{uid}.accountType. A missing document / field is a LEGACY account created before roles existed: it stays 'dj' (full access). */
+export async function loadAccountType(db: Firestore, uid: string): Promise<AccountType> {
+  const snap = await db.collection('users').doc(uid).get()
+  return snap.exists && snap.data()!.accountType === 'couple' ? 'couple' : 'dj'
+}
+
+/** DJ-only operations (live control: requests, dedications, polls, games, screen). A couple account is refused. */
+export async function requireDjAccount(db: Firestore, request: CallerAuth): Promise<string> {
+  const uid = requireAccount(request)
+  if ((await loadAccountType(db, uid)) === 'couple') throw fail('permission-denied', 'DJ account required', 'dj_account_required')
+  return uid
+}
+
 /** Soft-deleted events (events/{id}.deletedAt) behave as missing for every owner operation, except an explicit restore. */
 export async function requireEventOwner(
-  db: Firestore, request: CallerAuth, eventId: string, opts: { allowDeleted?: boolean } = {},
+  db: Firestore, request: CallerAuth, eventId: string, opts: { allowDeleted?: boolean; djOnly?: boolean } = {},
 ): Promise<{ uid: string; ref: DocumentReference; data: DocumentData }> {
-  const uid = requireAccount(request)
+  const uid = opts.djOnly ? await requireDjAccount(db, request) : requireAccount(request)
   const ref = db.collection('events').doc(eventId)
   const snap = await ref.get()
   // Same answer for "missing", "deleted" and "not yours": do not reveal which event ids exist.

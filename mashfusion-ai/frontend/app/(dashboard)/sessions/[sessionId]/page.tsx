@@ -46,6 +46,7 @@ import {
 } from '@/components/party/PartyUI'
 import { useI18n } from '@/lib/i18n'
 import { useEffectiveAccess, isPremiumSession } from '@/lib/access'
+import { useAccountRole, isCoupleWeddingTab, COUPLE_HOME } from '@/lib/roles'
 import { resolveVideoSource, formatRelativeTime } from '@/lib/utils'
 import type { VideoLiveCommand } from '@/lib/api'
 
@@ -289,12 +290,17 @@ export default function SessionDetailPage() {
     { refreshInterval: 5_000 },
   )
   const { hasAdvanceAccess, isFree } = useEffectiveAccess()
+  const { ready: roleReady, isCouple } = useAccountRole()
+  // Sposi never reach Party / standard sessions: replaced before any DJ UI is rendered.
+  const coupleBlocked = isCouple && !!session && session.session_type !== 'wedding'
+  useEffect(() => { if (coupleBlocked) router.replace(COUPLE_HOME) }, [coupleBlocked, router])
   // Realtime change signal from Firestore for THIS event only. Supabase is still authoritative,
   // so a change triggers a re-fetch of the legacy list instead of rendering Firestore data.
   // While the signal is live the 5s polling drops to a 60s safety net (covers a missed projection).
-  const requestsSignal = useRequestsSignal(sessionId)
+  // DJ live control data (requests) is never read for a Sposi account: Firestore rules refuse it too.
+  const requestsSignal = useRequestsSignal(isCouple ? undefined : sessionId)
   const { data: requests, mutate: refreshRequests } = useSWR(
-    sessionId ? ['requests', sessionId] : null,
+    sessionId && !isCouple ? ['requests', sessionId] : null,
     () => live.listRequests(sessionId!),
     { refreshInterval: requestsSignal.live ? 60_000 : 5_000 },
   )
@@ -302,7 +308,7 @@ export default function SessionDetailPage() {
 
   const [busyId, setBusyId] = useState<string | null>(null)
   const [togglingActive, setTogglingActive] = useState(false)
-  const [tab, setTab] = useState<WeddingNavKey>('home')
+  const [rawTab, setTab] = useState<WeddingNavKey>('home')
 
   if (sessionErr) {
     return (
@@ -314,7 +320,7 @@ export default function SessionDetailPage() {
       </div>
     )
   }
-  if (!session) return <div className="flex-1 p-8 text-white/50">{t('common.loading')}</div>
+  if (!session || !roleReady || coupleBlocked) return <div className="flex-1 p-8 text-white/50">{t('common.loading')}</div>
 
   // Sessione premium (Party/Wedding) senza accesso valido → schermata di blocco.
   // La sessione resta salvata e visibile in lista, ma non apre la regia interna
@@ -438,10 +444,12 @@ export default function SessionDetailPage() {
   }
 
   // ── Wedding — dedicated light platform layout ──────────────────
+  // A Sposi account can only ever land on its own sections, whatever `tab` holds.
+  const tab = isCouple && !isCoupleWeddingTab(rawTab) ? 'home' : rawTab
   const dashSection = (
     <>
       {tab === 'home' && (
-        <WeddingHomePage session={session} pendingRequests={pending.length} togglingActive={togglingActive} onToggleActive={toggleActive} />
+        <WeddingHomePage session={session} pendingRequests={pending.length} togglingActive={togglingActive} onToggleActive={toggleActive} couple={isCouple} />
       )}
       {tab === 'photos' && <WeddingPhotosPage session={session} />}
       {tab === 'requests' && (
@@ -464,7 +472,7 @@ export default function SessionDetailPage() {
           <GamesPanel sessionId={session.id} session={session} />
         </WdPage>
       )}
-      {tab === 'privacy' && <GuestVisibilityPanel sessionId={session.id} session={session} sessionType="wedding" hasAccess={hasAdvanceAccess} />}
+      {tab === 'privacy' && <GuestVisibilityPanel sessionId={session.id} session={session} sessionType="wedding" hasAccess={hasAdvanceAccess} couple={isCouple} />}
       {tab === 'poster' && <WeddingPosterPage session={session} />}
       {tab === 'booth' && <WeddingPhotosPage session={session} initialSource="booth" />}
       {(tab === 'settings' || tab === 'screen') && (
@@ -479,6 +487,7 @@ export default function SessionDetailPage() {
       active={tab}
       onSelect={setTab}
       badges={{ requests: pending.length }}
+      couple={isCouple}
     >
       {dashSection}
     </WeddingAdminShell>
@@ -993,8 +1002,8 @@ function ScreenControlsPanel({ sessionId, session }: { sessionId: string; sessio
 // (QR Code). Independent from screen_config (TV view). Gated behind premium
 // access (Advance plan OR active Event Pass 24H).
 function GuestVisibilityPanel({
-  sessionId, session, sessionType, hasAccess,
-}: { sessionId: string; session: any; sessionType: 'wedding' | 'party'; hasAccess: boolean }) {
+  sessionId, session, sessionType, hasAccess, couple = false,
+}: { sessionId: string; session: any; sessionType: 'wedding' | 'party'; hasAccess: boolean; couple?: boolean }) {
   const { t } = useI18n()
   const [saving, setSaving] = useState(false)
   const cfg: Record<string, boolean | undefined> = session?.guest_config ?? {}
@@ -1029,7 +1038,8 @@ function GuestVisibilityPanel({
     { key: 'music_battle', icon: <ListChecks className="h-4 w-4" />, label: t('guestVisibility.musicBattle') },
     { key: 'roulette',     icon: <Sparkles className="h-4 w-4" />,   label: t('guestVisibility.roulette') },
   ]
-  const items = sessionType === 'wedding' ? weddingItems : partyItems
+  // Sposi only manage the photo entry point; request / dedication / game visibility belongs to the DJ.
+  const items = sessionType === 'wedding' ? (couple ? weddingItems.filter((i) => i.key === 'live_booth') : weddingItems) : partyItems
 
   // ── Party theme ──────────────────────────────────────────────
   if (sessionType === 'party') {

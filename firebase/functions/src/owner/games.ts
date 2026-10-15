@@ -77,7 +77,7 @@ const millis = (d: QueryDocumentSnapshot) => (d.data().createdAt instanceof Time
 
 /** Games exist only for Party / Wedding events and need the premium gate (legacy ownedEventSession + hasEventAccess). */
 async function gate(db: Firestore, request: CallerAuth, eventId: string, fn: string) {
-  const owner = await requireEventOwner(db, request, eventId)
+  const owner = await requireEventOwner(db, request, eventId, { djOnly: true })
   if (owner.data.type !== 'party' && owner.data.type !== 'wedding') throw fail('failed-precondition', 'Games are for Party / Wedding events', 'games_unavailable')
   await requireOwnerEventAccess(db, eventId, owner.data, fn)
   return owner
@@ -180,7 +180,7 @@ export function parseGameConfigInput(data: unknown): GameConfigInput {
 
 /** null (or an empty list) = back to the defaults: the field is removed. Same semantics as the legacy `roulette_penitenze: null` reset. */
 export async function setGameConfig(db: Firestore, request: CallerAuth, input: GameConfigInput): Promise<{ updated: string[] }> {
-  const { ref } = await requireEventOwner(db, request, input.eventId)
+  const { ref } = await requireEventOwner(db, request, input.eventId, { djOnly: true })
   const patch: Record<string, unknown> = {}
   const put = (key: string, v: unknown[] | null | undefined) => { if (v !== undefined) patch[key] = v && v.length ? v : FieldValue.delete() }
   put('roulettePenitenze', input.roulettePenitenze); put('shoeGameQuestions', input.shoeGameQuestions)

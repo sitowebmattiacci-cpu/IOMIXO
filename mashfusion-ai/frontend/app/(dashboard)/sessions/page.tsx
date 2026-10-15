@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/Badge'
 import { formatRelativeTime } from '@/lib/utils'
 import { useI18n } from '@/lib/i18n'
 import { useEffectiveAccess, isPremiumSession } from '@/lib/access'
+import { useAccountRole } from '@/lib/roles'
 
 type SessionType = 'standard' | 'party' | 'wedding'
 
@@ -33,7 +34,10 @@ type CreateStep = 'idle' | 'choose' | 'form'
 
 export default function LiveSessionsPage() {
   const { t } = useI18n()
-  const { data: sessions } = useSWR('live-sessions', () => live.listSessions())
+  const { isCouple } = useAccountRole()
+  const { data: allSessions } = useSWR('live-sessions', () => live.listSessions())
+  // Sposi only ever see (and create) wedding albums.
+  const sessions = isCouple ? allSessions?.filter((s) => s.session_type === 'wedding') : allSessions
   const [step, setStep] = useState<CreateStep>('idle')
   const [form, setForm] = useState(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
@@ -43,6 +47,11 @@ export default function LiveSessionsPage() {
 
   const startCreate = () => {
     setForm(EMPTY_FORM)
+    if (isCouple) {
+      setForm({ ...EMPTY_FORM, session_type: 'wedding' })
+      setStep('form')
+      return
+    }
     // Advance users get the experience picker; everyone else jumps straight
     // to the standard session form.
     if (isAdvance) {
@@ -66,6 +75,7 @@ export default function LiveSessionsPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.event_name.trim()) return
+    if (isCouple && form.session_type !== 'wedding') return
     if ((form.session_type === 'wedding' || form.session_type === 'party') && !isAdvance) {
       toast.error(t('common.weddingPaywall'))
       return
@@ -104,12 +114,12 @@ export default function LiveSessionsPage() {
     <div className="flex-1 overflow-y-auto px-6 py-8 max-w-4xl mx-auto w-full">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white">{t('sessions.title')}</h1>
-          <p className="text-sm text-white/40 mt-1">{t('sessions.subtitle')}</p>
+          <h1 className="text-2xl font-black text-white">{isCouple ? t('roles.albumsTitle') : t('sessions.title')}</h1>
+          <p className="text-sm text-white/40 mt-1">{isCouple ? t('roles.albumsSubtitle') : t('sessions.subtitle')}</p>
         </div>
         {step === 'idle' && (
-          <Button icon={<Plus className="h-4 w-4" />} onClick={startCreate}>
-            {t('sessions.new')}
+          <Button icon={<Plus className="h-4 w-4" />} onClick={startCreate} data-testid="new-session">
+            {isCouple ? t('roles.newAlbum') : t('sessions.new')}
           </Button>
         )}
       </div>
@@ -167,7 +177,7 @@ export default function LiveSessionsPage() {
         <Card className="mb-6">
           <form onSubmit={submit} className="space-y-4">
             {/* Selected type badge */}
-            <div className="flex items-center gap-2 text-xs text-white/60">
+            {!isCouple && <div className="flex items-center gap-2 text-xs text-white/60">
               <span>{t('sessions.type')}:</span>
               {isWeddingForm && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-pink-500/15 text-pink-200 px-2.5 py-0.5">
@@ -184,7 +194,7 @@ export default function LiveSessionsPage() {
                   <Radio className="h-3 w-3" /> {t('sessions.typeStandard')}
                 </span>
               )}
-              {isAdvance && (
+              {isAdvance && !isCouple && (
                 <button
                   type="button"
                   onClick={() => setStep('choose')}
@@ -193,7 +203,7 @@ export default function LiveSessionsPage() {
                   {t('common.back')}
                 </button>
               )}
-            </div>
+            </div>}
 
             <div>
               <label className="text-xs text-white/60">{t('sessions.eventName')}</label>
@@ -204,6 +214,7 @@ export default function LiveSessionsPage() {
                 required
               />
             </div>
+            {!isCouple && (
             <div>
               <label className="text-xs text-white/60">{t('sessions.djName')}</label>
               <input
@@ -212,6 +223,7 @@ export default function LiveSessionsPage() {
                 className="w-full mt-1 rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-400"
               />
             </div>
+            )}
             <div>
               <label className="text-xs text-white/60">{t('sessions.description')}</label>
               <textarea
@@ -297,9 +309,9 @@ export default function LiveSessionsPage() {
         step === 'idle' && (
           <Card className="text-center py-12">
             <Radio className="h-10 w-10 text-white/20 mx-auto mb-4" />
-            <p className="text-white/60 mb-4">{t('sessions.noneYet')}</p>
+            <p className="text-white/60 mb-4">{isCouple ? t('roles.noAlbums') : t('sessions.noneYet')}</p>
             <Button icon={<Plus className="h-4 w-4" />} onClick={startCreate}>
-              {t('sessions.createFirst')}
+              {isCouple ? t('roles.createFirstAlbum') : t('sessions.createFirst')}
             </Button>
           </Card>
         )

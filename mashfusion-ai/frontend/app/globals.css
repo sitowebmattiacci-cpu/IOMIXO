@@ -575,3 +575,59 @@ body.iomixo-dragging .clip-block {
   .wd-poster-print, .wd-poster-print * { visibility: visible !important; }
   .wd-poster-print { position: fixed !important; left: 50%; top: 50%; transform: translate(-50%, -50%); box-shadow: none !important; width: 70vw; max-width: none; }
 }
+
+/* ── Sposi (accountType couple) theme: restyles the shared dashboard pages (sessions / billing / settings) to MIOLOVE ALBUM.
+   Used together with .wedding-admin (palette variables); DJ pages never get this class. ── */
+.couple-theme { background:#FFF7FA; color:var(--wd-ink); }
+.couple-theme .bg-surface-400 { background-color:#FFF7FA; }
+.couple-theme .glass { background:#fff; border:1px solid var(--wd-border); box-shadow:none; backdrop-filter:none; }
+.couple-theme .glass-hover:hover { background:var(--wd-active); }
+.couple-theme .text-white,
+.couple-theme .text-white\/90,
+.couple-theme .text-white\/80,
+.couple-theme .text-white\/70 { color:var(--wd-ink); }
+.couple-theme .text-white\/60,
+.couple-theme .text-white\/50,
+.couple-theme .text-white\/40,
+.couple-theme .text-white\/30,
+.couple-theme .text-white\/25,
+.couple-theme .text-white\/20 { color:var(--wd-muted); }
+.couple-theme .bg-white\/5,
+.couple-theme .bg-white\/3,
+.couple-theme .bg-\[\#15151B\],
+.couple-theme .bg-black\/20,
+.couple-theme .bg-black\/50 { background-color:#fff; }
+.couple-theme .hover\:bg-white\/5:hover { background-color:var(--wd-active); }
+.couple-theme .border-white\/10,
+.couple-theme .border-white\/6,
+.couple-theme .border-\[\#2A2A33\] { border-color:var(--wd-border); }
+.couple-theme .bg-\[\#2A2A33\] { background-color:var(--wd-border); }
+.couple-theme [class*="text-purple-"],
+.couple-theme [class*="text-pink-"],
+.couple-theme .text-\[\#FF2D8D\] { color:var(--wd-pink-hover); }
+.couple-theme [class*="bg-purple-"],
+.couple-theme [class*="bg-pink-"] { background-color:var(--wd-active); }
+.couple-theme [class*="border-purple-"],
+.couple-theme [class*="border-pink-"],
+.couple-theme .border-\[\#FF2D8D\] { border-color:var(--wd-border); }
+.couple-theme .bg-\[\#FF2D8D\] { background-color:var(--wd-pink); color:#fff; }
+.couple-theme .bg-\[\#E9207C\] { background-color:var(--wd-pink-hover); }
+.couple-theme [class*="from-\[\#FF2D8D\]"],
+.couple-theme [class*="bg-gradient-to-"] { background-image:none; }
+.couple-theme .btn-primary { background:var(--wd-pink); color:#fff; border:1px solid transparent; box-shadow:none; }
+.couple-theme .btn-primary:hover { background:var(--wd-pink-hover); }
+.couple-theme .btn-secondary { background:#fff; color:var(--wd-ink); border:1px solid var(--wd-border); }
+.couple-theme .btn-secondary:hover { background:var(--wd-active); }
+.couple-theme .btn-ghost { background:transparent; color:var(--wd-muted); }
+.couple-theme .btn-ghost:hover { background:var(--wd-active); color:var(--wd-ink); }
+.couple-theme .input-field { background:#fff; color:var(--wd-ink); border:1px solid var(--wd-border); }
+.couple-theme .input-field::placeholder,
+.couple-theme input::placeholder,
+.couple-theme textarea::placeholder { color:var(--wd-muted); }
+.couple-theme input:focus,
+.couple-theme textarea:focus,
+.couple-theme select:focus { border-color:var(--wd-pink); outline:none; }
+.couple-theme .badge-processing,
+.couple-theme .badge-complete { background:var(--wd-active); color:var(--wd-pink-hover); border:1px solid var(--wd-border); }
+.couple-theme .badge-failed { background:#FDECEC; color:#C0392B; border:1px solid #F5C6C6; }
+.couple-theme select option { color:var(--wd-ink); background:#fff; }

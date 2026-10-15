@@ -2,6 +2,7 @@
 
 export type PlanTier = 'free' | 'pro' | 'wedding' // 'wedding' == Advance (see lib/plan.ts)
 export type PlanSource = 'default' | 'legacy' | 'stripe'
+export type AccountType = 'dj' | 'couple'
 
 /** Server-written. Clients can read it but never write it (see firestore.rules). */
 export interface PlanState {
@@ -14,6 +15,8 @@ export interface PlanState {
 /** users/{firebaseUid} */
 export interface UserDoc {
   uid:         string
+  /** Role chosen at sign-up (immutable). Undefined = legacy account created before roles: treated as 'dj'. UI label for 'couple' is always "Sposi". */
+  accountType?: AccountType
   email:       string
   displayName?: string | null
   /** Server-written (commitAvatar): tokenised Storage URL + its path. Legacy docs may carry an old Supabase URL without a path. */

@@ -976,5 +976,45 @@
       "namesTitle": "Couple names on screen",
       "namesDesc": "Edit the names in Settings; here you choose font and size."
     }
+  },
+  "roles": {
+    "question": "How do you want to use the platform?",
+    "djTitle": "DJ / Event professional",
+    "djDesc": "Manage weddings and events, requests, games, screen and live control.",
+    "coupleTitle": "Sposi",
+    "coupleDesc": "Create your album, collect your guests’ photos and manage your wedding.",
+    "required": "Choose how you want to use the platform",
+    "myAlbums": "My albums",
+    "albumsTitle": "Your albums",
+    "albumsSubtitle": "Create and manage your wedding album.",
+    "newAlbum": "New album",
+    "noAlbums": "You do not have an album yet.",
+    "createFirstAlbum": "Create your album",
+    "brand": "MIOLOVE ALBUM",
+    "weddingOnly": "Sposi accounts can only create wedding albums.",
+    "loadError": "We could not load your account. Check your connection and try again.",
+    "retry": "Retry",
+    "billing": {
+      "subtitle": "Manage your MIOLOVE ALBUM plan.",
+      "eventPassSubtitle": "Full access to your wedding album for a single event",
+      "feat1": "Guest photo album",
+      "feat2": "Live Booth for guests",
+      "feat3": "Printable QR poster",
+      "feat4": "Guest link and QR",
+      "feat5": "Album privacy",
+      "ideal1": "Your wedding day",
+      "ideal2": "Anniversaries and family parties",
+      "ideal3": "Trying the album without a subscription",
+      "tipMsg": "For several albums the monthly Advance plan is better value",
+      "allFeaturesAvailable": "All album features are available until it expires",
+      "advTagline": "For your wedding album",
+      "free1": "1 active album",
+      "free2": "QR code and guest link",
+      "free3": "Basic album page",
+      "adv1": "Guest photo album with moderation",
+      "adv2": "Live Booth with QR for guests",
+      "adv3": "Printable QR poster",
+      "adv4": "Multiple wedding albums"
+    }
   }
 }

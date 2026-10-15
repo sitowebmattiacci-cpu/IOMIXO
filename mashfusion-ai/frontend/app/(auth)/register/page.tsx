@@ -2,13 +2,17 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, CheckCircle2, Send } from 'lucide-react'
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, CheckCircle2, Send, Disc3, Heart } from 'lucide-react'
 import { signUp, resendVerification, authErrorMessage } from '@/lib/auth'
 import { Button } from '@/components/ui/Button'
 import { Logo } from '@/components/Logo'
+import { useI18n } from '@/lib/i18n'
+import { COUPLE_HOME, type AccountType } from '@/lib/roles'
 import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
+  const { t } = useI18n()
+  const [accountType, setAccountType] = useState<AccountType | null>(null)
   const [fullName, setFullName] = useState('')
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
@@ -28,11 +32,12 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!accountType) { toast.error(t('roles.required')); return }
     if (!fullName || !email || !password) { toast.error('Please fill in all fields'); return }
     if (password.length < 8) { toast.error('Password must be at least 8 characters'); return }
     setLoading(true)
     try {
-      await signUp(email.trim().toLowerCase(), password, fullName.trim())
+      await signUp(email.trim().toLowerCase(), password, fullName.trim(), accountType)
       setDone(true)
     } catch (err: unknown) {
       toast.error(authErrorMessage(err, 'Registration failed'))
@@ -83,6 +88,11 @@ export default function RegisterPage() {
               </p>
             </div>
             <div className="pt-2 space-y-3">
+              {accountType === 'couple' && (
+                <Link href={COUPLE_HOME}>
+                  <Button className="w-full" data-testid="register-continue" icon={<ArrowRight className="h-4 w-4" />}>{t('roles.createFirstAlbum')}</Button>
+                </Link>
+              )}
               <Button
                 variant="secondary"
                 className="w-full"
@@ -141,6 +151,33 @@ export default function RegisterPage() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4" data-gramm="false">
+                {/* Account type */}
+                <fieldset className="space-y-2" data-testid="account-type-choice">
+                  <legend className="text-sm font-semibold text-white mb-2">{t('roles.question')}</legend>
+                  <div role="radiogroup" aria-label={t('roles.question')} className="grid gap-2.5">
+                    {([
+                      { value: 'dj' as const, icon: Disc3, title: t('roles.djTitle'), desc: t('roles.djDesc') },
+                      { value: 'couple' as const, icon: Heart, title: t('roles.coupleTitle'), desc: t('roles.coupleDesc') },
+                    ]).map(({ value, icon: Icon, title, desc }) => {
+                      const selected = accountType === value
+                      return (
+                        <button
+                          key={value} type="button" role="radio" aria-checked={selected}
+                          data-testid={`account-type-${value}`}
+                          onClick={() => setAccountType(value)}
+                          className={`flex w-full min-h-[64px] items-start gap-3 rounded-xl border p-3.5 text-left transition ${selected ? 'border-purple-400 bg-purple-500/15' : 'border-white/10 bg-white/5 hover:border-white/25'}`}
+                        >
+                          <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${selected ? 'text-purple-300' : 'text-white/40'}`} />
+                          <span className="min-w-0">
+                            <span className="block text-sm font-bold text-white">{title}</span>
+                            <span className="mt-0.5 block text-xs leading-relaxed text-white/50">{desc}</span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </fieldset>
+
                 {/* Full name */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-white/50">Full name</label>

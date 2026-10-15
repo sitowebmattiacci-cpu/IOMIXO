@@ -38,6 +38,7 @@ export function userToLegacy(uid: string, u: UserDoc | null, email: string | nul
     id: u?.legacySupabaseId ?? uid,
     email: u?.email || email || '',
     full_name: u?.displayName ?? null,
+    accountType: u?.accountType === 'couple' ? 'couple' : 'dj', // no field = legacy account = DJ
     avatar_url: u?.avatarUrl ?? null,
     plan: (expired ? 'free' : u?.plan.tier ?? 'free') as User['plan'],
     credits_remaining: 0,            // not in Firestore (legacy AI-studio credits; no consumer left in the UI)

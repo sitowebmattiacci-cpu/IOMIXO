@@ -42,7 +42,7 @@ test('L2. create is idempotent per requestId; a different requestId makes a diff
   const dj = await owner('pro'); const id = rid()
   const a = await callAs(dj, 'createEvent', { requestId: id, title: 'Uno' }), b = await callAs(dj, 'createEvent', { requestId: id, title: 'Uno' })
   assert.equal(a.eventId, b.eventId); assert.equal(a.slug, b.slug); assert.equal(b.created, false)
-  assert.equal((await fsList('events')).filter((d) => d.fields.ownerUid?.stringValue === dj.uid).length, 1, 'one document')
+  assert.equal((await fsList('events?pageSize=1000')).filter((d) => d.fields.ownerUid?.stringValue === dj.uid).length, 1, 'one document')
   const c = await callAs(dj, 'createEvent', { requestId: rid(), title: 'Due' }); assert.notEqual(c.eventId, a.eventId)
   assert.equal(await fails(callAs(dj, 'createEvent', { requestId: rid(), title: '  ' })), 'invalid-argument:invalid_payload')
   assert.equal(await fails(callAs(dj, 'createEvent', { title: 'x' })), 'invalid-argument:invalid_payload')

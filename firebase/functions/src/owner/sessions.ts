@@ -4,7 +4,7 @@ import { HttpsError } from 'firebase-functions/v2/https'
 import { str } from '../requests/validation'
 import { fail } from '../shared/guard'
 import { loadEntitlements } from '../entitlements/load'
-import { idField, requireAccount, requireEventOwner, type CallerAuth } from './guard'
+import { idField, requireAccount, requireEventOwner, loadAccountType, type CallerAuth } from './guard'
 
 /**
  * Event lifecycle for the owner, Firestore-authoritative (no Supabase write): create / soft delete / restore.
@@ -54,6 +54,10 @@ async function countActiveEvents(db: Firestore, uid: string): Promise<number> {
 /** Replacement of POST /api/live/sessions. Plan gates are decided here from users/{uid}.plan + eventPasses (clients never decide). */
 export async function createEvent(db: Firestore, request: CallerAuth, input: CreateEventInput): Promise<{ eventId: string; slug: string; created: boolean }> {
   const uid = requireAccount(request)
+  // Couple accounts can only create Wedding events (no Party / standard sessions).
+  if (input.type !== 'wedding' && (await loadAccountType(db, uid)) === 'couple') {
+    throw fail('permission-denied', 'Couple accounts can only create Wedding events', 'wedding_only')
+  }
   const eventId = eventIdFor(uid, input.requestId)
   const ref = db.collection('events').doc(eventId)
 

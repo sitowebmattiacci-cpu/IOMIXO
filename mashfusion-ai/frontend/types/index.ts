@@ -48,6 +48,8 @@ export interface User {
   id: string
   email: string
   full_name: string | null
+  /** 'couple' = Sposi. Missing/legacy accounts resolve to 'dj'. */
+  accountType?: 'dj' | 'couple'
   avatar_url: string | null
   plan: Plan
   credits_remaining: number
