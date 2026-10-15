@@ -40,8 +40,8 @@ async function fullUpload(g: TestClient, eventId: string, over: Record<string, u
   return { ...u, finalize: f }
 }
 
-test('P1. guest album flow: slot → direct upload → finalize → pending (invisible) → owner approves → guest can read; reject kills the old links', async () => {
-  const { dj, id } = await setup(); const g = await mk('anonymous'), other = await mk('anonymous')
+test('P1. Party album flow: slot → direct upload → finalize → pending (invisible) → owner approves → guest can read; reject kills the old links', async () => {
+  const { dj, id } = await setup('wedding', { type: 'party' }); const g = await mk('anonymous'), other = await mk('anonymous')
   const u = await upload(g, id, { source: 'live_booth' })
   assert.equal(u.storagePath, `events/${id}/photos/${u.photoId}/original.jpg`); assert.equal(u.contentType, 'image/jpeg')
   const d0 = (await fsGet(`events/${id}/photos/${u.photoId}`)).fields
@@ -71,8 +71,21 @@ test('P1. guest album flow: slot → direct upload → finalize → pending (inv
   assert.ok(tokenBefore && tokenAfter && tokenBefore !== tokenAfter, `the download token was rotated when the photo stopped being approved (${tokenBefore} -> ${tokenAfter})`)
 })
 
+test('P1w. Wedding photos need no approval: finalize makes them approved, readable by other guests / the TV right away; owner can still hide and delete', async () => {
+  const { dj, id } = await setup(); const g = await mk('anonymous'), other = await mk('anonymous')
+  const p = await fullUpload(g, id, { source: 'live_booth' })
+  assert.deepEqual(p.finalize, { photoId: p.photoId, status: 'approved' })
+  assert.deepEqual(await callAs(g, 'finalizePhoto', { eventId: id, photoId: p.photoId }), { photoId: p.photoId, status: 'approved' }, 'idempotent')
+  assert.equal((await fsGet(`events/${id}/photos/${p.photoId}`)).fields.status.stringValue, 'approved')
+  const url = await getDownloadURL(ref(stor(other), p.storagePath))
+  assert.equal((await (await fetch(url)).arrayBuffer()).byteLength, 2048, 'served to any guest without any owner action')
+  const approved = await getDocs(query(collection(other.db, 'events', id, 'photos'), where('status', '==', 'approved'), orderBy('createdAt', 'desc')))
+  assert.deepEqual(approved.docs.map((d) => d.id), [p.photoId], 'visible on the realtime wall query')
+  assert.deepEqual(await callAs(dj, 'moderatePhoto', { eventId: id, photoId: p.photoId, action: 'delete' }), { changed: true, deleted: true })
+})
+
 test('P2. storage.rules: only the issued path, once, by its guest, image/* <= 8 MB, live event; no listing, no delete, no overwrite', async () => {
-  const { dj, id } = await setup(); const g = await mk('anonymous'), thief = await mk('anonymous')
+  const { dj, id } = await setup('wedding', { type: 'party' }); const g = await mk('anonymous'), thief = await mk('anonymous')
   const u = await upload(g, id)
   const at = (c: TestClient, p: string) => ref(stor(c), p)
   assert.equal(await sCode(uploadBytes(at(g, `events/${id}/photos/nodoc123/original.jpg`), bytes(10), JPEG)), 'storage/unauthorized', 'no photo doc → refused')

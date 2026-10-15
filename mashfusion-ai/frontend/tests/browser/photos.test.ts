@@ -44,7 +44,7 @@ async function ownerSetup(over: Record<string, unknown> = {}) {
   return { owner, id, slug, ctx, page }
 }
 
-test('H1. guest uploads from the Live Booth → pending → owner approves in the dashboard → the TV shows it live → reject hides it → delete removes file + doc; Render untouched', async () => {
+test('H1. Wedding: guest uploads from the Live Booth → approved immediately → the TV shows it live, no approve / reject in the dashboard → delete removes file + doc; Render untouched', async () => {
   const s = await ownerSetup()
   const tvCtx = await browser.newContext(), guestCtx = await browser.newContext()
   try {
@@ -59,28 +59,19 @@ test('H1. guest uploads from the Live Booth → pending → owner approves in th
     await guest.getByRole('button', { name: /^Invia$|Usa questa foto/ }).first().click({ timeout: 30_000 })
     const photo = await until(async () => (await fsList(`events/${s.id}/photos`))[0], 30_000, 'photo doc')
     const photoId = photo.name.split('/').pop()
-    await until(async () => (await fsDoc(`events/${s.id}/photos/${photoId}`)).fields.status.stringValue === 'pending', 20_000, 'photo finalized (pending)')
+    // Wedding: no moderation. Finalize makes the photo approved and the TV shows it live.
+    await until(async () => (await fsDoc(`events/${s.id}/photos/${photoId}`)).fields.status.stringValue === 'approved', 20_000, 'photo finalized (approved, no moderation)')
     const f = (await fsDoc(`events/${s.id}/photos/${photoId}`)).fields
     assert.equal(f.source.stringValue, 'live_booth'); assert.ok(f.guestUid.stringValue); assert.match(f.storagePath.stringValue, new RegExp(`^events/${s.id}/photos/${photoId}/original\\.(jpg|png)$`))
     assert.ok(await objMeta(f.storagePath.stringValue), 'the bytes are in Storage')
-    await tv.waitForTimeout(3000); assert.equal(await storageImgs(tv), 0, 'a pending photo is NOT on the TV')
+    await until(async () => (await storageImgs(tv)) >= 1, 45_000, 'the photo appears on the TV (realtime) without any approval')
 
-    // owner: Photos tab → the card → approve
+    // owner: Photos tab → the card is there, with delete but WITHOUT approve / reject
     await s.page.goto(`${app.url}/sessions/${s.id}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
     await s.page.getByRole('button', { name: /Foto/ }).first().click({ timeout: 90_000 })
-    await s.page.locator('img[src*="127.0.0.1:9199"]').first().waitFor({ timeout: 60_000 })                  // the owner sees the pending photo (read-all rule)
+    await s.page.locator('img[src*="127.0.0.1:9199"]').first().waitFor({ timeout: 60_000 })
     await s.page.locator('div.group', { has: s.page.locator('img') }).first().hover()
-    await s.page.locator('button[title="Approva"]').first().click()
-    await until(async () => (await fsDoc(`events/${s.id}/photos/${photoId}`)).fields.status.stringValue === 'approved', 20_000, 'approved')
-    await until(async () => (await storageImgs(tv)) >= 1, 45_000, 'the approved photo appears on the TV (realtime)')
-
-    // reject → disappears from the TV; token rotated
-    const tokenBefore = (await objMeta(f.storagePath.stringValue)).downloadTokens
-    await s.page.locator('div.group', { has: s.page.locator('img') }).first().hover()
-    await s.page.locator('button[title="Rifiuta"]').first().click()
-    await until(async () => (await fsDoc(`events/${s.id}/photos/${photoId}`)).fields.status.stringValue === 'rejected', 20_000, 'rejected')
-    await until(async () => (await storageImgs(tv)) === 0, 45_000, 'the rejected photo leaves the TV')
-    assert.notEqual((await objMeta(f.storagePath.stringValue)).downloadTokens, tokenBefore, 'the download links were invalidated')
+    assert.equal(await s.page.locator('button[title="Approva"], button[title="Rifiuta"]').count(), 0, 'no approve / reject buttons for Wedding photos')
 
     // delete → file and document gone
     await s.page.locator('div.group', { has: s.page.locator('img') }).first().hover()

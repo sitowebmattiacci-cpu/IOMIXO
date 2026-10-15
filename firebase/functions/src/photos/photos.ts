@@ -15,7 +15,7 @@ import { deleteObjects, objectInfo, rotateDownloadToken } from './storage'
  * Upload is a 3-step protocol where the CLIENT writes the bytes straight to Storage (no byte passes through a Function):
  *   1. createPhotoUpload (guest)  validates event live + plan + anti-spam, creates the photo doc as `uploading` and returns the one allowed path
  *   2. client uploads to that path; storage.rules only accept it for an `uploading` doc owned by the caller, typed image/*, <= 8 MB, never overwriting
- *   3. finalizePhoto (guest)      checks the object really exists with the declared type / size, flips the doc to `pending`
+ * 3. finalizePhoto (guest)      checks the object really exists with the declared type / size, flips the doc to `approved` (Wedding) or `pending` (Party)
  * Owners moderate with moderatePhoto (approve / reject / feature / delete). Only `approved` photos are readable by guests / TV.
  */
 export const PHOTO_LIMITS = { guestName: 80, caption: 200, maxBytes: 8 * 1024 * 1024 } as const
@@ -86,9 +86,12 @@ export async function createPhotoUpload(db: Firestore, uid: string, input: Creat
   return { photoId: photoRef.id, storagePath, contentType }
 }
 
+/** Wedding photos are visible as soon as they are finalized (no moderation); Party keeps the owner approval step. */
+export const finalStatus = (eventType: unknown): 'approved' | 'pending' => (eventType === 'wedding' ? 'approved' : 'pending')
+
 /** Guest step 3. Idempotent: an already finalized photo is returned as is. */
 export async function finalizePhoto(db: Firestore, uid: string, input: PhotoRefInput): Promise<{ photoId: string; status: PhotoStatus }> {
-  const { ref: eventRef } = await loadLiveEvent(db, input.eventId)
+  const { ref: eventRef, data: ev } = await loadLiveEvent(db, input.eventId)
   const photoRef = eventRef.collection('photos').doc(input.photoId), snap = await photoRef.get()
   if (!snap.exists || snap.data()!.guestUid !== uid) throw fail('not-found', 'Photo not found', 'photo_not_found')
   const p = snap.data()!
@@ -100,8 +103,9 @@ export async function finalizePhoto(db: Firestore, uid: string, input: PhotoRefI
     await photoRef.delete()
     throw fail('failed-precondition', 'Invalid file', 'invalid_upload')
   }
-  await photoRef.update({ status: 'pending', size: info.size, updatedAt: FieldValue.serverTimestamp() })
-  return { photoId: photoRef.id, status: 'pending' }
+  const status = finalStatus(ev.type)
+  await photoRef.update({ status, size: info.size, updatedAt: FieldValue.serverTimestamp() })
+  return { photoId: photoRef.id, status }
 }
 
 /** Owner: approve / reject / feature / delete. The premium gate applies to status and feature changes (legacy requireEventAccess), not to delete. */

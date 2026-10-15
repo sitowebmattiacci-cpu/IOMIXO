@@ -24,7 +24,7 @@ export default function LiveBoothPage() {
   const { data, error } = useSWR(
     slug ? ['public-live', slug] : null,
     () => fetchPublicLive(slug!),
-    { refreshInterval: 3_000 },
+    { refreshInterval: 30_000 },
   )
   const wdToast = () => (data?.session.session_type === 'wedding' ? WEDDING_GUEST_TOAST : undefined)
 
@@ -32,6 +32,8 @@ export default function LiveBoothPage() {
   const [cameraError, setCameraError] = useState(false)
   const [photo, setPhoto] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadPct, setUploadPct] = useState(0)
+  const [uploadFailed, setUploadFailed] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -39,6 +41,8 @@ export default function LiveBoothPage() {
   const streamRef = useRef<MediaStream | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pendingFileRef = useRef<File | null>(null)
+  // Resize/compress starts as soon as the photo is picked, so "send" only pays for the network.
+  const preparedRef = useRef<Promise<File> | null>(null)
   const countdownTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const watchdogTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -51,6 +55,7 @@ export default function LiveBoothPage() {
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
 
   useEffect(() => {
+    if (slug) livePhotos.warmUpload(slug)      // anonymous session + event id ready before the first photo
     return () => {
       if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop())
       if (countdownTimer.current) clearTimeout(countdownTimer.current)
@@ -238,6 +243,8 @@ export default function LiveBoothPage() {
     // così la foto originale resta pulita.
     if (!isWedding) drawPartyOverlay(ctx, canvas.width, canvas.height)
     setPhoto(canvas.toDataURL('image/jpeg', 0.9))
+    setUploadFailed(false)
+    canvas.toBlob((blob) => { if (blob) prepareFile(new File([blob], 'booth-photo.jpg', { type: 'image/jpeg' })) }, 'image/jpeg', 0.9)
     stopCamera()
   }
 
@@ -260,6 +267,8 @@ export default function LiveBoothPage() {
     const wasUpload = !!pendingFileRef.current
     if (photo && photo.startsWith('blob:')) URL.revokeObjectURL(photo)
     setPhoto(null)
+    setUploadFailed(false)
+    preparedRef.current = null
     pendingFileRef.current = null
     // Se la foto veniva dal fallback nativo, riapri il selettore file (su iPhone
     // la camera live potrebbe dare schermo nero): niente getUserMedia.
@@ -274,6 +283,10 @@ export default function LiveBoothPage() {
   // estetica (objectURL) e NON è richiesta per l'upload.
   const openFilePicker = () => fileInputRef.current?.click()
 
+  const prepareFile = (file: File) => {
+    preparedRef.current = compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.82 })
+  }
+
   const handleNativePhotoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = '' // consente di riselezionare lo stesso file
@@ -286,6 +299,8 @@ export default function LiveBoothPage() {
     stopCamera()
     setCameraError(false)
     pendingFileRef.current = file
+    setUploadFailed(false)
+    prepareFile(file)
     try {
       setPhoto(URL.createObjectURL(file))
     } catch {
@@ -296,31 +311,37 @@ export default function LiveBoothPage() {
 
   const uploadPhoto = async () => {
     setUploading(true)
+    setUploadPct(0)
     try {
       // Fallback nativo: carica direttamente il File originale (no canvas).
       // Camera live: ricava il file dalla data-URL del canvas.
-      let file: File
-      if (pendingFileRef.current) {
-        file = pendingFileRef.current
-      } else if (photo && photo.startsWith('data:')) {
-        const blob = await (await fetch(photo)).blob()
-        file = new File([blob], 'booth-photo.jpg', { type: 'image/jpeg' })
+      let optimized: File
+      if (preparedRef.current) {
+        optimized = await preparedRef.current
       } else {
-        setUploading(false)
-        return
+        let file: File
+        if (pendingFileRef.current) {
+          file = pendingFileRef.current
+        } else if (photo && photo.startsWith('data:')) {
+          const blob = await (await fetch(photo)).blob()
+          file = new File([blob], 'booth-photo.jpg', { type: 'image/jpeg' })
+        } else {
+          setUploading(false)
+          return
+        }
+        // Ridimensiona/comprime lato client (file enormi 8/12 MB); difensivo: se fallisce usa l'originale.
+        optimized = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.82 })
       }
-      // Ottimizza per la Live Screen: ridimensiona/comprime lato client così
-      // non carichiamo file enormi (8/12 MB) sullo schermo TV. Difensivo: se la
-      // compressione fallisce, usa il file originale.
-      const optimized = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.82 })
-      await livePhotos.boothUpload(slug!, optimized, {})
+      await livePhotos.boothUpload(slug!, optimized, {}, setUploadPct)
       toast.success(isWedding
         ? t('booth.uploadedWedding')
         : t('booth.uploadedParty'), isWedding ? WEDDING_GUEST_TOAST : undefined)
       if (photo && photo.startsWith('blob:')) URL.revokeObjectURL(photo)
       pendingFileRef.current = null
+      preparedRef.current = null
       setPhoto(null)
     } catch (err: any) {
+      setUploadFailed(true)
       const msg = err?.message ?? t('booth.uploadError')
       if (msg.includes('Advance') || msg.includes('Pass') || msg.includes('sospese')) {
         toast.error(t('booth.uploadAccessError'), isWedding ? WEDDING_GUEST_TOAST : undefined)
@@ -530,7 +551,7 @@ export default function LiveBoothPage() {
           )}
         </div>
         <div className="mt-5 space-y-3">
-          <WeddingGuestButton onClick={uploadPhoto} disabled={uploading} loading={uploading} icon={<Check className="h-5 w-5" />}>{t('booth.send')}</WeddingGuestButton>
+          <WeddingGuestButton onClick={uploadPhoto} disabled={uploading} loading={uploading} icon={<Check className="h-5 w-5" />}>{uploading ? `${t('booth.sendingPhoto')}${uploadPct > 0 ? ` ${uploadPct}%` : ''}` : uploadFailed ? t('booth.retryUpload') : t('booth.send')}</WeddingGuestButton>
           <WeddingGuestButton variant="secondary" onClick={retakePhoto} disabled={uploading} icon={<RotateCw className="h-5 w-5" />}>{t('booth.retake')}</WeddingGuestButton>
         </div>
       </WeddingGuestShell>

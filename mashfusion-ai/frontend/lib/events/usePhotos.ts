@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { getFirebaseDb, getFirebaseStorage } from '../firebase/client'
 import { onAuthChange } from '../firebase/auth'
 import { authProvider } from '../auth'
-import { subscribeApprovedPhotos, photoUrl } from '../firebase/repositories/photoRepository'
+import { subscribeApprovedPhotos, subscribeOwnerPhotos, photoUrl } from '../firebase/repositories/photoRepository'
+import { useEventChildSignal } from './useRequests'
 import type { LivePhoto } from '../api'
 
 /**
@@ -36,6 +37,12 @@ export function useApprovedPhotos(eventId: string | undefined, max = 12): LivePh
 
   return photos
 }
+
+const subscribePhotosSignal = (db: ReturnType<typeof getFirebaseDb>, id: string, onChange: () => void, onError: () => void) =>
+  subscribeOwnerPhotos(db, id, onChange, () => onError())
+
+/** Owner: change signal for the open event's photos (see useEventChildSignal). */
+export const usePhotosSignal = (sessionId: string | undefined) => useEventChildSignal(sessionId, subscribePhotosSignal)
 
 export interface WinnerUrls { groom: string | null; bride: string | null }
 const FIREBASE_PATH = /^events\//

@@ -50,6 +50,13 @@ export async function listOwnerPhotos(db: Firestore, eventId: string, max = 300)
   return snap.docs.map((d) => fromPhotoDoc(d.id, d.data())).filter((p) => p.status !== 'uploading')
 }
 
+/** Owner: realtime change signal for the event's newest photos (the caller re-reads the list on every snapshot). */
+export function subscribeOwnerPhotos(
+  db: Firestore, eventId: string, onChange: () => void, onError?: (e: Error) => void,
+): Unsubscribe {
+  return onSnapshot(query(col(db, eventId), orderBy('createdAt', 'desc'), limit(30)), () => onChange(), (e) => onError?.(e))
+}
+
 // ── Storage URLs ──
 // getDownloadURL is allowed by storage.rules only for what the caller may read (approved for guests / TV, everything for the owner). The URL is cached per
 // path for the page lifetime: a photo that stops being approved has its token rotated server-side, so a stale cached URL stops working by itself.

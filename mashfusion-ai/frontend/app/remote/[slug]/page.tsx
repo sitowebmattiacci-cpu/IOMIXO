@@ -1,11 +1,11 @@
 'use client'
 import { useParams } from 'next/navigation'
-import useSWR from 'swr'
-import { useState } from 'react'
+import useSWR, { mutate } from 'swr'
+import { useEffect, useState } from 'react'
 import {
   Heart, MessageSquare, Sparkles, Image as ImageIcon,
   Play, RotateCw, SkipForward, Check, X,
-  Footprints, Users,
+  Footprints, Users, Trash2,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { live, liveDedications, liveGames, livePhotos, type LiveRequestStatus } from '@/lib/api'
@@ -18,6 +18,7 @@ import {
 } from '@/components/remote/RemoteUI'
 import { useI18n } from '@/lib/i18n'
 import { useLiveEvent } from '@/lib/events/useLiveEvent'
+import { usePhotosSignal } from '@/lib/events/usePhotos'
 import { useLatestGames, preferRealtime } from '@/lib/events/useGames'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
@@ -128,11 +129,13 @@ function RemoteControl() {
     { refreshInterval: 5_000 },
   )
 
-  const { data: photos } = useSWR(
+  const photoSignal = usePhotosSignal(session?.id)
+  const { data: photos, mutate: refreshPhotos } = useSWR(
     slug ? ['remote-photos', slug] : null,
     () => remoteApi.listPhotos(slug!),
-    { refreshInterval: 5_000 },
+    { refreshInterval: photoSignal.live ? 60_000 : 5_000 },
   )
+  useEffect(() => { if (photoSignal.tick > 0) refreshPhotos() }, [photoSignal.tick, refreshPhotos])
 
   const pending = requests?.filter((r: any) => r.status === 'pending') ?? []
 
@@ -176,7 +179,7 @@ function RemoteControl() {
         {tab === 'games' && slug && <RemoteGamesPanel slug={slug} sessionType={session.session_type} />}
         {tab === 'requests' && slug && <RemoteRequestsPanel slug={slug} requests={requests ?? []} />}
         {!isPartySession && tab === 'dedications' && slug && <RemoteDedicationsPanel slug={slug} dedications={dedications ?? []} />}
-        {tab === 'photos' && slug && <RemotePhotosPanel slug={slug} photos={photos ?? []} />}
+        {tab === 'photos' && slug && <RemotePhotosPanel slug={slug} photos={photos ?? []} isWedding={!isPartySession} />}
       </div>
     </RemoteShell>
   )
@@ -541,7 +544,7 @@ function RemoteDedicationsPanel({ slug, dedications }: { slug: string; dedicatio
   )
 }
 
-function RemotePhotosPanel({ slug, photos }: { slug: string; photos: any[] }) {
+function RemotePhotosPanel({ slug, photos, isWedding }: { slug: string; photos: any[]; isWedding: boolean }) {
   const { t } = useI18n()
   const [busy, setBusy] = useState<string | null>(null)
 
@@ -555,6 +558,45 @@ function RemotePhotosPanel({ slug, photos }: { slug: string; photos: any[] }) {
     } finally {
       setBusy(null)
     }
+  }
+
+  const removePhoto = async (id: string) => {
+    if (!confirm(t('wdAdmin.photos.confirmDelete'))) return
+    setBusy(id)
+    try {
+      await livePhotos.remove(id)
+      mutate(['remote-photos', slug])
+    } catch (e: any) {
+      toast.error(e?.message ?? t('common.errorGeneric'))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  // Wedding: no moderation, the latest guest photos with a delete shortcut.
+  if (isWedding) {
+    const latest = photos.filter((p) => p.url).slice(0, 12)
+    if (latest.length === 0) return <RemoteEmpty>{t('remote.noPhotosWedding')}</RemoteEmpty>
+    return (
+      <div className="grid grid-cols-2 gap-3 min-[420px]:grid-cols-3">
+        {latest.map((photo) => (
+          <RemoteCard key={photo.id} className="relative overflow-hidden p-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photo.url} alt={photo.caption ?? ''} loading="lazy" className="aspect-square w-full object-cover" />
+            <button
+              type="button"
+              onClick={() => removePhoto(photo.id)}
+              disabled={busy === photo.id}
+              aria-label={t('remote.deletePhoto')}
+              title={t('remote.deletePhoto')}
+              className="absolute right-1.5 top-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-red-600 shadow disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </RemoteCard>
+        ))}
+      </div>
+    )
   }
 
   const pending = photos.filter((p) => p.status === 'pending')

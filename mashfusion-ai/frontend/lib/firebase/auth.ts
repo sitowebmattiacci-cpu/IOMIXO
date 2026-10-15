@@ -71,10 +71,16 @@ export async function getIdToken(forceRefresh = false): Promise<string | null> {
  * Guest / TV / Remote identity. Reuses any existing session (anonymous or not)
  * so no throw-away anonymous accounts are created on every visit.
  */
+// One in-flight sign-in: concurrent callers (page hooks + callables) must not each create an anonymous account.
+let anonymousInFlight: Promise<User> | null = null
+
 export async function ensureAnonymousSession(): Promise<User> {
   const existing = await waitForAuthReady()
   if (existing) return existing
-  return (await signInAnonymously(getFirebaseAuth())).user
+  anonymousInFlight ??= signInAnonymously(getFirebaseAuth())
+    .then((c) => c.user)
+    .finally(() => { anonymousInFlight = null })
+  return anonymousInFlight
 }
 
 /** Maps Firebase auth error codes to messages suitable for the UI. */

@@ -6,6 +6,7 @@ import { Heart, CalendarDays, Copy, Check, Download, Power, Maximize2, ExternalL
 import { liveDedications, livePhotos, livePolls, type LivePoll } from '@/lib/api'
 import { useDedicationsSignal } from '@/lib/events/useDedications'
 import { usePollsSignal } from '@/lib/events/usePolls'
+import { usePhotosSignal } from '@/lib/events/usePhotos'
 import { useI18n } from '@/lib/i18n'
 import { WEDDING_BRAND_FILE_PREFIX } from '@/lib/brand/wedding'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -60,7 +61,9 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
   const dedSignal = useDedicationsSignal(couple ? undefined : sessionId)
   const { data: dedications, mutate: refreshDed } = useSWR(couple ? null : ['dedications', sessionId], () => liveDedications.listForDj(sessionId), { refreshInterval: dedSignal.live ? 60_000 : 8_000 })
   useEffect(() => { if (dedSignal.tick > 0) refreshDed() }, [dedSignal.tick, refreshDed])
-  const { data: photos } = useSWR(['photos', sessionId], () => livePhotos.listForDj(sessionId), { refreshInterval: 8_000 })
+  const photoSignal = usePhotosSignal(sessionId)
+  const { data: photos, mutate: refreshPhotos } = useSWR(['photos', sessionId], () => livePhotos.listForDj(sessionId), { refreshInterval: photoSignal.live ? 60_000 : 8_000 })
+  useEffect(() => { if (photoSignal.tick > 0) refreshPhotos() }, [photoSignal.tick, refreshPhotos])
   const pollSignal = usePollsSignal(couple ? undefined : sessionId)
   const { data: polls, mutate: refreshPolls } = useSWR(couple ? null : ['polls', sessionId], () => livePolls.list(sessionId), { refreshInterval: pollSignal.live ? 60_000 : 8_000 })
   useEffect(() => { if (pollSignal.tick > 0) refreshPolls() }, [pollSignal.tick, refreshPolls])

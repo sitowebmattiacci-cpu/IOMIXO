@@ -1,11 +1,12 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import useSWR from 'swr'
 import { QRCodeSVG } from 'qrcode.react'
 import toast from 'react-hot-toast'
-import { Download, Check, X, Trash2, Star, Copy, Camera, Play, CheckCircle2, Image as ImageIcon, Video } from 'lucide-react'
+import { Download, Check, Trash2, Star, Copy, Camera, Play, CheckCircle2, Image as ImageIcon, Video } from 'lucide-react'
 import { livePhotos, type LivePhoto } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
+import { usePhotosSignal } from '@/lib/events/usePhotos'
 import { WEDDING_BRAND_FILE_PREFIX } from '@/lib/brand/wedding'
 import { cn } from '@/lib/utils'
 import { WdPage, WdCard, WdButton, wdStatusLabel } from './WeddingAdminUI'
@@ -24,11 +25,12 @@ export function WeddingPhotosPage({ session, initialSource = 'album' }: { sessio
   const [copied, setCopied] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const { data: album, mutate: refreshAlbum } = useSWR(['photos', sessionId], () => livePhotos.listForDj(sessionId), { refreshInterval: 6_000 })
-  const { data: booth, mutate: refreshBooth } = useSWR(['booth-photos', sessionId], () => livePhotos.listBoothPhotos(sessionId), { refreshInterval: 4_000 })
-  const refresh = () => { refreshAlbum(); refreshBooth() }
+  // One query feeds both tabs (the Live Booth is the same collection filtered by source).
+  const photoSignal = usePhotosSignal(sessionId)
+  const { data: album, mutate: refresh } = useSWR(['photos', sessionId], () => livePhotos.listForDj(sessionId), { refreshInterval: photoSignal.live ? 60_000 : 4_000 })
+  useEffect(() => { if (photoSignal.tick > 0) refresh() }, [photoSignal.tick, refresh])
 
-  const all: LivePhoto[] = (source === 'album' ? album : booth) ?? []
+  const all: LivePhoto[] = (source === 'album' ? album : album?.filter((p) => p.source === 'live_booth')) ?? []
   const items = all.filter((p) => filter === 'all' || (filter === 'video') === isVideoUrl(p.url))
   const videoCount = all.filter((p) => isVideoUrl(p.url)).length
 
@@ -123,8 +125,6 @@ export function WeddingPhotosPage({ session, initialSource = 'album' }: { sessio
       {selectedItems.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-wd-border bg-white px-4 py-3 text-sm">
           <span className="mr-2 font-semibold text-wd-ink">{selectedItems.length} {t('wdAdmin.photos.selected')}</span>
-          <WdButton size="sm" variant="secondary" icon={<Check className="h-3.5 w-3.5" />} onClick={() => bulk((p) => livePhotos.approve(p.id))}>{t('common.approve')}</WdButton>
-          <WdButton size="sm" variant="secondary" icon={<X className="h-3.5 w-3.5" />} onClick={() => bulk((p) => livePhotos.setStatus(p.id, 'rejected'))}>{t('common.reject')}</WdButton>
           <WdButton size="sm" variant="danger" icon={<Trash2 className="h-3.5 w-3.5" />}
             onClick={() => { if (confirm(t('wdAdmin.photos.confirmDelete'))) bulk((p) => livePhotos.remove(p.id)) }}>{t('common.delete')}</WdButton>
         </div>
@@ -178,8 +178,6 @@ export function WeddingPhotosPage({ session, initialSource = 'album' }: { sessio
                   {source === 'booth' && (
                     <button onClick={() => run(() => livePhotos.setFeatured(p.id, !p.is_featured))} title={t('weddingPanels.toggleFeatured')} className="rounded-full bg-white/95 p-1.5 text-wd-pink"><Star className="h-3.5 w-3.5" /></button>
                   )}
-                  {p.status !== 'approved' && <button onClick={() => run(() => livePhotos.approve(p.id))} title={t('common.approve')} className="rounded-full bg-white/95 p-1.5 text-wd-pink"><Check className="h-3.5 w-3.5" /></button>}
-                  {p.status !== 'rejected' && <button onClick={() => run(() => livePhotos.setStatus(p.id, 'rejected'))} title={t('common.reject')} className="rounded-full bg-white/95 p-1.5 text-wd-ink"><X className="h-3.5 w-3.5" /></button>}
                   <button onClick={() => { if (confirm(t('wdAdmin.photos.confirmDelete'))) run(() => livePhotos.remove(p.id)) }} title={t('common.delete')} className="rounded-full bg-white/95 p-1.5 text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
                 <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-1 p-2">

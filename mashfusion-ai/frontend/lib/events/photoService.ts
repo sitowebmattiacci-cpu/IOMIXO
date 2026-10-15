@@ -1,5 +1,5 @@
 import { httpsCallable } from 'firebase/functions'
-import { ref, uploadBytes } from 'firebase/storage'
+import { ref, uploadBytesResumable } from 'firebase/storage'
 import { getFirebaseDb, getFirebaseFunctions, getFirebaseStorage } from '../firebase/client'
 import { ensureAnonymousSession } from '../firebase/auth'
 import { authProvider } from '../auth'
@@ -50,6 +50,7 @@ export function extensionOf(file: Pick<File, 'type' | 'name'>): string {
 
 export async function uploadGuestPhoto(
   slug: string, file: File, meta: { guest_name?: string; caption?: string }, source: 'guest_upload' | 'live_booth',
+  onProgress?: (pct: number) => void,
 ): Promise<{ id: string } | null> {
   if (!guestPhotosEnabled()) return null
   const eventId = await eventIdForSlug(slug); if (!eventId) return null
@@ -57,10 +58,19 @@ export async function uploadGuestPhoto(
     eventId, ext: extensionOf(file), size: file.size, source, guestName: meta.guest_name, caption: meta.caption,
   }, MESSAGES)
   try {
-    await uploadBytes(ref(getFirebaseStorage(), slot.storagePath), file, { contentType: slot.contentType })
+    // Unique path per photo: the object never changes, so browsers / the CDN may cache it for good.
+    const task = uploadBytesResumable(ref(getFirebaseStorage(), slot.storagePath), file, { contentType: slot.contentType, cacheControl: 'public,max-age=31536000,immutable' })
+    if (onProgress) task.on('state_changed', (s) => onProgress(s.totalBytes ? Math.round((s.bytesTransferred / s.totalBytes) * 100) : 0))
+    await task
   } catch { throw new Error('Caricamento non riuscito, riprova.') }
   await callGuestFunction('finalizePhoto', { eventId, photoId: slot.photoId }, MESSAGES)
   return { id: slot.photoId }
+}
+
+/** Booth page warm-up: anonymous session + slug → event id, so the first upload does not pay for them. Never throws. */
+export async function warmGuestPhotoUpload(slug: string): Promise<void> {
+  if (!guestPhotosEnabled()) return
+  await eventIdForSlug(slug)
 }
 
 /** PhotoDoc → the legacy `LivePhoto` the pages already render (url resolved from Storage). Photos without a served binary are dropped. */

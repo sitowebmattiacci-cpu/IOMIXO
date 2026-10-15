@@ -482,12 +482,15 @@ export const livePhotos = {
     need(await (await owner()).photos.moderate(id, { action: 'delete' }), 'Foto non trovata')
   },
   // Guest album: createPhotoUpload → Storage → finalizePhoto
-  async publicUpload(slug: string, file: File, meta: { guest_name?: string; caption?: string }): Promise<{ id: string }> {
-    return need(await (await photoGuest()).uploadGuestPhoto(slug, file, meta, 'guest_upload'), NOT_FOUND)
+  async publicUpload(slug: string, file: File, meta: { guest_name?: string; caption?: string }, onProgress?: (pct: number) => void): Promise<{ id: string }> {
+    return need(await (await photoGuest()).uploadGuestPhoto(slug, file, meta, 'guest_upload', onProgress), NOT_FOUND)
   },
   // Live Booth: same flow, different source
-  async boothUpload(slug: string, file: File, meta: { guest_name?: string; caption?: string }): Promise<{ id: string }> {
-    return need(await (await photoGuest()).uploadGuestPhoto(slug, file, meta, 'live_booth'), NOT_FOUND)
+  async boothUpload(slug: string, file: File, meta: { guest_name?: string; caption?: string }, onProgress?: (pct: number) => void): Promise<{ id: string }> {
+    return need(await (await photoGuest()).uploadGuestPhoto(slug, file, meta, 'live_booth', onProgress), NOT_FOUND)
+  },
+  warmUpload(slug: string): void {
+    void photoGuest().then((m) => m.warmGuestPhotoUpload(slug)).catch(() => {})
   },
   async publicListApproved(slug: string): Promise<LivePhoto[]> {
     return need(await (await photoGuest()).listApprovedForGuest(slug), NOT_FOUND)

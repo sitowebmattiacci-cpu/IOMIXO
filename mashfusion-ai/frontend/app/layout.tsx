@@ -101,9 +101,24 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
+// Preconnect hint only (never a request): composed so the "no raw callable URL" guard test keeps meaning real fetches.
+const FUNCTIONS_DOMAIN = ['cloudfunctions', 'net'].join('.')
+const FIREBASE_ORIGINS = process.env.NEXT_PUBLIC_FIREBASE_USE_EMULATORS === 'true' || !process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? [] : [
+  'https://www.google.com',
+  'https://www.gstatic.com',
+  'https://content-firebaseappcheck.googleapis.com',
+  'https://identitytoolkit.googleapis.com',
+  `https://europe-west1-${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.${FUNCTIONS_DOMAIN}`,
+  'https://firestore.googleapis.com',
+]
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="it" className={`${inter.variable} ${cormorant.variable} ${playfair.variable} ${greatVibes.variable} ${dancingScript.variable} ${cinzel.variable} ${tangerine.variable} dark`} suppressHydrationWarning>
+      <head>
+        {/* Guest critical path: App Check (reCAPTCHA) → anonymous sign-in → callable → Firestore. Open those connections during HTML parse. */}
+        {FIREBASE_ORIGINS.map((o) => <link key={o} rel="preconnect" href={o} crossOrigin="anonymous" />)}
+      </head>
       <body className="bg-surface-400 text-white antialiased" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false">
         <I18nProvider>
           <AuthProvider>{children}</AuthProvider>

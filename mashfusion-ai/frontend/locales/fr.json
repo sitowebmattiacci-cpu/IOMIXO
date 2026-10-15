@@ -34,7 +34,9 @@
     "cameraUnavailableTitle": "Caméra non disponible",
     "cameraUnavailableText": "Le navigateur n'a pas autorisé l'accès direct à la caméra. Tu peux quand même participer en prenant ou en important une photo.",
     "notImage": "Sélectionne un fichier image valide.",
-    "weddingApprovalNote": "Ta photo sera envoyée à la régie et apparaîtra à l'écran après approbation.",
+    "weddingApprovalNote": "Ta photo apparaîtra tout de suite à l'écran.",
+    "retryUpload": "Réessayer",
+    "sendingPhoto": "Envoi de la photo…",
     "partyApprovalNote": "Envoie ta photo et participe au Live Booth.",
     "iosIntro": "Prends ou choisis une photo depuis ton iPhone. Elle sera envoyée à la régie et apparaîtra à l'écran après approbation."
   },
@@ -708,7 +710,9 @@
     "updated": "Mis à jour",
     "noRequests": "Aucune demande en attente",
     "noDedications": "Aucune dédicace en attente",
-    "noPhotos": "Aucune photo en attente"
+    "noPhotos": "Aucune photo en attente",
+    "noPhotosWedding": "Aucune photo pour l'instant",
+    "deletePhoto": "Supprimer la photo"
   },
   "landing": {
     "nav": {
