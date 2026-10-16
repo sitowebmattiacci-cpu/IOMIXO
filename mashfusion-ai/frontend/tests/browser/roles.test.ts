@@ -93,7 +93,7 @@ test('S1. Sposi on miolovealbum.com: sign-up WITHOUT any role choice (390px) sav
     await page.locator('input[type="text"]').first().fill('Anna e Marco'); await page.locator('input[type="email"]').fill(email); await page.locator('input[type="password"]').fill('password123')
     await page.locator('button[type="submit"]').click()
     await page.getByTestId('register-continue').waitFor({ timeout: 60_000 })
-    const u = await until(async () => { const l = (await fsGet('users')).documents ?? []; return l.find((d: any) => d.fields.email?.stringValue === email) }, 20_000, 'users doc')
+    const u = await until(async () => { const l = (await fsGet('users?pageSize=1000')).documents ?? []; return l.find((d: any) => d.fields.email?.stringValue === email) }, 20_000, 'users doc')
     assert.equal(u.fields.accountType.stringValue, 'couple')
     const uid = u.name.split('/').pop()
     await seedSet(`users/${uid}`, { uid, email, accountType: 'couple', plan: { tier: 'wedding', source: 'legacy' }, createdAt: new Date(), updatedAt: new Date() }) // paid plan comes from billing, not the role

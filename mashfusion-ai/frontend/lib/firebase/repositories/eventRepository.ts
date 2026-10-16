@@ -24,6 +24,7 @@ export function fromEventDoc(id: string, d: DocumentData): EventDoc {
     description:       d.description ?? null,
     type:              TYPES.includes(d.type) ? d.type : 'standard',
     occasionType:      OCCASIONS.includes(d.occasionType) ? d.occasionType : d.type === 'wedding' ? 'wedding' : null,
+    accessMode:        d.accessMode === 'trial' || d.accessMode === 'activated' ? d.accessMode : null,
     status,
     coupleNames:       d.coupleNames ?? null,
     weddingDate:       d.weddingDate ?? null,

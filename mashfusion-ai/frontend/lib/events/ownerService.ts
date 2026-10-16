@@ -41,6 +41,7 @@ const MESSAGES: Record<string, string> = {
   account_required:      'Accedi con il tuo account',
   unauthenticated:       'Accedi con il tuo account',
   session_limit:         'Il tuo piano permette al massimo 1 sessione attiva. Passa a Pro per sessioni illimitate.',
+  miolove_trial_album_exists: 'Hai già creato il tuo album gratuito. Puoi continuare a usarlo dalla tua area album.',
   request_id_conflict:   'Richiesta già usata, riprova',
   slug_unavailable:      'Impossibile generare un link univoco, riprova',
   slug_taken:            'Il link della sessione è stato assegnato a un altro evento',
@@ -57,7 +58,9 @@ async function callOwner<Out>(name: string, payload: object): Promise<Out> {
     return (await httpsCallable<object, Out>(getFirebaseFunctions(), name)(payload)).data
   } catch (e) {
     const err = e as { message?: string; details?: { reason?: string } }
-    throw new Error((err.details?.reason && MESSAGES[err.details.reason]) || err.message || 'Operazione non riuscita')
+    // The server reason travels with the error so a screen can show its own (translated) message.
+    const reason = err.details?.reason
+    throw Object.assign(new Error((reason && MESSAGES[reason]) || err.message || 'Operazione non riuscita'), { reason })
   }
 }
 

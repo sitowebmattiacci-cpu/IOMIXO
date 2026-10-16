@@ -113,7 +113,7 @@ test('PT3. sign-up on iomixo.com saves accountType dj with no choice; unknown ho
     await page.locator('button[type="submit"]').click()
     await page.getByText(/Check your inbox/i).first().waitFor({ timeout: 60_000 })
     assert.equal(await page.getByTestId('register-continue').count(), 0, 'no Sposi continue button for a DJ')
-    const u = await until(async () => ((await fsGet('users')).documents ?? []).find((d: any) => d.fields.email?.stringValue === email), 20_000, 'users doc')
+    const u = await until(async () => ((await fsGet('users?pageSize=1000')).documents ?? []).find((d: any) => d.fields.email?.stringValue === email), 20_000, 'users doc')
     assert.equal(u.fields.accountType.stringValue, 'dj')
     await page.goto(`${app.url}/register`, { waitUntil: 'networkidle', timeout: 120_000 })
     assert.equal(await page.locator('[data-portal]').first().getAttribute('data-portal'), 'iomixo', 'safe default on a non-portal host')

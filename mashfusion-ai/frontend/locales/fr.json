@@ -954,6 +954,7 @@
       "other": "Événement"
     },
     "albumGroup": "Votre album",
-    "homeSubtitle": "Tout est sous contrôle pour votre événement."
+    "homeSubtitle": "Tout est sous contrôle pour votre événement.",
+    "trialAlbumExists": "Vous avez déjà créé votre album gratuit. Vous pouvez continuer à l'utiliser depuis votre espace albums."
   }
 }

@@ -16,6 +16,13 @@ export type EventType = 'standard' | 'party' | 'wedding'
 /** What an album is for. Orthogonal to `type`: every MIOLOVE album stays type 'wedding' (routing, permissions, Wedding UI). */
 export type OccasionType = 'wedding' | 'birthday' | 'baptism' | 'other'
 const OCCASIONS: readonly OccasionType[] = ['wedding', 'birthday', 'baptism', 'other']
+/**
+ * How a MIOLOVE (couple) album got its access. Written ONLY by createEvent for couple accounts; every other event (DJ, Party, legacy,
+ * events created before this field) has no value, and a missing value NEVER means trial.
+ *   'trial'     free first album of a couple account with no paid access (the one-time reservation trialAlbums/{uid} points at it)
+ *   'activated' created while the couple already had paid access (Advance plan or Event Pass), unrelated to the trial
+ */
+export type AccessMode = 'trial' | 'activated'
 
 export interface CreateEventInput {
   requestId: string; title: string; djName: string | null; description: string | null; type: EventType
@@ -63,11 +70,25 @@ async function countActiveEvents(db: Firestore, uid: string): Promise<number> {
   return snap.docs.filter((d) => !d.data().deletedAt).length
 }
 
+/**
+ * One free MIOLOVE trial album per couple account. trialAlbums/{uid} is the reservation: created in the SAME transaction as the event, never deleted
+ * (not by deleteEvent either, so deleting the trial album does not hand out another one), and denied to every client by the rules' default.
+ */
+const TRIAL_EXISTS = 'miolove_trial_album_exists'
+const trialReservation = (db: Firestore, uid: string) => db.collection('trialAlbums').doc(uid)
+
+/** A couple account that already owns a (not deleted) album cannot start a free trial: it is not its first album. */
+async function assertNoOwnedAlbum(db: Firestore, uid: string): Promise<void> {
+  const owned = await db.collection('events').where('ownerUid', '==', uid).limit(500).get()
+  if (owned.docs.some((d) => !d.data().deletedAt)) throw fail('already-exists', 'This account already has an album', TRIAL_EXISTS)
+}
+
 /** Replacement of POST /api/live/sessions. Plan gates are decided here from users/{uid}.plan + eventPasses (clients never decide). */
 export async function createEvent(db: Firestore, request: CallerAuth, input: CreateEventInput): Promise<{ eventId: string; slug: string; created: boolean }> {
   const uid = requireAccount(request)
+  const accountType = await loadAccountType(db, uid)
   // Couple accounts can only create Wedding events (no Party / standard sessions).
-  if (input.type !== 'wedding' && (await loadAccountType(db, uid)) === 'couple') {
+  if (input.type !== 'wedding' && accountType === 'couple') {
     throw fail('permission-denied', 'Couple accounts can only create Wedding events', 'wedding_only')
   }
   const eventId = eventIdFor(uid, input.requestId)
@@ -81,7 +102,12 @@ export async function createEvent(db: Firestore, request: CallerAuth, input: Cre
   }
 
   const ent = await loadEntitlements(db, { uid })
-  if ((input.type === 'party' || input.type === 'wedding') && !ent.eventAccess) {
+  // MIOLOVE: a couple account with paid access is 'activated'; one without gets exactly ONE free trial album (see trialReservation).
+  let accessMode: AccessMode | null = null
+  if (input.type === 'wedding' && accountType === 'couple') {
+    if (ent.eventAccess) accessMode = 'activated'
+    else { await assertNoOwnedAlbum(db, uid); accessMode = 'trial' }
+  } else if ((input.type === 'party' || input.type === 'wedding') && !ent.eventAccess) {
     throw fail('permission-denied', 'Advance plan or an Event Pass is required', 'event_access_required')
   }
   const max = ent.limits.maxActiveSessions
@@ -92,16 +118,24 @@ export async function createEvent(db: Firestore, request: CallerAuth, input: Cre
   for (let attempt = 0; attempt < 6; attempt++) {
     const slug = randomSlug(10 + attempt)                                            // grows on collision, like the legacy uniqueSlug
     const slugRef = db.collection('eventSlugs').doc(slug)
+    const trialRef = trialReservation(db, uid)
     const outcome = await db.runTransaction(async (tx) => {
       const [again, s] = [await tx.get(ref), await tx.get(slugRef)]
       if (again.exists) return { slug: String(again.data()!.slug), created: false }
       if (s.exists) return null                                                       // slug taken: try another
+      // The trial is a one-time reservation per account: two concurrent creates both read it absent, only one commits (the other retries and sees it).
+      if (accessMode === 'trial') {
+        const claimed = await tx.get(trialRef)
+        if (claimed.exists) throw fail('already-exists', 'The free MIOLOVE trial album was already created', TRIAL_EXISTS)
+        tx.create(trialRef, { eventId, createdAt: FieldValue.serverTimestamp() })
+      }
       tx.create(slugRef, { eventId })
       tx.create(ref, {
         ownerUid: uid, slug, origin: 'firebase',
         title: input.title, djName: input.djName, description: input.description, type: input.type, status: 'live',
         coupleNames: input.coupleNames, weddingDate: input.weddingDate, venueName: input.venueName,
         occasionType: input.occasionType,
+        ...(accessMode ? { accessMode } : {}),
         screenModeEnabled: input.screenModeEnabled, guestConfig: null, screenConfig: null,
         createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
       })

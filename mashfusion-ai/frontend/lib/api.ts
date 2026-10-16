@@ -81,6 +81,8 @@ export type LiveRequestStatus = 'pending' | 'approved' | 'rejected'
 export type SessionType = 'standard' | 'party' | 'wedding'
 /** What a MIOLOVE album is for; the album's `session_type` stays 'wedding' whatever the occasion. */
 export type OccasionType = 'wedding' | 'birthday' | 'baptism' | 'other'
+/** MIOLOVE access of an album ('trial' = the free first album); absent for every event created outside the couple flow. */
+export type AccessMode = 'trial' | 'activated'
 export type PlanTier = 'free' | 'pro' | 'wedding'
 
 /**
@@ -185,6 +187,7 @@ export interface LiveSession {
   online_count?: number | null
   session_type?: SessionType
   occasion_type?: OccasionType
+  access_mode?: AccessMode
   couple_names?: string | null
   wedding_date?: string | null
   venue_name?: string | null

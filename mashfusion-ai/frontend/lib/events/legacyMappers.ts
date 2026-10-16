@@ -23,6 +23,7 @@ export function eventToSession(e: EventDoc): LiveSession {
     updated_at: iso(e.updatedAt ?? e.createdAt),
     session_type: e.type,
     occasion_type: e.occasionType ?? undefined,
+    access_mode: e.accessMode ?? undefined,
     couple_names: e.coupleNames,
     wedding_date: e.weddingDate,
     venue_name: e.venueName,

@@ -326,7 +326,9 @@ export default function SessionDetailPage() {
   // Sessione premium (Party/Wedding) senza accesso valido → schermata di blocco.
   // La sessione resta salvata e visibile in lista, ma non apre la regia interna
   // finché l'Event Pass 24H non viene riattivato o si passa ad Advance.
-  if (isPremiumSession(session) && !hasAdvanceAccess) {
+  // MIOLOVE: the couple's free trial album (accessMode 'trial', written only by the server) always opens; a missing value never means trial.
+  const isTrialAlbum = isCouple && session.access_mode === 'trial'
+  if (isPremiumSession(session) && !hasAdvanceAccess && !isTrialAlbum) {
     return <SessionLockScreen sessionType={session.session_type} eventName={session.event_name} />
   }
 

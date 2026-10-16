@@ -84,7 +84,7 @@ export default function LiveSessionsPage() {
     e.preventDefault()
     if (!form.event_name.trim()) return
     if (isCouple && form.session_type !== 'wedding') return
-    if ((form.session_type === 'wedding' || form.session_type === 'party') && !isAdvance) {
+    if ((form.session_type === 'wedding' || form.session_type === 'party') && !isAdvance && !isCouple) {
       toast.error(t('common.weddingPaywall'))
       return
     }
@@ -111,7 +111,7 @@ export default function LiveSessionsPage() {
       await mutate('live-sessions')
       window.location.href = `/sessions/${session.id}`
     } catch (err: any) {
-      toast.error(err?.response?.data?.error ?? err?.message ?? t('common.errorGeneric'))
+      toast.error(err?.reason === 'miolove_trial_album_exists' ? t('onboarding.trialAlbumExists') : (err?.response?.data?.error ?? err?.message ?? t('common.errorGeneric')))
     } finally {
       setSubmitting(false)
     }
@@ -297,14 +297,14 @@ export default function LiveSessionsPage() {
               <Button
                 type="submit"
                 loading={submitting}
-                disabled={(isWeddingForm || isPartyForm) && !isAdvance}
+                disabled={(isWeddingForm || isPartyForm) && !isAdvance && !isCouple}
               >
                 {t('sessions.create')}
               </Button>
               <Button type="button" variant="ghost" onClick={cancelCreate}>
                 {t('common.cancel')}
               </Button>
-              {(isWeddingForm || isPartyForm) && !isAdvance && (
+              {(isWeddingForm || isPartyForm) && !isAdvance && !isCouple && (
                 <Link href="/billing" className="ml-auto text-xs text-pink-300 underline self-center">
                   {t('common.upgrade')}
                 </Link>
@@ -328,7 +328,7 @@ export default function LiveSessionsPage() {
       ) : (
         <div className="space-y-2">
           {sessions.map((s) => {
-            const locked = isPremiumSession(s) && !isAdvance
+            const locked = isPremiumSession(s) && !isAdvance && !(isCouple && s.access_mode === 'trial')
             return (
             <Link key={s.id} href={`/sessions/${s.id}`}>
               <Card className={`px-5 py-4 flex items-center justify-between hover:bg-white/5 transition ${locked ? 'opacity-70' : ''}`}>

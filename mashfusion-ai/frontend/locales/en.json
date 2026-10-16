@@ -1079,6 +1079,7 @@
       "other": "Event"
     },
     "albumGroup": "Your album",
-    "homeSubtitle": "Everything under control for your event."
+    "homeSubtitle": "Everything under control for your event.",
+    "trialAlbumExists": "You have already created your free album. You can keep using it from your albums area."
   }
 }

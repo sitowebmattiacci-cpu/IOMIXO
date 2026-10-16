@@ -45,7 +45,7 @@ export function CoupleOnboarding() {
       await mutate('live-sessions')
       router.replace(`/sessions/${album.id}`)
     } catch (err: any) {
-      toast.error(err?.message ?? t('common.errorGeneric'))
+      toast.error(err?.reason === 'miolove_trial_album_exists' ? t('onboarding.trialAlbumExists') : (err?.message ?? t('common.errorGeneric')))
       setSubmitting(false)
     }
   }
