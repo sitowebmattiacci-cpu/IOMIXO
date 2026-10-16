@@ -25,6 +25,8 @@ export function fromEventDoc(id: string, d: DocumentData): EventDoc {
     type:              TYPES.includes(d.type) ? d.type : 'standard',
     occasionType:      OCCASIONS.includes(d.occasionType) ? d.occasionType : d.type === 'wedding' ? 'wedding' : null,
     accessMode:        d.accessMode === 'trial' || d.accessMode === 'activated' ? d.accessMode : null,
+    trialPhotoCount:   typeof d.trialPhotoCount === 'number' ? d.trialPhotoCount : null,
+    trialPhotoLimit:   typeof d.trialPhotoLimit === 'number' ? d.trialPhotoLimit : null,
     status,
     coupleNames:       d.coupleNames ?? null,
     weddingDate:       d.weddingDate ?? null,

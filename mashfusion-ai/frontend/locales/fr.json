@@ -956,5 +956,6 @@
     "albumGroup": "Votre album",
     "homeSubtitle": "Tout est sous contrôle pour votre événement.",
     "trialAlbumExists": "Vous avez déjà créé votre album gratuit. Vous pouvez continuer à l'utiliser depuis votre espace albums."
-  }
+  },
+  "wdAdmin": { "trial": {"badge": "Essai gratuit", "unit": "photos", "hint": "Vous pouvez collecter jusqu'à {max} photos gratuitement.", "limitTitle": "Limite de l'essai gratuit atteinte", "activate": "Activer mon album"} }
 }

@@ -4,6 +4,7 @@ import { HttpsError } from 'firebase-functions/v2/https'
 import { str } from '../requests/validation'
 import { fail } from '../shared/guard'
 import { loadEntitlements } from '../entitlements/load'
+import { MIOLOVE_TRIAL_PHOTO_LIMIT } from '../photos/trialQuota'
 import { idField, requireAccount, requireEventOwner, loadAccountType, type CallerAuth } from './guard'
 
 /**
@@ -136,6 +137,7 @@ export async function createEvent(db: Firestore, request: CallerAuth, input: Cre
         coupleNames: input.coupleNames, weddingDate: input.weddingDate, venueName: input.venueName,
         occasionType: input.occasionType,
         ...(accessMode ? { accessMode } : {}),
+        ...(accessMode === 'trial' ? { trialPhotoCount: 0, trialPhotoLimit: MIOLOVE_TRIAL_PHOTO_LIMIT } : {}),
         screenModeEnabled: input.screenModeEnabled, guestConfig: null, screenConfig: null,
         createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
       })

@@ -13,6 +13,7 @@ import { WEDDING_BRAND_FILE_PREFIX } from '@/lib/brand/wedding'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { WeddingGuestHome, getWeddingGuestActionKeys, buildWeddingGuestActions } from '../guest/WeddingGuestUI'
 import { WdPage, WdCard, WdButton, WdLinkButton } from './WeddingAdminUI'
+import { TrialQuota } from './TrialQuota'
 
 export const isVideoUrl = (u: string | null | undefined) => !!u && /\.(mp4|mov|webm|m4v|ogv)(\?|#|$)/i.test(u)
 
@@ -99,6 +100,8 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
         {session.venue_name && <span>{session.venue_name}</span>}
         <span className={session.is_active ? 'font-semibold text-emerald-600' : 'font-semibold'}>{session.is_active ? t('sessions.active') : t('sessions.closed')}</span>
       </div>
+
+      <TrialQuota session={session} />
 
       <div className="grid grid-cols-2 gap-4">
         {[{ v: all.length - videoCount, l: t('wdAdmin.photos.photos') }, { v: videoCount, l: t('wdAdmin.photos.videos') }].map((s) => (

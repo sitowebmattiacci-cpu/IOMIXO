@@ -188,6 +188,8 @@ export interface LiveSession {
   session_type?: SessionType
   occasion_type?: OccasionType
   access_mode?: AccessMode
+  trial_photo_count?: number
+  trial_photo_limit?: number
   couple_names?: string | null
   wedding_date?: string | null
   venue_name?: string | null

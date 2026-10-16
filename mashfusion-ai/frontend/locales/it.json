@@ -892,6 +892,7 @@
     }
   },
   "wdAdmin": {
+    "trial": {"badge": "Prova gratuita", "unit": "foto", "hint": "Puoi raccogliere fino a {max} foto gratuitamente.", "limitTitle": "Limite della prova gratuita raggiunto", "activate": "Attiva il mio album"},
     "allEvents": "Tutti gli eventi",
     "currentEvent": "Evento corrente",
     "nav": {

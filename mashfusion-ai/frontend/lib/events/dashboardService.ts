@@ -4,7 +4,7 @@ import { eventToSession, userToLegacy } from './legacyMappers'
 import { listOwnerEvents } from '../firebase/repositories/eventRepository'
 import { getUser, listEventPasses } from '../firebase/repositories/userRepository'
 import { dashboardOn, resolveOwnerEvent } from './ownerService'
-import { getGameConfig } from '../firebase/repositories/eventRepository'
+import { getGameConfig, getEventById } from '../firebase/repositories/eventRepository'
 import type { LiveSession } from '../api'
 import type { EventPass, User } from '@/types'
 
@@ -59,7 +59,9 @@ export const dashboardOps = {
   /** The event + the owner-private games customisation. */
   async getSession(id: string): Promise<{ session: LiveSession } | null> {
     if (!dashboardEnabled()) return null
-    const ev = await resolveOwnerEvent(id); if (!ev) return null
+    let ev = await resolveOwnerEvent(id); if (!ev) return null
+    // The resolved event is memoized per page: a trial album re-reads itself so its photo counter stays live.
+    if (ev.accessMode === 'trial') ev = (await getEventById(getFirebaseDb(), ev.id).catch(() => null)) ?? ev
     const cfg = await getGameConfig(getFirebaseDb(), ev.id)
     return {
       session: { ...eventToSession(ev), roulette_penitenze: cfg?.roulettePenitenze ?? null, shoe_game_questions: cfg?.shoeGameQuestions ?? null },

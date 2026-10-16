@@ -28,6 +28,7 @@ const MESSAGES: Record<string, string> = {
   upload_missing:     'Caricamento non riuscito, riprova.',
   invalid_upload:     'File non valido.',
   photo_not_found:    'Foto non trovata',
+  miolove_trial_photo_limit_reached: 'Questo album ha raggiunto il limite della prova gratuita.',
 }
 
 /** slug → event id, memoized per page (a negative answer is not kept). */

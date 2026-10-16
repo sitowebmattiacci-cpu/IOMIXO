@@ -11,6 +11,7 @@ import { WEDDING_BRAND_FILE_PREFIX } from '@/lib/brand/wedding'
 import { cn } from '@/lib/utils'
 import { WdPage, WdCard, WdButton, WdLinkButton, wdStatusLabel } from './WeddingAdminUI'
 import { publicOrigin, isVideoUrl } from './WeddingHomePage'
+import { TrialQuota } from './TrialQuota'
 
 type MediaFilter = 'all' | 'photo' | 'video'
 
@@ -84,6 +85,7 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
 
   return (
     <WdPage width="wide" title={t('wdAdmin.nav.photos')}>
+      <TrialQuota session={session} />
       <div className="-mt-2 flex flex-wrap items-center justify-between gap-3">
         <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => onUpload(e.target.files)} />
         <WdButton className="!px-6 !py-3.5 !rounded-2xl" onClick={() => fileRef.current?.click()} disabled={uploading}>

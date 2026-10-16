@@ -857,6 +857,7 @@
     }
   },
   "wdAdmin": {
+    "trial": {"badge": "Free trial", "unit": "photos", "hint": "You can collect up to {max} photos for free.", "limitTitle": "Free trial limit reached", "activate": "Activate my album"},
     "allEvents": "All events",
     "currentEvent": "Current event",
     "nav": {

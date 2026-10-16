@@ -5,6 +5,7 @@ import { fail, loadLiveEvent, reserveSlot, releaseSlot } from '../shared/guard'
 import { selectEventEntitlements, logEntitlementDecision } from '../entitlements/source'
 import { idField, requireEventOwner, requireOwnerEventAccess, type CallerAuth } from '../owner/guard'
 import { deleteObjects, objectInfo, rotateDownloadToken } from './storage'
+import { MIOLOVE_TRIAL_PHOTO_LIMIT, TRIAL_PHOTO_LIMIT_REASON, isTrialAlbum, hasMiolovePhotoAccess, trialPhotoCount } from './trialQuota'
 
 /**
  * Event photos (guest album + Live Booth) on Firestore + Storage, replacing routes/livePhotos.ts.
@@ -65,9 +66,11 @@ export async function createPhotoUpload(db: Firestore, uid: string, input: Creat
   const { ref: eventRef, data: ev } = await loadLiveEvent(db, input.eventId)
   if (ev.type !== 'party' && ev.type !== 'wedding') throw fail('failed-precondition', 'Photos are for Party / Wedding events', 'photos_unavailable')
   const decision = await selectEventEntitlements(db, input.eventId, ev, new Date(now()))
-  const allowed = decision.ent ? decision.ent.gates.photos : ev.dedicationsEnabled === true
+  const allowed = (decision.ent ? decision.ent.gates.photos : ev.dedicationsEnabled === true) || hasMiolovePhotoAccess(ev)
   logEntitlementDecision('createPhotoUpload', decision, allowed ? 'allow' : 'deny', 'photos')
   if (!allowed) throw fail('permission-denied', 'Photos require the Advance plan or an Event Pass', 'photos_unavailable')
+  // UX only: finalizePhoto is the authoritative quota check.
+  if (isTrialAlbum(ev) && (trialPhotoCount(ev) ?? 0) >= MIOLOVE_TRIAL_PHOTO_LIMIT) throw fail('resource-exhausted', 'The free trial photo limit was reached', TRIAL_PHOTO_LIMIT_REASON)
 
   const slot = { guestRef: eventRef.collection('photoGuests').doc(uid), reasons: { cooldown: 'cooldown', guest: 'guest_limit' }, ...PHOTO_POLICY, now: now() }
   const previousLastAt = await reserveSlot(db, slot)
@@ -104,8 +107,31 @@ export async function finalizePhoto(db: Firestore, uid: string, input: PhotoRefI
     throw fail('failed-precondition', 'Invalid file', 'invalid_upload')
   }
   const status = finalStatus(ev.type)
-  await photoRef.update({ status, size: info.size, updatedAt: FieldValue.serverTimestamp() })
-  return { photoId: photoRef.id, status }
+  if (!isTrialAlbum(ev)) {
+    await photoRef.update({ status, size: info.size, updatedAt: FieldValue.serverTimestamp() })
+    return { photoId: photoRef.id, status }
+  }
+
+  // Trial album: the photo takes a slot only when it becomes approved, in the same transaction that bumps the counter.
+  const taken = await db.runTransaction(async (tx) => {
+    const [evSnap, photoSnap] = [await tx.get(eventRef), await tx.get(photoRef)]
+    if (!photoSnap.exists) return 'gone' as const
+    if (photoSnap.data()!.status !== 'uploading') return 'done' as const
+    const count = trialPhotoCount(evSnap.data()!) ?? (await tx.get(eventRef.collection('photos').where('status', '==', 'approved'))).size
+    if (count >= MIOLOVE_TRIAL_PHOTO_LIMIT) return 'full' as const
+    tx.update(photoRef, { status, size: info.size, updatedAt: FieldValue.serverTimestamp() })
+    tx.update(eventRef, { trialPhotoCount: count + 1, trialPhotoLimit: MIOLOVE_TRIAL_PHOTO_LIMIT })
+    return 'ok' as const
+  })
+  if (taken === 'full') {
+    // The rejected upload is not visible and holds no slot: remove the file and its doc.
+    await deleteObjects([String(p.storagePath)]).catch((e) => console.error('[finalizePhoto] cleanup failed', (e as Error).message))
+    await photoRef.delete().catch(() => {})
+    throw fail('resource-exhausted', 'The free trial photo limit was reached', TRIAL_PHOTO_LIMIT_REASON)
+  }
+  if (taken === 'gone') throw fail('not-found', 'Photo not found', 'photo_not_found')
+  const after = (await photoRef.get()).data()!
+  return { photoId: photoRef.id, status: after.status }
 }
 
 /** Owner: approve / reject / feature / delete. The premium gate applies to status and feature changes (legacy requireEventAccess), not to delete. */
@@ -117,11 +143,22 @@ export async function moderatePhoto(db: Firestore, request: CallerAuth, input: M
 
   if (input.action === 'delete') {
     await deleteObjects([String(p.storagePath)])             // file first: a doc without a file is harmless, a file without a doc is an orphan
+    if (isTrialAlbum(owner.data)) {
+      // Only an approved photo held a slot; the doc delete and the counter move together and never go below zero.
+      await db.runTransaction(async (tx) => {
+        const [evSnap, photoSnap] = [await tx.get(owner.ref), await tx.get(photoRef)]
+        if (!photoSnap.exists) return
+        const count = trialPhotoCount(evSnap.data()!)
+        tx.delete(photoRef)
+        if (photoSnap.data()!.status === 'approved' && count !== null) tx.update(owner.ref, { trialPhotoCount: Math.max(0, count - 1) })
+      })
+    }
     await db.recursiveDelete(photoRef)
     return { changed: true, deleted: true }
   }
   if (p.status === 'uploading') throw fail('failed-precondition', 'The upload is not finished', 'photo_not_ready')
-  await requireOwnerEventAccess(db, input.eventId, owner.data, 'moderatePhoto')
+  // Featuring is the only moderation a MIOLOVE album owner has; status changes keep the professional gate (they would move the trial counter).
+  if (!(input.action === 'set_featured' && hasMiolovePhotoAccess(owner.data))) await requireOwnerEventAccess(db, input.eventId, owner.data, 'moderatePhoto')
 
   if (input.action === 'set_featured') {
     if (p.isFeatured === input.isFeatured) return { changed: false, isFeatured: input.isFeatured }

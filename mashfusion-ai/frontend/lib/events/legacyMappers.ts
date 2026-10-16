@@ -24,6 +24,8 @@ export function eventToSession(e: EventDoc): LiveSession {
     session_type: e.type,
     occasion_type: e.occasionType ?? undefined,
     access_mode: e.accessMode ?? undefined,
+    trial_photo_count: e.trialPhotoCount ?? undefined,
+    trial_photo_limit: e.trialPhotoLimit ?? undefined,
     couple_names: e.coupleNames,
     wedding_date: e.weddingDate,
     venue_name: e.venueName,
