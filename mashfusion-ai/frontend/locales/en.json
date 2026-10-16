@@ -893,6 +893,8 @@
     },
     "photos": {
       "subtitle": "Photos and videos shared by your guests.",
+      "guestLinkTitle": "Guest link",
+      "guestLinkDesc": "Guests scan the QR code or open the link to send their photos to the album.",
       "upload": "Upload photos & videos",
       "uploaded": "Upload complete",
       "download": "Download",

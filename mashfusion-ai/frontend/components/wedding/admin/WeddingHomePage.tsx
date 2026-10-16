@@ -80,7 +80,8 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
   const stills = all.filter((p) => p.url && !isVideoUrl(p.url) && p.status !== 'rejected')
   const hero = stills[0]?.url ?? null
 
-  const guestItems = buildWeddingGuestActions(getWeddingGuestActionKeys(session.guest_config), t)
+  // Song requests are moderated by the DJ only: a Sposi album never offers them to guests.
+  const guestItems = buildWeddingGuestActions(getWeddingGuestActionKeys(session.guest_config).filter((k) => !(couple && k === 'requests')), t)
 
   return (
     <WdPage

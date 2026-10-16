@@ -7,7 +7,8 @@ import { usePortal } from '@/components/portal/PortalProvider'
 export function PortalBrand({ size = 40, textClass = 'text-xl', className = '', onDark = false }: { size?: number; textClass?: string; className?: string; /** on a dark surface the light MIOLOVE logo sits on a white chip */ onDark?: boolean }) {
   const { config } = usePortal()
   if (config.id === 'miolove') {
-    const logo = <MioloveLogo height={Math.round(size * 0.9)} variant="onLight" className={className} />
+    // Transparent logo on light backgrounds (the ivory canvas shows as a box on tinted gradients); the white chip on dark keeps the ivory one.
+    const logo = <MioloveLogo height={Math.round(size * 0.9)} variant={onDark ? 'onLight' : 'default'} className={className} />
     return onDark ? <span className="inline-flex rounded-xl bg-white px-3 py-1.5">{logo}</span> : logo
   }
   return (

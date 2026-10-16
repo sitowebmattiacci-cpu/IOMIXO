@@ -9,12 +9,12 @@ import { useI18n } from '@/lib/i18n'
 import { usePhotosSignal } from '@/lib/events/usePhotos'
 import { WEDDING_BRAND_FILE_PREFIX } from '@/lib/brand/wedding'
 import { cn } from '@/lib/utils'
-import { WdPage, WdCard, WdButton, wdStatusLabel } from './WeddingAdminUI'
+import { WdPage, WdCard, WdButton, WdLinkButton, wdStatusLabel } from './WeddingAdminUI'
 import { publicOrigin, isVideoUrl } from './WeddingHomePage'
 
 type MediaFilter = 'all' | 'photo' | 'video'
 
-export function WeddingPhotosPage({ session, initialSource = 'album' }: { session: any; initialSource?: 'album' | 'booth' }) {
+export function WeddingPhotosPage({ session, initialSource = 'album', couple = false }: { session: any; initialSource?: 'album' | 'booth'; couple?: boolean }) {
   const { t } = useI18n()
   const sessionId: string = session.id
   const slug: string = session.public_slug
@@ -23,6 +23,7 @@ export function WeddingPhotosPage({ session, initialSource = 'album' }: { sessio
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [uploading, setUploading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [copiedGuest, setCopiedGuest] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // One query feeds both tabs (the Live Booth is the same collection filtered by source).
@@ -35,6 +36,7 @@ export function WeddingPhotosPage({ session, initialSource = 'album' }: { sessio
   const videoCount = all.filter((p) => isVideoUrl(p.url)).length
 
   const boothUrl = `${publicOrigin()}/booth/${slug ?? sessionId}`
+  const guestUrl = `${publicOrigin()}/live/${slug ?? sessionId}`
   const err = (e: any) => toast.error(e?.message ?? t('common.errorGeneric'))
 
   const toggleSel = (id: string) => setSelected((prev) => {
@@ -130,15 +132,36 @@ export function WeddingPhotosPage({ session, initialSource = 'album' }: { sessio
         </div>
       )}
 
+      {couple && source === 'album' && (
+        <WdCard className="flex items-center gap-5">
+          <div className="min-w-0 flex-1" data-testid="wd-photos-guest-link">
+            <p className="text-sm font-bold text-wd-ink">{t('wdAdmin.photos.guestLinkTitle')}</p>
+            <p className="mt-1 text-[13px] text-wd-muted">{t('wdAdmin.photos.guestLinkDesc')}</p>
+            <p className="mt-2 truncate font-mono text-[12px] text-wd-ink" title={guestUrl}>{guestUrl}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <WdButton variant="secondary" size="sm" icon={copiedGuest ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                onClick={async () => { try { await navigator.clipboard.writeText(guestUrl); setCopiedGuest(true); setTimeout(() => setCopiedGuest(false), 1500) } catch {} }}>
+                {copiedGuest ? t('weddingPanels.linkCopied') : t('weddingPanels.copyLink')}
+              </WdButton>
+              <WdLinkButton href={guestUrl} size="sm">{t('weddingPanels.open')}</WdLinkButton>
+            </div>
+          </div>
+          <div className="shrink-0 rounded-xl border border-wd-border bg-white p-2"><QRCodeSVG value={guestUrl} size={104} level="M" /></div>
+        </WdCard>
+      )}
+
       {source === 'booth' && (
         <WdCard className="flex items-center gap-5">
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-wd-ink">{t('weddingPanels.liveBoothActive')}</p>
             <p className="mt-1 text-[13px] text-wd-muted">{t('weddingPanels.liveBoothDesc')}</p>
-            <WdButton className="mt-3" variant="secondary" size="sm" icon={copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              onClick={async () => { try { await navigator.clipboard.writeText(boothUrl); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch {} }}>
-              {copied ? t('weddingPanels.linkCopied') : t('weddingPanels.copyLink')}
-            </WdButton>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <WdButton variant="secondary" size="sm" icon={copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                onClick={async () => { try { await navigator.clipboard.writeText(boothUrl); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch {} }}>
+                {copied ? t('weddingPanels.linkCopied') : t('weddingPanels.copyLink')}
+              </WdButton>
+              <WdLinkButton href={boothUrl} size="sm">{t('weddingPanels.open')}</WdLinkButton>
+            </div>
           </div>
           <div className="shrink-0 rounded-xl border border-wd-border bg-white p-2"><QRCodeSVG value={boothUrl} size={88} level="M" /></div>
         </WdCard>

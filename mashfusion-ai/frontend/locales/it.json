@@ -928,6 +928,8 @@
     },
     "photos": {
       "subtitle": "Le foto e i video condivisi dai vostri ospiti.",
+      "guestLinkTitle": "Link per gli invitati",
+      "guestLinkDesc": "Gli invitati scansionano il QR code o aprono il link per inviare le loro foto all'album.",
       "upload": "Carica foto e video",
       "uploaded": "Caricamento completato",
       "download": "Scarica",

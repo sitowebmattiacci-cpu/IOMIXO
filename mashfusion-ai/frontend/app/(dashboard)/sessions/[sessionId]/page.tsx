@@ -452,7 +452,7 @@ export default function SessionDetailPage() {
       {tab === 'home' && (
         <WeddingHomePage session={session} pendingRequests={pending.length} togglingActive={togglingActive} onToggleActive={toggleActive} couple={isCouple} />
       )}
-      {tab === 'photos' && <WeddingPhotosPage session={session} />}
+      {tab === 'photos' && <WeddingPhotosPage session={session} couple={isCouple} />}
       {tab === 'requests' && (
         <WdPage title={t('wdAdmin.nav.requests')} subtitle={t('wdAdmin.requests.subtitle')}>
           <RequestsPanel

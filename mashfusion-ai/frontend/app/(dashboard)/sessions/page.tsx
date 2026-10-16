@@ -95,6 +95,8 @@ export default function LiveSessionsPage() {
         payload.screen_mode_enabled = form.screen_mode_enabled
       }
       const session = await live.createSession(payload)
+      // Song requests are moderated by the DJ only: a Sposi album starts with them off and the photo entry point on, so guests see "send a photo" and never "send your song to the DJ".
+      if (isCouple) await live.updateSession(session.id, { guest_config: { requests: false, live_booth: true } })
       toast.success(t('sessions.created'))
       setForm(EMPTY_FORM)
       setStep('idle')

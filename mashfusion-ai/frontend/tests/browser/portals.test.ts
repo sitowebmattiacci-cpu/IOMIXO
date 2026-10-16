@@ -274,3 +274,91 @@ test('PT9. every Function shares one CORS allow-list with both IOMIXO and both M
   const emu = await fetch('http://127.0.0.1:5001/demo-iomixo/europe-west1/getPublicEvent', { method: 'OPTIONS', headers: { origin: 'https://www.miolovealbum.com', 'access-control-request-method': 'POST' } })
   assert.equal(emu.headers.get('access-control-allow-origin'), 'https://www.miolovealbum.com')
 })
+
+/** The value encoded by every visible QR on the page (read from the React props, so what a phone would scan). */
+const qrValues = (page: Page) => page.evaluate(() => Array.from(document.querySelectorAll('svg')).filter((el) => el.getBoundingClientRect().width >= 60).map((el: any) => {
+  const k = Object.keys(el).find((x) => x.startsWith('__reactFiber')); let f = k ? el[k] : null
+  while (f) { const v = f.memoizedProps?.value; if (typeof v === 'string' && /^https?:/.test(v)) return v; f = f.return }
+  return null
+}).filter(Boolean) as string[])
+const NO_DJ = /\bDJs?\b|\bParty\b|Brano al DJ|Regia/i
+
+for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
+  test(`PT10. Sposi album on miolovealbum.com @${vp.width}: clean logo, no DJ copy, Photos tab shows guest link + QR, booth, poster — all MIOLOVE`, async () => {
+    const couple = await newClient('account')
+    await seedSet(`users/${couple.uid}`, { uid: couple.uid, email: couple.email, accountType: 'couple', plan: { tier: 'wedding', source: 'legacy' }, createdAt: new Date(), updatedAt: new Date() })
+    const ctx = await browser.newContext({ viewport: vp }); await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: M() }); const page = await ctx.newPage()
+    await page.addInitScript('window.__name = (f) => f')
+    try {
+      // MIOLOVE logo: the transparent asset, never the ivory canvas that shows as a box on the tinted page
+      await page.goto(`${M()}/register`, { waitUntil: 'networkidle', timeout: 120_000 })
+      const logoSrc = await page.locator('[role="img"][aria-label="MIOLOVE ALBUM"]:visible img').first().getAttribute('src')
+      assert.match(logoSrc ?? '', /miolove-album-logo\.png/); assert.doesNotMatch(logoSrc ?? '', /on-light|on-dark/)
+      assert.equal(await overflow(page), false, 'register overflow')
+
+      await signIn(page, M(), couple.email); await page.waitForURL(/\/sessions/, { timeout: 60_000 })
+      await page.getByTestId('new-session').click({ timeout: 60_000 })
+      await page.locator('input[required]').first().fill('Album di prova')
+      await page.getByRole('button', { name: /Crea sessione/ }).click()
+      await page.waitForURL(/\/sessions\/[^/]+$/, { timeout: 60_000 })
+      const eventId = page.url().split('/sessions/')[1]
+      const ev = (await until(async () => (await fsGet(`events/${eventId}`)).fields, 20_000, 'album created'))
+      const slug = ev.slug.stringValue
+      assert.equal(ev.guestConfig?.mapValue?.fields?.requests?.booleanValue, false, 'a Sposi album starts with song requests off')
+      assert.equal(ev.guestConfig?.mapValue?.fields?.live_booth?.booleanValue, true, 'and the photo entry point on')
+      const guestUrl = `https://miolovealbum.com/live/${slug}`, boothUrl = `https://miolovealbum.com/booth/${slug}`
+
+      const openTab = async (label: string) => {
+        const btn = page.getByRole('button', { name: new RegExp(`^${label}`) }).first()
+        if (!(await btn.isVisible())) await page.locator('.wedding-admin header button[aria-label="Menu"]').click()
+        await btn.click(); await page.waitForTimeout(800)
+      }
+      // Home: guest preview has no "send your song to the DJ"
+      await page.getByTestId('wd-guest-preview').waitFor({ timeout: 60_000 })
+      const home = await page.evaluate(() => document.body.innerText)
+      assert.doesNotMatch(home, NO_DJ, 'Home: no DJ / Party copy'); assert.doesNotMatch(await page.getByTestId('wd-guest-preview').innerText(), /DJ|canzone/i)
+      assert.ok((await qrValues(page)).includes(guestUrl), 'Home QR'); assert.equal(await overflow(page), false, 'home overflow')
+
+      // Photos: guest link + QR + copy + open, then the Live Booth
+      await openTab('Foto')
+      const card = page.getByTestId('wd-photos-guest-link'); await card.waitFor({ timeout: 30_000 })
+      assert.deepEqual(await qrValues(page), [guestUrl], 'Photos QR = guest link'); assert.equal(await card.getByText(guestUrl).count(), 1)
+      await card.getByRole('button', { name: /Copia link/ }).click(); assert.equal(await page.evaluate(() => navigator.clipboard.readText()), guestUrl)
+      assert.equal(await card.locator('a').first().getAttribute('href'), guestUrl)
+      assert.doesNotMatch(await page.evaluate(() => document.body.innerText), NO_DJ, 'Photos: no DJ / Party copy'); assert.equal(await overflow(page), false, 'photos overflow')
+      await page.getByRole('button', { name: /^Live Booth/ }).first().click(); await page.waitForTimeout(800)
+      assert.deepEqual(await qrValues(page), [boothUrl], 'Booth QR')
+      await page.getByRole('button', { name: /Copia link/ }).first().click(); assert.equal(await page.evaluate(() => navigator.clipboard.readText()), boothUrl)
+      assert.ok(await page.locator(`a[href="${boothUrl}"]`).count() > 0, 'Open booth'); assert.equal(await overflow(page), false, 'booth overflow')
+
+      // Poster
+      await openTab('Poster')
+      await page.locator('#wd-poster-qr').waitFor({ timeout: 30_000 })
+      assert.ok((await qrValues(page)).includes(guestUrl), 'Poster QR'); assert.doesNotMatch(await page.evaluate(() => document.body.innerText), NO_DJ, 'Poster: no DJ / Party copy')
+      assert.equal(await overflow(page), false, 'poster overflow')
+      assert.equal(await page.locator('a[href*="iomixo.com"]').count(), 0, 'no iomixo.com link anywhere in the Sposi album')
+
+      // What a guest scanning the QR really gets: a photo action, no song request
+      const guest = await ctx.newPage()
+      await guest.goto(`${M()}/live/${slug}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
+      await guest.getByText('Invia una foto').first().waitFor({ timeout: 60_000 })
+      const gt = await guest.evaluate(() => document.body.innerText)
+      assert.doesNotMatch(gt, /canzone|brano|\bDJ\b/i, 'guest page: no song request'); assert.equal(await overflow(guest), false, 'guest overflow')
+    } finally { await ctx.close() }
+  })
+}
+
+test('PT11. DJ Wedding (iomixo.com) is unchanged: guest preview still offers song requests, links stay MIOLOVE for guests and IOMIXO for the Remote', async () => {
+  const dj = await newClient('account'), stamp = Date.now(), slug = `djreg${stamp}`, id = `djregid${stamp}`
+  await seedSet(`users/${dj.uid}`, { uid: dj.uid, email: dj.email, accountType: 'dj', plan: { tier: 'wedding', source: 'legacy' }, createdAt: new Date(), updatedAt: new Date() })
+  await seedSet(`events/${id}`, eventFields(dj.uid, slug, { type: 'wedding', title: `Nozze ${slug}`, legacySupabaseId: undefined })); await seedSet(`eventSlugs/${slug}`, { eventId: id })
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } }); const page = await ctx.newPage()
+  await page.addInitScript('window.__name = (f) => f')
+  try {
+    await signIn(page, I(), dj.email); await page.waitForURL(/\/dashboard/, { timeout: 60_000 })
+    await page.goto(`${I()}/sessions/${id}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
+    await page.getByTestId('wd-guest-preview').waitFor({ timeout: 60_000 })
+    assert.match(await page.getByTestId('wd-guest-preview').innerText(), /Invia il tuo brano al DJ/)
+    const q = await qrValues(page); assert.ok(q.includes(`https://miolovealbum.com/live/${slug}`) && q.includes(`https://iomixo.com/remote/${slug}`), q.join(' '))
+  } finally { await ctx.close() }
+})
