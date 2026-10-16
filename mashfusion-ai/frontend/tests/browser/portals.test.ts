@@ -224,6 +224,8 @@ test('PT6. manifest, theme-color and icons are per portal: IOMIXO dark/pink, MIO
   } finally { await ctx.close() }
 })
 
+const LEGAL_LEGACY = /\bAI\b|artificial intelligence|mashup|\bstems?\b|\bBPM\b|credits?\b|transformation|Vercel|DMCA/i
+
 for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
   test(`PT7. /privacy and /terms are brand-aware @${vp.width}: MIOLOVE never shows IOMIXO (title, header, footer), IOMIXO stays dark`, async () => {
     const ctx = await browser.newContext({ viewport: vp }); const page = await ctx.newPage()
@@ -233,11 +235,14 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
         const text = await page.evaluate(() => document.body.innerText)
         assert.match(await page.title(), /MIOLOVE ALBUM/); assert.match(text, /MIOLOVE ALBUM/)
         assert.doesNotMatch(await page.title(), /IOMIXO/); assert.doesNotMatch(text.replace(/@iomixo\.com/g, ''), /IOMIXO|Live Hub/, `${route}: no IOMIXO brand on MIOLOVE`)
+        assert.doesNotMatch(text, LEGAL_LEGACY, `${route}: no legacy AI/music/Vercel text`); assert.doesNotMatch(text, /\bDJs?\b|\bParty\b/, `${route}: no DJ/Party on MIOLOVE`)
         assert.equal(await page.locator('img[alt="IOMIXO Logo"]').count(), 0); assert.ok(await page.locator('[role="img"][aria-label="MIOLOVE ALBUM"]:visible').first().isVisible())
         assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('[style*="--lg-bg"]')!).backgroundColor), 'rgb(255, 247, 250)')
         assert.equal(await overflow(page), false, `${M()}${route} overflow`)
         await page.goto(`${I()}${route}`, { waitUntil: 'networkidle', timeout: 120_000 })
-        assert.match(await page.title(), /IOMIXO|Privacy|Terms/); assert.doesNotMatch(await page.evaluate(() => document.body.innerText), /MIOLOVE/)
+        const itext = await page.evaluate(() => document.body.innerText)
+        assert.match(await page.title(), /IOMIXO|Privacy|Terms/); assert.doesNotMatch(itext, /MIOLOVE|Sposi|album matrimonio/i); assert.doesNotMatch(itext, LEGAL_LEGACY, `${route}: no legacy AI/music/Vercel text on IOMIXO`)
+        assert.match(itext, route === '/terms' ? /Live Booth/ : /Firebase App Hosting/)
         assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('[style*="--lg-bg"]')!).backgroundColor), 'rgb(10, 10, 13)')
         assert.equal(await overflow(page), false, `${I()}${route} overflow`)
       }
