@@ -45,3 +45,9 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  # MIOLOVE go-live: Wedding links (guest, Live Booth, QR, poster) use miolovealbum.com; read at build and runtime.
+  - variable: NEXT_PUBLIC_MIOLOVE_LIVE
+    value: "true"
+    availability:
+      - BUILD
+      - RUNTIME

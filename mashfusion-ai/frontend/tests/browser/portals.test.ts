@@ -1,5 +1,6 @@
 import { test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
+import http from 'node:http'
 import type { Browser, Page } from 'playwright-core'
 import { startFakeRender, startNext, launchPortals, portalUrl, type FakeRender, type App } from './harness'
 import { newClient } from '../firebase/helpers'
@@ -193,4 +194,78 @@ test('PT5. public links: Wedding → miolovealbum.com (also for a DJ on iomixo.c
     assert.equal(await page.locator('a[href*="/remote/"]').count(), 0, 'no Remote DJ for Sposi')
     assert.doesNotMatch(await page.evaluate(() => document.body.innerText), /iomixo/i, 'no IOMIXO text in the Sposi album Home')
   } finally { await ctx.close() }
+})
+
+/** What a browser on `host` is told about the installable app and its icons (links in <head>, the manifest they point at, the bare /favicon.ico). */
+async function brandAssets(page: Page, url: string) {
+  await page.goto(url, { waitUntil: 'networkidle', timeout: 120_000 })
+  return page.evaluate(async () => {
+    const manifestHref = document.querySelector('link[rel="manifest"]')?.getAttribute('href') ?? ''
+    const manifest = await (await fetch(manifestHref)).json()
+    const bare = await fetch('/favicon.ico', { redirect: 'follow' })
+    return { icons: Array.from(document.querySelectorAll('link[rel~="icon"], link[rel="apple-touch-icon"]')).map((l) => l.getAttribute('href') ?? ''), manifest, themeColor: document.querySelector('meta[name="theme-color"]')?.getAttribute('content'), bare: { status: bare.status, url: new URL(bare.url).pathname } }
+  })
+}
+
+test('PT6. manifest, theme-color and icons are per portal: IOMIXO dark/pink, MIOLOVE light/pink, no IOMIXO icon on MIOLOVE', async () => {
+  const ctx = await browser.newContext(); const page = await ctx.newPage()
+  try {
+    const i = await brandAssets(page, `${I()}/login`)
+    assert.equal(i.manifest.name, 'IOMIXO Live Hub'); assert.equal(i.manifest.theme_color, '#0A0A0D'); assert.equal(i.manifest.background_color, '#0A0A0D'); assert.equal(i.themeColor, '#0A0A0D')
+    assert.ok(i.icons.length > 0 && i.icons.every((h) => !/miolove/i.test(h)), `IOMIXO icons: ${i.icons}`)
+    assert.deepEqual([i.bare.status, i.bare.url], [200, '/brand/iomixo/favicon.ico'])
+    const m = await brandAssets(page, `${M()}/login`)
+    assert.equal(m.manifest.name, 'MIOLOVE ALBUM'); assert.equal(m.manifest.theme_color, '#F06A9B'); assert.equal(m.manifest.background_color, '#FFFDFB'); assert.equal(m.themeColor, '#F06A9B')
+    assert.ok(m.icons.length > 0 && m.icons.every((h) => /miolove/i.test(h)), `MIOLOVE icons must all be MIOLOVE assets: ${m.icons}`)
+    assert.ok(m.manifest.icons.every((x: any) => /miolove/i.test(x.src)), 'MIOLOVE manifest icons')
+    assert.doesNotMatch(JSON.stringify(m.manifest), /iomixo|8F1D2C/i)
+    assert.deepEqual([m.bare.status, m.bare.url], [200, '/brand/miolove/miolove-album-logo-on-light.png'])
+    assert.doesNotMatch(JSON.stringify(i.manifest), /8F1D2C/i)
+  } finally { await ctx.close() }
+})
+
+for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
+  test(`PT7. /privacy and /terms are brand-aware @${vp.width}: MIOLOVE never shows IOMIXO (title, header, footer), IOMIXO stays dark`, async () => {
+    const ctx = await browser.newContext({ viewport: vp }); const page = await ctx.newPage()
+    try {
+      for (const route of ['/privacy', '/terms']) {
+        await page.goto(`${M()}${route}`, { waitUntil: 'networkidle', timeout: 120_000 })
+        const text = await page.evaluate(() => document.body.innerText)
+        assert.match(await page.title(), /MIOLOVE ALBUM/); assert.match(text, /MIOLOVE ALBUM/)
+        assert.doesNotMatch(await page.title(), /IOMIXO/); assert.doesNotMatch(text.replace(/@iomixo\.com/g, ''), /IOMIXO|Live Hub/, `${route}: no IOMIXO brand on MIOLOVE`)
+        assert.equal(await page.locator('img[alt="IOMIXO Logo"]').count(), 0); assert.ok(await page.locator('[role="img"][aria-label="MIOLOVE ALBUM"]:visible').first().isVisible())
+        assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('[style*="--lg-bg"]')!).backgroundColor), 'rgb(255, 247, 250)')
+        assert.equal(await overflow(page), false, `${M()}${route} overflow`)
+        await page.goto(`${I()}${route}`, { waitUntil: 'networkidle', timeout: 120_000 })
+        assert.match(await page.title(), /IOMIXO|Privacy|Terms/); assert.doesNotMatch(await page.evaluate(() => document.body.innerText), /MIOLOVE/)
+        assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('[style*="--lg-bg"]')!).backgroundColor), 'rgb(10, 10, 13)')
+        assert.equal(await overflow(page), false, `${I()}${route} overflow`)
+      }
+    } finally { await ctx.close() }
+  })
+}
+
+/** Raw request with an explicit Host header (no redirect following): what App Hosting forwards for the custom domains. */
+const rawGet = (host: string, path: string) => new Promise<{ status: number; location: string | null }>((resolve, reject) => {
+  http.get({ host: '127.0.0.1', port: app.port, path, headers: { host: `${host}:${app.port}`, 'x-forwarded-host': host } }, (res) => { res.resume(); resolve({ status: res.statusCode ?? 0, location: (res.headers.location as string | undefined) ?? null }) }).on('error', reject)
+})
+
+test('PT8. www.miolovealbum.com is a permanent alias of the apex (path + query kept); apex, IOMIXO hosts and dev hosts are never redirected that way', async () => {
+  for (const [path, to] of [['/', 'https://miolovealbum.com/'], ['/login', 'https://miolovealbum.com/login'], ['/live/abc?x=1', 'https://miolovealbum.com/live/abc?x=1'], ['/register', 'https://miolovealbum.com/register']] as const) {
+    const r = await rawGet('www.miolovealbum.com', path)
+    assert.equal(r.status, 308, path); assert.equal(r.location, to, path)
+  }
+  const apexRoot = await rawGet('miolovealbum.com', '/'); assert.equal(apexRoot.status, 307); assert.match(apexRoot.location ?? '', /\/login$/)
+  assert.equal((await rawGet('miolovealbum.com', '/login')).status, 200)
+  for (const host of ['iomixo.com', 'www.iomixo.com']) { const r = await rawGet(host, '/login'); assert.equal(r.status, 200, host); assert.equal(r.location, null) }
+  assert.equal((await rawGet('127.0.0.1', '/login')).status, 200)
+})
+
+test('PT9. every Function shares one CORS allow-list with both IOMIXO and both MIOLOVE origins (the emulator reflects any origin, so the source list is what is asserted)', async () => {
+  const src = (await import('node:fs')).readFileSync(new URL('../../../../firebase/functions/src/index.ts', import.meta.url), 'utf8')
+  const list = /cors:\s*\[([^\]]+)\]/.exec(src)?.[1] ?? ''
+  for (const origin of ['https://iomixo.com', 'https://www.iomixo.com', 'https://miolovealbum.com', 'https://www.miolovealbum.com']) assert.ok(list.includes(`'${origin}'`), origin)
+  assert.equal((src.match(/cors:/g) ?? []).length, 2, 'one allow-list (guestCallOptions) + the webhook cors:false; callables must all derive from guestCallOptions')
+  const emu = await fetch('http://127.0.0.1:5001/demo-iomixo/europe-west1/getPublicEvent', { method: 'OPTIONS', headers: { origin: 'https://www.miolovealbum.com', 'access-control-request-method': 'POST' } })
+  assert.equal(emu.headers.get('access-control-allow-origin'), 'https://www.miolovealbum.com')
 })

@@ -67,19 +67,12 @@ export function generateMetadata(): Metadata {
     keywords: miolove
       ? ['MIOLOVE ALBUM', 'album matrimonio', 'foto invitati', 'QR code matrimonio', 'Live Booth', 'album digitale']
       : ['Live Hub', 'DJ', 'Weddings', 'Events', 'Music Requests', 'Interactive DJ', 'Wedding Roulette', 'QR Sessions', 'Guest Photos'],
-    manifest: '/site.webmanifest',
     alternates: { canonical: config.baseUrl },
-    // Favicons are shared for now: swap the set per portal here once MIOLOVE has its own assets.
+    // Each portal ships its own icon set (lib/portal.ts); nothing IOMIXO is ever linked from a MIOLOVE page.
     icons: {
-      icon: [
-        { url: '/favicon.ico', sizes: 'any' },
-        { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
-        { url: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
-        { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
-        { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
-      ],
-      apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
-      shortcut: ['/favicon.ico'],
+      icon: config.icons.icon,
+      apple: [config.icons.apple],
+      shortcut: [config.icons.favicon],
     },
     openGraph: {
       type: 'website',
@@ -105,7 +98,7 @@ export function generateMetadata(): Metadata {
 }
 
 export function generateViewport(): Viewport {
-  return { themeColor: getRequestPortal().config.id === 'miolove' ? '#F06A9B' : '#8F1D2C', width: 'device-width', initialScale: 1 }
+  return { themeColor: getRequestPortal().config.id === 'miolove' ? '#F06A9B' : '#0A0A0D', width: 'device-width', initialScale: 1 }
 }
 
 // Preconnect hint only (never a request): composed so the "no raw callable URL" guard test keeps meaning real fetches.

@@ -18,6 +18,8 @@ export interface PortalConfig {
   /** Where a signed-in account of this portal lands. */
   home: string
   meta: { title: string; description: string; ogTitle: string; siteName: string; locale: string }
+  /** Browser / home-screen icons of the portal. `favicon` is what a bare /favicon.ico request resolves to. */
+  icons: { favicon: string; icon: { url: string; sizes: string; type: string }[]; apple: { url: string; sizes: string } }
 }
 
 export const PORTAL_CONFIG: Record<PortalId, PortalConfig> = {
@@ -36,6 +38,17 @@ export const PORTAL_CONFIG: Record<PortalId, PortalConfig> = {
       siteName: 'IOMIXO Live Hub',
       locale: 'it_IT',
     },
+    icons: {
+      favicon: '/brand/iomixo/favicon.ico',
+      icon: [
+        { url: '/brand/iomixo/favicon.ico', sizes: 'any', type: 'image/x-icon' },
+        { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+        { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+        { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+        { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+      ],
+      apple: { url: '/apple-touch-icon.png', sizes: '180x180' },
+    },
   },
   miolove: {
     id: 'miolove',
@@ -51,6 +64,11 @@ export const PORTAL_CONFIG: Record<PortalId, PortalConfig> = {
       ogTitle: 'MIOLOVE ALBUM — il tuo album digitale di matrimonio',
       siteName: 'MIOLOVE ALBUM',
       locale: 'it_IT',
+    },
+    icons: {
+      favicon: '/brand/miolove/miolove-album-logo-on-light.png',
+      icon: [{ url: '/brand/miolove/miolove-album-logo-on-light.png', sizes: '1254x1254', type: 'image/png' }],
+      apple: { url: '/brand/miolove/miolove-album-logo-on-light.png', sizes: '1254x1254' },
     },
   },
 }
