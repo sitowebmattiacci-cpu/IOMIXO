@@ -489,6 +489,7 @@ export default function SessionDetailPage() {
       onSelect={setTab}
       badges={{ requests: pending.length }}
       couple={isCouple}
+      occasion={session.occasion_type}
     >
       {dashSection}
     </WeddingAdminShell>

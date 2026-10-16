@@ -38,6 +38,21 @@ test('L1. create: event + slug written atomically, ownerUid from the token, wedd
   assert.deepEqual([pe.coupleNames, pe.venueName, pe.screenModeEnabled], [null, null, false], 'wedding-only fields are dropped for other types (as the legacy insert)')
 })
 
+test('L1b. occasionType: stored for wedding-type events (type stays wedding), defaults to wedding, validated, null for other types', async () => {
+  const dj = await owner('wedding')
+  for (const occasionType of ['wedding', 'birthday', 'baptism', 'other']) {
+    const r = await create(dj, { type: 'wedding', title: `Album ${occasionType}`, occasionType })
+    const e = (await getDoc(doc(dj.db, 'events', r.eventId))).data()!
+    assert.deepEqual([e.type, e.occasionType], ['wedding', occasionType])
+  }
+  const legacyShape = await create(dj, { type: 'wedding', title: 'Senza campo' })
+  assert.equal((await getDoc(doc(dj.db, 'events', legacyShape.eventId))).data()!.occasionType, 'wedding', 'missing = wedding (what every DJ client sends today)')
+  assert.equal(await fails(create(dj, { type: 'wedding', occasionType: 'funeral' })), 'invalid-argument:invalid_payload')
+  assert.equal(await fails(create(dj, { type: 'wedding', occasionType: 5 })), 'invalid-argument:invalid_payload')
+  const party = await create(dj, { type: 'party', occasionType: 'birthday' })
+  assert.equal((await getDoc(doc(dj.db, 'events', party.eventId))).data()!.occasionType, null, 'Party / standard events carry no occasion')
+})
+
 test('L2. create is idempotent per requestId; a different requestId makes a different event; the title is required', async () => {
   const dj = await owner('pro'); const id = rid()
   const a = await callAs(dj, 'createEvent', { requestId: id, title: 'Uno' }), b = await callAs(dj, 'createEvent', { requestId: id, title: 'Uno' })

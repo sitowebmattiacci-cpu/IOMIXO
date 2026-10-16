@@ -297,9 +297,8 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
       assert.equal(await overflow(page), false, 'register overflow')
 
       await signIn(page, M(), couple.email); await page.waitForURL(/\/sessions/, { timeout: 60_000 })
-      await page.getByTestId('new-session').click({ timeout: 60_000 })
-      await page.locator('input[required]').first().fill('Album di prova')
-      await page.getByRole('button', { name: /Crea sessione/ }).click()
+      await page.getByTestId('onboarding-name').fill('Album di prova', { timeout: 60_000 })
+      await page.getByTestId('onboarding-create').click()
       await page.waitForURL(/\/sessions\/[^/]+$/, { timeout: 60_000 })
       const eventId = page.url().split('/sessions/')[1]
       const ev = (await until(async () => (await fsGet(`events/${eventId}`)).fields, 20_000, 'album created'))

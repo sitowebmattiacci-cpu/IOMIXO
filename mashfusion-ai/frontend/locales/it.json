@@ -1078,5 +1078,42 @@
       "adv3": "Poster con QR da stampare",
       "adv4": "Più album matrimonio"
     }
+  },
+  "onboarding": {
+    "title": "Raccontaci del tuo evento",
+    "subtitle": "Bastano pochi dettagli per creare il tuo album. Potrai cambiarli quando vuoi.",
+    "welcome": "Benvenuto, {name}",
+    "welcomeNoName": "Benvenuto",
+    "eventType": "Che tipo di evento è?",
+    "occasion": {
+      "wedding": "Matrimonio",
+      "birthday": "Compleanno",
+      "baptism": "Battesimo",
+      "other": "Altro"
+    },
+    "albumName": "Nome dell'album",
+    "exampleName": "Enrico",
+    "name": {
+      "wedding": "Matrimonio di {name}",
+      "weddingNoName": "Il nostro matrimonio",
+      "birthday": "Compleanno di {name}",
+      "birthdayNoName": "Il mio compleanno",
+      "baptismPlaceholder": "Battesimo di [nome]",
+      "other": "Il mio evento"
+    },
+    "date": "Data dell'evento",
+    "unknownDate": "Non conosco ancora la data",
+    "unknownDateOn": "Data da definire: potrai aggiungerla dalle Impostazioni.",
+    "chooseDate": "Scegli la data",
+    "cta": "Crea il mio album",
+    "creating": "Creazione in corso…",
+    "nameRequired": "Dai un nome al tuo album.",
+    "eyebrow": {
+      "birthday": "Compleanno",
+      "baptism": "Battesimo",
+      "other": "Evento"
+    },
+    "albumGroup": "Il tuo album",
+    "homeSubtitle": "Tutto sotto controllo per il tuo evento."
   }
 }

@@ -55,7 +55,7 @@ export function DashboardRoleGuard({ children }: { children: ReactNode }) {
   if (failed) return <RoleError onRetry={retry} />
   if (!ready || blocked || wrongPortal) return <Blank />
   // Sposi get the light MIOLOVE theme (CSS scope); DJ keeps the current dark one untouched.
-  // Albums (/sessions/[id]) bring their own full MIOLOVE shell: the CSS scope is only for the shared dashboard pages.
-  const themed = isCouple && !/^\/sessions\/[^/]+/.test(pathname ?? '')
+  // Albums (/sessions/[id]) and the onboarding bring their own full MIOLOVE shell: the CSS scope is only for the shared dashboard pages.
+  const themed = isCouple && !/^\/(sessions\/[^/]+|onboarding)/.test(pathname ?? '')
   return <div className={themed ? 'couple-theme wedding-admin' : 'contents'} data-role={isCouple ? 'couple' : 'dj'}>{children}</div>
 }

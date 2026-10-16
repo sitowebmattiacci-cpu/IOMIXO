@@ -918,5 +918,42 @@
       "adv3": "Affiche QR à imprimer",
       "adv4": "Plusieurs albums de mariage"
     }
+  },
+  "onboarding": {
+    "title": "Parlez-nous de votre événement",
+    "subtitle": "Quelques détails suffisent pour créer votre album. Vous pourrez les modifier à tout moment.",
+    "welcome": "Bienvenue, {name}",
+    "welcomeNoName": "Bienvenue",
+    "eventType": "De quel type d'événement s'agit-il ?",
+    "occasion": {
+      "wedding": "Mariage",
+      "birthday": "Anniversaire",
+      "baptism": "Baptême",
+      "other": "Autre"
+    },
+    "albumName": "Nom de l'album",
+    "exampleName": "Henri",
+    "name": {
+      "wedding": "Mariage de {name}",
+      "weddingNoName": "Notre mariage",
+      "birthday": "Anniversaire de {name}",
+      "birthdayNoName": "Mon anniversaire",
+      "baptismPlaceholder": "Baptême de [prénom]",
+      "other": "Mon événement"
+    },
+    "date": "Date de l'événement",
+    "unknownDate": "Je ne connais pas encore la date",
+    "unknownDateOn": "Date à définir : vous pourrez l'ajouter dans les Paramètres.",
+    "chooseDate": "Choisissez la date",
+    "cta": "Créer mon album",
+    "creating": "Création en cours…",
+    "nameRequired": "Donnez un nom à votre album.",
+    "eyebrow": {
+      "birthday": "Anniversaire",
+      "baptism": "Baptême",
+      "other": "Événement"
+    },
+    "albumGroup": "Votre album",
+    "homeSubtitle": "Tout est sous contrôle pour votre événement."
   }
 }

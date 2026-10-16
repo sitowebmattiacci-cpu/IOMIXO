@@ -2,7 +2,7 @@ import {
   collection, doc, getDoc, getDocs, onSnapshot, query, where, orderBy, limit, Timestamp,
   type Firestore, type DocumentData, type Unsubscribe,
 } from 'firebase/firestore'
-import type { EventDoc, EventType, EventStatus, GameConfigDoc } from '../models'
+import type { EventDoc, EventType, EventStatus, GameConfigDoc, OccasionType } from '../models'
 
 // Read-side repository for events/{eventId} and eventSlugs/{slug}.
 // There are intentionally NO client write functions: events are written by the
@@ -10,6 +10,7 @@ import type { EventDoc, EventType, EventStatus, GameConfigDoc } from '../models'
 
 const toDate = (v: unknown): Date | null => (v instanceof Timestamp ? v.toDate() : null)
 const TYPES: readonly EventType[] = ['standard', 'party', 'wedding']
+const OCCASIONS: readonly OccasionType[] = ['wedding', 'birthday', 'baptism', 'other']
 
 export function fromEventDoc(id: string, d: DocumentData): EventDoc {
   const status: EventStatus = d.status === 'ended' ? 'ended' : 'live'
@@ -22,6 +23,7 @@ export function fromEventDoc(id: string, d: DocumentData): EventDoc {
     djName:            d.djName ?? null,
     description:       d.description ?? null,
     type:              TYPES.includes(d.type) ? d.type : 'standard',
+    occasionType:      OCCASIONS.includes(d.occasionType) ? d.occasionType : d.type === 'wedding' ? 'wedding' : null,
     status,
     coupleNames:       d.coupleNames ?? null,
     weddingDate:       d.weddingDate ?? null,

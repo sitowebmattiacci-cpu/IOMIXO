@@ -87,7 +87,7 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
     <WdPage
       width="wide"
       title={session.event_name}
-      subtitle={session.description || t('wdAdmin.home.subtitle')}
+      subtitle={session.description || (session.occasion_type && session.occasion_type !== 'wedding' ? t('onboarding.homeSubtitle') : t('wdAdmin.home.subtitle'))}
       actions={
         <WdButton variant="secondary" onClick={onToggleActive} disabled={togglingActive} icon={<Power className="h-4 w-4" />}>
           {session.is_active ? t('common.close') : t('common.open')}
@@ -153,6 +153,7 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
                 date={dateLabel}
                 venue={session.venue_name}
                 items={guestItems}
+                eyebrow={session.occasion_type && session.occasion_type !== 'wedding' ? t(`onboarding.eyebrow.${session.occasion_type}`) : undefined}
                 languageSlot={<LanguageSwitcher variant="wedding" />}
               />
             </div>

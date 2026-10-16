@@ -1043,5 +1043,42 @@
       "adv3": "Printable QR poster",
       "adv4": "Multiple wedding albums"
     }
+  },
+  "onboarding": {
+    "title": "Tell us about your event",
+    "subtitle": "A few details are enough to create your album. You can change them any time.",
+    "welcome": "Welcome, {name}",
+    "welcomeNoName": "Welcome",
+    "eventType": "What kind of event is it?",
+    "occasion": {
+      "wedding": "Wedding",
+      "birthday": "Birthday",
+      "baptism": "Baptism",
+      "other": "Other"
+    },
+    "albumName": "Album name",
+    "exampleName": "Henry",
+    "name": {
+      "wedding": "Wedding of {name}",
+      "weddingNoName": "Our wedding",
+      "birthday": "Birthday of {name}",
+      "birthdayNoName": "My birthday",
+      "baptismPlaceholder": "Baptism of [name]",
+      "other": "My event"
+    },
+    "date": "Event date",
+    "unknownDate": "I don't know the date yet",
+    "unknownDateOn": "Date to be decided: you can add it later in Settings.",
+    "chooseDate": "Pick the date",
+    "cta": "Create my album",
+    "creating": "Creating…",
+    "nameRequired": "Give your album a name.",
+    "eyebrow": {
+      "birthday": "Birthday",
+      "baptism": "Baptism",
+      "other": "Event"
+    },
+    "albumGroup": "Your album",
+    "homeSubtitle": "Everything under control for your event."
   }
 }

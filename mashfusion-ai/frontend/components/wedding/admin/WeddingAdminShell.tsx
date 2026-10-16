@@ -42,11 +42,13 @@ interface Props {
   badges?: Partial<Record<WeddingNavKey, number>>
   /** Sposi account: only the couple group is rendered (no DJ control room, no "Regia DJ" title). */
   couple?: boolean
+  /** What the album is for: anything but a wedding gets a neutral navigation heading instead of "Per gli sposi". */
+  occasion?: string
   children: ReactNode
 }
 
 // Full-screen wedding admin layout. Covers the shared dashboard chrome so Party/DJ UI is never affected.
-export function WeddingAdminShell({ eventName, active, onSelect, badges, couple = false, children }: Props) {
+export function WeddingAdminShell({ eventName, active, onSelect, badges, couple = false, occasion, children }: Props) {
   const { t, locale, setLocale } = useI18n()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -71,7 +73,7 @@ export function WeddingAdminShell({ eventName, active, onSelect, badges, couple 
       <nav className="mt-5 space-y-4" aria-label="Wedding">
         {(couple ? NAV_GROUPS.slice(0, 1) : NAV_GROUPS).map((g) => (
           <div key={g.title} className="space-y-1">
-            <p className="px-4 pb-1 text-[11px] font-medium uppercase tracking-[0.12em] text-wd-muted">{t(g.title)}</p>
+            <p className="px-4 pb-1 text-[11px] font-medium uppercase tracking-[0.12em] text-wd-muted">{g.title === 'wdAdmin.group.couple' && occasion && occasion !== 'wedding' ? t('onboarding.albumGroup') : t(g.title)}</p>
             {g.items.map(({ key, icon: Icon, label }) => {
               const isActive = key === active
               const badge = badges?.[key]

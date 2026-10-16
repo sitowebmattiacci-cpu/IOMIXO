@@ -13,10 +13,14 @@ import { idField, requireAccount, requireEventOwner, loadAccountType, type Calle
  */
 export const SESSION_LIMITS = { title: 200, djName: 120, description: 2000, coupleNames: 200, weddingDate: 32, venueName: 200, requestId: 64 } as const
 export type EventType = 'standard' | 'party' | 'wedding'
+/** What an album is for. Orthogonal to `type`: every MIOLOVE album stays type 'wedding' (routing, permissions, Wedding UI). */
+export type OccasionType = 'wedding' | 'birthday' | 'baptism' | 'other'
+const OCCASIONS: readonly OccasionType[] = ['wedding', 'birthday', 'baptism', 'other']
 
 export interface CreateEventInput {
   requestId: string; title: string; djName: string | null; description: string | null; type: EventType
   coupleNames: string | null; weddingDate: string | null; venueName: string | null; screenModeEnabled: boolean
+  occasionType: OccasionType | null
 }
 
 export function parseCreateEventInput(data: unknown): CreateEventInput {
@@ -36,7 +40,15 @@ export function parseCreateEventInput(data: unknown): CreateEventInput {
     weddingDate: wedding ? str(d.weddingDate, 'weddingDate', SESSION_LIMITS.weddingDate, false) : null,
     venueName: wedding ? str(d.venueName, 'venueName', SESSION_LIMITS.venueName, false) : null,
     screenModeEnabled: wedding && d.screenModeEnabled === true,
+    // Only Wedding-type events carry an occasion; a missing value means "wedding" (every event created before this field).
+    occasionType: wedding ? parseOccasion(d.occasionType) : null,
   }
+}
+
+function parseOccasion(raw: unknown): OccasionType {
+  if (raw === undefined || raw === null || raw === '') return 'wedding'
+  if (typeof raw !== 'string' || !OCCASIONS.includes(raw as OccasionType)) throw new HttpsError('invalid-argument', 'occasionType invalid', { reason: 'invalid_payload', field: 'occasionType' })
+  return raw as OccasionType
 }
 
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789'
@@ -89,6 +101,7 @@ export async function createEvent(db: Firestore, request: CallerAuth, input: Cre
         ownerUid: uid, slug, origin: 'firebase',
         title: input.title, djName: input.djName, description: input.description, type: input.type, status: 'live',
         coupleNames: input.coupleNames, weddingDate: input.weddingDate, venueName: input.venueName,
+        occasionType: input.occasionType,
         screenModeEnabled: input.screenModeEnabled, guestConfig: null, screenConfig: null,
         createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
       })

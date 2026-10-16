@@ -918,5 +918,42 @@
       "adv3": "Póster con QR para imprimir",
       "adv4": "Varios álbumes de boda"
     }
+  },
+  "onboarding": {
+    "title": "Cuéntanos sobre tu evento",
+    "subtitle": "Bastan unos pocos datos para crear tu álbum. Podrás cambiarlos cuando quieras.",
+    "welcome": "Bienvenido, {name}",
+    "welcomeNoName": "Bienvenido",
+    "eventType": "¿Qué tipo de evento es?",
+    "occasion": {
+      "wedding": "Boda",
+      "birthday": "Cumpleaños",
+      "baptism": "Bautizo",
+      "other": "Otro"
+    },
+    "albumName": "Nombre del álbum",
+    "exampleName": "Enrique",
+    "name": {
+      "wedding": "Boda de {name}",
+      "weddingNoName": "Nuestra boda",
+      "birthday": "Cumpleaños de {name}",
+      "birthdayNoName": "Mi cumpleaños",
+      "baptismPlaceholder": "Bautizo de [nombre]",
+      "other": "Mi evento"
+    },
+    "date": "Fecha del evento",
+    "unknownDate": "Todavía no sé la fecha",
+    "unknownDateOn": "Fecha por definir: podrás añadirla desde Ajustes.",
+    "chooseDate": "Elige la fecha",
+    "cta": "Crear mi álbum",
+    "creating": "Creando…",
+    "nameRequired": "Ponle un nombre a tu álbum.",
+    "eyebrow": {
+      "birthday": "Cumpleaños",
+      "baptism": "Bautizo",
+      "other": "Evento"
+    },
+    "albumGroup": "Tu álbum",
+    "homeSubtitle": "Todo bajo control para tu evento."
   }
 }

@@ -79,6 +79,8 @@ export const billing = {
 // ══════════════════════════════════════════════════════════════
 export type LiveRequestStatus = 'pending' | 'approved' | 'rejected'
 export type SessionType = 'standard' | 'party' | 'wedding'
+/** What a MIOLOVE album is for; the album's `session_type` stays 'wedding' whatever the occasion. */
+export type OccasionType = 'wedding' | 'birthday' | 'baptism' | 'other'
 export type PlanTier = 'free' | 'pro' | 'wedding'
 
 /**
@@ -182,6 +184,7 @@ export interface LiveSession {
   updated_at: string
   online_count?: number | null
   session_type?: SessionType
+  occasion_type?: OccasionType
   couple_names?: string | null
   wedding_date?: string | null
   venue_name?: string | null
@@ -292,6 +295,7 @@ export const live = {
     wedding_date?: string
     venue_name?: string
     screen_mode_enabled?: boolean
+    occasion_type?: OccasionType
   }): Promise<LiveSession> {
     return need(await (await owner()).sessions.create(input))
   },

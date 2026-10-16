@@ -83,8 +83,8 @@ export function Sidebar() {
     })
   }
 
-  // Wedding sessions render their own full-screen layout (WeddingAdminShell).
-  if (weddingPage) return null
+  // Wedding sessions render their own full-screen layout (WeddingAdminShell); the MIOLOVE onboarding is a standalone screen.
+  if (weddingPage || pathname === '/onboarding') return null
 
   const mobileNav = (
     <div className="md:hidden">

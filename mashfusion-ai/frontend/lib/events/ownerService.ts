@@ -104,12 +104,13 @@ export const ownerOps = {
   sessions: {
     async create(input: {
       event_name: string; dj_name?: string; description?: string; session_type?: string
-      couple_names?: string; wedding_date?: string; venue_name?: string; screen_mode_enabled?: boolean
+      couple_names?: string; wedding_date?: string; venue_name?: string; screen_mode_enabled?: boolean; occasion_type?: string
     }): Promise<LiveSession | null> {
       if (!dashboardOn()) return null
       const r = await callOwner<{ eventId: string; slug: string }>('createEvent', {
         requestId: requestId(), title: input.event_name, djName: input.dj_name, description: input.description, type: input.session_type,
         coupleNames: input.couple_names, weddingDate: input.wedding_date, venueName: input.venue_name, screenModeEnabled: input.screen_mode_enabled,
+        occasionType: input.occasion_type,
       })
       const ev = await getEventById(getFirebaseDb(), r.eventId)
       if (!ev) throw new Error('Sessione creata ma non ancora leggibile, riprova')

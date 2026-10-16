@@ -1,6 +1,7 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
 import { Plus, Radio, Heart, PartyPopper, Sparkles, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -12,6 +13,7 @@ import { formatRelativeTime } from '@/lib/utils'
 import { useI18n } from '@/lib/i18n'
 import { useEffectiveAccess, isPremiumSession } from '@/lib/access'
 import { useAccountRole } from '@/lib/roles'
+import { COUPLE_DEFAULT_GUEST_CONFIG, ONBOARDING_PATH } from '@/lib/coupleAlbum'
 
 type SessionType = 'standard' | 'party' | 'wedding'
 
@@ -44,6 +46,12 @@ export default function LiveSessionsPage() {
 
   // Accesso premium: piano Advance reale OPPURE Event Pass 24H attivo.
   const { hasAdvanceAccess: isAdvance } = useEffectiveAccess()
+
+  // A Sposi account with no album yet starts from the onboarding, not from an empty list.
+  const router = useRouter()
+  const needsOnboarding = isCouple && !!sessions && sessions.length === 0
+  useEffect(() => { if (needsOnboarding) router.replace(ONBOARDING_PATH) }, [needsOnboarding, router])
+  if (needsOnboarding) return <div className="min-h-screen" aria-busy="true" />
 
   const startCreate = () => {
     setForm(EMPTY_FORM)
@@ -96,7 +104,7 @@ export default function LiveSessionsPage() {
       }
       const session = await live.createSession(payload)
       // Song requests are moderated by the DJ only: a Sposi album starts with them off and the photo entry point on, so guests see "send a photo" and never "send your song to the DJ".
-      if (isCouple) await live.updateSession(session.id, { guest_config: { requests: false, live_booth: true } })
+      if (isCouple) await live.updateSession(session.id, { guest_config: { ...COUPLE_DEFAULT_GUEST_CONFIG } })
       toast.success(t('sessions.created'))
       setForm(EMPTY_FORM)
       setStep('idle')

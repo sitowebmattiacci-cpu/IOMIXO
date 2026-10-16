@@ -99,24 +99,19 @@ test('S1. Sposi on miolovealbum.com: sign-up WITHOUT any role choice (390px) sav
     await seedSet(`users/${uid}`, { uid, email, accountType: 'couple', plan: { tier: 'wedding', source: 'legacy' }, createdAt: new Date(), updatedAt: new Date() }) // paid plan comes from billing, not the role
 
     await watchForbidden(page, ['Regia DJ', 'Profilo DJ', 'Prossime date', 'Party Mode', 'Sessioni Live'])
-    // direct DJ routes land on the album home
+    // direct DJ routes land on the Sposi start (no album yet = the onboarding)
     for (const route of ['/dashboard', '/profile', '/events']) {
       await page.goto(`${M}${route}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
-      await page.waitForURL(/\/sessions$/, { timeout: 60_000 })
+      await page.waitForURL(/\/(sessions|onboarding)$/, { timeout: 60_000 })
     }
-    // sidebar (mobile menu): albums / subscription / settings only, MIOLOVE brand
-    await page.getByRole('button', { name: 'Menu' }).click()
-    const nav = page.getByRole('navigation', { name: 'Menu' })
-    await nav.getByText('I miei album').waitFor({ timeout: 30_000 })
-    for (const hidden of ['Profilo DJ', 'Prossime date', 'Dashboard', 'Sessioni Live']) assert.equal(await nav.getByText(hidden).count(), 0, hidden)
+    await page.waitForURL(/\/onboarding$/, { timeout: 60_000 })
     assert.ok(await page.getByRole('img', { name: 'MIOLOVE ALBUM' }).first().isVisible())
-    await page.getByRole('button', { name: 'Menu' }).click()   // close the drawer
 
-    // create the album: wedding only, no type picker, no DJ name
-    await page.getByRole('button', { name: /Nuovo album|Crea il tuo album/ }).first().click({ timeout: 60_000 })
+    // create the first album from the onboarding: wedding only, no type picker, no DJ name
+    await page.getByTestId('couple-onboarding').waitFor({ timeout: 60_000 })
     assert.equal(await page.getByText('Party Mode').count(), 0); assert.equal(await page.getByText('Wedding Edition').count(), 0)
-    await page.locator('input[required]').first().fill('Il nostro matrimonio')
-    await page.getByRole('button', { name: /Crea sessione/ }).click()
+    await page.getByTestId('onboarding-name').fill('Il nostro matrimonio')
+    await page.getByTestId('onboarding-create').click()
     await page.waitForURL(/\/sessions\/[^/]+$/, { timeout: 60_000 })
     const eventId = page.url().split('/sessions/')[1]
     const ev = await until(async () => (await fsGet(`events/${eventId}`)).fields, 20_000, 'album created')
@@ -131,6 +126,15 @@ test('S1. Sposi on miolovealbum.com: sign-up WITHOUT any role choice (390px) sav
     for (const label of ['Richieste', 'Dediche', 'Giochi', 'Live Booth', 'Schermo']) assert.equal(await page.getByRole('button', { name: new RegExp(label) }).count(), 0, label)
     assert.equal(await page.getByText('Regia DJ').count(), 0)
     assert.ok(await page.getByRole('img', { name: 'MIOLOVE ALBUM' }).first().isVisible())
+
+    // album list (now that there is an album) with the mobile menu: albums / subscription / settings only, MIOLOVE brand
+    await page.goto(`${M}/sessions`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
+    await page.getByRole('button', { name: 'Menu' }).click()
+    const nav = page.getByRole('navigation', { name: 'Menu' })
+    await nav.getByText('I miei album').waitFor({ timeout: 30_000 })
+    for (const hidden of ['Profilo DJ', 'Prossime date', 'Dashboard', 'Sessioni Live']) assert.equal(await nav.getByText(hidden).count(), 0, hidden)
+    assert.ok(await page.getByRole('img', { name: 'MIOLOVE ALBUM' }).first().isVisible())
+    await page.getByRole('button', { name: 'Menu' }).click()   // close the drawer
 
     // a Party event can be seeded server-side only; the couple opening it never sees DJ UI
     const partyId = `cparty${Date.now()}`
@@ -160,6 +164,8 @@ async function coupleAccount() {
 
 test('S2. Sposi at 390px: /sessions, /billing, /settings use the MIOLOVE theme, no DJ / Party UI, no overflow', async () => {
   const c = await coupleAccount()
+  const albumSlug = `s2${Date.now()}`    // with no album the account would be sent to the onboarding instead of the list
+  await seedSet(`events/${albumSlug}`, eventFields(c.uid, albumSlug, { type: 'wedding', title: 'Album S2', legacySupabaseId: undefined })); await seedSet(`eventSlugs/${albumSlug}`, { eventId: albumSlug })
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const page = await ctx.newPage()
   try {
     await login(page, c.email)
@@ -202,7 +208,7 @@ test('S3. account read failure: no DJ UI, no assumed role, error state with retr
       if (await page.getByTestId('role-retry').count()) await page.getByTestId('role-retry').click().catch(() => {})
       await page.waitForTimeout(2500)
     }
-    await page.waitForURL(/\/sessions$/, { timeout: 60_000 })
+    await page.waitForURL(/\/(sessions|onboarding)$/, { timeout: 60_000 })
     await page.locator('[data-role="couple"]').waitFor({ timeout: 30_000 })
     assert.deepEqual(await seen(page), [], 'DJ UI never painted during the failure / retry')
   } finally { await ctx.close() }

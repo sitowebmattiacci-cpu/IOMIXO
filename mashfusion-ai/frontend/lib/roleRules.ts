@@ -10,7 +10,7 @@ export const resolveAccountType = (raw: unknown): AccountType => (raw === 'coupl
 export const COUPLE_HOME = '/sessions'
 
 /** Dashboard routes a Sposi account may open. Everything else under (dashboard) is DJ-only. */
-const COUPLE_ALLOWED_PREFIXES = ['/sessions', '/billing', '/settings'] as const
+const COUPLE_ALLOWED_PREFIXES = ['/sessions', '/onboarding', '/billing', '/settings'] as const
 export function isCoupleAllowedPath(pathname: string | null | undefined): boolean {
   if (!pathname) return false
   return COUPLE_ALLOWED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))

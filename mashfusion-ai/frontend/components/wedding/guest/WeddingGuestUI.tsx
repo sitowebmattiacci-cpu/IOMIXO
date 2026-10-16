@@ -77,10 +77,10 @@ export function WeddingGuestTopBar({ languageSlot }: { languageSlot?: ReactNode 
   )
 }
 
-export function WeddingGuestHero({ names, date, venue }: { names: string; date?: string | null; venue?: string | null }) {
+export function WeddingGuestHero({ names, date, venue, eyebrow = 'Wedding Edition' }: { names: string; date?: string | null; venue?: string | null; eyebrow?: string }) {
   return (
     <header className="px-2 pb-9 pt-12 text-center">
-      <p className="text-[12px] font-semibold uppercase tracking-[0.28em] text-wd-pink">Wedding Edition</p>
+      <p className="text-[12px] font-semibold uppercase tracking-[0.28em] text-wd-pink">{eyebrow}</p>
       <h1 className="mt-5 break-words text-[40px] font-bold leading-[1.08] tracking-tight text-wd-ink">{names}</h1>
       <div className="mx-auto mt-6 h-[3px] w-12 rounded-full bg-wd-pink/60" />
       {date && <p className="mt-6 text-[17px] font-medium text-wd-ink">{date}</p>}
@@ -129,7 +129,7 @@ export function WeddingGuestActionList({ items, onSelect }: { items: WeddingGues
 
 /** Full guest home: top bar, hero, notices, actions. Rendered as-is inside the dashboard phone preview. */
 export function WeddingGuestHome({
-  names, date, venue, items, onSelect, languageSlot, notice, footer,
+  names, date, venue, items, onSelect, languageSlot, notice, footer, eyebrow,
 }: {
   names: string
   date?: string | null
@@ -139,12 +139,13 @@ export function WeddingGuestHome({
   languageSlot?: ReactNode
   notice?: ReactNode
   footer?: ReactNode
+  eyebrow?: string
 }) {
   const { t } = useI18n()
   return (
     <>
       <WeddingGuestTopBar languageSlot={languageSlot} />
-      <WeddingGuestHero names={names} date={date} venue={venue} />
+      <WeddingGuestHero names={names} date={date} venue={venue} eyebrow={eyebrow} />
       {notice}
       {items.length === 0 ? (
         <div className="rounded-[20px] border border-wd-border bg-white p-5 text-center text-[15px] text-wd-muted">

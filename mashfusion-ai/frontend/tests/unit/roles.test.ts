@@ -25,9 +25,9 @@ test('legacy mapper: missing user doc / legacy doc => dj; couple doc => couple',
   assert.equal(userToLegacy('u1', userDoc({ accountType: 'couple' }), 'a@b.c').accountType, 'couple')
 })
 
-test('couple route allow-list: albums, billing, settings only; every DJ route is blocked', () => {
-  for (const p of ['/sessions', '/sessions/abc', '/billing', '/settings']) assert.ok(isCoupleAllowedPath(p), p)
-  for (const p of ['/dashboard', '/profile', '/events', '/remote/abc', '/sessionsx', '/dashboard/sessions', '', null, undefined]) assert.ok(!isCoupleAllowedPath(p as string), String(p))
+test('couple route allow-list: albums, onboarding, billing, settings only; every DJ route is blocked', () => {
+  for (const p of ['/sessions', '/sessions/abc', '/onboarding', '/billing', '/settings']) assert.ok(isCoupleAllowedPath(p), p)
+  for (const p of ['/dashboard', '/profile', '/events', '/remote/abc', '/sessionsx', '/onboardingx', '/dashboard/sessions', '', null, undefined]) assert.ok(!isCoupleAllowedPath(p as string), String(p))
   assert.equal(COUPLE_HOME, '/sessions')
 })
 

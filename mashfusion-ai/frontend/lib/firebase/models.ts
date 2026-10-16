@@ -82,6 +82,8 @@ export interface DjProfileDoc {
 export type DjProfilePatch = Partial<Omit<DjProfileDoc, 'publicSlug' | 'avatarUrl' | 'avatarPath' | 'createdAt' | 'updatedAt'>>
 
 export type EventType   = 'standard' | 'party' | 'wedding'
+/** What an album is for (MIOLOVE onboarding). Independent of `type`, which stays 'wedding' for every MIOLOVE album. */
+export type OccasionType = 'wedding' | 'birthday' | 'baptism' | 'other'
 export type EventStatus = 'live' | 'ended'
 
 /**
@@ -99,6 +101,8 @@ export interface EventDoc {
   djName:            string | null
   description:       string | null
   type:              EventType
+  /** Missing on events created before the field existed: those are 'wedding' (see fromEventDoc). */
+  occasionType?:     OccasionType | null
   status:            EventStatus
   coupleNames:       string | null
   weddingDate:       string | null
