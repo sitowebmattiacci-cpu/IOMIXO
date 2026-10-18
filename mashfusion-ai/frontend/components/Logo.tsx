@@ -1,19 +1,21 @@
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
+/** Official IOMIXO logo (final artwork, transparent corners). */
+export const IOMIXO_LOGO = '/brand/iomixo/iomixo-logo.png'
+
 interface LogoProps {
   size?: number
   className?: string
   /**
-   * 'default' → official IOMIXO logo (used everywhere).
-   * 'wedding' → legacy red logo, kept only inside the Wedding Edition.
-   * 'party'   → same mark on the Party/DJ pink palette.
+   * 'default' / 'party' → official IOMIXO logo (pink-yellow X on black, public/brand/iomixo/iomixo-logo.png), used everywhere in IOMIXO.
+   * 'wedding' → legacy red logo, not used by the IOMIXO or MIOLOVE brands any more.
    */
   variant?: 'default' | 'wedding' | 'party'
 }
 
 export function Logo({ size = 32, className, variant = 'default' }: LogoProps) {
-  const src = variant === 'wedding' ? '/logo.png' : variant === 'party' ? '/iomixo-logo-party.png' : '/iomixo-logo.png'
+  const src = variant === 'wedding' ? '/logo.png' : IOMIXO_LOGO
   return (
     <div className={cn('relative shrink-0', className)} style={{ width: size, height: size }}>
       <Image

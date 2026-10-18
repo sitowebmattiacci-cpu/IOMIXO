@@ -13,6 +13,7 @@ import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
 import { EVENT_BRAND_NAME, hasPhotoFeatures } from '@/lib/brand/eventBrand'
 import { useEventBrand } from '@/lib/events/useEventBrand'
+import { Logo } from '@/components/Logo'
 import { WeddingPhotoDisplay } from '@/components/wedding/WeddingPhotoGridWall'
 import { RouletteWheel } from '@/components/wedding/RouletteWheel'
 import { WinnerAnnouncementStage } from '@/components/wedding/WinnerAnnouncementStage'
@@ -1226,8 +1227,8 @@ function PartyScreen({
         {/* FOOTER */}
         <footer className={`shrink-0 ${isCompact ? 'mt-4' : 'mt-6'}`}>
           <PartyDivider />
-          <p className="text-center text-[11px] uppercase tracking-[0.4em] text-white/50 mt-3">
-            Powered by <span className="text-[#FF2D8D] font-bold">IOMIXO Live Hub</span>
+          <p className="mt-3 flex items-center justify-center gap-2 text-center text-[11px] uppercase tracking-[0.4em] text-white/50">
+            Powered by <Logo variant="party" size={20} className="shrink-0" /> <span className="text-[#FF2D8D] font-bold">IOMIXO Live Hub</span>
           </p>
         </footer>
       </div>

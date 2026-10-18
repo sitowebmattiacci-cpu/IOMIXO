@@ -2,6 +2,7 @@
 import { createContext, useContext, type ReactNode, type ButtonHTMLAttributes } from 'react'
 import { Wifi } from 'lucide-react'
 import { IomixoWeddingMark } from '@/components/brand/EventBrand'
+import { Logo } from '@/components/Logo'
 import { cn } from '@/lib/utils'
 
 // DJ Remote design system. One component set, two themes:
@@ -64,7 +65,12 @@ export function RemoteBrand() {
   const theme = useRemoteTheme()
   // The remote is a DJ tool: IOMIXO brand on both themes, never MIOLOVE.
   if (theme === 'wedding') return <IomixoWeddingMark height={30} className="text-wd-ink" />
-  return <span className="text-[17px] font-black tracking-tight text-white">IOMIXO <span className="text-[#FF2D8D]">Live Hub</span></span>
+  return (
+    <span className="inline-flex items-center gap-2 text-[17px] font-black tracking-tight text-white">
+      <Logo variant="party" size={28} className="shrink-0" />
+      <span>IOMIXO <span className="text-[#FF2D8D]">Live Hub</span></span>
+    </span>
+  )
 }
 
 export function RemoteHeader({ title, subtitle, live, liveLabel, remoteLabel, languageSlot }: {
