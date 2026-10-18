@@ -14,7 +14,45 @@ export interface UpdateEventConfigInput {
   screenModeEnabled?: boolean
   /** Winner-announcement mirror (the legacy route validates/cleans the photos; here it is only a SIGNAL that tells the TV to use the legacy path). */
   winnerAnnouncement?: Record<string, unknown> | null
+  /** MIOLOVE table sign: only the owner's overrides of the defaults (null = back to defaults). */
+  posterConfig?: PosterConfig | null
   eventFields?: MirroredEventFields
+}
+
+export type PosterConfig = Partial<Record<(typeof POSTER_TEXT_FIELDS)[number], string>> & {
+  format?: 'A4' | 'A5'; primaryColor?: string; backgroundColor?: string
+  titleFont?: string; scriptFont?: string; bodyFont?: string; titleSize?: 's' | 'm' | 'l'
+}
+const POSTER_TEXT_FIELDS = ['title1', 'title2', 'title3', 'instruction1', 'instruction2', 'displayName', 'displayDate'] as const
+const POSTER_TEXT_MAX: Record<(typeof POSTER_TEXT_FIELDS)[number], number> = { title1: 24, title2: 16, title3: 24, instruction1: 60, instruction2: 60, displayName: 80, displayDate: 40 }
+const POSTER_ENUMS = {
+  format: ['A4', 'A5'], titleSize: ['s', 'm', 'l'],
+  titleFont: ['playfair', 'cormorant', 'cinzel', 'inter'], scriptFont: ['greatVibes', 'dancing', 'tangerine'], bodyFont: ['inter', 'cormorant', 'playfair'],
+} as const
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/
+
+/** Known keys only; anything invalid is refused (never silently stored). */
+export function parsePosterConfig(v: unknown): PosterConfig | null {
+  if (v === null) return null
+  if (typeof v !== 'object' || Array.isArray(v)) throw new HttpsError('invalid-argument', 'posterConfig must be an object or null', { reason: 'invalid_payload', field: 'posterConfig' })
+  const d = v as Record<string, unknown>, out: Record<string, unknown> = {}
+  const bad = (k: string) => new HttpsError('invalid-argument', `posterConfig.${k} invalid`, { reason: 'invalid_payload', field: `posterConfig.${k}` })
+  for (const k of Object.keys(POSTER_ENUMS) as Array<keyof typeof POSTER_ENUMS>) {
+    if (!(k in d) || d[k] === undefined) continue
+    if (typeof d[k] !== 'string' || !(POSTER_ENUMS[k] as readonly string[]).includes(d[k] as string)) throw bad(k)
+    out[k] = d[k]
+  }
+  for (const k of ['primaryColor', 'backgroundColor'] as const) {
+    if (!(k in d) || d[k] === undefined) continue
+    if (typeof d[k] !== 'string' || !HEX_COLOR.test(d[k] as string)) throw bad(k)
+    out[k] = d[k]
+  }
+  for (const k of POSTER_TEXT_FIELDS) {
+    if (!(k in d) || d[k] === undefined) continue
+    if (typeof d[k] !== 'string' || (d[k] as string).length > POSTER_TEXT_MAX[k]) throw bad(k)
+    out[k] = d[k]
+  }
+  return out as PosterConfig
 }
 
 const plainObject = (v: unknown, field: string): Record<string, unknown> | null => {
@@ -53,6 +91,7 @@ export function parseConfigInput(data: unknown): UpdateEventConfigInput {
     if (typeof d.screenModeEnabled !== 'boolean') throw new HttpsError('invalid-argument', 'screenModeEnabled must be a boolean', { reason: 'invalid_payload', field: 'screenModeEnabled' })
     out.screenModeEnabled = d.screenModeEnabled
   }
+  if ('posterConfig' in d) out.posterConfig = parsePosterConfig(d.posterConfig)
   if ('eventFields' in d) out.eventFields = parseEventFields(d.eventFields)
   if (Object.keys(out).length === 1) throw new HttpsError('invalid-argument', 'nothing to update', { reason: 'invalid_payload' })
   return out
@@ -113,6 +152,7 @@ export async function updateEventConfig(db: Firestore, request: CallerAuth, inpu
     }
     if (input.guestConfig !== undefined) patch.guestConfig = input.guestConfig
     if (input.screenModeEnabled !== undefined) patch.screenModeEnabled = input.screenModeEnabled
+    if (input.posterConfig !== undefined) patch.posterConfig = input.posterConfig
     if (input.eventFields) Object.assign(patch, input.eventFields)
     tx.update(ref, { ...patch, updatedAt: FieldValue.serverTimestamp() })
     return { updated: Object.keys(patch) }

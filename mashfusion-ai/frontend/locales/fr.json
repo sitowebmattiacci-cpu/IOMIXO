@@ -1,4 +1,5 @@
 {
+  "legal": {"legal": "Mentions légales", "lastUpdated": "Dernière mise à jour", "back": "Retour à l'accueil", "home": "Accueil", "rights": "Tous droits réservés.", "privacyTitle": "Politique de confidentialité", "termsTitle": "Conditions d'utilisation"},
   "booth": {
     "sessionNotFound": "Session introuvable.",
     "onlyEventModes": "Live Booth disponible uniquement pour les sessions Party Mode ou Wedding Edition.",
@@ -957,5 +958,179 @@
     "homeSubtitle": "Tout est sous contrôle pour votre événement.",
     "trialAlbumExists": "Vous avez déjà créé votre album gratuit. Vous pouvez continuer à l'utiliser depuis votre espace albums."
   },
-  "wdAdmin": { "trial": {"badge": "Essai gratuit", "unit": "photos", "hint": "Vous pouvez collecter jusqu'à {max} photos gratuitement.", "limitTitle": "Limite de l'essai gratuit atteinte", "activate": "Activer mon album"} }
+  "wdAdmin": {
+    "allEvents": "Tous les événements",
+    "currentEvent": "Événement actuel",
+    "nav": {
+      "home": "Accueil",
+      "photos": "Photos",
+      "requests": "Demandes",
+      "dedications": "Dédicaces",
+      "games": "Jeux",
+      "privacy": "Confidentialité",
+      "poster": "Affiche",
+      "settings": "Réglages",
+      "booth": "Live Booth",
+      "screen": "Écran"
+    },
+    "home": {
+      "subtitle": "Tout est sous contrôle pour votre grand jour.",
+      "publicLink": "Lien public",
+      "publicLinkDesc": "Partagez ce lien ou le QR code avec vos invités.",
+      "qrHint": "Les invités scannent le QR code pour participer.",
+      "downloadQr": "Télécharger le QR",
+      "guestPreview": "Aperçu invité",
+      "guestPreviewDesc": "Comment vos invités voient l'événement sur leur téléphone.",
+      "openGuest": "Ouvrir la page invité",
+      "screenPreview": "Aperçu de l'écran",
+      "screenPreviewDesc": "L'affichage en direct pour le grand écran.",
+      "openScreen": "Ouvrir le mode écran",
+      "screenOff": "Le mode écran n'est pas activé pour cet événement.",
+      "copy": "Copier",
+      "openShort": "Ouvrir",
+      "transparentBg": "Fond transparent (PNG)",
+      "photosAndVideos": "photos et vidéos",
+      "live": "EN DIRECT",
+      "fullscreen": "Plein écran"
+    },
+    "photos": {
+      "subtitle": "Les photos et vidéos partagées par vos invités.",
+      "guestLinkTitle": "Lien pour les invités",
+      "guestLinkDesc": "Les invités scannent le QR code ou ouvrent le lien pour envoyer leurs photos à l'album.",
+      "upload": "Importer photos et vidéos",
+      "uploaded": "Importation terminée",
+      "download": "Télécharger",
+      "downloadAll": "Tout télécharger",
+      "all": "Tout",
+      "photos": "Photos",
+      "videos": "Vidéos",
+      "select": "Sélectionner",
+      "selectAll": "Tout sélectionner",
+      "deselectAll": "Désélectionner",
+      "selected": "sélectionnés",
+      "confirmDelete": "Supprimer définitivement les éléments sélectionnés ?"
+    },
+    "requests": {
+      "subtitle": "Gérez les chansons demandées par les invités."
+    },
+    "dedications": {
+      "subtitle": "Messages des invités pour les mariés."
+    },
+    "games": {
+      "subtitle": "Lancez des jeux et animez vos invités."
+    },
+    "privacy": {
+      "requestsDesc": "Les invités peuvent demander des chansons.",
+      "dedicationsDesc": "Les invités peuvent écrire des dédicaces aux mariés.",
+      "shoeGameDesc": "Afficher le Shoe Game aux invités.",
+      "pollsDesc": "Les invités peuvent voter aux sondages.",
+      "liveBoothDesc": "Les invités peuvent prendre et envoyer des photos.",
+      "pageTitle": "Confidentialité et sécurité",
+      "on": "Activé",
+      "off": "Désactivé"
+    },
+    "poster": {
+      "subtitle": "Personnalisez votre affiche A4 avec le QR code, puis imprimez-la ou enregistrez-la en PDF.",
+      "controls": "Personnaliser",
+      "headline": "Titre",
+      "subline": "Sous-titre",
+      "showNames": "Afficher les noms",
+      "showDate": "Afficher la date",
+      "print": "Imprimer",
+      "defaultHeadline": "Partagez",
+      "defaultSubline": "l'amour",
+      "title": "Affiche de mariage",
+      "previewA4": "Aperçu A4",
+      "edit": "Modifier l'affiche",
+      "caption": "Texte sous le QR",
+      "defaultCaption": "Partagez vos photos ! Scannez le QR code et participez"
+    },
+    "settings": {
+      "subtitle": "Détails de l'événement et options d'écran.",
+      "eventDetails": "Détails de l'événement",
+      "eventDetailsDesc": "Les informations principales affichées aux invités.",
+      "eventName": "Nom de l'événement",
+      "coupleNames": "Noms des mariés",
+      "date": "Date",
+      "venue": "Lieu",
+      "description": "Description",
+      "save": "Enregistrer les modifications",
+      "nameRequired": "Le nom de l'événement est obligatoire",
+      "screenDesc": "Choisissez ce qui s'affiche sur le grand écran.",
+      "namesStyle": "Style des noms",
+      "namesStyleDesc": "Police et taille des noms à l'écran.",
+      "eventStatus": "Statut de l'événement",
+      "eventStatusDesc": "Ouvrez ou fermez l'événement, ou supprimez-le.",
+      "pageTitle": "Réglages de l'événement",
+      "eventNameDesc": "Affiché à vos invités sur la page de l'événement.",
+      "coupleNamesDesc": "Les noms affichés à l'écran et sur l'affiche.",
+      "dateDesc": "Indiquez quand votre événement aura lieu.",
+      "venueDesc": "Où la fête a lieu.",
+      "descriptionDesc": "Un court texte de bienvenue pour les invités."
+    },
+    "welcome": "Bienvenue",
+    "manageEvents": "Gérez vos événements",
+    "group": {
+      "couple": "Pour les mariés",
+      "dj": "Contrôle DJ"
+    },
+    "status": {
+      "pending": "EN ATTENTE",
+      "approved": "APPROUVÉE",
+      "rejected": "REFUSÉE"
+    },
+    "screen": {
+      "subtitle": "Écran, vidéo, noms des mariés et contrôles en direct pendant l'événement.",
+      "namesTitle": "Noms des mariés à l'écran",
+      "namesDesc": "Modifiez les noms dans Réglages ; ici vous choisissez la police et la taille."
+    },
+    "posterEditor": {
+      "title": "Cartonnet QR de table",
+      "subtitle": "Personnalisez le cartonnet à imprimer et à poser sur les tables. Le QR mène toujours à la page photos de votre album.",
+      "format": "Format",
+      "texts": "Textes",
+      "titleSize": "Taille du titre",
+      "size_s": "Petite",
+      "size_m": "Moyenne",
+      "size_l": "Grande",
+      "title1": "Titre 1",
+      "title2": "Titre 2",
+      "title3": "Titre 3",
+      "instruction1": "Ligne d'instruction 1",
+      "instruction2": "Ligne d'instruction 2",
+      "displayName": "Nom affiché sur le cartonnet",
+      "displayDate": "Date affichée",
+      "colors": "Couleurs",
+      "presets": "Styles prêts à l'emploi",
+      "preset_rose": "Rose et ivoire",
+      "preset_sage": "Sauge et crème",
+      "preset_terracotta": "Terracotta et ivoire",
+      "preset_dustyblue": "Bleu poudré et blanc",
+      "primaryColor": "Couleur principale",
+      "backgroundColor": "Fond",
+      "fonts": "Polices",
+      "titleFont": "Police du titre principal",
+      "scriptFont": "Police des titres cursifs",
+      "bodyFont": "Police du texte",
+      "qrNote": "Le QR code est généré automatiquement, noir sur blanc pour rester lisible, et ne peut pas être modifié.",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "saved": "Affiche enregistrée",
+      "saveError": "Échec de l'enregistrement, réessayez.",
+      "unsaved": "Modifications non enregistrées",
+      "reset": "Rétablir le style par défaut",
+      "resetConfirm": "Perdre vos personnalisations et revenir au style par défaut ?",
+      "download": "Télécharger le PDF",
+      "pdfBusy": "Préparation du PDF…",
+      "pdfError": "Impossible de créer le PDF, réessayez.",
+      "preview": "Aperçu"
+    },
+    "trial": {
+      "badge": "Essai gratuit",
+      "unit": "photos",
+      "hint": "Vous pouvez collecter jusqu'à {max} photos gratuitement.",
+      "limitTitle": "Limite de l'essai gratuit atteinte",
+      "activate": "Activer mon album"
+    }
+  }
 }

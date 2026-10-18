@@ -37,6 +37,7 @@ import { WeddingHomePage } from '@/components/wedding/admin/WeddingHomePage'
 import { publicOriginFor, djToolsOrigin } from '@/lib/portalLinks'
 import { WeddingPhotosPage } from '@/components/wedding/admin/WeddingPhotosPage'
 import { WeddingPosterPage } from '@/components/wedding/admin/WeddingPosterPage'
+import { MiolovePosterEditor } from '@/components/wedding/admin/MiolovePosterEditor'
 import {
   WdPage, WdCard, WdSectionCard, WdSection, WdButton, WdLinkButton, wdStatusLabel, WdToggleRow, WdDivided, WdPills, WdInput, WdSelect, WdField,
 } from '@/components/wedding/admin/WeddingAdminUI'
@@ -476,7 +477,7 @@ export default function SessionDetailPage() {
         </WdPage>
       )}
       {tab === 'privacy' && <GuestVisibilityPanel sessionId={session.id} session={session} sessionType="wedding" hasAccess={hasAdvanceAccess} couple={isCouple} />}
-      {tab === 'poster' && <WeddingPosterPage session={session} />}
+      {tab === 'poster' && (isCouple ? <MiolovePosterEditor session={session} /> : <WeddingPosterPage session={session} />)}
       {tab === 'booth' && <WeddingPhotosPage session={session} initialSource="booth" />}
       {(tab === 'settings' || tab === 'screen') && (
         <WeddingSettingsPage key={tab} mode={tab === 'screen' ? 'screen' : 'event'} session={session} togglingActive={togglingActive} onToggle={toggleActive} onDelete={removeSession} />

@@ -53,8 +53,10 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
       assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('[data-testid="couple-onboarding"]')!).backgroundColor), 'rgb(255, 247, 250)')
       assert.equal(await overflow(page), false, 'overflow')
       await page.screenshot({ path: `/tmp/onboarding-${vp.width}.png`, fullPage: true }).catch(() => {})
-      // only the four languages that exist
-      assert.deepEqual(await page.locator('[data-testid="couple-onboarding"] button[aria-pressed]:text-matches("^(IT|EN|ES|FR)$")').allInnerTexts(), ['IT', 'EN', 'ES', 'FR'])
+      // only the four languages that exist, with flags
+      await page.getByTestId('miolove-lang-trigger').click()
+      assert.deepEqual((await page.locator('[role="option"]').allInnerTexts()).map((o) => o.replace(/\s+/g, ' ').trim()), ['🇮🇹 Italiano', '🇬🇧 English', '🇫🇷 Français', '🇪🇸 Español'])
+      await page.keyboard.press('Escape')
       // card width: 560-650px on desktop
       if (vp.width >= 1000) { const w = (await page.locator('form').boundingBox())!.width; assert.ok(w >= 560 && w <= 650, `card ${w}px`) }
 
@@ -92,7 +94,7 @@ test('O2. language switcher: IT / EN / ES / FR translate the onboarding', async 
     await openOnboarding(page, c.email)
     const titles: Record<string, string> = { EN: 'Tell us about your event', ES: 'Cuéntanos sobre tu evento', FR: 'Parlez-nous de votre événement', IT: 'Raccontaci del tuo evento' }
     for (const l of ['EN', 'ES', 'FR', 'IT']) {
-      await page.locator('[data-testid="couple-onboarding"] button[aria-pressed]', { hasText: new RegExp(`^${l}$`) }).click()
+      await page.getByTestId('miolove-lang-trigger').click(); await page.locator(`[role="option"][data-lang="${l.toLowerCase()}"]`).click()
       await page.getByText(titles[l], { exact: true }).waitFor({ timeout: 10_000 })
       assert.equal(await overflow(page), false, `${l} overflow`)
     }

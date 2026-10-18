@@ -1,4 +1,5 @@
 {
+  "legal": {"legal": "Legal", "lastUpdated": "Last updated", "back": "Back to home", "home": "Home", "rights": "All rights reserved.", "privacyTitle": "Privacy Policy", "termsTitle": "Terms of Service"},
   "booth": {
     "sessionNotFound": "Session not found.",
     "onlyEventModes": "Live Booth is available only for Party Mode or Wedding Edition sessions.",
@@ -857,6 +858,7 @@
     }
   },
   "wdAdmin": {
+    "posterEditor": {"title": "Table QR sign", "subtitle": "Customise the sign to print and place on the tables. The QR always opens your album's photo page.", "format": "Format", "texts": "Text", "titleSize": "Title size", "size_s": "Small", "size_m": "Medium", "size_l": "Large", "title1": "Title 1", "title2": "Title 2", "title3": "Title 3", "instruction1": "Instruction line 1", "instruction2": "Instruction line 2", "displayName": "Name shown on the sign", "displayDate": "Date shown", "colors": "Colours", "presets": "Ready-made styles", "preset_rose": "Rose and ivory", "preset_sage": "Sage and cream", "preset_terracotta": "Terracotta and ivory", "preset_dustyblue": "Dusty blue and white", "primaryColor": "Main colour", "backgroundColor": "Background", "fonts": "Fonts", "titleFont": "Main title font", "scriptFont": "Script title font", "bodyFont": "Text font", "qrNote": "The QR code is generated automatically, black on white so it always scans, and cannot be changed.", "save": "Save changes", "saving": "Saving…", "saved": "Poster saved", "saveError": "Could not save, please retry.", "unsaved": "Unsaved changes", "reset": "Restore default style", "resetConfirm": "Lose your customisations and go back to the default style?", "download": "Download PDF", "pdfBusy": "Preparing PDF…", "pdfError": "Could not create the PDF, please retry.", "preview": "Preview"},
     "trial": {"badge": "Free trial", "unit": "photos", "hint": "You can collect up to {max} photos for free.", "limitTitle": "Free trial limit reached", "activate": "Activate my album"},
     "allEvents": "All events",
     "currentEvent": "Current event",

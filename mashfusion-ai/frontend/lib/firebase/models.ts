@@ -109,6 +109,8 @@ export interface EventDoc {
   /** Trial albums only (server-managed): approved photos held / allowed. */
   trialPhotoCount?:  number | null
   trialPhotoLimit?:  number | null
+  /** MIOLOVE table sign: the owner's overrides of the poster defaults. */
+  posterConfig?:     Record<string, unknown> | null
   status:            EventStatus
   coupleNames:       string | null
   weddingDate:       string | null

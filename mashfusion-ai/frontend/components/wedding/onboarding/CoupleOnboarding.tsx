@@ -7,7 +7,7 @@ import { Check } from 'lucide-react'
 import { live, type OccasionType } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { useAccountRole } from '@/lib/roles'
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { MioloveLanguageSwitcher } from '@/components/wedding/MioloveLanguageSwitcher'
 import { MioloveLogo } from '@/components/brand/MioloveLogo'
 import { WdButton, WdField, WdInput } from '@/components/wedding/admin/WeddingAdminUI'
 import { COUPLE_DEFAULT_GUEST_CONFIG, OCCASIONS, OCCASION_EMOJI, albumNamePlaceholder, firstNameOf, suggestAlbumName } from '@/lib/coupleAlbum'
@@ -58,7 +58,7 @@ export function CoupleOnboarding() {
         <MioloveLogo height={36} className="text-wd-ink" />
         <div className="flex min-w-0 items-center gap-3">
           <span className="hidden truncate rounded-full border border-wd-border bg-white px-4 py-1.5 text-sm text-wd-muted sm:inline-block" data-testid="onboarding-welcome">{welcome}</span>
-          <LanguageSwitcher variant="wedding" />
+          <MioloveLanguageSwitcher />
         </div>
       </header>
 

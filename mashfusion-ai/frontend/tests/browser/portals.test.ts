@@ -228,7 +228,7 @@ const LEGAL_LEGACY = /\bAI\b|artificial intelligence|mashup|\bstems?\b|\bBPM\b|c
 
 for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
   test(`PT7. /privacy and /terms are brand-aware @${vp.width}: MIOLOVE never shows IOMIXO (title, header, footer), IOMIXO stays dark`, async () => {
-    const ctx = await browser.newContext({ viewport: vp }); const page = await ctx.newPage()
+    const ctx = await browser.newContext({ viewport: vp, locale: 'en-US' }); const page = await ctx.newPage()
     try {
       for (const route of ['/privacy', '/terms']) {
         await page.goto(`${M()}${route}`, { waitUntil: 'networkidle', timeout: 120_000 })
@@ -332,8 +332,8 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
 
       // Poster
       await openTab('Poster')
-      await page.locator('#wd-poster-qr').waitFor({ timeout: 30_000 })
-      assert.ok((await qrValues(page)).includes(guestUrl), 'Poster QR'); assert.doesNotMatch(await page.evaluate(() => document.body.innerText), NO_DJ, 'Poster: no DJ / Party copy')
+      await page.getByTestId('poster-preview').waitFor({ timeout: 30_000 })
+      assert.equal(await page.getByTestId('poster-preview').getAttribute('data-qr-value'), guestUrl, 'Poster QR'); assert.doesNotMatch(await page.evaluate(() => document.body.innerText), NO_DJ, 'Poster: no DJ / Party copy')
       assert.equal(await overflow(page), false, 'poster overflow')
       assert.equal(await page.locator('a[href*="iomixo.com"]').count(), 0, 'no iomixo.com link anywhere in the Sposi album')
 

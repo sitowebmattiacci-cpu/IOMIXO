@@ -27,6 +27,7 @@ export function fromEventDoc(id: string, d: DocumentData): EventDoc {
     accessMode:        d.accessMode === 'trial' || d.accessMode === 'activated' ? d.accessMode : null,
     trialPhotoCount:   typeof d.trialPhotoCount === 'number' ? d.trialPhotoCount : null,
     trialPhotoLimit:   typeof d.trialPhotoLimit === 'number' ? d.trialPhotoLimit : null,
+    posterConfig:      d.posterConfig && typeof d.posterConfig === 'object' && !Array.isArray(d.posterConfig) ? d.posterConfig : null,
     status,
     coupleNames:       d.coupleNames ?? null,
     weddingDate:       d.weddingDate ?? null,

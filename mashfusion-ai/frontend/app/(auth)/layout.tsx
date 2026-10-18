@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { MioloveLanguageSwitcher } from '@/components/wedding/MioloveLanguageSwitcher'
 import { getRequestPortal } from '@/lib/portalServer'
 
 export function generateMetadata(): Metadata {
@@ -16,7 +17,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <>
       <div className="fixed top-4 right-4 z-50">
-        <LanguageSwitcher variant={config.id === 'miolove' ? 'wedding' : undefined} />
+        {config.id === 'miolove' ? <MioloveLanguageSwitcher /> : <LanguageSwitcher />}
       </div>
       {children}
     </>

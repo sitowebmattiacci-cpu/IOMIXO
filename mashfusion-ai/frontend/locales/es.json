@@ -1,4 +1,5 @@
 {
+  "legal": {"legal": "Legal", "lastUpdated": "Última actualización", "back": "Volver al inicio", "home": "Inicio", "rights": "Todos los derechos reservados.", "privacyTitle": "Política de privacidad", "termsTitle": "Condiciones del servicio"},
   "booth": {
     "sessionNotFound": "Sesión no encontrada.",
     "onlyEventModes": "Live Booth disponible solo para sesiones Party Mode o Wedding Edition.",
@@ -957,5 +958,179 @@
     "homeSubtitle": "Todo bajo control para tu evento.",
     "trialAlbumExists": "Ya has creado tu álbum gratuito. Puedes seguir usándolo desde tu área de álbumes."
   },
-  "wdAdmin": { "trial": {"badge": "Prueba gratuita", "unit": "fotos", "hint": "Puedes reunir hasta {max} fotos gratis.", "limitTitle": "Límite de la prueba gratuita alcanzado", "activate": "Activar mi álbum"} }
+  "wdAdmin": {
+    "allEvents": "Todos los eventos",
+    "currentEvent": "Evento actual",
+    "nav": {
+      "home": "Inicio",
+      "photos": "Fotos",
+      "requests": "Peticiones",
+      "dedications": "Dedicatorias",
+      "games": "Juegos",
+      "privacy": "Privacidad",
+      "poster": "Cartel",
+      "settings": "Ajustes",
+      "booth": "Live Booth",
+      "screen": "Pantalla"
+    },
+    "home": {
+      "subtitle": "Todo bajo control para tu gran día.",
+      "publicLink": "Enlace público",
+      "publicLinkDesc": "Comparte este enlace o el código QR con tus invitados.",
+      "qrHint": "Los invitados escanean el código QR para entrar.",
+      "downloadQr": "Descargar QR",
+      "guestPreview": "Vista del invitado",
+      "guestPreviewDesc": "Cómo ven el evento tus invitados en su móvil.",
+      "openGuest": "Abrir página del invitado",
+      "screenPreview": "Vista de pantalla",
+      "screenPreviewDesc": "La vista en directo para la pantalla grande.",
+      "openScreen": "Abrir modo pantalla",
+      "screenOff": "El modo pantalla no está activado para este evento.",
+      "copy": "Copiar",
+      "openShort": "Abrir",
+      "transparentBg": "Fondo transparente (PNG)",
+      "photosAndVideos": "fotos y vídeos",
+      "live": "EN DIRECTO",
+      "fullscreen": "Pantalla completa"
+    },
+    "photos": {
+      "subtitle": "Las fotos y los vídeos compartidos por tus invitados.",
+      "guestLinkTitle": "Enlace para invitados",
+      "guestLinkDesc": "Los invitados escanean el código QR o abren el enlace para enviar sus fotos al álbum.",
+      "upload": "Subir fotos y vídeos",
+      "uploaded": "Subida completada",
+      "download": "Descargar",
+      "downloadAll": "Descargar todo",
+      "all": "Todo",
+      "photos": "Fotos",
+      "videos": "Vídeos",
+      "select": "Seleccionar",
+      "selectAll": "Seleccionar todo",
+      "deselectAll": "Deseleccionar",
+      "selected": "seleccionados",
+      "confirmDelete": "¿Eliminar definitivamente los elementos seleccionados?"
+    },
+    "requests": {
+      "subtitle": "Gestiona las canciones pedidas por los invitados."
+    },
+    "dedications": {
+      "subtitle": "Mensajes de los invitados para los novios."
+    },
+    "games": {
+      "subtitle": "Inicia juegos y anima a tus invitados."
+    },
+    "privacy": {
+      "requestsDesc": "Los invitados pueden pedir canciones.",
+      "dedicationsDesc": "Los invitados pueden escribir dedicatorias a los novios.",
+      "shoeGameDesc": "Mostrar el Shoe Game a los invitados.",
+      "pollsDesc": "Los invitados pueden votar en las encuestas.",
+      "liveBoothDesc": "Los invitados pueden hacer y subir fotos.",
+      "pageTitle": "Privacidad y seguridad",
+      "on": "Activado",
+      "off": "Desactivado"
+    },
+    "poster": {
+      "subtitle": "Personaliza tu cartel A4 con el código QR, luego imprímelo o guárdalo como PDF.",
+      "controls": "Personalizar",
+      "headline": "Título",
+      "subline": "Subtítulo",
+      "showNames": "Mostrar nombres",
+      "showDate": "Mostrar fecha",
+      "print": "Imprimir",
+      "defaultHeadline": "Comparte",
+      "defaultSubline": "el amor",
+      "title": "Cartel de boda",
+      "previewA4": "Vista previa A4",
+      "edit": "Editar cartel",
+      "caption": "Texto bajo el QR",
+      "defaultCaption": "¡Comparte tus fotos! Escanea el código QR y participa"
+    },
+    "settings": {
+      "subtitle": "Datos del evento y opciones de pantalla.",
+      "eventDetails": "Datos del evento",
+      "eventDetailsDesc": "La información principal que ven los invitados.",
+      "eventName": "Nombre del evento",
+      "coupleNames": "Nombres de los novios",
+      "date": "Fecha",
+      "venue": "Lugar",
+      "description": "Descripción",
+      "save": "Guardar cambios",
+      "nameRequired": "El nombre del evento es obligatorio",
+      "screenDesc": "Elige qué mostrar en la pantalla grande.",
+      "namesStyle": "Estilo de los nombres",
+      "namesStyleDesc": "Fuente y tamaño de los nombres en pantalla.",
+      "eventStatus": "Estado del evento",
+      "eventStatusDesc": "Abre o cierra el evento, o elimínalo.",
+      "pageTitle": "Ajustes del evento",
+      "eventNameDesc": "Se muestra a tus invitados en la página del evento.",
+      "coupleNamesDesc": "Los nombres que se muestran en pantalla y en el cartel.",
+      "dateDesc": "Indica cuándo tendrá lugar tu evento.",
+      "venueDesc": "Dónde se celebra la fiesta.",
+      "descriptionDesc": "Un breve texto de bienvenida para los invitados."
+    },
+    "welcome": "Bienvenido",
+    "manageEvents": "Gestiona tus eventos",
+    "group": {
+      "couple": "Para los novios",
+      "dj": "Control del DJ"
+    },
+    "status": {
+      "pending": "PENDIENTE",
+      "approved": "APROBADA",
+      "rejected": "RECHAZADA"
+    },
+    "screen": {
+      "subtitle": "Pantalla, vídeo, nombres de los novios y controles en directo durante el evento.",
+      "namesTitle": "Nombres de los novios en pantalla",
+      "namesDesc": "Edita los nombres en Ajustes; aquí eliges fuente y tamaño."
+    },
+    "posterEditor": {
+      "title": "Cartel QR de mesa",
+      "subtitle": "Personaliza el cartel para imprimir y poner en las mesas. El QR siempre abre la página de fotos de tu álbum.",
+      "format": "Formato",
+      "texts": "Textos",
+      "titleSize": "Tamaño del título",
+      "size_s": "Pequeño",
+      "size_m": "Mediano",
+      "size_l": "Grande",
+      "title1": "Título 1",
+      "title2": "Título 2",
+      "title3": "Título 3",
+      "instruction1": "Línea de instrucción 1",
+      "instruction2": "Línea de instrucción 2",
+      "displayName": "Nombre mostrado en el cartel",
+      "displayDate": "Fecha mostrada",
+      "colors": "Colores",
+      "presets": "Estilos listos",
+      "preset_rose": "Rosa y marfil",
+      "preset_sage": "Salvia y crema",
+      "preset_terracotta": "Terracota y marfil",
+      "preset_dustyblue": "Azul empolvado y blanco",
+      "primaryColor": "Color principal",
+      "backgroundColor": "Fondo",
+      "fonts": "Fuentes",
+      "titleFont": "Fuente del título principal",
+      "scriptFont": "Fuente de los títulos cursivos",
+      "bodyFont": "Fuente del texto",
+      "qrNote": "El código QR se genera automáticamente, negro sobre blanco para que siempre se lea, y no se puede cambiar.",
+      "save": "Guardar cambios",
+      "saving": "Guardando…",
+      "saved": "Cartel guardado",
+      "saveError": "No se pudo guardar, inténtalo de nuevo.",
+      "unsaved": "Cambios sin guardar",
+      "reset": "Restaurar estilo predeterminado",
+      "resetConfirm": "¿Perder tus personalizaciones y volver al estilo predeterminado?",
+      "download": "Descargar PDF",
+      "pdfBusy": "Preparando el PDF…",
+      "pdfError": "No se pudo crear el PDF, inténtalo de nuevo.",
+      "preview": "Vista previa"
+    },
+    "trial": {
+      "badge": "Prueba gratuita",
+      "unit": "fotos",
+      "hint": "Puedes reunir hasta {max} fotos gratis.",
+      "limitTitle": "Límite de la prueba gratuita alcanzado",
+      "activate": "Activar mi álbum"
+    }
+  }
 }

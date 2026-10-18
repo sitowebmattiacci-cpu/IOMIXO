@@ -190,6 +190,7 @@ export interface LiveSession {
   access_mode?: AccessMode
   trial_photo_count?: number
   trial_photo_limit?: number
+  poster_config?: Record<string, unknown> | null
   couple_names?: string | null
   wedding_date?: string | null
   venue_name?: string | null
@@ -282,7 +283,7 @@ export interface PublicLivePayload {
   requestsRemaining: number | null
 }
 
-type SessionPatch = Partial<Pick<LiveSession, 'event_name' | 'dj_name' | 'description' | 'is_active' | 'couple_names' | 'wedding_date' | 'venue_name' | 'screen_mode_enabled' | 'screen_config' | 'guest_config' | 'roulette_penitenze' | 'shoe_game_questions'>>
+type SessionPatch = Partial<Pick<LiveSession, 'event_name' | 'dj_name' | 'description' | 'is_active' | 'couple_names' | 'wedding_date' | 'venue_name' | 'screen_mode_enabled' | 'screen_config' | 'guest_config' | 'poster_config' | 'roulette_penitenze' | 'shoe_game_questions'>>
 
 export const live = {
   async listSessions(): Promise<LiveSession[]> {
@@ -314,6 +315,7 @@ export const live = {
     if ('screen_config' in patch) fs.screen_config = hasWinner ? (({ winner_announcement: _w, ...rest }) => (void _w, rest))(dsc!) : patch.screen_config as any
     if (hasWinner) fs.winner_announcement = (dsc!.winner_announcement ?? null) as Record<string, unknown> | null
     if ('guest_config' in patch) fs.guest_config = patch.guest_config as any
+    if ('poster_config' in patch) fs.poster_config = patch.poster_config as any
     if ('screen_mode_enabled' in patch) fs.screen_mode_enabled = patch.screen_mode_enabled
     const mirrorKeys = Object.keys(o.config.MIRRORED_KEYS).concat('is_active')
     const core = Object.fromEntries(Object.entries(patch).filter(([k]) => mirrorKeys.includes(k)))

@@ -246,7 +246,7 @@ export const ownerOps = {
   },
   config: {
     /** Fields of `live_sessions` whose AUTHORITY moved to Firestore (event config the TV and the guest page read). */
-    CONFIG_KEYS: ['screen_config', 'guest_config', 'screen_mode_enabled'] as const,
+    CONFIG_KEYS: ['screen_config', 'guest_config', 'poster_config', 'screen_mode_enabled'] as const,
     /** Fields still AUTHORITATIVE in Supabase; Firestore only mirrors them (legacy write first, then this mirror). */
     MIRRORED_KEYS: { event_name: 'title', dj_name: 'djName', description: 'description', couple_names: 'coupleNames', wedding_date: 'weddingDate', venue_name: 'venueName' } as const,
     /** The Firestore event of a dashboard session, or null when this switch/event does not apply (→ legacy only). */
@@ -257,7 +257,7 @@ export const ownerOps = {
      */
     async update(sessionId: string, input: {
       screen_config?: Record<string, unknown> | null; guest_config?: Record<string, unknown> | null; screen_mode_enabled?: boolean
-      winner_announcement?: Record<string, unknown> | null; mirror?: Record<string, unknown>
+      winner_announcement?: Record<string, unknown> | null; poster_config?: Record<string, unknown> | null; mirror?: Record<string, unknown>
     }): Promise<boolean> {
       const ev = await forSession(sessionId); if (!ev) return false
       const eventFields: Record<string, unknown> = {}
@@ -267,6 +267,7 @@ export const ownerOps = {
         eventId: ev.id,
         ...('screen_config' in input ? { screenConfig: input.screen_config } : {}),
         ...('guest_config' in input ? { guestConfig: input.guest_config } : {}),
+        ...('poster_config' in input ? { posterConfig: input.poster_config } : {}),
         ...('screen_mode_enabled' in input ? { screenModeEnabled: input.screen_mode_enabled } : {}),
         ...('winner_announcement' in input ? { winnerAnnouncement: input.winner_announcement } : {}),
         ...(Object.keys(eventFields).length ? { eventFields } : {}),
@@ -280,6 +281,7 @@ export const ownerOps = {
         ...session,
         ...(ev.screenConfig !== undefined ? { screen_config: ev.screenConfig } : {}),
         ...(ev.guestConfig !== undefined ? { guest_config: ev.guestConfig } : {}),
+        ...(ev.posterConfig ? { poster_config: ev.posterConfig } : {}),
         screen_mode_enabled: ev.screenModeEnabled,
       }
     },

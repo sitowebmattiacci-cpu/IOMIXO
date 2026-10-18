@@ -10,6 +10,8 @@ import {
 } from 'lucide-react'
 import { auth } from '@/lib/api'
 import { useI18n, SUPPORTED_LOCALES, type Locale } from '@/lib/i18n'
+import { usePortal } from '@/components/portal/PortalProvider'
+import { MioloveLanguageSwitcher } from '../MioloveLanguageSwitcher'
 import { useEffectiveAccess } from '@/lib/access'
 import { MioloveLogo, useWeddingTitle } from '@/components/brand/MioloveLogo'
 import { cn } from '@/lib/utils'
@@ -50,6 +52,7 @@ interface Props {
 // Full-screen wedding admin layout. Covers the shared dashboard chrome so Party/DJ UI is never affected.
 export function WeddingAdminShell({ eventName, active, onSelect, badges, couple = false, occasion, children }: Props) {
   const { t, locale, setLocale } = useI18n()
+  const { config: portal } = usePortal()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const { user } = useEffectiveAccess()
@@ -144,14 +147,16 @@ export function WeddingAdminShell({ eventName, active, onSelect, badges, couple 
               {t('wdAdmin.welcome')}, <b className="ml-1 font-semibold text-wd-ink">{displayName}</b>
             </span>
           )}
-          <select
-            value={locale}
-            onChange={(e) => setLocale(e.target.value as Locale)}
-            aria-label="Language"
-            className="rounded-full border border-wd-border bg-white px-3 py-1.5 text-sm font-semibold text-wd-ink focus:outline-none focus:ring-2 focus:ring-wd-pink/30"
-          >
-            {SUPPORTED_LOCALES.map((l) => <option key={l} value={l}>{l.toUpperCase()}</option>)}
-          </select>
+          {portal.id === 'miolove' ? <MioloveLanguageSwitcher /> : (
+            <select
+              value={locale}
+              onChange={(e) => setLocale(e.target.value as Locale)}
+              aria-label="Language"
+              className="rounded-full border border-wd-border bg-white px-3 py-1.5 text-sm font-semibold text-wd-ink focus:outline-none focus:ring-2 focus:ring-wd-pink/30"
+            >
+              {SUPPORTED_LOCALES.map((l) => <option key={l} value={l}>{l.toUpperCase()}</option>)}
+            </select>
+          )}
         </div>
       </header>
 

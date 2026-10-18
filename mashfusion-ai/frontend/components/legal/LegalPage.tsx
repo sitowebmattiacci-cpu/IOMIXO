@@ -1,6 +1,10 @@
+'use client'
 import Link from 'next/link'
 import type { CSSProperties, ReactNode } from 'react'
 import { ArrowLeft } from 'lucide-react'
+import { useI18n } from '@/lib/i18n'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { MioloveLanguageSwitcher } from '@/components/wedding/MioloveLanguageSwitcher'
 import { Logo } from '@/components/Logo'
 import { MioloveLogo } from '@/components/brand/MioloveLogo'
 import type { PortalConfig } from '@/lib/portal'
@@ -28,6 +32,7 @@ export function LegalPage({ config, title, updated, otherLink, children }: {
   children: ReactNode
 }) {
   const miolove = config.id === 'miolove'
+  const { t } = useI18n()
   return (
     <div className="relative min-h-screen overflow-hidden bg-[color:var(--lg-bg)]" style={THEMES[config.id] as CSSProperties}>
       <div className="pointer-events-none select-none" aria-hidden>
@@ -42,7 +47,7 @@ export function LegalPage({ config, title, updated, otherLink, children }: {
         )}
       </div>
 
-      <header className="relative z-10 flex items-center justify-between px-6 py-5 max-w-4xl mx-auto">
+      <header className="relative z-20 flex items-center justify-between px-6 py-5 max-w-4xl mx-auto">
         <Link href="/" className="flex items-center gap-2.5" aria-label={config.brand}>
           {miolove ? (
             <MioloveLogo height={36} variant="onLight" />
@@ -55,26 +60,29 @@ export function LegalPage({ config, title, updated, otherLink, children }: {
             </>
           )}
         </Link>
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-[color:var(--lg-back)] hover:text-[color:var(--lg-back-hover)] transition-colors">
-          <ArrowLeft className="h-4 w-4" />
-          Back to home
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/" aria-label={t('legal.back')} className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-[color:var(--lg-back)] hover:text-[color:var(--lg-back-hover)] transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('legal.back')}</span>
+          </Link>
+          {miolove ? <MioloveLanguageSwitcher /> : <LanguageSwitcher />}
+        </div>
       </header>
 
       <main className="relative z-10 max-w-3xl mx-auto px-6 py-16">
         <div className="mb-12">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--lg-eyebrow)] mb-3">Legal</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--lg-eyebrow)] mb-3">{t('legal.legal')}</p>
           <h1 className="text-4xl md:text-5xl font-black text-[color:var(--lg-title)] tracking-tight mb-3">{title}</h1>
-          <p className="text-sm text-[color:var(--lg-meta)]">Last updated: {updated}</p>
+          <p className="text-sm text-[color:var(--lg-meta)]">{t('legal.lastUpdated')}: {updated}</p>
         </div>
 
         <article className="space-y-10 text-[color:var(--lg-body)] leading-relaxed">{children}</article>
 
         <div className="mt-16 pt-8 border-t border-[color:var(--lg-border)] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[color:var(--lg-foot)]">
-          <p>© 2026 {miolove ? config.brand : 'IOMIXO'}. All rights reserved.</p>
+          <p>© 2026 {miolove ? config.brand : 'IOMIXO'}. {t('legal.rights')}</p>
           <div className="flex gap-4">
             <Link href={otherLink.href} className="hover:text-[color:var(--lg-foot-hover)] transition-colors">{otherLink.label}</Link>
-            <Link href="/" className="hover:text-[color:var(--lg-foot-hover)] transition-colors">Home</Link>
+            <Link href="/" className="hover:text-[color:var(--lg-foot-hover)] transition-colors">{t('legal.home')}</Link>
           </div>
         </div>
       </main>
