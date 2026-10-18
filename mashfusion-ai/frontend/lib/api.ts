@@ -268,6 +268,10 @@ export interface PublicLivePayload {
     venue_name: string | null
     screen_mode_enabled: boolean
     guest_config: GuestConfig | null
+    /** Event owner's account type (brand / portal of the guest pages). null = the server could not read it; absent on an older server. */
+    owner_account_type?: 'dj' | 'couple' | null
+    /** Couple albums only: 'trial' | 'activated'. */
+    access_mode?: 'trial' | 'activated' | null
   }
   profile: Omit<DjProfile, 'public_slug' | 'id' | 'user_id'> | null
   events: Array<Omit<DjEvent, 'is_public'>>

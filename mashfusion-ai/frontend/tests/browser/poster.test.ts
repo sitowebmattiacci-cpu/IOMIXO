@@ -190,7 +190,7 @@ for (const [fmt, ptW, ptH, pxW, pxH] of [['A4', 595.28, 841.89, 2480, 3508], ['A
   })
 }
 
-test('PO6. IOMIXO is untouched: a DJ wedding event keeps the original poster page', async () => {
+test('PO6. IOMIXO has no poster / photo sections: a DJ wedding event offers none of them, and keeps the plain language selector', async () => {
   const dj = await newClient('account'), id = `psd${Date.now()}`, slug = `psds${Date.now()}`
   await seedSet(`users/${dj.uid}`, { uid: dj.uid, email: dj.email, plan: { tier: 'wedding', source: 'legacy' }, createdAt: new Date(), updatedAt: new Date() })
   await seedSet(`events/${id}`, eventFields(dj.uid, slug, { type: 'wedding', title: 'Matrimonio DJ', legacySupabaseId: undefined, guestConfig: { requests: true } })); await seedSet(`eventSlugs/${slug}`, { eventId: id })
@@ -202,9 +202,12 @@ test('PO6. IOMIXO is untouched: a DJ wedding event keeps the original poster pag
       await page.locator('button[type="submit"]').click(); await page.waitForURL((u) => !/\/login$/.test(u.pathname), { timeout: 15_000 }).catch(() => {})
     }
     await page.goto(`${I()}/sessions/${id}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
-    await goTab(page, /Poster/)
-    await page.locator('.wd-poster-print').waitFor({ timeout: 60_000 })
-    assert.equal(await page.getByTestId('poster-editor').count(), 0, 'the DJ keeps the original poster page')
+    await page.locator('button[aria-label="Menu"]:visible, nav[aria-label="Wedding"]:visible').first().waitFor({ timeout: 90_000 })
+    const menu = page.getByRole('button', { name: 'Menu', exact: true }); if (await menu.isVisible().catch(() => false)) await menu.click()
+    const nav = page.locator('nav[aria-label="Wedding"]:visible')
+    await nav.getByRole('button', { name: /Giochi/ }).first().waitFor({ timeout: 30_000 })
+    for (const gone of [/Poster/, /^Foto/, /Live Booth/]) assert.equal(await nav.getByRole('button', { name: gone }).count(), 0, `no ${gone} section for a DJ`)
+    assert.equal(await page.getByTestId('poster-editor').count(), 0)
     // IOMIXO language UI is the original one: the plain selector, no MIOLOVE flag menu
     assert.equal(await page.locator('select[aria-label="Language"]').count(), 1); assert.equal(await page.getByTestId('miolove-lang').count(), 0)
     assert.deepEqual(await page.locator('select[aria-label="Language"] option').allInnerTexts(), ['IT', 'EN', 'ES', 'FR'])

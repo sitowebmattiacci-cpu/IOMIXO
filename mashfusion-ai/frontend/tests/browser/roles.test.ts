@@ -68,7 +68,8 @@ test('D1. DJ (explicit accountType) and legacy owner (no field): full dashboard,
       // the wedding opens with BOTH groups: Per gli sposi + Regia DJ
       await page.goto(`${app.url}/sessions/${wedId}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
       await page.getByText('Regia DJ').first().waitFor({ timeout: 60_000 })
-      for (const label of ['Richieste', 'Dediche', 'Giochi', 'Live Booth', 'Schermo']) assert.ok(await page.getByRole('button', { name: new RegExp(label) }).first().isVisible(), label)
+      for (const label of ['Richieste', 'Dediche', 'Giochi', 'Schermo']) assert.ok(await page.getByRole('button', { name: new RegExp(label) }).first().isVisible(), label)
+      assert.equal(await page.locator('nav[aria-label="Wedding"]:visible').getByRole('button', { name: /Live Booth|Poster|^Foto/ }).count(), 0, 'IOMIXO Wedding DJ has no photo sections')
       // remote opens (no redirect)
       await page.goto(`${app.url}/remote/${wedSlug}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
       await page.waitForTimeout(3000)
@@ -123,7 +124,7 @@ test('S1. Sposi on miolovealbum.com: sign-up WITHOUT any role choice (390px) sav
     await page.locator('.wedding-admin header button[aria-label="Menu"]').click()
     await page.getByText('Per gli sposi').last().waitFor({ timeout: 30_000 })
     for (const label of ['Home', 'Foto', 'Privacy', 'Poster', 'Impostazioni']) assert.ok(await page.getByRole('button', { name: new RegExp(`^${label}`) }).first().count() > 0, label)
-    for (const label of ['Richieste', 'Dediche', 'Giochi', 'Live Booth', 'Schermo']) assert.equal(await page.getByRole('button', { name: new RegExp(label) }).count(), 0, label)
+    for (const label of ['Richieste', 'Dediche', 'Giochi', 'Schermo']) assert.equal(await page.getByRole('button', { name: new RegExp(label) }).count(), 0, label)
     assert.equal(await page.getByText('Regia DJ').count(), 0)
     assert.ok(await page.getByRole('img', { name: 'MIOLOVE ALBUM' }).first().isVisible())
 

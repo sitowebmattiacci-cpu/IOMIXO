@@ -13,26 +13,27 @@ import { useI18n, SUPPORTED_LOCALES, type Locale } from '@/lib/i18n'
 import { usePortal } from '@/components/portal/PortalProvider'
 import { MioloveLanguageSwitcher } from '../MioloveLanguageSwitcher'
 import { useEffectiveAccess } from '@/lib/access'
-import { MioloveLogo, useWeddingTitle } from '@/components/brand/MioloveLogo'
+import { useWeddingTitle } from '@/components/brand/MioloveLogo'
+import { WeddingBrandLogo } from '@/components/brand/EventBrand'
 import { cn } from '@/lib/utils'
 
 export type WeddingNavKey = 'home' | 'photos' | 'requests' | 'dedications' | 'games' | 'booth' | 'screen' | 'privacy' | 'poster' | 'settings'
 
-type NavItem = { key: WeddingNavKey; icon: typeof Home; label: string }
+type NavItem = { key: WeddingNavKey; icon: typeof Home; label: string; /** Photo feature: MIOLOVE albums only, never shown to a DJ (IOMIXO Wedding). */ photo?: boolean }
 // Two areas: couple-facing album tools and the DJ's live control room.
 const NAV_GROUPS: Array<{ title: string; items: NavItem[] }> = [
   { title: 'wdAdmin.group.couple', items: [
     { key: 'home',     icon: Home,        label: 'wdAdmin.nav.home' },
-    { key: 'photos',   icon: ImageIcon,   label: 'wdAdmin.nav.photos' },
+    { key: 'photos',   icon: ImageIcon,   label: 'wdAdmin.nav.photos', photo: true },
     { key: 'privacy',  icon: ShieldCheck, label: 'wdAdmin.nav.privacy' },
-    { key: 'poster',   icon: Printer,     label: 'wdAdmin.nav.poster' },
+    { key: 'poster',   icon: Printer,     label: 'wdAdmin.nav.poster', photo: true },
     { key: 'settings', icon: Settings,    label: 'wdAdmin.nav.settings' },
   ] },
   { title: 'wdAdmin.group.dj', items: [
     { key: 'requests',    icon: Music2,   label: 'wdAdmin.nav.requests' },
     { key: 'dedications', icon: Heart,    label: 'wdAdmin.nav.dedications' },
     { key: 'games',       icon: Sparkles, label: 'wdAdmin.nav.games' },
-    { key: 'booth',       icon: Camera,   label: 'wdAdmin.nav.booth' },
+    { key: 'booth',       icon: Camera,   label: 'wdAdmin.nav.booth', photo: true },
     { key: 'screen',      icon: Tv,       label: 'wdAdmin.nav.screen' },
   ] },
 ]
@@ -74,9 +75,9 @@ export function WeddingAdminShell({ eventName, active, onSelect, badges, couple 
       </div>
 
       <nav className="mt-5 space-y-4" aria-label="Wedding">
-        {(couple ? NAV_GROUPS.slice(0, 1) : NAV_GROUPS).map((g) => (
+        {(couple ? NAV_GROUPS.slice(0, 1) : NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => !i.photo) }))).map((g) => (
           <div key={g.title} className="space-y-1">
-            <p className="px-4 pb-1 text-[11px] font-medium uppercase tracking-[0.12em] text-wd-muted">{g.title === 'wdAdmin.group.couple' && occasion && occasion !== 'wedding' ? t('onboarding.albumGroup') : t(g.title)}</p>
+            <p className="px-4 pb-1 text-[11px] font-medium uppercase tracking-[0.12em] text-wd-muted">{g.title === 'wdAdmin.group.couple' && !couple ? t('wdAdmin.group.event') : g.title === 'wdAdmin.group.couple' && occasion && occasion !== 'wedding' ? t('onboarding.albumGroup') : t(g.title)}</p>
             {g.items.map(({ key, icon: Icon, label }) => {
               const isActive = key === active
               const badge = badges?.[key]
@@ -139,7 +140,7 @@ export function WeddingAdminShell({ eventName, active, onSelect, badges, couple 
           <button onClick={() => setOpen(!open)} aria-label="Menu" className="md:hidden rounded-lg p-2 text-wd-ink hover:bg-wd-active">
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-          <MioloveLogo height={36} className="text-wd-ink" />
+          <WeddingBrandLogo height={36} className="text-wd-ink" />
         </div>
         <div className="flex items-center gap-2.5">
           {displayName && (

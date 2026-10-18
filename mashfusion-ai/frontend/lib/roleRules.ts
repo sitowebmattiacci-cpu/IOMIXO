@@ -19,4 +19,7 @@ export function isCoupleAllowedPath(pathname: string | null | undefined): boolea
 /** Sections of the wedding admin visible to a Sposi account (no live-control / DJ tools). */
 export const COUPLE_WEDDING_TABS = ['home', 'photos', 'privacy', 'poster', 'settings'] as const
 export const isCoupleWeddingTab = (key: string) => (COUPLE_WEDDING_TABS as readonly string[]).includes(key)
+/** Wedding sections that belong to MIOLOVE albums only (photos): a DJ's Wedding (IOMIXO) never opens them. */
+export const MIOLOVE_ONLY_WEDDING_TABS = ['photos', 'poster', 'booth'] as const
+export const isMioloveOnlyTab = (key: string) => (MIOLOVE_ONLY_WEDDING_TABS as readonly string[]).includes(key)
 

@@ -28,6 +28,7 @@
     "step4": "Envía: el DJ podrá mostrarla en pantalla",
     "joinParty": "Participa en el Live Booth",
     "backToMain": "Volver a la página principal",
+    "notAvailable": "El Live Booth no está disponible para este evento.",
     "weddingIntro": "Saca una foto y participa en el Live Booth de la boda. ¡Tu foto aparecerá en la pantalla en vivo!",
     "openCamera": "Abrir cámara",
     "uploadPhoto": "Haz o sube una foto",
@@ -112,7 +113,7 @@
     "feat1": "Dedicatorias románticas en vivo",
     "feat2": "Ruleta de prendas",
     "feat3": "Juego del zapato",
-    "feat4": "Álbum de fotos de invitados",
+    "feat4": "Encuestas y Music Battle",
     "feat5": "Modo pantalla para proyector",
     "buyPass": "Comprar Event Pass 24H",
     "passActiveCheck": "✓ Event Pass activo",
@@ -500,7 +501,7 @@
     "perk1": "Peticiones musicales en vivo",
     "perk2": "Dedicatorias en pantalla",
     "perk3": "Juegos interactivos y ruleta",
-    "perk4": "Photo Booth Live integrado",
+    "perk4": "Karaoke y Screen Mode",
     "checkInbox": "Revisa tu bandeja de entrada",
     "sentVerification": "Hemos enviado un enlace de verificación a",
     "clickActivate": ". Haz clic para activar tu cuenta.",
@@ -562,7 +563,7 @@
     "perMonth": "/mes",
     "freeDesc": "1 sesión live activa, hasta 30 peticiones por sesión, QR básico, branding IOMIXO.",
     "proDesc": "Sesiones y peticiones ilimitadas, aprobar/rechazar, redes públicas, próximas fechas, presencia online, branding reducido.",
-    "weddingDesc": "Todo Pro + el paquete premium completo para eventos y bodas: Party Mode (cumpleaños, eventos de empresa, noches DJ) y Wedding Edition (bodas, aniversarios), con dedicatorias, juegos, encuestas, álbum de fotos de invitados, pantalla live y branding personalizable."
+    "weddingDesc": "Todo Pro + el paquete premium completo para eventos y bodas: Party Mode (noches DJ, karaoke, cumpleaños, eventos de empresa) y Wedding DJ (bodas, aniversarios), con dedicatorias, juegos, encuestas, pantalla live y branding personalizable."
   },
   "sessions": {
     "title": "Sesiones Live", "subtitle": "Crea, gestiona y cierra tus eventos.",
@@ -724,44 +725,44 @@
       "ctaShort": "Empezar"
     },
     "hero": {
-      "badge": "Live · Interactivo · Para tu público",
-      "tagline": "La plataforma interactiva para DJs, eventos y bodas.",
+      "badge": "DJ · Karaoke · Animación de bodas",
+      "tagline": "La plataforma interactiva para DJ, noches de karaoke y bodas.",
       "description": "Crea una sesión live con QR Code, recibe peticiones musicales, activa juegos, recoge dedicatorias y crea una experiencia envolvente para tu público.",
       "claim": "El DJ manda. El público interactúa.",
-      "audiences": "Cenas espectáculo · Fiestas privadas · Cumpleaños · Bodas · Eventos corporativos · Clubs · Locales",
+      "audiences": "Noches DJ · Karaoke · Fiestas privadas · Cumpleaños · Bodas · Eventos de empresa · Clubs · Locales",
       "ctaPrimary": "Crea tu Live Hub",
       "ctaSecondary": "Descubre las modalidades",
-      "subline": "Los invitados participan desde el móvil vía QR — peticiones musicales, juegos, dedicatorias, fotos y Screen Mode en tiempo real."
+      "subline": "Los invitados participan desde el móvil con un QR: peticiones musicales, karaoke, juegos, dedicatorias y Screen Mode en tiempo real."
     },
     "modes": {
       "party": {
         "label": "Modalidad",
-        "for": "Para cumpleaños, fiestas privadas, locales, aperitivos y eventos corporativos.",
+        "for": "Para noches DJ, karaoke, cumpleaños, fiestas privadas, locales y eventos de empresa.",
         "f1": "Peticiones en vivo",
-        "f2": "Juegos",
-        "f3": "Live Booth",
+        "f2": "Karaoke",
+        "f3": "Juegos y Music Battle",
         "f4": "Screen Mode",
         "cta": "Inicia una Fiesta"
       },
       "wedding": {
-        "label": "Edición",
+        "label": "Modo",
         "premium": "Premium",
-        "for": "Para bodas, aniversarios y eventos románticos.",
+        "for": "Para DJ de bodas: música, juegos y animación para el banquete.",
         "f1": "Dedicatorias a los novios",
-        "f2": "Álbum de fotos",
-        "f3": "Live Booth",
-        "f4": "Juegos de boda",
+        "f2": "Juegos de boda",
+        "f3": "Encuestas en vivo",
+        "f4": "Control desde el móvil",
         "f5": "Screen Mode",
         "cta": "Inicia la Boda"
       }
     },
     "caps": {
       "badge": "Todo en una sola plataforma",
-      "title": "Cuatro herramientas, un evento inolvidable",
+      "title": "Cuatro herramientas para que la sala baile, cante y juegue",
       "requests": { "title": "Peticiones en vivo", "body": "El público envía canciones desde el móvil. Tú apruebas y gestionas la cola." },
-      "booth": { "title": "Live Booth", "body": "Fotos de los invitados que alimentan el álbum y el Photo Moment en tiempo real." },
+      "karaoke": { "title": "Karaoke", "body": "Los invitados eligen desde el móvil la canción que quieren cantar y tú gestionas el orden desde el panel." },
       "games": { "title": "Juegos interactivos", "body": "Ruleta, concursos y juegos de boda para implicar a toda la sala." },
-      "screen": { "title": "Screen Mode", "body": "QR, fotos, dedicatorias y juegos proyectados en TV o pantalla gigante." }
+      "screen": { "title": "Screen Mode", "body": "QR, dedicatorias, juegos y encuestas proyectados en TV o pantalla gigante." }
     },
     "plans": {
       "free": {
@@ -788,12 +789,12 @@
         "tagline": "Para eventos interactivos premium",
         "f1": "Todo lo del plan Pro",
         "f2": "Party Mode (cumpleaños, locales, graduaciones, noches DJ)",
-        "f3": "Wedding Edition (bodas, aniversarios)",
-        "f4": "Live Booth con QR de fotos para invitados",
-        "f5": "Screen Mode (TV / proyector)",
-        "f6": "Álbum del evento con moderación",
-        "f7": "Encuestas en vivo (Live Polls)",
-        "f8": "Party Games (Ruleta, Music Battle, Top Fan, Adivina la Canción, Reto de Mesas)",
+        "f3": "Wedding DJ (bodas, aniversarios)",
+        "f4": "Screen Mode (TV / proyector)",
+        "f5": "Encuestas en vivo (Live Polls)",
+        "f6": "Party Games (Ruleta, Music Battle, Top Fan, Adivina la canción, Reto de mesas)",
+        "f7": "Juegos de boda (Ruleta, Juego del zapato, Quién conoce mejor a los novios, Él o Ella, Mensajes a los novios, ¿Quién se levanta?)",
+        "f8": "Analíticas avanzadas",
         "f9": "Juegos de Boda (Ruleta, Juego del Zapato, Quién conoce mejor a los novios, Él o Ella, Mensajes a los Novios)",
         "f10": "Analítica avanzada"
       }
@@ -801,9 +802,9 @@
     "sections": {
       "requests":  { "title": "Peticiones musicales sin interrupciones", "body": "Los invitados envían sus peticiones desde el móvil. El DJ aprueba, rechaza o lo gestiona todo desde el panel." },
       "wedding":   { "title": "Experiencias interactivas para bodas", "body": "Dedicatorias a los novios, juegos live, ruleta wedding, juego del zapato y momentos especiales dirigidos por el DJ." },
-      "booth":     { "title": "Live Booth fotográfico", "body": "Los invitados hacen fotos desde el móvil, participan en el Photo Moment y las imágenes pasan al álbum de los novios." },
-      "screen":    { "title": "Todo también en pantalla", "body": "Muestra QR Code, fotos, resultados de los juegos y momentos live en TV o proyector." },
-      "album":     { "title": "Álbum de invitados listo para compartir", "body": "Las fotos aprobadas terminan en una biblioteca privada con enlace dedicado para los novios." }
+      "karaoke":     { "title": "Noches de karaoke sin caos", "body": "Se acabaron el papel y el boli: el público reserva su canción desde el móvil y tú decides el orden desde la cabina." },
+      "screen":    { "title": "Todo también en pantalla", "body": "Muestra el código QR, las dedicatorias, los resultados de los juegos y las encuestas en TV o proyector." },
+      "remote":     { "title": "Control desde el móvil", "body": "Gestiona peticiones, dedicatorias, juegos y pantalla desde el móvil mientras estás en cabina." }
     },
     "features": {
       "title": "Todo lo que necesitas para gestionar la noche",
@@ -844,13 +845,13 @@
       "trial24h": "Prueba completa 24h",
       "eventPass": "Event Pass",
       "oneTime": "pago único",
-      "eventPassDesc": "Acceso completo a todas las funciones premium para un solo evento. Compatible con Party Mode y Wedding Edition, válido 24 horas desde la activación. Perfecto para bodas, cumpleaños, fiestas privadas, eventos corporativos y noches especiales.",
+      "eventPassDesc": "Acceso completo a las funciones premium para un solo evento. Válido para Party Mode y Wedding DJ, durante 24 horas desde la activación. Perfecto para bodas, noches de karaoke, cumpleaños, fiestas privadas y eventos de empresa.",
       "buyPass": "Comprar Event Pass 24H",
       "includes": "Incluye",
       "f1": "Dedicatorias románticas en vivo",
       "f2": "Ruleta de prendas",
       "f3": "Juego del zapato",
-      "f4": "Álbum de fotos de invitados con votación",
+      "f4": "Party Games y Music Battle",
       "f5": "Modo pantalla para videoproyector",
       "f6": "Encuestas interactivas"
     },
@@ -863,11 +864,11 @@
     "authPage": {
       "djHeadlineA": "Lleva tu evento",
       "djHeadlineB": "a otro nivel.",
-      "djSub": "Peticiones musicales, karaoke, juegos, fotos de los invitados, Live Booth y dirección en tiempo real. Todo en una sola plataforma.",
+      "djSub": "Peticiones musicales, karaoke, juegos para fiestas y bodas y control en tiempo real. Todo en una sola plataforma.",
       "djPerk1": "Peticiones musicales y dedicatorias en tiempo real",
       "djPerk2": "Karaoke y modo Party",
       "djPerk3": "Juegos e interacción con los invitados",
-      "djPerk4": "Fotos y Live Booth en pantalla",
+      "djPerk4": "Dedicatorias, juegos y encuestas en pantalla",
       "djPerk5": "Remote Control para gestionarlo todo desde el móvil",
       "coupleHeadline": "Tu boda, contada por quienes la viven.",
       "coupleSub": "Reúne las fotos de tus invitados, comparte el código QR y crea un álbum digital de tu día especial.",
@@ -1072,7 +1073,8 @@
     "manageEvents": "Gestiona tus eventos",
     "group": {
       "couple": "Para los novios",
-      "dj": "Control del DJ"
+      "dj": "Control del DJ",
+      "event": "Evento"
     },
     "status": {
       "pending": "PENDIENTE",

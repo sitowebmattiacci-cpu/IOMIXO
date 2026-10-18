@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import { QRCodeSVG } from 'qrcode.react'
-import { Heart, CalendarDays, Copy, Check, Download, Power, Maximize2, ExternalLink, Image as ImageIcon } from 'lucide-react'
+import { Heart, CalendarDays, Copy, Check, Download, Power, Maximize2, ExternalLink, Tv } from 'lucide-react'
 import { liveDedications, livePhotos, livePolls, type LivePoll } from '@/lib/api'
 import { useDedicationsSignal } from '@/lib/events/useDedications'
 import { usePollsSignal } from '@/lib/events/usePolls'
@@ -17,8 +17,8 @@ import { TrialQuota } from './TrialQuota'
 
 export const isVideoUrl = (u: string | null | undefined) => !!u && /\.(mp4|mov|webm|m4v|ogv)(\?|#|$)/i.test(u)
 
-/** Guest-facing origin of a Wedding album (MIOLOVE once its domain is live). */
-export const publicOrigin = () => publicOriginFor('wedding')
+/** Guest-facing origin of a Sposi album (MIOLOVE once its domain is live). Wedding DJ events pass `couple = false` and stay on IOMIXO. */
+export const publicOrigin = (couple = true) => publicOriginFor('wedding', couple ? 'couple' : 'dj')
 
 export function downloadQrPng(svgId: string, filename: string, transparent = false) {
   const svg = document.getElementById(svgId) as SVGSVGElement | null
@@ -45,7 +45,7 @@ interface Props {
   pendingRequests: number
   togglingActive: boolean
   onToggleActive: () => void
-  /** Sposi account: no DJ stats, no live screen preview, no DJ remote. */
+  /** Sposi account (MIOLOVE album): photo stats, no DJ stats, no live screen preview, no DJ remote. A DJ (IOMIXO Wedding) never sees photo features. */
   couple?: boolean
 }
 
@@ -53,7 +53,7 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
   const { t } = useI18n()
   const sessionId: string = session.id
   const slug: string = session.public_slug
-  const url = `${publicOrigin()}/live/${slug}`
+  const url = `${publicOrigin(couple)}/live/${slug}`
   const [copied, setCopied] = useState(false)
   const [transparentQr, setTransparentQr] = useState(false)
 
@@ -61,8 +61,9 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
   const dedSignal = useDedicationsSignal(couple ? undefined : sessionId)
   const { data: dedications, mutate: refreshDed } = useSWR(couple ? null : ['dedications', sessionId], () => liveDedications.listForDj(sessionId), { refreshInterval: dedSignal.live ? 60_000 : 8_000 })
   useEffect(() => { if (dedSignal.tick > 0) refreshDed() }, [dedSignal.tick, refreshDed])
-  const photoSignal = usePhotosSignal(sessionId)
-  const { data: photos, mutate: refreshPhotos } = useSWR(['photos', sessionId], () => livePhotos.listForDj(sessionId), { refreshInterval: photoSignal.live ? 60_000 : 8_000 })
+  // Photos exist only on a Sposi album: never requested for an IOMIXO Wedding DJ event.
+  const photoSignal = usePhotosSignal(couple ? sessionId : undefined)
+  const { data: photos, mutate: refreshPhotos } = useSWR(couple ? ['photos', sessionId] : null, () => livePhotos.listForDj(sessionId), { refreshInterval: photoSignal.live ? 60_000 : 8_000 })
   useEffect(() => { if (photoSignal.tick > 0) refreshPhotos() }, [photoSignal.tick, refreshPhotos])
   const pollSignal = usePollsSignal(couple ? undefined : sessionId)
   const { data: polls, mutate: refreshPolls } = useSWR(couple ? null : ['polls', sessionId], () => livePolls.list(sessionId), { refreshInterval: pollSignal.live ? 60_000 : 8_000 })
@@ -81,8 +82,9 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
   const stills = all.filter((p) => p.url && !isVideoUrl(p.url) && p.status !== 'rejected')
   const hero = stills[0]?.url ?? null
 
-  // Song requests are moderated by the DJ only: a Sposi album never offers them to guests.
-  const guestItems = buildWeddingGuestActions(getWeddingGuestActionKeys(session.guest_config).filter((k) => !(couple && k === 'requests')), t)
+  // Song requests are moderated by the DJ only: a Sposi album never offers them to guests. An IOMIXO Wedding DJ event never offers photos.
+  const guestItems = buildWeddingGuestActions(getWeddingGuestActionKeys(session.guest_config).filter((k) => (couple ? k !== 'requests' : k !== 'photos')), t)
+  const filePrefix = couple ? WEDDING_BRAND_FILE_PREFIX : 'iomixo'
 
   return (
     <WdPage
@@ -103,14 +105,14 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
 
       <TrialQuota session={session} />
 
-      <div className="grid grid-cols-2 gap-4">
+      {couple && <div className="grid grid-cols-2 gap-4">
         {[{ v: all.length - videoCount, l: t('wdAdmin.photos.photos') }, { v: videoCount, l: t('wdAdmin.photos.videos') }].map((s) => (
           <div key={s.l} className="rounded-[20px] border border-wd-border bg-white px-6 py-5">
             <p className="text-[32px] font-bold leading-none tabular-nums text-wd-pink">{s.v}</p>
             <p className="mt-2 text-sm text-wd-muted">{s.l}</p>
           </div>
         ))}
-      </div>
+      </div>}
       {!couple && <div className="grid grid-cols-3 gap-4">
         {[
           { v: pendingRequests, l: t('weddingPanels.statRequests') },
@@ -138,7 +140,7 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
             <QRCodeSVG id="wd-qrcode-svg" value={url} size={170} level="M" bgColor="#ffffff" includeMargin={false} className="h-auto w-full" />
           </div>
           <WdButton className="mt-4 w-full" variant="secondary" icon={<Download className="h-4 w-4" />}
-            onClick={() => downloadQrPng('wd-qrcode-svg', `${WEDDING_BRAND_FILE_PREFIX}-${slug}.png`, transparentQr)}>
+            onClick={() => downloadQrPng('wd-qrcode-svg', `${filePrefix}-${slug}.png`, transparentQr)}>
             {t('wdAdmin.home.downloadQr')}
           </WdButton>
           <label className="mt-3 flex items-center gap-2 text-xs text-wd-muted cursor-pointer">
@@ -168,7 +170,7 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
           <p className="mt-1 mb-3 text-[13px] text-wd-muted">{t('wdAdmin.home.screenPreviewDesc')}</p>
           <div className="relative aspect-video overflow-hidden rounded-2xl border border-wd-border bg-wd-active">
             {hero && /* eslint-disable-next-line @next/next/no-img-element */ <img src={hero} alt="" className="absolute inset-0 h-full w-full object-cover" />}
-            {!hero && <ImageIcon className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 text-wd-pink/50" />}
+            {!hero && <Tv className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 text-wd-pink/50" />}
             {session.is_active && (
               <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-bold text-white">
                 <span className="h-2 w-2 rounded-full bg-red-500" /> {t('wdAdmin.home.live')}

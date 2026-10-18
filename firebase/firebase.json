@@ -45,7 +45,10 @@
       ],
       "ignore": [
         "node_modules",
-        "lib/**/*.map"
+        "lib/**/*.map",
+        ".secret.local",
+        ".env.*local",
+        ".env.demo-*"
       ]
     }
   ]

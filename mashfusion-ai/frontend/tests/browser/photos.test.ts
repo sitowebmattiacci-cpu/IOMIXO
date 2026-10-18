@@ -29,9 +29,11 @@ const shot = (page: Page, name: string) => page.screenshot({ path: `/tmp/claude-
 const storageImgs = (p: Page) => p.locator('img[src*="127.0.0.1:9199"]').count()
 const dataCalls = () => render.calls.filter((c) => /\/photos|booth-photo|\/screen$|\/api\/live\/public\//.test(c.path) && !c.path.endsWith('/heartbeat'))
 
-async function ownerSetup(over: Record<string, unknown> = {}) {
+// Photos / Live Booth are a MIOLOVE album feature: the album owner is a Sposi account (accessMode 'activated'). A DJ (IOMIXO) never gets them.
+async function ownerSetup(over: Record<string, unknown> = {}, accountType: 'couple' | 'dj' = 'couple') {
   const owner = await newClient('account'), stamp = Date.now(), id = `phev${stamp}`, slug = `phslug${stamp}`
-  await seedSet(`users/${owner.uid}`, { uid: owner.uid, email: owner.email, plan: { tier: 'wedding', source: 'legacy' }, createdAt: new Date(), updatedAt: new Date() })
+  await seedSet(`users/${owner.uid}`, { uid: owner.uid, email: owner.email, accountType, plan: { tier: 'wedding', source: 'legacy' }, createdAt: new Date(), updatedAt: new Date() })
+  if (accountType === 'couple') over = { accessMode: 'activated', ...over }
   await seedSet(`events/${id}`, eventFields(owner.uid, slug, { type: 'wedding', title: 'Foto Browser', legacySupabaseId: undefined, screenConfig: { show_photos: true, live_booth_layout: 'grid' }, guestConfig: { requests: true }, ...over }))
   await seedSet(`eventSlugs/${slug}`, { eventId: id })
   const ctx = await browser.newContext(); const page = await ctx.newPage(); page.on('dialog', (d) => d.accept())
@@ -44,7 +46,7 @@ async function ownerSetup(over: Record<string, unknown> = {}) {
   return { owner, id, slug, ctx, page }
 }
 
-test('H1. Wedding: guest uploads from the Live Booth → approved immediately → the TV shows it live, no approve / reject in the dashboard → delete removes file + doc; Render untouched', async () => {
+test('H1. MIOLOVE album: guest uploads from the Live Booth → approved immediately → the TV shows it live, no approve / reject in the dashboard → delete removes file + doc; Render untouched', async () => {
   const s = await ownerSetup()
   const tvCtx = await browser.newContext(), guestCtx = await browser.newContext()
   try {
@@ -85,7 +87,7 @@ test('H1. Wedding: guest uploads from the Live Booth → approved immediately �
 })
 
 test('H2. winner announcement: owner uploads both photos to Storage, picks the winner and starts it; the TV shows them from Storage; Render untouched', async () => {
-  const s = await ownerSetup({ screenConfig: { show_photos: false } })
+  const s = await ownerSetup({ screenConfig: { show_photos: false } }, 'dj')
   const tvCtx = await browser.newContext()
   try {
     render.calls.length = 0
@@ -114,4 +116,27 @@ test('H2. winner announcement: owner uploads both photos to Storage, picks the w
     assert.deepEqual(render.calls.filter((c) => c.method !== 'GET'), [], 'no write reached Render')
     assert.deepEqual(dataCalls(), [], 'no photo / screen call reached Render')
   } catch (e) { await shot(s.page, 'h2-owner'); throw e } finally { await s.ctx.close(); await tvCtx.close() }
+})
+
+test('H3. IOMIXO Wedding DJ: no Photos / Poster / Live Booth in the dashboard, /booth is not available, the TV ignores show_photos', async () => {
+  const s = await ownerSetup({}, 'dj')
+  const ctx = await browser.newContext()
+  try {
+    await s.page.goto(`${app.url}/sessions/${s.id}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
+    await s.page.getByRole('button', { name: /Giochi/ }).first().waitFor({ timeout: 90_000 })
+    for (const name of [/^Foto/, /Poster/, /Live Booth/]) assert.equal(await s.page.locator('nav').getByRole('button', { name }).count(), 0, `no ${name} section for a DJ`)
+    assert.equal(await s.page.locator('[role="img"][aria-label="MIOLOVE ALBUM"]').count(), 0, 'no MIOLOVE logo in the Wedding DJ dashboard')
+    assert.ok(await s.page.locator('[role="img"][aria-label="IOMIXO Live Hub"]').first().isVisible(), 'IOMIXO brand in the Wedding DJ dashboard')
+
+    const page = await ctx.newPage()
+    await page.goto(`${app.url}/booth/${s.slug}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
+    await page.getByText('Il Live Booth non è disponibile per questo evento.').waitFor({ timeout: 90_000 })
+    assert.equal(await page.locator('input[type="file"]').count(), 0, 'no upload control')
+
+    await page.goto(`${app.url}/screen/${s.slug}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
+    await page.waitForLoadState('networkidle', { timeout: 120_000 }).catch(() => {})
+    await page.waitForTimeout(8000)
+    assert.equal(await storageImgs(page), 0, 'no photo on the IOMIXO TV even with show_photos true')
+    assert.doesNotMatch(await page.evaluate(() => document.body.innerText), /MIOLOVE/, 'no MIOLOVE brand on the IOMIXO TV')
+  } catch (e) { await shot(s.page, 'h3-owner'); throw e } finally { await s.ctx.close(); await ctx.close() }
 })

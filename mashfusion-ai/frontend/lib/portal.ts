@@ -32,9 +32,9 @@ export const PORTAL_CONFIG: Record<PortalId, PortalConfig> = {
     theme: 'party',
     home: '/dashboard',
     meta: {
-      title: 'IOMIXO Live Hub — Interactive platform for DJs, weddings and events',
-      description: 'Create live QR sessions, receive music requests, run wedding games, collect guest photos and manage interactive event experiences.',
-      ogTitle: 'IOMIXO Live Hub — Interactive platform for DJs, weddings and events',
+      title: 'IOMIXO Live Hub — Interactive platform for DJs, karaoke and weddings',
+      description: 'Create live QR sessions, receive music requests, run karaoke nights and wedding games, and drive the room from your phone and the big screen.',
+      ogTitle: 'IOMIXO Live Hub — Interactive platform for DJs, karaoke and weddings',
       siteName: 'IOMIXO Live Hub',
       locale: 'it_IT',
     },
@@ -98,8 +98,12 @@ export function resolvePortal(host: string | null | undefined): ResolvedPortal {
   return { config: PORTAL_CONFIG[id ?? DEFAULT_PORTAL], matched: id !== null }
 }
 
-/** Portal that owns the PUBLIC links of an event type: Wedding → MIOLOVE, everything else (party, standard) → IOMIXO. */
-export const portalForEventType = (type: string | null | undefined): PortalId => (type === 'wedding' ? 'miolove' : 'iomixo')
+/**
+ * Portal that owns the PUBLIC links of an event: a Sposi album (Wedding owned by a couple account) → MIOLOVE, everything a DJ runs
+ * (party, standard and Wedding DJ) → IOMIXO. `owner` omitted keeps the legacy rule (every Wedding → MIOLOVE).
+ */
+export const portalForEventType = (type: string | null | undefined, owner?: AccountType | null): PortalId =>
+  (type === 'wedding' && owner !== 'dj' ? 'miolove' : 'iomixo')
 
 /**
  * Go-live switch for MIOLOVE-domain links. Until miolovealbum.com is connected to App Hosting, Wedding links keep using the current origin
@@ -107,14 +111,14 @@ export const portalForEventType = (type: string | null | undefined): PortalId =>
  */
 export const isMioloveLive = (): boolean => process.env.NEXT_PUBLIC_MIOLOVE_LIVE === 'true'
 
-export interface LinkContext { hostname?: string | null; origin?: string | null; mioloveLive?: boolean }
+export interface LinkContext { hostname?: string | null; origin?: string | null; mioloveLive?: boolean; /** Account type of the event owner (a DJ's Wedding stays on IOMIXO). */ owner?: AccountType | null }
 /**
  * Origin for the public/guest links of an event: on a real portal host the canonical base of the event's portal (so a DJ on iomixo.com still gets
- * miolovealbum.com links for a Wedding); on any other host the current origin, so dev / preview / hosted.app keep working unchanged.
+ * miolovealbum.com links for a Sposi album, iomixo.com links for a Wedding DJ event); on any other host the current origin, so dev / preview / hosted.app keep working unchanged.
  */
 export function publicBaseFor(eventType: string | null | undefined, ctx: LinkContext = {}): string {
   const live = ctx.mioloveLive ?? isMioloveLive()
-  const target = portalForEventType(eventType)
+  const target = portalForEventType(eventType, ctx.owner)
   if (target === 'miolove' && !live) return ctx.origin || PORTAL_CONFIG.iomixo.baseUrl
   if (getPortalFromHostname(ctx.hostname) !== null) return PORTAL_CONFIG[target].baseUrl
   return ctx.origin || PORTAL_CONFIG[target].baseUrl

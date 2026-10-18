@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Camera, X, RotateCw, Check, Sparkles, ArrowLeft, RefreshCw, ImagePlus, AlertTriangle } from 'lucide-react'
 import { livePhotos } from '@/lib/api'
 import { fetchPublicLive } from '@/lib/events/publicEventService'
+import { useEventBrand } from '@/lib/events/useEventBrand'
 import { compressImage } from '@/lib/imageCompress'
 import {
   WeddingGuestShell, WeddingGuestPageTitle, WeddingGuestPanel, WeddingGuestButton, WeddingGuestHelper,
@@ -27,6 +28,8 @@ export default function LiveBoothPage() {
     { refreshInterval: 30_000 },
   )
   const wdToast = () => (data?.session.session_type === 'wedding' ? WEDDING_GUEST_TOAST : undefined)
+  // Live Booth is a MIOLOVE album feature: an IOMIXO event (Party, standard, Wedding DJ) never opens it.
+  const brand = useEventBrand(slug, data?.session.session_type)
 
   const [cameraActive, setCameraActive] = useState(false)
   const [cameraError, setCameraError] = useState(false)
@@ -112,6 +115,22 @@ export default function LiveBoothPage() {
   const { session } = data
   const isParty   = session.session_type === 'party'
   const isWedding = session.session_type === 'wedding'
+
+  if (brand === undefined) {
+    return <PartyShell><div className="min-h-screen" /></PartyShell>
+  }
+  if (brand === 'iomixo') {
+    return (
+      <PartyShell>
+        <div className="min-h-screen flex flex-col items-center justify-center gap-5 px-6 text-center">
+          <p className="text-white/70">{t('booth.notAvailable')}</p>
+          <Link href={`/live/${slug}`} className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:border-[#FF2D8D]/60">
+            <ArrowLeft className="h-4 w-4" /> {t('booth.backToMain')}
+          </Link>
+        </div>
+      </PartyShell>
+    )
+  }
 
   if (!isParty && !isWedding) {
     return (

@@ -160,7 +160,7 @@ test('PT4. wrong portal: a Sposi account on iomixo.com goes to miolovealbum.com,
   } finally { await ctx.close() }
 })
 
-test('PT5. public links: Wedding → miolovealbum.com (also for a DJ on iomixo.com), Party → iomixo.com, Remote stays on iomixo.com', async () => {
+test('PT5. public links: Sposi album → miolovealbum.com, Wedding DJ and Party → iomixo.com, Remote stays on iomixo.com', async () => {
   const dj = await newClient('account'), couple = await newClient('account'), stamp = Date.now()
   await seedSet(`users/${dj.uid}`, { uid: dj.uid, email: dj.email, accountType: 'dj', plan: { tier: 'wedding', source: 'legacy' }, createdAt: new Date(), updatedAt: new Date() })
   await seedSet(`users/${couple.uid}`, { uid: couple.uid, email: couple.email, accountType: 'couple', plan: { tier: 'wedding', source: 'legacy' }, createdAt: new Date(), updatedAt: new Date() })
@@ -173,7 +173,8 @@ test('PT5. public links: Wedding → miolovealbum.com (also for a DJ on iomixo.c
   try {
     await signIn(page, I(), dj.email); await page.waitForURL(/\/dashboard/, { timeout: 60_000 })
     await page.goto(`${I()}/sessions/lwid${stamp}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
-    await page.getByText(`https://miolovealbum.com/live/${wedSlug}`, { exact: true }).waitFor({ timeout: 60_000 })
+    await page.getByText(`https://iomixo.com/live/${wedSlug}`, { exact: true }).waitFor({ timeout: 60_000 })
+    assert.equal(await page.locator(`a[href*="miolovealbum.com"]`).count(), 0, 'no MIOLOVE link on a Wedding DJ event')
     assert.ok(await page.locator(`a[href="https://iomixo.com/remote/${wedSlug}"]`).count() > 0, 'the Wedding Remote link stays on IOMIXO')
     assert.equal(await page.getByText(`miolovealbum.com/remote`).count(), 0)
     await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: I() })
@@ -181,8 +182,8 @@ test('PT5. public links: Wedding → miolovealbum.com (also for a DJ on iomixo.c
     await page.getByRole('button', { name: /Copia link/ }).first().click({ timeout: 60_000 })
     assert.equal(await page.evaluate(() => navigator.clipboard.readText()), `https://iomixo.com/live/${partySlug}`, 'the copied Party link is IOMIXO')
     assert.ok(await page.locator(`a[href="https://iomixo.com/screen/${partySlug}"]`).count() > 0, 'Party TV link is IOMIXO')
-    await page.getByRole('button', { name: /Live Booth/ }).first().click()
-    await page.locator(`a[href="https://iomixo.com/booth/${partySlug}"]`).first().waitFor({ state: 'attached', timeout: 30_000 })
+    assert.equal(await page.getByRole('button', { name: /Live Booth/ }).count(), 0, 'no Live Booth on a Party event')
+    assert.equal(await page.locator('a[href*="/booth/"]').count(), 0, 'no Live Booth link on a Party event')
     assert.equal(await page.locator(`a[href*="miolovealbum.com"]`).count(), 0, 'no MIOLOVE link on a Party event')
   } finally { await ctx.close() }
   // Sposi on miolovealbum.com
@@ -347,7 +348,7 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
   })
 }
 
-test('PT11. DJ Wedding (iomixo.com) is unchanged: guest preview still offers song requests, links stay MIOLOVE for guests and IOMIXO for the Remote', async () => {
+test('PT11. DJ Wedding (iomixo.com) is IOMIXO: guest preview offers song requests and no photos, guest and Remote links are both IOMIXO, no MIOLOVE logo', async () => {
   const dj = await newClient('account'), stamp = Date.now(), slug = `djreg${stamp}`, id = `djregid${stamp}`
   await seedSet(`users/${dj.uid}`, { uid: dj.uid, email: dj.email, accountType: 'dj', plan: { tier: 'wedding', source: 'legacy' }, createdAt: new Date(), updatedAt: new Date() })
   await seedSet(`events/${id}`, eventFields(dj.uid, slug, { type: 'wedding', title: `Nozze ${slug}`, legacySupabaseId: undefined })); await seedSet(`eventSlugs/${slug}`, { eventId: id })
@@ -358,6 +359,48 @@ test('PT11. DJ Wedding (iomixo.com) is unchanged: guest preview still offers son
     await page.goto(`${I()}/sessions/${id}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
     await page.getByTestId('wd-guest-preview').waitFor({ timeout: 60_000 })
     assert.match(await page.getByTestId('wd-guest-preview').innerText(), /Invia il tuo brano al DJ/)
-    const q = await qrValues(page); assert.ok(q.includes(`https://miolovealbum.com/live/${slug}`) && q.includes(`https://iomixo.com/remote/${slug}`), q.join(' '))
+    assert.doesNotMatch(await page.getByTestId('wd-guest-preview').innerText(), /Live Booth|Invia una foto/i, 'no photo action in the Wedding DJ guest preview')
+    const q = await qrValues(page); assert.ok(q.includes(`https://iomixo.com/live/${slug}`) && q.includes(`https://iomixo.com/remote/${slug}`), q.join(' '))
+    assert.ok(!q.some((v) => v.includes('miolovealbum.com')), q.join(' '))
+    assert.equal(await page.locator('[role="img"][aria-label="MIOLOVE ALBUM"]').count(), 0, 'no MIOLOVE logo for a DJ')
+  } finally { await ctx.close() }
+})
+
+test('PT12. QR / links of the wrong domain move to the event\'s own portal (path, slug and query kept); historic couple album included; Party Live Booth is blocked', async () => {
+  const dj = await newClient('account'), couple = await newClient('account'), old = await newClient('account'), stamp = Date.now()
+  await seedSet(`users/${dj.uid}`, { uid: dj.uid, email: dj.email, accountType: 'dj', plan: { tier: 'wedding', source: 'legacy' }, createdAt: new Date(), updatedAt: new Date() })
+  await seedSet(`users/${couple.uid}`, { uid: couple.uid, email: couple.email, accountType: 'couple', plan: { tier: 'wedding', source: 'legacy' }, createdAt: new Date(), updatedAt: new Date() })
+  await seedSet(`users/${old.uid}`, { uid: old.uid, email: old.email, accountType: 'couple', plan: { tier: 'free', source: 'default' }, createdAt: new Date(), updatedAt: new Date() })
+  const evs = { djw: `rdw${stamp}`, party: `rdp${stamp}`, album: `rda${stamp}`, historic: `rdh${stamp}` }
+  for (const [id, slug, owner, type, extra] of [
+    [`id${evs.djw}`, evs.djw, dj.uid, 'wedding', {}], [`id${evs.party}`, evs.party, dj.uid, 'party', {}],
+    [`id${evs.album}`, evs.album, couple.uid, 'wedding', { accessMode: 'activated' }], [`id${evs.historic}`, evs.historic, old.uid, 'wedding', {}],
+  ] as const) { await seedSet(`events/${id}`, eventFields(owner, slug, { type, title: `Evento ${slug}`, legacySupabaseId: undefined, ...extra })); await seedSet(`eventSlugs/${slug}`, { eventId: id }) }
+  const ctx = await browser.newContext(); const page = await ctx.newPage()
+  // The redirect target is the canonical production origin (https, no dev port): capture it instead of following it.
+  const jumps: string[] = []
+  await page.route(/^https:\/\/(www\.)?(iomixo|miolovealbum)\.com\//, (route) => { jumps.push(route.request().url()); return route.abort() })
+  const jumpTo = async (from: string, expected: string) => {
+    jumps.length = 0
+    await page.goto(from, { waitUntil: 'domcontentloaded', timeout: 120_000 }).catch(() => {})
+    const t0 = Date.now(); while (!jumps.length && Date.now() - t0 < 60_000) await page.waitForTimeout(250)
+    const got = jumps[0]
+    await page.waitForTimeout(800); await page.goto('about:blank').catch(() => {})   // let the aborted navigation settle before the next one
+    assert.equal(got, expected, `${from} → ${got}`)
+  }
+  try {
+    await jumpTo(`${M()}/live/${evs.djw}?x=1#h`, `https://iomixo.com/live/${evs.djw}?x=1#h`.replace('#h', ''))
+    await jumpTo(`${M()}/live/${evs.party}`, `https://iomixo.com/live/${evs.party}`)
+    await jumpTo(`${I()}/live/${evs.album}`, `https://miolovealbum.com/live/${evs.album}`)
+    await jumpTo(`${I()}/live/${evs.historic}`, `https://miolovealbum.com/live/${evs.historic}`)
+    // already on the right portal: no redirect, no loop
+    jumps.length = 0
+    await page.goto(`${M()}/live/${evs.album}`, { waitUntil: 'domcontentloaded', timeout: 120_000 }); await page.waitForTimeout(5000)
+    assert.deepEqual(jumps, [], 'no redirect on the right portal')
+    assert.equal(new URL(page.url()).hostname, 'miolovealbum.com')
+    // Party Live Booth on iomixo.com: blocked, no upload control
+    await page.goto(`${I()}/booth/${evs.party}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
+    await page.getByText('Il Live Booth non è disponibile per questo evento.').waitFor({ timeout: 60_000 })
+    assert.equal(await page.locator('input[type="file"]').count(), 0)
   } finally { await ctx.close() }
 })

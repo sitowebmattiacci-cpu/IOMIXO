@@ -184,7 +184,7 @@ test('D1. getPublicEvent: guests resolve by slug; legacy payload shape; plan-dep
   await seedSet(`djProfiles/${dj.uid}`, { displayName: 'DJ X', bio: 'b', avatarUrl: 'https://x/y.png', instagramUrl: 'https://ig/x', createdAt: new Date(), updatedAt: new Date() })
   const r = await callAs(g, 'getPublicEvent', { slug: e.slug })
   assert.equal(r.eventId, e.id)
-  assert.deepEqual(r.session, { id: e.id, event_name: 'Wedding Anna & Marco', dj_name: 'DJ X', description: null, is_active: true, session_type: 'party', couple_names: 'Anna & Marco', wedding_date: '2026-09-12', venue_name: 'Villa', screen_mode_enabled: true, guest_config: { requests: true } })
+  assert.deepEqual(r.session, { id: e.id, event_name: 'Wedding Anna & Marco', dj_name: 'DJ X', description: null, is_active: true, session_type: 'party', couple_names: 'Anna & Marco', wedding_date: '2026-09-12', venue_name: 'Villa', screen_mode_enabled: true, owner_account_type: 'dj', access_mode: null, guest_config: { requests: true } })
   assert.equal(r.plan, 'wedding'); assert.equal(r.branding, 'full'); assert.equal(r.features.screenMode, true); assert.equal(r.requestsRemaining, null); assert.deepEqual(r.events, [])
   assert.deepEqual(r.profile, { display_name: 'DJ X', bio: 'b', avatar_url: 'https://x/y.png', instagram_url: 'https://ig/x', tiktok_url: null, spotify_url: null, soundcloud_url: null, website_url: null })
   const free = await mk(); const fe = await seedEvent(free.uid, {}, 'free'); await seedSet(`djProfiles/${free.uid}`, { displayName: 'F', instagramUrl: 'https://ig/f', createdAt: new Date(), updatedAt: new Date() })

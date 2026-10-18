@@ -4,6 +4,23 @@ import { str } from '../requests/validation'
 import { fail } from '../shared/guard'
 import { loadEventEntitlements } from '../entitlements/load'
 import { PLAN_LIMITS } from '../entitlements/plans'
+import type { AccountType } from './guard'
+
+/**
+ * Owner account type for the PUBLIC payload (brand of the guest pages: a couple's album is MIOLOVE, everything a DJ runs is IOMIXO).
+ * Same classification as loadAccountType for a readable document (no doc / no field = legacy account = DJ), but a failed read returns
+ * null ("unknown") instead of throwing or defaulting to DJ: the guest page then falls back to accessMode / hostname. Only this one
+ * enum leaves the server, never any other field of users/{uid}.
+ */
+export async function publicOwnerAccountType(db: Firestore, ownerUid: string): Promise<AccountType | null> {
+  if (!ownerUid) return null
+  try {
+    const snap = await db.collection('users').doc(ownerUid).get()
+    return snap.exists && snap.data()!.accountType === 'couple' ? 'couple' : 'dj'
+  } catch {
+    return null
+  }
+}
 
 export function parseSlug(data: unknown): string {
   const d = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>
@@ -16,6 +33,7 @@ export function parseSlug(data: unknown): string {
  * Replacement of GET /api/live/public/:slug. Same payload shape (snake_case, so the guest page does not change), computed server-side:
  * plan / branding / features / profile socials depend on the owner's EFFECTIVE entitlements, which clients cannot read.
  * `events` = the DJ's public upcoming dates (djProfiles/{uid}/dates, isPublic, today or later, max 10). Any signed-in identity (incl. anonymous guests).
+ * `session.owner_account_type` / `session.access_mode` (read-only) decide the brand and the portal of the guest pages.
  */
 export async function getPublicEvent(db: Firestore, slug: string, now: Date = new Date()) {
   const s = await db.collection('eventSlugs').doc(slug).get()
@@ -28,10 +46,11 @@ export async function getPublicEvent(db: Firestore, slug: string, now: Date = ne
   const limits = PLAN_LIMITS[ent.effectiveTier]
 
   const today = now.toISOString().slice(0, 10)
-  const [profileSnap, counter, datesSnap] = await Promise.all([
+  const [profileSnap, counter, datesSnap, ownerAccountType] = await Promise.all([
     db.collection('djProfiles').doc(ent.ownerUid).get(),
     db.collection('events').doc(eventId).collection('state').doc('requests').get(),
     db.collection('djProfiles').doc(ent.ownerUid).collection('dates').where('isPublic', '==', true).get(),
+    publicOwnerAccountType(db, ent.ownerUid),
   ])
   const dates = datesSnap.docs
     .map((d): Record<string, any> => ({ id: d.id, ...d.data() }))
@@ -48,6 +67,8 @@ export async function getPublicEvent(db: Firestore, slug: string, now: Date = ne
       id: eventId, event_name: e.title, dj_name: e.djName ?? null, description: e.description ?? null, is_active: e.status === 'live',
       session_type: e.type ?? 'standard', couple_names: e.coupleNames ?? null, wedding_date: e.weddingDate ?? null, venue_name: e.venueName ?? null,
       screen_mode_enabled: e.screenModeEnabled === true, guest_config: e.guestConfig ?? null,
+      owner_account_type: ownerAccountType,
+      access_mode: e.accessMode === 'trial' || e.accessMode === 'activated' ? e.accessMode : null,
     },
     profile: p ? {
       display_name: p.displayName ?? null, bio: p.bio ?? null, avatar_url: p.avatarUrl ?? null,

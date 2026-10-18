@@ -308,10 +308,8 @@ export const PLAN_METADATA: Record<Plan, {
     features: [
       'Tutto del piano Pro',
       'Party Mode (compleanni, locali, lauree, serate DJ)',
-      'Wedding Edition (matrimoni, anniversari)',
-      'Live Booth con QR foto guest',
+      'Wedding DJ (matrimoni, anniversari)',
       'Screen Mode (TV / proiettore)',
-      'Album evento con moderazione',
       'Sondaggi live (Live Polls)',
       'Party Games (Roulette, Music Battle, Top Fan, Indovina la Canzone, Sfida Tavoli)',
       'Giochi Wedding (Roulette, Gioco della Scarpa, Chi conosce meglio gli sposi, Lui o Lei, Messaggi agli Sposi, Chi si alza?)',

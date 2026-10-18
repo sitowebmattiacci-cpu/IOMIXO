@@ -18,7 +18,6 @@ import {
 } from '@/components/remote/RemoteUI'
 import { useI18n } from '@/lib/i18n'
 import { useLiveEvent } from '@/lib/events/useLiveEvent'
-import { usePhotosSignal } from '@/lib/events/usePhotos'
 import { useLatestGames, preferRealtime } from '@/lib/events/useGames'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
@@ -106,7 +105,8 @@ export default function RemoteControlPage() {
 function RemoteControl() {
   const { slug } = useParams<{ slug: string }>()
   const { t } = useI18n()
-  const [tab, setTab] = useState<'games' | 'requests' | 'dedications' | 'photos'>('games')
+  // The DJ remote is an IOMIXO tool: live entertainment only, no photo moderation (photos belong to MIOLOVE albums).
+  const [tab, setTab] = useState<'games' | 'requests' | 'dedications'>('games')
 
   // Ottieni la sessione tramite slug pubblico
   const { data: sessionData, error } = useSWR(
@@ -128,14 +128,6 @@ function RemoteControl() {
     () => remoteApi.listDedications(slug!),
     { refreshInterval: 5_000 },
   )
-
-  const photoSignal = usePhotosSignal(session?.id)
-  const { data: photos, mutate: refreshPhotos } = useSWR(
-    slug ? ['remote-photos', slug] : null,
-    () => remoteApi.listPhotos(slug!),
-    { refreshInterval: photoSignal.live ? 60_000 : 5_000 },
-  )
-  useEffect(() => { if (photoSignal.tick > 0) refreshPhotos() }, [photoSignal.tick, refreshPhotos])
 
   const pending = requests?.filter((r: any) => r.status === 'pending') ?? []
 
@@ -171,7 +163,6 @@ function RemoteControl() {
         {!isPartySession && (
           <RemoteTab active={tab === 'dedications'} onClick={() => setTab('dedications')} icon={<Heart className="h-4 w-4" />} label={t('remote.tabDedications')} />
         )}
-        <RemoteTab active={tab === 'photos'} onClick={() => setTab('photos')} icon={<ImageIcon className="h-4 w-4" />} label={t('remote.tabPhotos')} />
       </div>
 
       {/* Content panels */}
@@ -179,7 +170,6 @@ function RemoteControl() {
         {tab === 'games' && slug && <RemoteGamesPanel slug={slug} sessionType={session.session_type} />}
         {tab === 'requests' && slug && <RemoteRequestsPanel slug={slug} requests={requests ?? []} />}
         {!isPartySession && tab === 'dedications' && slug && <RemoteDedicationsPanel slug={slug} dedications={dedications ?? []} />}
-        {tab === 'photos' && slug && <RemotePhotosPanel slug={slug} photos={photos ?? []} isWedding={!isPartySession} />}
       </div>
     </RemoteShell>
   )

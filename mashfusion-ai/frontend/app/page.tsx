@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
-  QrCode, Heart, Camera, Monitor, Images, Radio,
+  QrCode, Heart, Monitor, Radio, Mic2, Smartphone,
   CheckCircle2, ArrowRight, PartyPopper, Music2, Gamepad2,
   Sparkles,
 } from 'lucide-react'
@@ -70,16 +70,16 @@ function Hero() {
             className="inline-flex items-center gap-2 rounded-full border border-[#FF2D8D]/40 bg-[#15151B] px-3 py-1 text-xs text-[#F8F8FA] mb-5"
           >
             <Radio className="h-3 w-3 text-[#F4FF3A]" />
-            {t('landing.hero.badge', 'Piattaforma live per eventi interattivi')}
+            {t('landing.hero.badge', 'DJ · Karaoke · Wedding entertainment')}
           </motion.div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#F8F8FA] mb-4">
             IOMIXO <span className="text-gradient">Live Hub</span>
           </h1>
           <p className="text-lg sm:text-xl text-[#F8F8FA] max-w-2xl mx-auto mb-3 font-medium">
-            {t('landing.hero.tagline', 'La piattaforma interattiva per DJ, eventi e matrimoni.')}
+            {t('landing.hero.tagline', 'La piattaforma interattiva per DJ, serate karaoke e matrimoni.')}
           </p>
           <p className="text-sm sm:text-base text-[#9A9AA3] max-w-2xl mx-auto mb-6">
-            {t('landing.hero.subline', 'Gli ospiti partecipano dal telefono via QR — richieste musicali, giochi, dediche, foto e Screen Mode in tempo reale.')}
+            {t('landing.hero.subline', 'Gli ospiti partecipano dal telefono via QR: richieste musicali, karaoke, giochi, dediche e Screen Mode in tempo reale.')}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
             <Link href="/register">
@@ -95,7 +95,7 @@ function Hero() {
           </div>
         </div>
 
-        {/* Mode cards — Party Mode & Wedding Edition (above the fold) */}
+        {/* Mode cards — Party & Karaoke, Wedding DJ (above the fold) */}
         <div id="modes" className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 max-w-5xl mx-auto">
           {/* PARTY MODE */}
           <motion.div
@@ -111,17 +111,17 @@ function Hero() {
               </div>
               <div>
                 <p className="text-[11px] uppercase tracking-wider text-[#F4FF3A] font-semibold">{t('landing.modes.party.label', 'Modalità')}</p>
-                <h3 className="text-xl font-bold text-[#F8F8FA]">Party Mode</h3>
+                <h3 className="text-xl font-bold text-[#F8F8FA]">Party &amp; Karaoke</h3>
               </div>
             </div>
             <p className="text-sm text-[#9A9AA3] mb-4">
-              {t('landing.modes.party.for', 'Per compleanni, feste private, locali, aperitivi ed eventi aziendali.')}
+              {t('landing.modes.party.for', 'Per serate DJ, karaoke, compleanni, feste private, locali ed eventi aziendali.')}
             </p>
             <ul className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm text-[#F8F8FA] mb-5">
               {[
                 t('landing.modes.party.f1', 'Richieste live'),
-                t('landing.modes.party.f2', 'Giochi'),
-                t('landing.modes.party.f3', 'Live Booth'),
+                t('landing.modes.party.f2', 'Karaoke'),
+                t('landing.modes.party.f3', 'Giochi e Music Battle'),
                 t('landing.modes.party.f4', 'Screen Mode'),
               ].map((f) => (
                 <li key={f} className="flex items-center gap-2">
@@ -137,7 +137,7 @@ function Hero() {
             </Link>
           </motion.div>
 
-          {/* WEDDING EDITION */}
+          {/* WEDDING DJ */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -153,19 +153,19 @@ function Hero() {
                 <Heart className="h-6 w-6 fill-[#FF9BC8]" />
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-[#FF9BC8] font-semibold">{t('landing.modes.wedding.label', 'Edizione')}</p>
-                <h3 className="text-xl font-bold text-[#F8F8FA]">Wedding Edition</h3>
+                <p className="text-[11px] uppercase tracking-wider text-[#FF9BC8] font-semibold">{t('landing.modes.wedding.label', 'Modalità')}</p>
+                <h3 className="text-xl font-bold text-[#F8F8FA]">Wedding DJ</h3>
               </div>
             </div>
             <p className="text-sm text-[#9A9AA3] mb-4">
-              {t('landing.modes.wedding.for', 'Per matrimoni, anniversari ed eventi romantici.')}
+              {t('landing.modes.wedding.for', 'Per DJ di matrimoni: musica, giochi e intrattenimento per il ricevimento.')}
             </p>
             <ul className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm text-[#F8F8FA] mb-5">
               {[
                 t('landing.modes.wedding.f1', 'Dediche agli sposi'),
-                t('landing.modes.wedding.f2', 'Album foto'),
-                t('landing.modes.wedding.f3', 'Live Booth'),
-                t('landing.modes.wedding.f4', 'Giochi wedding'),
+                t('landing.modes.wedding.f2', 'Giochi wedding'),
+                t('landing.modes.wedding.f3', 'Sondaggi live'),
+                t('landing.modes.wedding.f4', 'Regia dal telefono'),
                 t('landing.modes.wedding.f5', 'Screen Mode'),
               ].map((f) => (
                 <li key={f} className="flex items-center gap-2">
@@ -197,9 +197,9 @@ function Capabilities() {
   const { t } = useI18n()
   const items = [
     { Icon: Music2,    title: t('landing.caps.requests.title', 'Richieste Live'),     body: t('landing.caps.requests.body', 'Il pubblico invia canzoni dal telefono. Tu approvi e gestisci la coda.') },
-    { Icon: Camera,    title: t('landing.caps.booth.title',    'Live Booth'),         body: t('landing.caps.booth.body',    'Foto degli ospiti che alimentano album e Photo Moment in tempo reale.') },
+    { Icon: Mic2,      title: t('landing.caps.karaoke.title',  'Karaoke'),            body: t('landing.caps.karaoke.body',  'Gli ospiti scelgono dal telefono il brano da cantare e tu gestisci la scaletta dalla dashboard.') },
     { Icon: Gamepad2,  title: t('landing.caps.games.title',    'Giochi Interattivi'), body: t('landing.caps.games.body',    'Roulette, quiz e giochi wedding per coinvolgere tutta la sala.') },
-    { Icon: Monitor,   title: t('landing.caps.screen.title',   'Screen Mode'),        body: t('landing.caps.screen.body',   'QR, foto, dediche e giochi proiettati su TV o maxi-schermo.') },
+    { Icon: Monitor,   title: t('landing.caps.screen.title',   'Screen Mode'),        body: t('landing.caps.screen.body',   'QR, dediche, giochi e sondaggi proiettati su TV o maxi-schermo.') },
   ]
   return (
     <section className="py-14 sm:py-20 bg-[#0F0F14] border-y border-[#2A2A33]">
@@ -210,7 +210,7 @@ function Capabilities() {
             {t('landing.caps.badge', 'Tutto in una sola piattaforma')}
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-[#F8F8FA]">
-            {t('landing.caps.title', 'Quattro strumenti, un evento indimenticabile')}
+            {t('landing.caps.title', 'Quattro strumenti per far ballare, cantare e giocare la sala')}
           </h2>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
@@ -232,26 +232,26 @@ function Capabilities() {
   )
 }
 
-// ── Feature sections (5 per spec) ──────────────────────────────
-type SectionKey = 'requests' | 'wedding' | 'booth' | 'screen' | 'album'
+// ── Feature sections: DJ, karaoke and wedding entertainment (no photo features: those are MIOLOVE ALBUM) ──
+type SectionKey = 'requests' | 'karaoke' | 'wedding' | 'screen' | 'remote'
 const SECTION_ICONS: Record<SectionKey, typeof QrCode> = {
   requests: QrCode,
+  karaoke:  Mic2,
   wedding:  Heart,
-  booth:    Camera,
   screen:   Monitor,
-  album:    Images,
+  remote:   Smartphone,
 }
 const SECTION_FALLBACK: Record<SectionKey, { title: string; body: string }> = {
   requests: { title: 'Richieste musicali senza interruzioni', body: 'Gli ospiti inviano le richieste dal telefono. Il DJ approva, rifiuta o gestisce tutto dalla dashboard.' },
   wedding:  { title: 'Esperienze interattive per matrimoni',  body: 'Dediche agli sposi, giochi live, roulette wedding, gioco della scarpa e momenti speciali guidati dal DJ.' },
-  booth:    { title: 'Live Booth fotografico',                body: 'Gli invitati scattano foto dal telefono, partecipano al Photo Moment e le immagini entrano nell’album degli sposi.' },
-  screen:   { title: 'Tutto anche su schermo',                body: 'Mostra QR Code, foto, risultati dei giochi e momenti live su TV o proiettore.' },
-  album:    { title: 'Album ospiti pronto da condividere',    body: 'Le foto approvate finiscono in una libreria privata con link dedicato per gli sposi.' },
+  karaoke:  { title: 'Serate karaoke senza caos',             body: 'Niente fogli e penne: il pubblico prenota il brano dal telefono e tu decidi l\'ordine dalla regia.' },
+  screen:   { title: 'Tutto anche su schermo',                body: 'Mostra QR Code, dediche, risultati dei giochi e sondaggi su TV o proiettore.' },
+  remote:   { title: 'Regia dal telefono',                    body: 'Gestisci richieste, dediche, giochi e schermo dal telefono mentre sei in consolle.' },
 }
 
 function Sections() {
   const { t } = useI18n()
-  const keys: SectionKey[] = ['requests', 'wedding', 'booth', 'screen', 'album']
+  const keys: SectionKey[] = ['requests', 'karaoke', 'wedding', 'screen', 'remote']
   return (
     <section id="features" className="py-20 sm:py-28 bg-[#0A0A0D]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -272,8 +272,8 @@ function Sections() {
                 key={key}
                 className="rounded-2xl p-6 bg-[#15151B] border border-[#2A2A33] hover:border-[#FF2D8D]/70 transition"
               >
-                <div className={`h-11 w-11 rounded-xl border flex items-center justify-center mb-4 ${key === 'screen' || key === 'album' ? 'bg-[#F4FF3A]/10 border-[#F4FF3A]/30' : 'bg-[#FF2D8D]/10 border-[#FF2D8D]/30'}`}>
-                  <Icon className={`h-5 w-5 ${key === 'screen' || key === 'album' ? 'text-[#F4FF3A]' : 'text-[#FF2D8D]'}`} />
+                <div className={`h-11 w-11 rounded-xl border flex items-center justify-center mb-4 ${key === 'screen' || key === 'remote' ? 'bg-[#F4FF3A]/10 border-[#F4FF3A]/30' : 'bg-[#FF2D8D]/10 border-[#FF2D8D]/30'}`}>
+                  <Icon className={`h-5 w-5 ${key === 'screen' || key === 'remote' ? 'text-[#F4FF3A]' : 'text-[#FF2D8D]'}`} />
                 </div>
                 <h3 className="text-base font-semibold text-[#F8F8FA] mb-2">
                   {t(`landing.sections.${key}.title`, fb.title)}
@@ -370,7 +370,7 @@ function Pricing() {
           <PricingCard plan="wedding" />
         </div>
 
-        {/* Wedding Pass 24H */}
+        {/* Event Pass 24H */}
         <div className="mt-16">
           <div className="text-center mb-8">
             <h3 className="text-2xl sm:text-3xl font-bold text-[#F8F8FA] mb-3">{t('landing.pricing.or24h')}</h3>

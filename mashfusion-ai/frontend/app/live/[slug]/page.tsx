@@ -22,7 +22,9 @@ import {
   WeddingGuestInput, WeddingGuestTextarea, getWeddingGuestActionKeys, buildWeddingGuestActions,
   formatWeddingGuestDate, WEDDING_GUEST_TOAST, WeddingGuestTitle, type WeddingGuestActionKey,
 } from '@/components/wedding/guest/WeddingGuestUI'
-import { WEDDING_BRAND_NAME } from '@/lib/brand/wedding'
+import { hasPhotoFeatures, EVENT_BRAND_NAME } from '@/lib/brand/eventBrand'
+import { useEventBrand } from '@/lib/events/useEventBrand'
+import { EventBrandProvider } from '@/components/brand/EventBrand'
 
 const STATUS_STYLE: Record<LiveRequestStatus, string> = {
   pending:  'bg-amber-500/15 text-amber-300 border-amber-500/30',
@@ -62,6 +64,8 @@ export default function PublicLivePage() {
   const [form, setForm] = useState({ track_title: '', artist: '', message: '' })
   const [sending, setSending] = useState(false)
   const [activeGuestSection, setActiveGuestSection] = useState<string | null>(null)
+  // MIOLOVE album (Sposi) vs IOMIXO (everything a DJ runs): only a MIOLOVE album offers photos to its guests.
+  const brand = useEventBrand(slug, payload?.session.session_type)
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -83,7 +87,7 @@ export default function PublicLivePage() {
     } finally { setSending(false) }
   }
 
-  if (isLoading) {
+  if (isLoading || (payload && !brand)) {
     return <Center><p className="text-white/50">{t('live.loading')}</p></Center>
   }
   if (error || !data) {
@@ -103,6 +107,7 @@ export default function PublicLivePage() {
   const disabled     = closed || limitReached
   const isWedding    = session.session_type === 'wedding'
   const isParty      = session.session_type === 'party'
+  const photosAllowed = !!brand && hasPhotoFeatures(brand)
 
   // Guest Visibility: DJ-controlled flags from guest_config (independent from
   // plan gating in `features`). Song requests are visible by default; every
@@ -112,7 +117,7 @@ export default function PublicLivePage() {
   const guestOn = (key: string) => (key === 'requests' ? gc.requests !== false : (gc as Record<string, boolean | undefined>)[key] === true)
 
   if (isWedding) {
-    const weddingKeys = getWeddingGuestActionKeys(gc as Record<string, boolean | undefined>, features)
+    const weddingKeys = getWeddingGuestActionKeys(gc as Record<string, boolean | undefined>, features).filter((k) => photosAllowed || k !== 'photos')
     const weddingItems = buildWeddingGuestActions(weddingKeys, t)
     const weddingNodes: Record<WeddingGuestActionKey, React.ReactNode> = {
       requests: (
@@ -167,6 +172,7 @@ export default function PublicLivePage() {
     const languageSlot = <LanguageSwitcher variant="wedding" />
 
     return (
+      <EventBrandProvider brand={brand ?? 'iomixo'}>
       <div className="min-h-screen w-full bg-wd-bg font-sans text-wd-ink antialiased">
         <div className="mx-auto w-full max-w-[520px] px-5 pb-12 pt-5">
           {activeWeddingKey ? (
@@ -213,9 +219,10 @@ export default function PublicLivePage() {
           <FollowDjSection tone="wedding" profile={profile} events={events} t={t} />
 
           <WeddingGuestTitle prefix={names} />
-          <p className="mt-12 text-center text-[12px] font-semibold tracking-wide text-wd-muted">{WEDDING_BRAND_NAME}</p>
+          <p className="mt-12 text-center text-[12px] font-semibold tracking-wide text-wd-muted">{EVENT_BRAND_NAME[brand ?? 'iomixo']}</p>
         </div>
       </div>
+      </EventBrandProvider>
     )
   }
 
@@ -289,7 +296,8 @@ export default function PublicLivePage() {
         node: partyRequestForm,
       })
     }
-    if (features.guestPhotoAlbum && guestOn('live_booth')) {
+    // Party is IOMIXO: never a photo entry point for guests (Live Booth belongs to MIOLOVE albums).
+    if (photosAllowed && features.guestPhotoAlbum && guestOn('live_booth')) {
       partySections.push({
         key: 'photos',
         icon: <Camera className="h-6 w-6" />,

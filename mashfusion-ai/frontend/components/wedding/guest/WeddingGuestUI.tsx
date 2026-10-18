@@ -4,8 +4,8 @@ import Link from 'next/link'
 import type { ToastOptions } from 'react-hot-toast'
 import { Music2, Camera, Heart, Gamepad2, BarChart3, ChevronRight, ChevronLeft, ArrowLeft, CheckCircle2, AlertTriangle, Info } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
-import { MioloveLogo, useWeddingTitle } from '@/components/brand/MioloveLogo'
-import { WEDDING_BRAND_NAME } from '@/lib/brand/wedding'
+import { useWeddingTitle } from '@/components/brand/MioloveLogo'
+import { WeddingBrandLogo, useEventBrandName } from '@/components/brand/EventBrand'
 import { cn } from '@/lib/utils'
 
 // Shared Wedding guest UI. Used by the real guest page (/live/[slug]) AND by the
@@ -71,7 +71,7 @@ export function formatWeddingGuestDate(raw: string | null | undefined): string |
 export function WeddingGuestTopBar({ languageSlot }: { languageSlot?: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <MioloveLogo height={30} className="text-wd-ink" />
+      <WeddingBrandLogo height={30} className="text-wd-ink" />
       {languageSlot}
     </div>
   )
@@ -234,13 +234,14 @@ export function WeddingGuestTitle({ prefix }: { prefix?: string }) {
 }
 
 export function WeddingGuestShell({ children, languageSlot, centered = false }: { children: ReactNode; languageSlot?: ReactNode; centered?: boolean }) {
+  const brandName = useEventBrandName()
   return (
     <div className="min-h-screen w-full bg-wd-bg font-sans text-wd-ink antialiased">
       <WeddingGuestTitle />
       <div className={cn('mx-auto flex min-h-screen w-full max-w-[520px] flex-col px-5 pb-12 pt-5', centered && 'justify-center')}>
         <WeddingGuestTopBar languageSlot={languageSlot} />
         <div className="pt-6">{children}</div>
-        <p className="mt-12 text-center text-[12px] font-semibold tracking-wide text-wd-muted">{WEDDING_BRAND_NAME}</p>
+        <p className="mt-12 text-center text-[12px] font-semibold tracking-wide text-wd-muted">{brandName}</p>
       </div>
     </div>
   )

@@ -11,7 +11,8 @@ import { useActivePoll, toLegacyPoll } from '@/lib/events/usePolls'
 import { useLatestGames } from '@/lib/events/useGames'
 import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
-import { WEDDING_BRAND_NAME } from '@/lib/brand/wedding'
+import { EVENT_BRAND_NAME, hasPhotoFeatures } from '@/lib/brand/eventBrand'
+import { useEventBrand } from '@/lib/events/useEventBrand'
 import { WeddingPhotoDisplay } from '@/components/wedding/WeddingPhotoGridWall'
 import { RouletteWheel } from '@/components/wedding/RouletteWheel'
 import { WinnerAnnouncementStage } from '@/components/wedding/WinnerAnnouncementStage'
@@ -77,10 +78,15 @@ export default function ScreenModePage() {
   // Whole TV payload from Firestore when the event is fully there (screenConfig, no photos); otherwise the legacy 1.5s polling.
   const rtDedications = useApprovedDedications(liveEvent?.id)
   // Live Booth photos (realtime, approved only) and the winner photos' Storage URLs: only subscribed when the TV actually shows them.
-  const showPhotosCfg = (liveEvent?.screenConfig as Record<string, unknown> | null | undefined)?.show_photos === true
+  // Photos on the TV exist only for a MIOLOVE album: an IOMIXO event (Party, Wedding DJ) never subscribes to them, whatever show_photos holds.
+  const brand = useEventBrand(slug, liveEvent?.type)
+  const photosAllowed = !!brand && hasPhotoFeatures(brand)
+  const brandName = EVENT_BRAND_NAME[brand ?? 'iomixo']
+  const showPhotosCfg = photosAllowed && (liveEvent?.screenConfig as Record<string, unknown> | null | undefined)?.show_photos === true
   const rtPhotos = useApprovedPhotos(showPhotosCfg ? liveEvent?.id : undefined)
   const winnerUrls = useWinnerUrls((liveEvent?.screenConfig as Record<string, unknown> | null | undefined)?.winner_announcement)
-  const screenExtras = useMemo(() => ({ photos: rtPhotos, winnerUrls }), [rtPhotos, winnerUrls])
+  // Not a MIOLOVE album (or brand still unknown): photos are known to be empty, so the TV never waits for them nor falls back to the legacy payload.
+  const screenExtras = useMemo(() => ({ photos: photosAllowed ? rtPhotos : [], winnerUrls }), [photosAllowed, rtPhotos, winnerUrls])
   const fsScreen = useFirestoreScreen(liveEvent, rtPoll, rtGames, rtDedications, slug, screenExtras)
   const data = fsScreen.payload
   const error = fsScreen.decided && !fsScreen.payload ? new Error('screen_unavailable') : undefined
@@ -197,7 +203,7 @@ export default function ScreenModePage() {
   const enabledShoeGame   = cfg.show_shoe_game  === true
   const enabledPolls      = cfg.show_polls      === true
   const enabledDedications = cfg.show_dedications === true
-  const enabledPhotos     = cfg.show_photos     === true
+  const enabledPhotos     = photosAllowed && cfg.show_photos === true
   const standUpGuess = normalizeStandUpGuess(cfg.stand_up_guess)
   const enabledStandUpGuess = standUpGuess.enabled === true
   const standUpRound = standUpGuess.rounds.find((round) => round.id === standUpGuess.current_round_id)
@@ -322,7 +328,7 @@ export default function ScreenModePage() {
               )}
             </div>
             <footer className="absolute bottom-8 text-xs uppercase tracking-[0.3em] text-wedding-taupe">
-              <span className="text-wedding-gold">{WEDDING_BRAND_NAME}</span>
+              <span className="text-wedding-gold">{brandName}</span>
             </footer>
           </div>
         )}
@@ -449,7 +455,7 @@ export default function ScreenModePage() {
             </div>
 
             <footer className="mt-12 text-xs uppercase tracking-[0.3em] text-wedding-taupe">
-              <span className="text-wedding-gold">{WEDDING_BRAND_NAME}</span>
+              <span className="text-wedding-gold">{brandName}</span>
             </footer>
           </div>
         )}
@@ -506,7 +512,7 @@ export default function ScreenModePage() {
             </div>
 
             <footer className="absolute bottom-8 text-xs uppercase tracking-[0.3em] text-wedding-taupe">
-              <span className="text-wedding-gold">{WEDDING_BRAND_NAME}</span>
+              <span className="text-wedding-gold">{brandName}</span>
             </footer>
           </div>
         )}
@@ -641,7 +647,7 @@ export default function ScreenModePage() {
           </div>
 
           <footer className="mt-8 text-center text-xs uppercase tracking-[0.3em] text-wedding-taupe">
-            <span className="text-wedding-gold">{WEDDING_BRAND_NAME}</span>
+            <span className="text-wedding-gold">{brandName}</span>
           </footer>
           </div>
         )}
@@ -1001,7 +1007,8 @@ function PartyScreen({
   // Un widget appare solo se il rispettivo toggle è esplicitamente true.
   // (Foto Live Booth → show_photos, Music Battle → show_polls, Party Roulette → show_roulette)
   const cfg = session.screen_config ?? {}
-  const showLiveBooth     = cfg.show_photos   === true
+  // Party is IOMIXO: no Live Booth photos on the TV (a legacy show_photos=true is ignored).
+  const showLiveBooth     = false
   const showMusicBattle   = cfg.show_polls    === true
   const showPartyRoulette = cfg.show_roulette === true
   // Layout Live Booth (single | grid | auto). Default 'single' (retrocompat).

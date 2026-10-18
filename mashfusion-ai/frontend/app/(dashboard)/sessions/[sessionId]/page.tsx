@@ -48,7 +48,8 @@ import {
 } from '@/components/party/PartyUI'
 import { useI18n } from '@/lib/i18n'
 import { useEffectiveAccess, isPremiumSession } from '@/lib/access'
-import { useAccountRole, isCoupleWeddingTab, COUPLE_HOME } from '@/lib/roles'
+import { useAccountRole, isCoupleWeddingTab, isMioloveOnlyTab, COUPLE_HOME } from '@/lib/roles'
+import { EventBrandProvider } from '@/components/brand/EventBrand'
 import { resolveVideoSource, formatRelativeTime } from '@/lib/utils'
 import type { VideoLiveCommand } from '@/lib/api'
 
@@ -449,7 +450,8 @@ export default function SessionDetailPage() {
 
   // ── Wedding — dedicated light platform layout ──────────────────
   // A Sposi account can only ever land on its own sections, whatever `tab` holds.
-  const tab = isCouple && !isCoupleWeddingTab(rawTab) ? 'home' : rawTab
+  // A DJ (IOMIXO Wedding DJ / Wedding Games) never lands on the MIOLOVE photo sections (album, poster, Live Booth).
+  const tab = isCouple ? (isCoupleWeddingTab(rawTab) ? rawTab : 'home') : (isMioloveOnlyTab(rawTab) ? 'home' : rawTab)
   const dashSection = (
     <>
       {tab === 'home' && (
@@ -486,16 +488,18 @@ export default function SessionDetailPage() {
   )
 
   return (
-    <WeddingAdminShell
-      eventName={session.event_name}
-      active={tab}
-      onSelect={setTab}
-      badges={{ requests: pending.length }}
-      couple={isCouple}
-      occasion={session.occasion_type}
-    >
-      {dashSection}
-    </WeddingAdminShell>
+    <EventBrandProvider brand={isCouple ? 'miolove' : 'iomixo'}>
+      <WeddingAdminShell
+        eventName={session.event_name}
+        active={tab}
+        onSelect={setTab}
+        badges={{ requests: pending.length }}
+        couple={isCouple}
+        occasion={session.occasion_type}
+      >
+        {dashSection}
+      </WeddingAdminShell>
+    </EventBrandProvider>
   )
 }
 
@@ -608,7 +612,6 @@ function WeddingSettingsPage({ session, togglingActive, onToggle, onDelete, mode
     saveConfig({ ...screenConfig, [field]: value }, t('weddingPanels.fontUpdated'))
 
   const screenToggles: Array<{ key: string; icon: React.ReactNode; label: string }> = [
-    { key: 'show_photos',     icon: <ImageIcon className="h-[18px] w-[18px]" />,  label: t('weddingPanels.photos') },
     { key: 'show_dedications', icon: <Heart className="h-[18px] w-[18px]" />,      label: t('weddingPanels.dedications') },
     { key: 'show_roulette',   icon: <Sparkles className="h-[18px] w-[18px]" />,   label: t('weddingPanels.roulette') },
     { key: 'show_shoe_game',  icon: <Footprints className="h-[18px] w-[18px]" />, label: t('weddingPanels.shoeGame') },
@@ -1035,16 +1038,18 @@ function GuestVisibilityPanel({
     { key: 'dedications', icon: <Heart className="h-4 w-4" />,      label: t('guestVisibility.dedications') },
     { key: 'shoe_game',   icon: <Footprints className="h-4 w-4" />, label: t('guestVisibility.shoeGame') },
     { key: 'polls',       icon: <ListChecks className="h-4 w-4" />, label: t('guestVisibility.polls') },
+  ]
+  // MIOLOVE album only: the guests' photo entry point (Live Booth).
+  const coupleItems = [
     { key: 'live_booth',  icon: <Camera className="h-4 w-4" />,     label: t('guestVisibility.liveBooth') },
   ]
   const partyItems = [
     { key: 'requests',     icon: <Music2 className="h-4 w-4" />,     label: t('guestVisibility.requests') },
-    { key: 'live_booth',   icon: <Camera className="h-4 w-4" />,     label: t('guestVisibility.liveBooth') },
     { key: 'music_battle', icon: <ListChecks className="h-4 w-4" />, label: t('guestVisibility.musicBattle') },
     { key: 'roulette',     icon: <Sparkles className="h-4 w-4" />,   label: t('guestVisibility.roulette') },
   ]
-  // Sposi only manage the photo entry point; request / dedication / game visibility belongs to the DJ.
-  const items = sessionType === 'wedding' ? (couple ? weddingItems.filter((i) => i.key === 'live_booth') : weddingItems) : partyItems
+  // Sposi only manage the photo entry point; request / dedication / game visibility belongs to the DJ. IOMIXO (DJ) has no photo features.
+  const items = sessionType === 'wedding' ? (couple ? coupleItems : weddingItems) : partyItems
 
   // ── Party theme ──────────────────────────────────────────────
   if (sessionType === 'party') {
@@ -2049,7 +2054,8 @@ function PollsPanel({ sessionId }: { sessionId: string }) {
 
 // ════════════════════════════════════════════════════════════════
 // PARTY DASHBOARD — for session_type === 'party'
-// Tabs: Richieste · Live Booth · Music Battle · Party Games · Screen
+// Tabs: Richieste · Music Battle · Party Games · Screen · Ospiti
+// IOMIXO is live entertainment only: the Live Booth UI belongs to MIOLOVE (PartyBoothPanel stays in the code, unused here).
 // ════════════════════════════════════════════════════════════════
 
 const PARTY_PRESETS: Array<{ q: string; opts: [string, string] }> = [
@@ -2077,11 +2083,10 @@ function PartyDashboard({
   onUpdateRequest, onDeleteRequest,
 }: any) {
   const { t } = useI18n()
-  const [tab, setTab] = useState<'requests' | 'booth' | 'battle' | 'games' | 'screen' | 'guests'>('requests')
+  const [tab, setTab] = useState<'requests' | 'battle' | 'games' | 'screen' | 'guests'>('requests')
 
   const origin = publicOriginFor('party')
   const liveUrl = `${origin}/live/${session.public_slug}`
-  const boothUrl = `${origin}/booth/${session.public_slug}`
   const screenUrl = `${origin}/screen/${session.public_slug}`
 
   const copy = (url: string, label = 'Link copiato') => {
@@ -2125,9 +2130,8 @@ function PartyDashboard({
 
           <PartyDivider className="my-5" />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <PartyLinkRow label="Pagina Live" desc="Link ospiti per partecipare" url={liveUrl} onCopy={() => copy(liveUrl)} />
-            <PartyLinkRow label="Live Booth" desc="Foto live dagli ospiti" url={boothUrl} onCopy={() => copy(boothUrl)} />
             <PartyLinkRow label="Schermo TV" desc="Apri sul TV o proiettore" url={screenUrl} onCopy={() => copy(screenUrl)} external />
           </div>
         </PartyCard>
@@ -2136,14 +2140,13 @@ function PartyDashboard({
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
           <PartyStat icon={<Music2 className="h-4 w-4" />} label="In attesa" value={pending.length.toString()} pulse={pending.length > 0} accent={pending.length > 0} />
           <PartyStat icon={<Music2 className="h-4 w-4" />} label="Richieste" value={(pending.length + approved.length + rejected.length).toString()} />
-          <PartyStatPhotos sessionId={session.id} />
+          <PartyStat icon={<Check className="h-4 w-4" />} label="Approvate" value={approved.length.toString()} />
           <PartyStatPolls sessionId={session.id} />
         </div>
 
         {/* TABS */}
         <div className="flex gap-2 mb-4 flex-wrap">
           <PartyTabBtn active={tab === 'requests'} onClick={() => setTab('requests')} icon={<Music2 className="h-3.5 w-3.5" />}>Richieste {pending.length > 0 && <span className="ml-1 text-[10px] text-[#FF2D8D]">({pending.length})</span>}</PartyTabBtn>
-          <PartyTabBtn active={tab === 'booth'} onClick={() => setTab('booth')} icon={<Camera className="h-3.5 w-3.5" />}>Live Booth</PartyTabBtn>
           <PartyTabBtn active={tab === 'battle'} onClick={() => setTab('battle')} icon={<ListChecks className="h-3.5 w-3.5" />}>Music Battle</PartyTabBtn>
           <PartyTabBtn active={tab === 'games'} onClick={() => setTab('games')} icon={<Sparkles className="h-3.5 w-3.5" />}>Party Games</PartyTabBtn>
           <PartyTabBtn active={tab === 'screen'} onClick={() => setTab('screen')} icon={<Tv className="h-3.5 w-3.5" />}>Schermo</PartyTabBtn>
@@ -2176,7 +2179,6 @@ function PartyDashboard({
           </div>
         )}
 
-        {tab === 'booth' && <PartyBoothPanel session={session} boothUrl={boothUrl} onCopy={() => copy(boothUrl)} isFree={isFree} />}
         {tab === 'battle' && <PartyBattlePanel sessionId={session.id} isFree={isFree} />}
         {tab === 'games' && <PartyGamesPanel session={session} isFree={isFree} onJumpToBattle={() => setTab('battle')} />}
         {tab === 'screen' && <PartyScreenPanel session={session} screenUrl={screenUrl} />}
@@ -2627,6 +2629,7 @@ function PartyRouletteCard({ session, isFree }: any) {
 }
 
 // ─────────────── SCREEN PANEL ───────────────
+// No photo controls: the Party TV screen shows live entertainment only (photos are a MIOLOVE feature).
 function PartyScreenPanel({ session, screenUrl }: any) {
   const cfg = session.screen_config ?? {}
   const [draft, setDraft] = useState({
@@ -2677,9 +2680,9 @@ function PartyScreenPanel({ session, screenUrl }: any) {
             </PartyButton>
           </div>
         </div>
-        <PartyScreenPreview session={session} show={{ photos: draft.show_photos, polls: draft.show_polls }} />
+        <PartyScreenPreview session={session} show={{ polls: draft.show_polls }} />
         <div className="mt-3 flex flex-wrap gap-2">
-          {([['Foto', draft.show_photos], ['Music Battle', draft.show_polls], ['Roulette', draft.show_roulette], ['Video', draft.show_video_live]] as const).map(([l, on]) => (
+          {([['Music Battle', draft.show_polls], ['Roulette', draft.show_roulette], ['Video', draft.show_video_live]] as const).map(([l, on]) => (
             <PartyBadge key={l} tone={on ? 'success' : 'soft'}>{on ? '● ' : '○ '}{l}</PartyBadge>
           ))}
         </div>
@@ -2688,39 +2691,10 @@ function PartyScreenPanel({ session, screenUrl }: any) {
       <PartyCard>
         <PartyEyebrow>Cosa mostrare sullo schermo</PartyEyebrow>
         <div className="mt-4 space-y-2.5">
-          <ScreenToggle label="Foto Live Booth" value={draft.show_photos} onChange={(v) => setDraft({ ...draft, show_photos: v })} />
           <ScreenToggle label="Music Battle" value={draft.show_polls} onChange={(v) => setDraft({ ...draft, show_polls: v })} />
           <ScreenToggle label="Party Roulette" value={draft.show_roulette} onChange={(v) => setDraft({ ...draft, show_roulette: v })} />
           <ScreenToggle label="Video Live" value={draft.show_video_live} onChange={(v) => setDraft({ ...draft, show_video_live: v })} />
         </div>
-
-        {draft.show_photos && (
-          <div className="mt-3 rounded-xl bg-black/20 border border-white/10 p-3">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#FF2D8D] mb-2.5">
-              Come mostrare le foto
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                ['single', 'Foto singola'],
-                ['grid', 'Griglia'],
-                ['auto', 'Mix automatico'],
-              ] as const).map(([val, label]) => (
-                <button
-                  key={val}
-                  type="button"
-                  onClick={() => setDraft({ ...draft, live_booth_layout: val })}
-                  className={`rounded-lg px-2 py-2 text-xs font-semibold transition border ${
-                    draft.live_booth_layout === val
-                      ? 'bg-[#FF2D8D] text-white border-[#FF2D8D]'
-                      : 'bg-black/30 text-white/70 border-white/10 hover:border-[#FF2D8D]/40'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {draft.show_video_live && (
           <div className="mt-3 space-y-2.5 rounded-xl bg-black/20 border border-white/10 p-3">
@@ -2783,18 +2757,12 @@ function PartyScreenPanel({ session, screenUrl }: any) {
 }
 
 // Pages are served with X-Frame-Options: DENY, so the preview is rendered from the same data the TV reads.
-function PartyScreenPreview({ session, show }: { session: any; show: { photos: boolean; polls: boolean } }) {
-  const { data: photos } = useSWR(['booth-photos', session.id], () => livePhotos.listBoothPhotos(session.id).catch(() => []), { refreshInterval: 8_000 })
+function PartyScreenPreview({ session, show }: { session: any; show: { polls: boolean } }) {
   const { data: polls } = useSWR(['polls', session.id], () => livePolls.list(session.id).catch(() => []), { refreshInterval: 8_000 })
-  const photo = (photos ?? []).find((p: any) => p.status === 'approved' && p.url) ?? (photos ?? []).find((p: any) => p.url)
   const poll = (polls ?? []).find((p) => p.is_active)
   const total = (poll?.tally ?? []).reduce((x: number, y: number) => x + y, 0)
   return (
     <div className="relative mt-4 aspect-video w-full overflow-hidden rounded-2xl border border-[#2A2A33] bg-[#0A0A0D]">
-      {show.photos && photo?.url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={photo.url} alt="" className="absolute inset-0 h-full w-full object-contain" />
-      )}
       <div className="absolute inset-x-0 top-0 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
         <p className="truncate text-sm font-black text-[#F8F8FA] sm:text-lg">{session.event_name}</p>
         <PartyLivePill live={session.is_active} label={session.is_active ? 'IN ONDA' : 'SPENTO'} />
@@ -2818,7 +2786,7 @@ function PartyScreenPreview({ session, show }: { session: any; show: { photos: b
           </div>
         </div>
       )}
-      {!(show.photos && photo?.url) && !(show.polls && poll) && (
+      {!(show.polls && poll) && (
         <div className="absolute inset-0 flex items-center justify-center text-sm text-[#9A9AA3]">Nessun contenuto attivo sullo schermo</div>
       )}
     </div>
