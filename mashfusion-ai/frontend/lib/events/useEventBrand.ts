@@ -46,6 +46,7 @@ export function useEventBrand(slug: string | undefined, eventType: string | null
     type: eventType,
     ownerAccountType: payload?.session.owner_account_type ?? null,
     accessMode: payload?.session.access_mode ?? watchedAccessMode ?? null,
+    brand: payload?.session.event_brand ?? null,
   }
   const certain = certainEventPortal(facts)
   const redirectTo = certain && loc

@@ -48,8 +48,8 @@ export const user = {
 // ══════════════════════════════════════════════════════════════
 export const billing = {
   /** The server decides mode, URLs, metadata and the customer; `sessionId` (a Firebase event id) only scopes an Event Pass. */
-  async createCheckoutSession(priceId: string, _mode: 'subscription' | 'payment' = 'subscription', sessionId?: string, opts?: { trial?: boolean; plan?: string }): Promise<{ url: string }> {
-    return need(await (await billingFs()).checkout(priceId, { trial: opts?.trial, eventId: sessionId }))
+  async createCheckoutSession(priceId: string, _mode: 'subscription' | 'payment' = 'subscription', sessionId?: string, opts?: { trial?: boolean; plan?: string; portal?: 'iomixo' | 'miolove' }): Promise<{ url: string }> {
+    return need(await (await billingFs()).checkout(priceId, { trial: opts?.trial, eventId: sessionId, portal: opts?.portal }))
   },
 
   async getEventPasses() {
@@ -61,8 +61,8 @@ export const billing = {
     return this.getEventPasses()
   },
 
-  async createPortalSession(): Promise<{ url: string }> {
-    return need(await (await billingFs()).portal())
+  async createPortalSession(portal?: 'iomixo' | 'miolove'): Promise<{ url: string }> {
+    return need(await (await billingFs()).portal(portal))
   },
 
   async getSubscription(): Promise<Subscription | null> {
@@ -188,6 +188,8 @@ export interface LiveSession {
   session_type?: SessionType
   occasion_type?: OccasionType
   access_mode?: AccessMode
+  /** Product the event was created in; absent on events created before the field. */
+  brand?: 'iomixo' | 'miolove'
   trial_photo_count?: number
   trial_photo_limit?: number
   poster_config?: Record<string, unknown> | null
@@ -272,6 +274,8 @@ export interface PublicLivePayload {
     owner_account_type?: 'dj' | 'couple' | null
     /** Couple albums only: 'trial' | 'activated'. */
     access_mode?: 'trial' | 'activated' | null
+    /** Product the event was created in (explicit); null/absent on events created before the field. */
+    event_brand?: 'iomixo' | 'miolove' | null
   }
   profile: Omit<DjProfile, 'public_slug' | 'id' | 'user_id'> | null
   events: Array<Omit<DjEvent, 'is_public'>>
@@ -306,6 +310,8 @@ export const live = {
     venue_name?: string
     screen_mode_enabled?: boolean
     occasion_type?: OccasionType
+    /** Product the owner creates from (the portal). */
+    brand?: 'iomixo' | 'miolove'
   }): Promise<LiveSession> {
     return need(await (await owner()).sessions.create(input))
   },

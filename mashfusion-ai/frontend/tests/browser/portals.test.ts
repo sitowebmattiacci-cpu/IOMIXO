@@ -120,43 +120,39 @@ test('PT3. sign-up on iomixo.com saves accountType dj with no choice; unknown ho
   } finally { await ctx.close() }
 })
 
-test('PT4. wrong portal: a Sposi account on iomixo.com goes to miolovealbum.com, a DJ on miolovealbum.com goes to iomixo.com — the wrong UI is never painted', async () => {
+test('PT4. the domain decides the product: a couple-typed account on iomixo.com stays on IOMIXO, a dj-typed account on miolovealbum.com stays on MIOLOVE — no cross-domain redirect, no wrong UI painted', async () => {
   const couple = await newClient('account'), dj = await newClient('account')
   await seedSet(`users/${couple.uid}`, { uid: couple.uid, email: couple.email, accountType: 'couple', plan: { tier: 'free', source: 'default' }, createdAt: new Date(), updatedAt: new Date() })
   await seedSet(`users/${dj.uid}`, { uid: dj.uid, email: dj.email, accountType: 'dj', plan: { tier: 'free', source: 'default' }, createdAt: new Date(), updatedAt: new Date() })
-  const stub = (page: Page) => page.route(/^https:\/\/(www\.)?(iomixo|miolovealbum)\.com\//, (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<html><body>portal target</body></html>' }))
+  const hostsVisited = (page: Page) => { const hosts = new Set<string>(); page.on('framenavigated', (f) => { if (f === page.mainFrame() && /^https?:/.test(f.url())) hosts.add(new URL(f.url()).hostname) }); return hosts }
 
-  // Sposi on IOMIXO
-  let ctx = await browser.newContext(); let page = await ctx.newPage(); await stub(page)
-  let seen = await trackPaint(page, ['I miei album', 'I tuoi album', 'Per gli sposi', 'Nuovo album'])
+  // couple-typed account on IOMIXO
+  let ctx = await browser.newContext(); let page = await ctx.newPage(); let hosts = hostsVisited(page)
   try {
     await signIn(page, I(), couple.email)
-    await page.waitForURL('https://miolovealbum.com/sessions', { timeout: 60_000 })
-    assert.deepEqual(Array.from(seen), [], 'no Sposi UI was painted on iomixo.com')
-    // a Sposi path is kept
-    const p2 = await ctx.newPage(); await stub(p2)
-    await p2.goto(`${I()}/sessions/abc?x=1`, { waitUntil: 'commit' }); await p2.waitForURL('https://miolovealbum.com/sessions/abc?x=1', { timeout: 60_000 })
-    // a DJ-only path is not kept: MIOLOVE home
-    const p3 = await ctx.newPage(); await stub(p3)
-    await p3.goto(`${I()}/remote/some-slug`, { waitUntil: 'commit' }); await p3.waitForURL('https://miolovealbum.com/sessions', { timeout: 60_000 })
+    await page.waitForURL(/iomixo\.com:\d+\/dashboard/, { timeout: 60_000 })
+    await page.getByText('Profilo DJ').first().waitFor({ timeout: 60_000 })
+    await page.waitForTimeout(3000)
+    assert.deepEqual(Array.from(hosts), ['iomixo.com'], 'never left iomixo.com')
+    // a Sposi-only path and a DJ path both stay on the same domain
+    await page.goto(`${I()}/sessions`, { waitUntil: 'domcontentloaded' }); await page.waitForTimeout(3000)
+    assert.equal(new URL(page.url()).hostname, 'iomixo.com'); assert.match(new URL(page.url()).pathname, /^\/sessions$/)
   } finally { await ctx.close() }
 
-  // DJ on MIOLOVE
-  ctx = await browser.newContext(); page = await ctx.newPage(); await stub(page)
-  seen = await trackPaint(page, ['Regia DJ', 'Profilo DJ', 'Prossime date', 'Sessioni Live', 'Party Mode'])
+  // dj-typed account on MIOLOVE
+  ctx = await browser.newContext(); page = await ctx.newPage(); hosts = hostsVisited(page)
+  const seen = await trackPaint(page, ['Regia DJ', 'Profilo DJ', 'Prossime date', 'Sessioni Live', 'Party Mode'])
   try {
     await signIn(page, M(), dj.email)
-    await page.waitForURL('https://iomixo.com/sessions', { timeout: 60_000 })
+    await page.getByTestId('couple-onboarding').waitFor({ timeout: 60_000 })
+    assert.match(page.url(), /miolovealbum\.com:\d+\/onboarding/)
+    // DJ-only URLs on MIOLOVE are replaced on the SAME domain
+    for (const route of ['/events', '/dashboard', '/profile']) {
+      await page.goto(`${M()}${route}`, { waitUntil: 'domcontentloaded', timeout: 120_000 }); await page.waitForURL(/\/(sessions|onboarding)$/, { timeout: 60_000 })
+      assert.equal(new URL(page.url()).hostname, 'miolovealbum.com', route)
+    }
+    assert.deepEqual(Array.from(hosts), ['miolovealbum.com'], 'never left miolovealbum.com')
     assert.deepEqual(Array.from(seen), [], 'no DJ UI was painted on miolovealbum.com')
-    const p2 = await ctx.newPage(); await stub(p2)
-    await p2.goto(`${M()}/events`, { waitUntil: 'commit' }); await p2.waitForURL('https://iomixo.com/dashboard', { timeout: 60_000 })
-  } finally { await ctx.close() }
-
-  // right portal: nothing happens
-  ctx = await browser.newContext(); page = await ctx.newPage(); await stub(page)
-  try {
-    await signIn(page, I(), dj.email); await page.waitForURL(/iomixo\.com:\d+\/dashboard/, { timeout: 60_000 })
-    await page.getByText('Profilo DJ').first().waitFor({ timeout: 60_000 })
   } finally { await ctx.close() }
 })
 

@@ -10,6 +10,8 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { useI18n, type Locale } from '@/lib/i18n'
 import { useEffectiveAccess, isPremiumSession } from '@/lib/access'
+import { useAccountRole } from '@/lib/roles'
+import { sessionsOfBrand } from '@/lib/brand/eventBrand'
 
 /** Tempo rimanente leggibile (es. "2h 30m") dato un timestamp ISO futuro. */
 function formatRemaining(validUntil: string | null): string | null {
@@ -37,8 +39,11 @@ function formatEventDate(value: string, locale: Locale): string {
 
 function DashboardInner() {
   const { t, locale } = useI18n()
+  const { accountType } = useAccountRole()
   const { user: me, isFree, effectiveLabel, hasActiveEventPass, passValidUntil, hasAdvanceAccess } = useEffectiveAccess()
-  const { data: sessions } = useSWR('live-sessions', () => live.listSessions())
+  const { data: allSessions } = useSWR('live-sessions', () => live.listSessions())
+  // The IOMIXO dashboard never shows MIOLOVE albums owned by the same account.
+  const sessions = sessionsOfBrand(allSessions, 'iomixo', accountType)
 
   const activeCount = sessions?.filter((s) => s.is_active).length ?? 0
   const planDisplay = hasActiveEventPass ? t('dashboard.planEventPass') : effectiveLabel

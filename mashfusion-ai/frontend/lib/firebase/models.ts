@@ -106,6 +106,8 @@ export interface EventDoc {
   /** Missing on events created before the field existed: those are 'wedding' (see fromEventDoc). */
   occasionType?:     OccasionType | null
   accessMode?:       AccessMode | null
+  /** Product the event was created in (createEvent). Missing on events created before the field: see lib/brand/eventBrand. */
+  brand?:            'iomixo' | 'miolove' | null
   /** Trial albums only (server-managed): approved photos held / allowed. */
   trialPhotoCount?:  number | null
   trialPhotoLimit?:  number | null

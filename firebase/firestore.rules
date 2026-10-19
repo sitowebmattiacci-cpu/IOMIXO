@@ -16,13 +16,22 @@ service cloud.firestore {
       return isAccount()
         && get(/databases/$(database)/documents/events/$(eventId)).data.ownerUid == request.auth.uid;
     }
-    // accountType 'couple' (Sposi) is a restricted role: no DJ live-control data. A missing users doc / field = legacy account = DJ (full access).
+    // Legacy only: accountType 'couple' marked a Sposi account before events carried their own brand. A missing users doc / field = DJ.
     function isCouple() {
       return exists(/databases/$(database)/documents/users/$(request.auth.uid))
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('accountType', 'dj') == 'couple';
     }
+    // A MIOLOVE album: events/{id}.brand (written by createEvent) decides. Events without it (created before the field): a Wedding with a
+    // server-written accessMode, or a Wedding owned by a couple-typed account. Same classification as functions/src/owner/brand.ts.
+    function isMioloveEvent(eventId) {
+      let e = get(/databases/$(database)/documents/events/$(eventId)).data;
+      return e.get('brand', '') == 'miolove'
+        || (e.get('brand', '') == '' && e.get('type', '') == 'wedding'
+            && (e.get('accessMode', '') in ['trial', 'activated'] || isCouple()));
+    }
+    // DJ live-control data is the owner's, per EVENT: a MIOLOVE album has none, while the same uid keeps full access to its IOMIXO events.
     function isDjEventOwner(eventId) {
-      return isEventOwner(eventId) && !isCouple();
+      return isEventOwner(eventId) && !isMioloveEvent(eventId);
     }
     function optStr(d, k, max) {
       return !(k in d) || d[k] == null || (d[k] is string && d[k].size() <= max);

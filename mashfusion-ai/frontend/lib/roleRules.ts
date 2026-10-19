@@ -6,6 +6,13 @@ export const COUPLE_LABEL = 'Sposi'
 /** No field = legacy account (created before roles existed) = DJ, so nobody is locked out. */
 export const resolveAccountType = (raw: unknown): AccountType => (raw === 'couple' ? 'couple' : 'dj')
 
+/**
+ * The product the user is in. A real portal domain DECIDES (hostPortal = the portal of the hostname): the same Firebase account uses both products and
+ * accountType never moves it. Only on a host that belongs to no portal (hostPortal null: localhost, previews) the legacy account type picks the UI.
+ */
+export const resolvePortalMode = (hostPortal: 'iomixo' | 'miolove' | null, accountType: AccountType): 'iomixo' | 'miolove' =>
+  hostPortal ?? (accountType === 'couple' ? 'miolove' : 'iomixo')
+
 /** Home of a Sposi account (album list; the album itself opens on its Home tab). */
 export const COUPLE_HOME = '/sessions'
 

@@ -130,25 +130,6 @@ export function djToolsBase(ctx: LinkContext = {}): string {
   return ctx.origin || PORTAL_CONFIG.iomixo.baseUrl
 }
 
-const COUPLE_PATHS = ['/sessions', '/billing', '/settings']
-const isCouplePath = (p: string) => COUPLE_PATHS.some((x) => p === x || p.startsWith(`${x}/`))
-
-/**
- * Where an account that opened the WRONG portal must go (null = it is on the right portal, or the host is not a real portal domain so nothing
- * is enforced). A couple on IOMIXO → MIOLOVE keeping a Sposi path; a DJ on MIOLOVE → IOMIXO keeping its path, or the DJ dashboard for Sposi-only paths.
- */
-export function wrongPortalTarget(input: { accountType: AccountType; hostname: string | null | undefined; pathname: string; search?: string }): string | null {
-  const host = getPortalFromHostname(input.hostname)
-  if (!host) return null
-  const owner: PortalId = input.accountType === 'couple' ? 'miolove' : 'iomixo'
-  if (host === owner) return null
-  const path = input.pathname || '/'
-  const search = input.search ?? ''
-  if (owner === 'miolove') return PORTAL_CONFIG.miolove.baseUrl + (isCouplePath(path) ? path + search : PORTAL_CONFIG.miolove.home)
-  // DJ on MIOLOVE: MIOLOVE only serves Sposi paths, so a DJ lands on the DJ dashboard (or the same Sposi path, which the DJ app also has).
-  return PORTAL_CONFIG.iomixo.baseUrl + (isCouplePath(path) ? path + search : PORTAL_CONFIG.iomixo.home)
-}
-
 /** Origin of another portal a Firebase action link (continueUrl) points to, so /auth/action can hop there; null when it is this portal or not a portal. */
 export function actionHopOrigin(continueUrl: string | null | undefined, currentHostname: string | null | undefined): string | null {
   if (!continueUrl) return null

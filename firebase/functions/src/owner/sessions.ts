@@ -5,7 +5,8 @@ import { str } from '../requests/validation'
 import { fail } from '../shared/guard'
 import { loadEntitlements } from '../entitlements/load'
 import { MIOLOVE_TRIAL_PHOTO_LIMIT } from '../photos/trialQuota'
-import { idField, requireAccount, requireEventOwner, loadAccountType, type CallerAuth } from './guard'
+import { idField, requireAccount, requireEventOwner, loadAccountType, type AccountType, type CallerAuth } from './guard'
+import { brandFromEvent, parseBrand, type EventBrand } from './brand'
 
 /**
  * Event lifecycle for the owner, Firestore-authoritative (no Supabase write): create / soft delete / restore.
@@ -29,6 +30,8 @@ export interface CreateEventInput {
   requestId: string; title: string; djName: string | null; description: string | null; type: EventType
   coupleNames: string | null; weddingDate: string | null; venueName: string | null; screenModeEnabled: boolean
   occasionType: OccasionType | null
+  /** Portal the owner is creating from. null = a client that does not send it: the owner's legacy account type decides (couple → MIOLOVE, otherwise IOMIXO). */
+  brand: EventBrand | null
 }
 
 export function parseCreateEventInput(data: unknown): CreateEventInput {
@@ -50,6 +53,7 @@ export function parseCreateEventInput(data: unknown): CreateEventInput {
     screenModeEnabled: wedding && d.screenModeEnabled === true,
     // Only Wedding-type events carry an occasion; a missing value means "wedding" (every event created before this field).
     occasionType: wedding ? parseOccasion(d.occasionType) : null,
+    brand: parseBrand(d.brand),
   }
 }
 
@@ -65,10 +69,16 @@ const randomSlug = (length: number) => Array.from({ length }, () => ALPHABET[ran
 /** Same id for the same (account, requestId): a retried / double-clicked create returns the event it already made. */
 export const eventIdFor = (uid: string, requestId: string) => 'e' + createHash('sha256').update(`${uid}:${requestId}`).digest('hex').slice(0, 24)
 
-/** Live (not ended, not deleted) events of an owner: what the plan's maxActiveSessions counts. */
-async function countActiveEvents(db: Firestore, uid: string): Promise<number> {
+/** Brand of an event of this owner (legacy events without a brand fall back to the owner's legacy account type). */
+const brandFor = (ev: Record<string, unknown>, ownerType: AccountType): EventBrand => {
+  const b = brandFromEvent(ev)
+  return b === 'owner' ? (ownerType === 'couple' ? 'miolove' : 'iomixo') : b
+}
+
+/** Live (not ended, not deleted) events of an owner IN ONE PRODUCT: what the plan's maxActiveSessions counts (a MIOLOVE album never uses an IOMIXO slot). */
+async function countActiveEvents(db: Firestore, uid: string, brand: EventBrand, ownerType: AccountType): Promise<number> {
   const snap = await db.collection('events').where('ownerUid', '==', uid).where('status', '==', 'live').limit(500).get()
-  return snap.docs.filter((d) => !d.data().deletedAt).length
+  return snap.docs.filter((d) => !d.data().deletedAt && brandFor(d.data(), ownerType) === brand).length
 }
 
 /**
@@ -78,19 +88,21 @@ async function countActiveEvents(db: Firestore, uid: string): Promise<number> {
 const TRIAL_EXISTS = 'miolove_trial_album_exists'
 const trialReservation = (db: Firestore, uid: string) => db.collection('trialAlbums').doc(uid)
 
-/** A couple account that already owns a (not deleted) album cannot start a free trial: it is not its first album. */
-async function assertNoOwnedAlbum(db: Firestore, uid: string): Promise<void> {
+/** An account that already owns a (not deleted) MIOLOVE album cannot start a free trial: it is not its first album. IOMIXO events do not count. */
+async function assertNoOwnedAlbum(db: Firestore, uid: string, ownerType: AccountType): Promise<void> {
   const owned = await db.collection('events').where('ownerUid', '==', uid).limit(500).get()
-  if (owned.docs.some((d) => !d.data().deletedAt)) throw fail('already-exists', 'This account already has an album', TRIAL_EXISTS)
+  if (owned.docs.some((d) => !d.data().deletedAt && brandFor(d.data(), ownerType) === 'miolove')) throw fail('already-exists', 'This account already has an album', TRIAL_EXISTS)
 }
 
 /** Replacement of POST /api/live/sessions. Plan gates are decided here from users/{uid}.plan + eventPasses (clients never decide). */
 export async function createEvent(db: Firestore, request: CallerAuth, input: CreateEventInput): Promise<{ eventId: string; slug: string; created: boolean }> {
   const uid = requireAccount(request)
   const accountType = await loadAccountType(db, uid)
-  // Couple accounts can only create Wedding events (no Party / standard sessions).
-  if (input.type !== 'wedding' && accountType === 'couple') {
-    throw fail('permission-denied', 'Couple accounts can only create Wedding events', 'wedding_only')
+  // The product comes from the portal the owner creates from; the account type is only the fallback for a client that sends none.
+  const brand: EventBrand = input.brand ?? (accountType === 'couple' ? 'miolove' : 'iomixo')
+  // MIOLOVE only has albums, and an album is a Wedding event.
+  if (brand === 'miolove' && input.type !== 'wedding') {
+    throw fail('permission-denied', 'MIOLOVE accounts can only create Wedding events', 'wedding_only')
   }
   const eventId = eventIdFor(uid, input.requestId)
   const ref = db.collection('events').doc(eventId)
@@ -103,16 +115,16 @@ export async function createEvent(db: Firestore, request: CallerAuth, input: Cre
   }
 
   const ent = await loadEntitlements(db, { uid })
-  // MIOLOVE: a couple account with paid access is 'activated'; one without gets exactly ONE free trial album (see trialReservation).
+  // MIOLOVE: an album created while the owner already has paid access is 'activated'; one without gets exactly ONE free trial album (see trialReservation).
   let accessMode: AccessMode | null = null
-  if (input.type === 'wedding' && accountType === 'couple') {
+  if (brand === 'miolove') {
     if (ent.eventAccess) accessMode = 'activated'
-    else { await assertNoOwnedAlbum(db, uid); accessMode = 'trial' }
+    else { await assertNoOwnedAlbum(db, uid, accountType); accessMode = 'trial' }
   } else if ((input.type === 'party' || input.type === 'wedding') && !ent.eventAccess) {
     throw fail('permission-denied', 'Advance plan or an Event Pass is required', 'event_access_required')
   }
   const max = ent.limits.maxActiveSessions
-  if (Number.isFinite(max) && (await countActiveEvents(db, uid)) >= max) {
+  if (Number.isFinite(max) && (await countActiveEvents(db, uid, brand, accountType)) >= max) {
     throw fail('resource-exhausted', `Plan allows ${max} active session`, 'session_limit', { max })
   }
 
@@ -132,7 +144,7 @@ export async function createEvent(db: Firestore, request: CallerAuth, input: Cre
       }
       tx.create(slugRef, { eventId })
       tx.create(ref, {
-        ownerUid: uid, slug, origin: 'firebase',
+        ownerUid: uid, slug, origin: 'firebase', brand,
         title: input.title, djName: input.djName, description: input.description, type: input.type, status: 'live',
         coupleNames: input.coupleNames, weddingDate: input.weddingDate, venueName: input.venueName,
         occasionType: input.occasionType,

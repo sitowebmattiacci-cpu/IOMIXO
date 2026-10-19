@@ -24,6 +24,7 @@ export function eventToSession(e: EventDoc): LiveSession {
     session_type: e.type,
     occasion_type: e.occasionType ?? undefined,
     access_mode: e.accessMode ?? undefined,
+    brand: e.brand ?? undefined,
     trial_photo_count: e.trialPhotoCount ?? undefined,
     trial_photo_limit: e.trialPhotoLimit ?? undefined,
     poster_config: e.posterConfig ?? undefined,

@@ -45,3 +45,15 @@ test('wording: the account type is shown ONLY as "Sposi" in every locale', () =>
     assert.doesNotMatch(all, /\bsposo\b|\bsposa\b|sposo\/a|\bcouple\b|\bcoppia\b/i, `${l}: forbidden label in roles.*`)
   }
 })
+
+test('portal mode: the DOMAIN decides, accountType never moves a user between products (dj / couple / missing all work on both)', async () => {
+  const { resolvePortalMode } = await import('../../lib/roleRules')
+  for (const type of ['dj', 'couple'] as const) {
+    assert.equal(resolvePortalMode('iomixo', type), 'iomixo', `${type} on iomixo.com stays on IOMIXO`)
+    assert.equal(resolvePortalMode('miolove', type), 'miolove', `${type} on miolovealbum.com stays on MIOLOVE`)
+  }
+  assert.equal(resolvePortalMode('iomixo', resolveAccountType(undefined)), 'iomixo', 'legacy account (no accountType) on IOMIXO')
+  assert.equal(resolvePortalMode('miolove', resolveAccountType(undefined)), 'miolove', 'legacy account (no accountType) on MIOLOVE')
+  assert.equal(resolvePortalMode(null, 'couple'), 'miolove', 'dev / preview host keeps the legacy behaviour')
+  assert.equal(resolvePortalMode(null, 'dj'), 'iomixo')
+})

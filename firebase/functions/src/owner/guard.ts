@@ -3,6 +3,7 @@ import type { Firestore, DocumentData, DocumentReference } from 'firebase-admin/
 import { fail } from '../shared/guard'
 import { str, LIMITS } from '../requests/validation'
 import { selectEventEntitlements, logEntitlementDecision } from '../entitlements/source'
+import { eventBrandOf } from './brand'
 
 /** Auth subset of a callable request that the owner guards need. */
 export interface CallerAuth { auth?: { uid?: string; token?: { firebase?: { sign_in_provider?: string } } } }
@@ -33,22 +34,21 @@ export async function loadAccountType(db: Firestore, uid: string): Promise<Accou
   return snap.exists && snap.data()!.accountType === 'couple' ? 'couple' : 'dj'
 }
 
-/** DJ-only operations (live control: requests, dedications, polls, games, screen). A couple account is refused. */
-export async function requireDjAccount(db: Firestore, request: CallerAuth): Promise<string> {
-  const uid = requireAccount(request)
-  if ((await loadAccountType(db, uid)) === 'couple') throw fail('permission-denied', 'DJ account required', 'dj_account_required')
-  return uid
+/** DJ-only operations (live control: requests, dedications, polls, games, screen) are refused on a MIOLOVE album. The decision is per EVENT (its brand), never per account: one uid may own both. */
+export async function requireIomixoEvent(db: Firestore, ev: DocumentData): Promise<void> {
+  if ((await eventBrandOf(db, ev)) === 'miolove') throw fail('permission-denied', 'DJ account required', 'dj_account_required')
 }
 
 /** Soft-deleted events (events/{id}.deletedAt) behave as missing for every owner operation, except an explicit restore. */
 export async function requireEventOwner(
   db: Firestore, request: CallerAuth, eventId: string, opts: { allowDeleted?: boolean; djOnly?: boolean } = {},
 ): Promise<{ uid: string; ref: DocumentReference; data: DocumentData }> {
-  const uid = opts.djOnly ? await requireDjAccount(db, request) : requireAccount(request)
+  const uid = requireAccount(request)
   const ref = db.collection('events').doc(eventId)
   const snap = await ref.get()
   // Same answer for "missing", "deleted" and "not yours": do not reveal which event ids exist.
   if (!snap.exists || snap.data()!.ownerUid !== uid || (snap.data()!.deletedAt && !opts.allowDeleted)) throw fail('not-found', 'Event not found', 'event_not_found')
+  if (opts.djOnly) await requireIomixoEvent(db, snap.data()!)
   return { uid, ref, data: snap.data()! }
 }
 

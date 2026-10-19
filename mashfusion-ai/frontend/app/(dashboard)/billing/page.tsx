@@ -36,7 +36,7 @@ function normalisePlan(p: string | undefined): Plan {
 
 export default function BillingPage() {
   const { t, locale } = useI18n()
-  const { isCouple } = useAccountRole()
+  const { isCouple, portal } = useAccountRole()
   // Sposi: wedding-album wording where one exists, the common text otherwise.
   const tb = (k: string) => (isCouple ? t(`roles.billing.${k}`, t(`billing.${k}`)) : t(`billing.${k}`))
   const currency = currencyForLocale(locale)
@@ -63,6 +63,7 @@ export default function BillingPage() {
       const { url } = await billing.createCheckoutSession(priceId, 'subscription', undefined, {
         trial: true,
         plan,
+        portal,
       })
       window.location.href = url
     } catch (err: unknown) {
@@ -74,7 +75,7 @@ export default function BillingPage() {
   const handlePortal = async () => {
     setLoading('portal')
     try {
-      const { url } = await billing.createPortalSession()
+      const { url } = await billing.createPortalSession(portal)
       window.location.href = url
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t('billing.errPortal'))
@@ -90,7 +91,7 @@ export default function BillingPage() {
     }
     setLoading('event-pass')
     try {
-      const { url } = await billing.createCheckoutSession(priceId, 'payment')
+      const { url } = await billing.createCheckoutSession(priceId, 'payment', undefined, { portal })
       window.location.href = url
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t('billing.errCheckout'))

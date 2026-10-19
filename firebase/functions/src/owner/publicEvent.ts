@@ -5,6 +5,7 @@ import { fail } from '../shared/guard'
 import { loadEventEntitlements } from '../entitlements/load'
 import { PLAN_LIMITS } from '../entitlements/plans'
 import type { AccountType } from './guard'
+import { parseBrand } from './brand'
 
 /**
  * Owner account type for the PUBLIC payload (brand of the guest pages: a couple's album is MIOLOVE, everything a DJ runs is IOMIXO).
@@ -68,6 +69,7 @@ export async function getPublicEvent(db: Firestore, slug: string, now: Date = ne
       session_type: e.type ?? 'standard', couple_names: e.coupleNames ?? null, wedding_date: e.weddingDate ?? null, venue_name: e.venueName ?? null,
       screen_mode_enabled: e.screenModeEnabled === true, guest_config: e.guestConfig ?? null,
       owner_account_type: ownerAccountType,
+      event_brand: parseBrand(e.brand),
       access_mode: e.accessMode === 'trial' || e.accessMode === 'activated' ? e.accessMode : null,
     },
     profile: p ? {

@@ -11,9 +11,12 @@ const fail = (code: FunctionsErrorCode, reason: string): never => { throw new Ht
 
 /** baseUrl = IOMIXO (DJ accounts); coupleBaseUrl = MIOLOVE, set at go-live (MIOLOVE_BASE_URL). Unset → every account keeps returning to baseUrl. */
 export interface BillingConfig { baseUrl: string; coupleBaseUrl?: string }
-/** Return origin by the account's role (server-side data, never client input): Sposi → MIOLOVE, everyone else → IOMIXO. */
-const returnBase = (cfg: BillingConfig, accountType: unknown): { base: string; couple: boolean } => {
-  const couple = accountType === 'couple' && !!cfg.coupleBaseUrl
+/** Return origin: the portal the buyer is on (a fixed enum, not a URL). A client that sends none falls back to the account's legacy role. */
+export type Portal = 'iomixo' | 'miolove'
+const parsePortal = (v: unknown): Portal | null => (v === 'iomixo' || v === 'miolove' ? v : null)
+export const portalOf = (d: unknown): Portal | null => parsePortal(((d ?? {}) as Record<string, unknown>).portal)
+const returnBase = (cfg: BillingConfig, accountType: unknown, portal: Portal | null = null): { base: string; couple: boolean } => {
+  const couple = (portal ? portal === 'miolove' : accountType === 'couple') && !!cfg.coupleBaseUrl
   return { base: (couple ? cfg.coupleBaseUrl! : cfg.baseUrl).replace(/\/+$/, ''), couple }
 }
 export interface AuthLike { uid: string; token: { email?: string; firebase?: { sign_in_provider?: string } } }
@@ -22,13 +25,13 @@ const account = (auth: AuthLike | undefined): AuthLike => {
   return auth
 }
 
-export interface CheckoutInput { priceId: string; trial: boolean; eventId: string | null }
+export interface CheckoutInput { priceId: string; trial: boolean; eventId: string | null; portal?: Portal | null }
 export function parseCheckoutInput(d: unknown): CheckoutInput {
   const o = (d ?? {}) as Record<string, unknown>
   if (typeof o.priceId !== 'string' || !/^price_[A-Za-z0-9]{8,120}$/.test(o.priceId)) return fail('invalid-argument', 'invalid_payload')
   if (o.trial !== undefined && typeof o.trial !== 'boolean') return fail('invalid-argument', 'invalid_payload')
   if (o.eventId !== undefined && o.eventId !== null && (typeof o.eventId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(o.eventId))) return fail('invalid-argument', 'invalid_payload')
-  return { priceId: o.priceId, trial: o.trial === true, eventId: (o.eventId as string | undefined) ?? null }
+  return { priceId: o.priceId, trial: o.trial === true, eventId: (o.eventId as string | undefined) ?? null, portal: parsePortal(o.portal) }
 }
 
 /** The Stripe customer of this account, guaranteed to exist in the CURRENT Stripe environment (test/live); created and persisted (both mappings) when absent. */
@@ -82,7 +85,7 @@ export async function createCheckoutSession(
   if (legacyId) metadata.legacySupabaseId = legacyId
   if (eventId) metadata.eventId = eventId
 
-  const { base, couple } = returnBase(cfg, user.data()!.accountType)
+  const { base, couple } = returnBase(cfg, user.data()!.accountType, input.portal)
   const params: Parameters<StripeApi['checkout']['sessions']['create']>[0] = {
     customer, mode: price.mode, line_items: [{ price: input.priceId, quantity: 1 }],
     payment_method_types: ['card', 'paypal'], allow_promotion_codes: true, metadata,
@@ -105,13 +108,13 @@ export async function createCheckoutSession(
   }
 }
 
-export async function createPortalSession(db: Firestore, stripe: StripeApi, cfg: BillingConfig, authIn: AuthLike | undefined): Promise<{ url: string }> {
+export async function createPortalSession(db: Firestore, stripe: StripeApi, cfg: BillingConfig, authIn: AuthLike | undefined, portal: Portal | null = null): Promise<{ url: string }> {
   const auth = account(authIn)
   const userData = (await db.doc(`users/${auth.uid}`).get()).data()
   const customer = userData?.stripeCustomerId
   if (typeof customer !== 'string' || !customer) return fail('failed-precondition', 'no_billing_account')
   try {
-    const s = await stripe.billingPortal.sessions.create({ customer, return_url: `${returnBase(cfg, userData?.accountType).base}/billing` })
+    const s = await stripe.billingPortal.sessions.create({ customer, return_url: `${returnBase(cfg, userData?.accountType, portal).base}/billing` })
     return { url: s.url }
   } catch (e) {
     if (isStripeError(e)) return fail('failed-precondition', 'portal_failed')

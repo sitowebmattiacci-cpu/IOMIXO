@@ -96,7 +96,7 @@ export function mapAuthError(err: unknown): string {
     case 'auth/wrong-password':
     case 'auth/user-not-found':       return 'Invalid email or password'
     case 'auth/invalid-email':        return 'Invalid email address'
-    case 'auth/email-already-in-use': return 'An account with this email already exists'
+    case 'auth/email-already-in-use': return 'An account with this email already exists. Sign in with the same email and password: one account works on IOMIXO and MIOLOVE ALBUM.'
     case 'auth/weak-password':        return 'Password must be at least 8 characters'
     case 'auth/too-many-requests':    return 'Too many attempts. Try again in a few minutes'
     case 'auth/network-request-failed': return 'Network error. Check your connection'

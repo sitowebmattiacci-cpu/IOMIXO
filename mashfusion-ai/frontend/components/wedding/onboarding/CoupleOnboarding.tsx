@@ -37,7 +37,7 @@ export function CoupleOnboarding() {
     try {
       // The engine stays 'wedding' for every MIOLOVE album; what the album is for lives in occasion_type.
       const album = await live.createSession({
-        event_name: title, session_type: 'wedding', occasion_type: occasion,
+        event_name: title, session_type: 'wedding', occasion_type: occasion, brand: 'miolove',
         wedding_date: dateUnknown || !date ? undefined : date,
       })
       // A failure here only leaves the defaults; retrying would create a second album, so it never blocks the user.

@@ -70,7 +70,7 @@ test('PB5. an unexpected accessMode value is never echoed; nothing else about th
   const json = JSON.stringify(r)
   assert.ok(!json.includes('secret@example.com') && !json.includes(a.uid), 'no owner email / uid in the public payload')
   assert.deepEqual(Object.keys(r.session).sort(), [
-    'access_mode', 'couple_names', 'description', 'dj_name', 'event_name', 'guest_config', 'id', 'is_active',
+    'access_mode', 'couple_names', 'description', 'dj_name', 'event_brand', 'event_name', 'guest_config', 'id', 'is_active',
     'owner_account_type', 'screen_mode_enabled', 'session_type', 'venue_name', 'wedding_date',
   ])
 })

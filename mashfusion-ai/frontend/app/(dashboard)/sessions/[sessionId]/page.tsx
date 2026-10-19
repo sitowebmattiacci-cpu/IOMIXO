@@ -49,6 +49,7 @@ import {
 import { useI18n } from '@/lib/i18n'
 import { useEffectiveAccess, isPremiumSession } from '@/lib/access'
 import { useAccountRole, isCoupleWeddingTab, isMioloveOnlyTab, COUPLE_HOME } from '@/lib/roles'
+import { ownedEventBrand } from '@/lib/brand/eventBrand'
 import { EventBrandProvider } from '@/components/brand/EventBrand'
 import { resolveVideoSource, formatRelativeTime } from '@/lib/utils'
 import type { VideoLiveCommand } from '@/lib/api'
@@ -293,10 +294,10 @@ export default function SessionDetailPage() {
     { refreshInterval: 5_000 },
   )
   const { hasAdvanceAccess, isFree } = useEffectiveAccess()
-  const { ready: roleReady, isCouple } = useAccountRole()
-  // Sposi never reach Party / standard sessions: replaced before any DJ UI is rendered.
-  const coupleBlocked = isCouple && !!session && session.session_type !== 'wedding'
-  useEffect(() => { if (coupleBlocked) router.replace(COUPLE_HOME) }, [coupleBlocked, router])
+  const { ready: roleReady, isCouple, portal, accountType } = useAccountRole()
+  // An event of the other product (MIOLOVE album on IOMIXO, IOMIXO event on MIOLOVE) is replaced before any of its UI renders.
+  const coupleBlocked = roleReady && !!session && ownedEventBrand(session, accountType) !== portal
+  useEffect(() => { if (coupleBlocked) router.replace(isCouple ? COUPLE_HOME : '/dashboard') }, [coupleBlocked, isCouple, router])
   // Realtime change signal from Firestore for THIS event only. Supabase is still authoritative,
   // so a change triggers a re-fetch of the legacy list instead of rendering Firestore data.
   // While the signal is live the 5s polling drops to a 60s safety net (covers a missed projection).

@@ -13,6 +13,7 @@ import { formatRelativeTime } from '@/lib/utils'
 import { useI18n } from '@/lib/i18n'
 import { useEffectiveAccess, isPremiumSession } from '@/lib/access'
 import { useAccountRole } from '@/lib/roles'
+import { sessionsOfBrand } from '@/lib/brand/eventBrand'
 import { COUPLE_DEFAULT_GUEST_CONFIG, ONBOARDING_PATH } from '@/lib/coupleAlbum'
 
 type SessionType = 'standard' | 'party' | 'wedding'
@@ -36,10 +37,10 @@ type CreateStep = 'idle' | 'choose' | 'form'
 
 export default function LiveSessionsPage() {
   const { t } = useI18n()
-  const { isCouple } = useAccountRole()
+  const { isCouple, accountType, portal } = useAccountRole()
   const { data: allSessions } = useSWR('live-sessions', () => live.listSessions())
-  // Sposi only ever see (and create) wedding albums.
-  const sessions = isCouple ? allSessions?.filter((s) => s.session_type === 'wedding') : allSessions
+  // One account, two products: each portal lists ONLY its own events.
+  const sessions = sessionsOfBrand(allSessions, portal, accountType)
   const [step, setStep] = useState<CreateStep>('idle')
   const [form, setForm] = useState(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
@@ -95,6 +96,7 @@ export default function LiveSessionsPage() {
         dj_name: form.dj_name || undefined,
         description: form.description || undefined,
         session_type: form.session_type,
+        brand: portal,
       }
       if (form.session_type === 'wedding') {
         payload.couple_names = form.couple_names || undefined

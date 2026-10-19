@@ -359,4 +359,14 @@ test('C-portal. Stripe return URLs follow the account role: Sposi → MIOLOVE on
   fs.st.portal.length = 0
   await createPortalSession(db, fs.api, both, auth(couple.uid)); await createPortalSession(db, fs.api, both, auth(dj.uid)); await createPortalSession(db, fs.api, CFG, auth(couple.uid))
   assert.deepEqual(fs.st.portal.map((p: any) => p.return_url), ['https://miolovealbum.com/billing', 'https://www.iomixo.com/billing', 'https://www.iomixo.com/billing'])
+
+  // The portal the buyer is on wins over the account type: the same uid returns to the domain it paid from.
+  const sessionOn = async (uid: string, portal: 'iomixo' | 'miolove') => { fs.st.created.length = 0; await createCheckoutSession(db, fs.api, PRICES, both, auth(uid), { priceId: P.PRO, trial: false, eventId: null, portal }); return fs.st.created.find((c) => c.kind === 'session') }
+  assert.equal((await sessionOn(couple.uid, 'iomixo')).success_url, 'https://www.iomixo.com/dashboard?upgraded=true&session_id={CHECKOUT_SESSION_ID}', 'couple-typed uid on IOMIXO')
+  assert.equal((await sessionOn(dj.uid, 'miolove')).success_url, 'https://miolovealbum.com/billing?upgraded=true&session_id={CHECKOUT_SESSION_ID}', 'dj-typed uid on MIOLOVE')
+  assert.equal((await sessionOn(legacy.uid, 'miolove')).cancel_url, 'https://miolovealbum.com/billing', 'legacy uid on MIOLOVE')
+  fs.st.portal.length = 0
+  await createPortalSession(db, fs.api, both, auth(couple.uid), 'iomixo'); await createPortalSession(db, fs.api, both, auth(dj.uid), 'miolove')
+  assert.deepEqual(fs.st.portal.map((p: any) => p.return_url), ['https://www.iomixo.com/billing', 'https://miolovealbum.com/billing'])
+  assert.equal(parseCheckoutInput({ priceId: P.PRO, portal: 'https://evil.example' }).portal, null, 'only the two portal ids are accepted, never a URL')
 })

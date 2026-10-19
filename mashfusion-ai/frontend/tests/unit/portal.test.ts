@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  PORTAL_CONFIG, normalizeHost, getPortalFromHostname, resolvePortal, portalForEventType, publicBaseFor, djToolsBase, wrongPortalTarget, actionHopOrigin,
+  PORTAL_CONFIG, normalizeHost, getPortalFromHostname, resolvePortal, portalForEventType, publicBaseFor, djToolsBase, actionHopOrigin,
 } from '../../lib/portal'
 
 test('portal config: two portals, one role each, canonical origins', () => {
@@ -45,16 +45,9 @@ test('DJ tools (Remote) stay on IOMIXO whatever the event type or host', () => {
   assert.equal(djToolsBase({ hostname: 'localhost', origin: 'http://localhost:3000' }), 'http://localhost:3000')
 })
 
-test('wrong-portal redirect: couple on IOMIXO → MIOLOVE, DJ on MIOLOVE → IOMIXO, nothing on the right portal or on dev hosts', () => {
-  const w = (accountType: 'dj' | 'couple', hostname: string, pathname: string, search = '') => wrongPortalTarget({ accountType, hostname, pathname, search })
-  assert.equal(w('couple', 'iomixo.com', '/dashboard'), 'https://miolovealbum.com/sessions')
-  assert.equal(w('couple', 'www.iomixo.com', '/sessions/abc', '?x=1'), 'https://miolovealbum.com/sessions/abc?x=1', 'a Sposi path is kept')
-  assert.equal(w('couple', 'iomixo.com', '/remote/slug'), 'https://miolovealbum.com/sessions', 'DJ-only path → MIOLOVE home')
-  assert.equal(w('dj', 'miolovealbum.com', '/sessions'), 'https://iomixo.com/sessions')
-  assert.equal(w('dj', 'www.miolovealbum.com', '/billing'), 'https://iomixo.com/billing')
-  assert.equal(w('dj', 'miolovealbum.com', '/anything-else'), 'https://iomixo.com/dashboard')
-  assert.equal(w('dj', 'iomixo.com', '/dashboard'), null); assert.equal(w('couple', 'miolovealbum.com', '/sessions'), null)
-  for (const h of ['localhost', '127.0.0.1', 'iomixo-web--iomixo-494817.europe-west4.hosted.app']) { assert.equal(w('couple', h, '/dashboard'), null, h); assert.equal(w('dj', h, '/sessions'), null, h) }
+test('no redirect between portals is decided by the account type any more (wrongPortalTarget is gone)', async () => {
+  const mod = await import('../../lib/portal') as Record<string, unknown>
+  assert.equal('wrongPortalTarget' in mod, false)
 })
 
 test('Firebase action link hop: only to the OTHER known portal (https), never to an arbitrary URL', () => {

@@ -20,7 +20,7 @@ import { parseCreatePhotoUploadInput, parsePhotoRefInput, parseModeratePhotoInpu
 import { parseCommitAvatarInput, parseRemoveAvatarInput, commitAvatar as commitAvatarImpl, removeAvatar as removeAvatarImpl } from './profile/avatar'
 import { buildPriceTable } from './billing/prices'
 import { makeStripe } from './billing/stripeApi'
-import { parseCheckoutInput, createCheckoutSession as createCheckoutSessionImpl, createPortalSession as createPortalSessionImpl } from './billing/checkout'
+import { parseCheckoutInput, portalOf, createCheckoutSession as createCheckoutSessionImpl, createPortalSession as createPortalSessionImpl } from './billing/checkout'
 import { handleStripeWebhook } from './billing/webhook'
 import { parseSlug, getPublicEvent as getPublicEventImpl } from './owner/publicEvent'
 
@@ -167,7 +167,7 @@ export const createCheckoutSession = onCall(billingCallOptions, async (request) 
 /** Callable: Stripe Billing Portal for the signed-in account's customer. */
 export const createPortalSession = onCall(billingCallOptions, async (request) => {
   observeAppCheck('createPortalSession', ENFORCE_BILLING, request)
-  return createPortalSessionImpl(getFirestore(), makeStripe(STRIPE_SECRET_KEY.value()), billingConfig(), request.auth as any)
+  return createPortalSessionImpl(getFirestore(), makeStripe(STRIPE_SECRET_KEY.value()), billingConfig(), request.auth as any, portalOf(request.data))
 })
 
 /** HTTPS: Stripe webhook. Raw body + signature, idempotent per event id; any handler failure answers non-2xx so Stripe retries. */

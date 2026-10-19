@@ -4,14 +4,15 @@ import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import { live } from '@/lib/api'
 import { useAccountRole, COUPLE_HOME } from '@/lib/roles'
+import { sessionsOfBrand } from '@/lib/brand/eventBrand'
 import { CoupleOnboarding } from '@/components/wedding/onboarding/CoupleOnboarding'
 
 /** MIOLOVE only: shown to a Sposi account that has no album yet. Anyone else (an account that already has albums, a DJ) is sent on, never shown this. */
 export default function OnboardingPage() {
   const router = useRouter()
-  const { ready, isCouple } = useAccountRole()
+  const { ready, isCouple, accountType } = useAccountRole()
   const { data: all } = useSWR('live-sessions', () => live.listSessions())
-  const albums = all?.filter((s) => s.session_type === 'wedding')
+  const albums = sessionsOfBrand(all, 'miolove', accountType)
   const hasAlbums = !!albums && albums.length > 0
 
   useEffect(() => {

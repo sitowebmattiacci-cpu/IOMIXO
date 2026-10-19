@@ -25,6 +25,7 @@ export function fromEventDoc(id: string, d: DocumentData): EventDoc {
     type:              TYPES.includes(d.type) ? d.type : 'standard',
     occasionType:      OCCASIONS.includes(d.occasionType) ? d.occasionType : d.type === 'wedding' ? 'wedding' : null,
     accessMode:        d.accessMode === 'trial' || d.accessMode === 'activated' ? d.accessMode : null,
+    brand:             d.brand === 'iomixo' || d.brand === 'miolove' ? d.brand : null,
     trialPhotoCount:   typeof d.trialPhotoCount === 'number' ? d.trialPhotoCount : null,
     trialPhotoLimit:   typeof d.trialPhotoLimit === 'number' ? d.trialPhotoLimit : null,
     posterConfig:      d.posterConfig && typeof d.posterConfig === 'object' && !Array.isArray(d.posterConfig) ? d.posterConfig : null,

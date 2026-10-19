@@ -42,13 +42,13 @@ const iso = (d: Date | null) => (d ?? new Date(0)).toISOString()
 const LIVE = ['active', 'trialing']
 
 export const billingOps = {
-  async checkout(priceId: string, opts: { trial?: boolean; eventId?: string } = {}): Promise<{ url: string } | null> {
+  async checkout(priceId: string, opts: { trial?: boolean; eventId?: string; portal?: 'iomixo' | 'miolove' } = {}): Promise<{ url: string } | null> {
     if (!(await account())) return null
-    return call<{ url: string }>('createCheckoutSession', { priceId, ...(opts.trial ? { trial: true } : {}), ...(opts.eventId ? { eventId: opts.eventId } : {}) })
+    return call<{ url: string }>('createCheckoutSession', { priceId, ...(opts.trial ? { trial: true } : {}), ...(opts.eventId ? { eventId: opts.eventId } : {}), ...(opts.portal ? { portal: opts.portal } : {}) })
   },
-  async portal(): Promise<{ url: string } | null> {
+  async portal(portal?: 'iomixo' | 'miolove'): Promise<{ url: string } | null> {
     if (!(await account())) return null
-    return call<{ url: string }>('createPortalSession', {})
+    return call<{ url: string }>('createPortalSession', portal ? { portal } : {})
   },
 
   /** The CURRENT subscription as maintained by Stripe's webhook. Historical (legacy backfill) documents are never shown as current: their status is stale. */

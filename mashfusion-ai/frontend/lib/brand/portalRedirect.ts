@@ -16,10 +16,13 @@ export interface EventPortalFacts {
   ownerAccountType?: string | null
   /** getPublicEvent `access_mode` / events.accessMode: only couple albums carry 'trial' / 'activated'. */
   accessMode?: string | null
+  /** getPublicEvent `event_brand` / events.brand: the product the event was created in. Written by createEvent; absent on older events. */
+  brand?: string | null
 }
 
 /** The portal an event certainly belongs to, or null when its data does not say (no guess from the hostname here). */
 export function certainEventPortal(f: EventPortalFacts): PortalId | null {
+  if (f.brand === 'miolove' || f.brand === 'iomixo') return f.brand                // explicit: one uid may own events of both products
   if (!f.type) return null
   if (f.type !== 'wedding') return 'iomixo'                                         // only couples own albums, and couples can only create Weddings
   if (f.accessMode === 'trial' || f.accessMode === 'activated') return 'miolove'    // written by the server only for couple albums
