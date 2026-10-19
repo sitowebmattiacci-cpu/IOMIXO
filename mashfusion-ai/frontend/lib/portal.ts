@@ -66,9 +66,15 @@ export const PORTAL_CONFIG: Record<PortalId, PortalConfig> = {
       locale: 'it_IT',
     },
     icons: {
-      favicon: '/brand/miolove/miolove-album-logo-on-light.png',
-      icon: [{ url: '/brand/miolove/miolove-album-logo-on-light.png', sizes: '1254x1254', type: 'image/png' }],
-      apple: { url: '/brand/miolove/miolove-album-logo-on-light.png', sizes: '1254x1254' },
+      favicon: '/brand/miolove/favicon.ico',
+      icon: [
+        { url: '/brand/miolove/favicon.ico', sizes: 'any', type: 'image/x-icon' },
+        { url: '/brand/miolove/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+        { url: '/brand/miolove/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+        { url: '/brand/miolove/icon-192.png', sizes: '192x192', type: 'image/png' },
+        { url: '/brand/miolove/icon-512.png', sizes: '512x512', type: 'image/png' },
+      ],
+      apple: { url: '/brand/miolove/apple-touch-icon.png', sizes: '180x180' },
     },
   },
 }

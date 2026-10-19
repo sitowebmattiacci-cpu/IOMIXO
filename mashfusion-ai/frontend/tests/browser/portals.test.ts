@@ -216,7 +216,7 @@ test('PT6. manifest, theme-color and icons are per portal: IOMIXO dark/pink, MIO
     assert.ok(m.icons.length > 0 && m.icons.every((h) => /miolove/i.test(h)), `MIOLOVE icons must all be MIOLOVE assets: ${m.icons}`)
     assert.ok(m.manifest.icons.every((x: any) => /miolove/i.test(x.src)), 'MIOLOVE manifest icons')
     assert.doesNotMatch(JSON.stringify(m.manifest), /iomixo|8F1D2C/i)
-    assert.deepEqual([m.bare.status, m.bare.url], [200, '/brand/miolove/miolove-album-logo-on-light.png'])
+    assert.deepEqual([m.bare.status, m.bare.url], [200, '/brand/miolove/favicon.ico'])
     assert.doesNotMatch(JSON.stringify(i.manifest), /8F1D2C/i)
   } finally { await ctx.close() }
 })

@@ -15,7 +15,11 @@ export default function manifest(): MetadataRoute.Manifest {
       display: 'standalone',
       background_color: '#FFFDFB',
       theme_color: '#F06A9B',
-      icons: [{ src: '/brand/miolove/miolove-album-logo-on-light.png', sizes: '1254x1254', type: 'image/png', purpose: 'any' }],
+      icons: [
+        { src: '/brand/miolove/icon-192.png', sizes: '192x192', type: 'image/png' },
+        { src: '/brand/miolove/icon-512.png', sizes: '512x512', type: 'image/png' },
+        { src: '/brand/miolove/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      ],
     }
   }
   return {
