@@ -22,7 +22,7 @@ const WEDDING_COPY = /\bsposi\b|\bsposo\b|\bsposa\b|matrimon|nozze|giorno specia
 
 async function couple(tier: 'free' | 'wedding' = 'wedding', displayName: string | null = 'Enrico Rossi') {
   const c = await newClient('account')
-  await seedSet(`users/${c.uid}`, { uid: c.uid, email: c.email, ...(displayName ? { displayName } : {}), accountType: 'couple', plan: { tier, source: 'legacy' }, createdAt: new Date(), updatedAt: new Date() })
+  await seedSet(`users/${c.uid}`, { uid: c.uid, email: c.email, ...(displayName ? { displayName } : {}), accountType: 'couple', plan: { tier, source: 'legacy' }, ...(tier === 'wedding' ? { miolovePlan: { tier, source: 'stripe' } } : {}), createdAt: new Date(), updatedAt: new Date() })
   return c
 }
 async function signIn(page: Page, base: string, email: string) {

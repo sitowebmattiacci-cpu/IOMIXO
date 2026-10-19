@@ -162,7 +162,7 @@ test('PT5. public links: Sposi album → miolovealbum.com, Wedding DJ and Party 
   await seedSet(`users/${couple.uid}`, { uid: couple.uid, email: couple.email, accountType: 'couple', plan: { tier: 'wedding', source: 'legacy' }, createdAt: new Date(), updatedAt: new Date() })
   const wedSlug = `lw${stamp}`, partySlug = `lp${stamp}`, coupleSlug = `lc${stamp}`
   for (const [id, slug, owner, type] of [[`lwid${stamp}`, wedSlug, dj.uid, 'wedding'], [`lpid${stamp}`, partySlug, dj.uid, 'party'], [`lcid${stamp}`, coupleSlug, couple.uid, 'wedding']] as const) {
-    await seedSet(`events/${id}`, eventFields(owner, slug, { type, title: `Evento ${slug}`, legacySupabaseId: undefined })); await seedSet(`eventSlugs/${slug}`, { eventId: id })
+    await seedSet(`events/${id}`, eventFields(owner, slug, { type, title: `Evento ${slug}`, legacySupabaseId: undefined, ...(slug === coupleSlug ? { accessMode: 'activated' } : {}) })); await seedSet(`eventSlugs/${slug}`, { eventId: id })
   }
   // DJ on iomixo.com
   let ctx = await browser.newContext(); let page = await ctx.newPage()
@@ -283,7 +283,7 @@ const NO_DJ = /\bDJs?\b|\bParty\b|Brano al DJ|Regia/i
 for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
   test(`PT10. Sposi album on miolovealbum.com @${vp.width}: clean logo, no DJ copy, Photos tab shows guest link + QR, booth, poster — all MIOLOVE`, async () => {
     const couple = await newClient('account')
-    await seedSet(`users/${couple.uid}`, { uid: couple.uid, email: couple.email, accountType: 'couple', plan: { tier: 'wedding', source: 'legacy' }, createdAt: new Date(), updatedAt: new Date() })
+    await seedSet(`users/${couple.uid}`, { uid: couple.uid, email: couple.email, accountType: 'couple', plan: { tier: 'wedding', source: 'legacy' }, miolovePlan: { tier: 'wedding', source: 'stripe' }, createdAt: new Date(), updatedAt: new Date() })
     const ctx = await browser.newContext({ viewport: vp }); await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: M() }); const page = await ctx.newPage()
     await page.addInitScript('window.__name = (f) => f')
     try {

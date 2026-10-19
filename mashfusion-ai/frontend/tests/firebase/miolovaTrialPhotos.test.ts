@@ -50,7 +50,7 @@ test('T0. createEvent initialises the trial counter (0 / limit) for a new trial 
   const r = await callAs<{ eventId: string }>(c, 'createEvent', { requestId: `t0${Date.now()}`, title: 'Album', type: 'wedding', occasionType: 'wedding' })
   const f = (await fsGet(`events/${r.eventId}`)).fields
   assert.deepEqual([f.accessMode.stringValue, Number(f.trialPhotoCount.integerValue), Number(f.trialPhotoLimit.integerValue)], ['trial', 0, LIMIT])
-  const paid = await mk(); await seedSet(`users/${paid.uid}`, { uid: paid.uid, email: paid.email, accountType: 'couple', plan: { tier: 'wedding', source: 'legacy' } })
+  const paid = await mk(); await seedSet(`users/${paid.uid}`, { uid: paid.uid, email: paid.email, accountType: 'couple', plan: { tier: 'free', source: 'default' }, miolovePlan: { tier: 'wedding', source: 'stripe' } })
   const p = await callAs<{ eventId: string }>(paid, 'createEvent', { requestId: `t0p${Date.now()}`, title: 'Album', type: 'wedding', occasionType: 'wedding' })
   const pf = (await fsGet(`events/${p.eventId}`)).fields
   assert.equal(pf.accessMode.stringValue, 'activated'); assert.equal(pf.trialPhotoCount, undefined, 'activated albums carry no trial counter')

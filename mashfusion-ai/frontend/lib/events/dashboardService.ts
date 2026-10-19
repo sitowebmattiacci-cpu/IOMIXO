@@ -39,6 +39,7 @@ export async function eventPassesFor(uid: string): Promise<EventPass[]> {
     amount_cents: p.amountCents,
     currency: p.currency,
     valid_until: p.validUntil.toISOString(),
+    product_scope: p.productScope,
     status: p.status,
     created_at: iso(p.createdAt),
     updated_at: iso(p.updatedAt ?? p.createdAt),

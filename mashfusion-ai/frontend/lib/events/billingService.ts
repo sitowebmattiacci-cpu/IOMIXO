@@ -7,6 +7,8 @@ import { listSubscriptions, listPayments } from '../firebase/repositories/userRe
 import { eventPassesFor } from './dashboardService'
 import type { Payment, Subscription, EventPass } from '@/types'
 
+type ProductScope = 'iomixo' | 'miolove'
+
 /**
  * Billing on Firebase (checkout, portal, subscription, payments, Event Passes), behind NEXT_PUBLIC_FIREBASE_BILLING=on|true and a Firebase account.
  * Checkout / portal are callables (Stripe stays the provider; prices, customer, URLs and metadata are decided server-side). Everything else is a direct
@@ -52,9 +54,9 @@ export const billingOps = {
   },
 
   /** The CURRENT subscription as maintained by Stripe's webhook. Historical (legacy backfill) documents are never shown as current: their status is stale. */
-  async subscription(): Promise<{ data: Subscription | null } | null> {
+  async subscription(scope: ProductScope = 'iomixo'): Promise<{ data: Subscription | null } | null> {
     const user = await account(); if (!user) return null
-    const docs = (await listSubscriptions(getFirebaseDb(), user.uid)).filter((s) => !s.historical)
+    const docs = (await listSubscriptions(getFirebaseDb(), user.uid)).filter((s) => !s.historical && s.productScope === scope)
     const pick = docs.sort((a, b) => Number(LIVE.includes(b.status)) - Number(LIVE.includes(a.status)) || (b.currentPeriodEnd?.getTime() ?? 0) - (a.currentPeriodEnd?.getTime() ?? 0))[0]
     if (!pick) return { data: null }
     return { data: {
@@ -64,16 +66,16 @@ export const billingOps = {
     } }
   },
 
-  async payments(limit = 10): Promise<{ data: Payment[] } | null> {
+  async payments(limit = 10, scope: ProductScope = 'iomixo'): Promise<{ data: Payment[] } | null> {
     const user = await account(); if (!user) return null
-    return { data: (await listPayments(getFirebaseDb(), user.uid, 50)).slice(0, limit).map((p): Payment => ({
+    return { data: (await listPayments(getFirebaseDb(), user.uid, 50)).filter((p) => p.productScope === scope).slice(0, limit).map((p): Payment => ({
       id: p.id, user_id: user.uid, stripe_payment_intent_id: p.stripePaymentIntentId, amount_cents: p.amountCents, currency: p.currency,
       status: (['succeeded', 'pending', 'failed', 'refunded'].includes(p.status) ? p.status : 'failed') as Payment['status'], description: p.description, created_at: iso(p.createdAt),
     })) }
   },
 
-  async eventPasses(): Promise<{ data: EventPass[] } | null> {
+  async eventPasses(scope: ProductScope = 'iomixo'): Promise<{ data: EventPass[] } | null> {
     const user = await account(); if (!user) return null
-    return { data: await eventPassesFor(user.uid) }
+    return { data: (await eventPassesFor(user.uid)).filter((p) => (p.product_scope ?? 'iomixo') === scope) }
   },
 }

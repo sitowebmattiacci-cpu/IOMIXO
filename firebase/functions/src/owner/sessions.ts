@@ -114,7 +114,8 @@ export async function createEvent(db: Firestore, request: CallerAuth, input: Cre
     return { eventId, slug: String(e.slug), created: false }                       // idempotent replay
   }
 
-  const ent = await loadEntitlements(db, { uid })
+  // Only entitlements of the product being created count: an IOMIXO plan / Event Pass never activates a MIOLOVE album (nor the reverse).
+  const ent = await loadEntitlements(db, { uid }, null, new Date(), brand)
   // MIOLOVE: an album created while the owner already has paid access is 'activated'; one without gets exactly ONE free trial album (see trialReservation).
   let accessMode: AccessMode | null = null
   if (brand === 'miolove') {

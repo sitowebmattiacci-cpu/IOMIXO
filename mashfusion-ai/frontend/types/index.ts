@@ -52,6 +52,8 @@ export interface User {
   accountType?: 'dj' | 'couple'
   avatar_url: string | null
   plan: Plan
+  /** MIOLOVE plan (`plan` is the IOMIXO one). */
+  miolove_plan?: Plan
   credits_remaining: number
   credits_reset_at: string | null
   created_at: string
@@ -217,6 +219,8 @@ export interface EventPass {
   amount_cents: number
   currency: string
   valid_until: string  // ISO timestamp
+  /** Product the pass unlocks (missing = IOMIXO). */
+  product_scope?: 'iomixo' | 'miolove'
   status: 'active' | 'expired' | 'refunded'
   created_at: string
   updated_at: string

@@ -91,7 +91,7 @@ test('C2. subscription checkout: customer created ONCE and persisted both ways, 
   assert.deepEqual(created.metadata, { firebaseUid: uid, legacySupabaseId: legacy }); assert.equal(created.email, 'dj@example.com')
   const s = fs.st.created.find((c) => c.kind === 'session')
   assert.equal(s.customer, cust); assert.equal(s.mode, 'subscription'); assert.deepEqual(s.line_items, [{ price: P.ADV, quantity: 1 }]); assert.deepEqual(s.payment_method_types, ['card', 'paypal'])
-  assert.deepEqual(s.metadata, { firebaseUid: uid, legacySupabaseId: legacy, plan: 'wedding', checkoutType: 'subscription', product: 'advance' }); assert.deepEqual(s.subscription_data.metadata, s.metadata)
+  assert.deepEqual(s.metadata, { firebaseUid: uid, legacySupabaseId: legacy, plan: 'wedding', checkoutType: 'subscription', product: 'advance', productScope: 'iomixo' }); assert.deepEqual(s.subscription_data.metadata, s.metadata)
   assert.equal(s.success_url, 'https://www.iomixo.com/dashboard?upgraded=true&session_id={CHECKOUT_SESSION_ID}'); assert.equal(s.cancel_url, 'https://www.iomixo.com/billing')
   assert.equal(s.subscription_data.trial_period_days, undefined)
   fs.st.calls.length = 0

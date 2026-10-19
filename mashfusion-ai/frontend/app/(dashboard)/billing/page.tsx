@@ -41,9 +41,9 @@ export default function BillingPage() {
   const tb = (k: string) => (isCouple ? t(`roles.billing.${k}`, t(`billing.${k}`)) : t(`billing.${k}`))
   const currency = currencyForLocale(locale)
   const { data: me, isLoading: loadingMe } = useSWR<User>('me', () => auth.me())
-  const { data: subscription } = useSWR('subscription', () => billing.getSubscription())
-  const { data: payments }     = useSWR('payments', () => billing.getPaymentHistory(10))
-  const { data: eventPasses, error: passesError } = useSWR('event-passes', () => billing.getEventPasses(), {
+  const { data: subscription } = useSWR(['subscription', portal], () => billing.getSubscription(portal))
+  const { data: payments }     = useSWR(['payments', portal], () => billing.getPaymentHistory(10, portal))
+  const { data: eventPasses, error: passesError } = useSWR(['event-passes', portal], () => billing.getEventPasses(portal), {
     onError: (err) => {
       console.warn('Event passes API non disponibile:', err)
     }
@@ -99,7 +99,7 @@ export default function BillingPage() {
     }
   }
 
-  const currentPlan = normalisePlan(me?.plan)
+  const currentPlan = normalisePlan(portal === 'miolove' ? me?.miolove_plan : me?.plan)
 
   // Active 7-day trial → show a dedicated badge + CTA instead of a renewal date.
   const isTrialing = subscription?.status === 'trialing'

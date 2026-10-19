@@ -9,17 +9,20 @@ import type { UserDoc, UserProfilePatch, PlanTier, AccountType, EventPassDoc, Su
 
 const toDate = (v: unknown): Date | null => (v instanceof Timestamp ? v.toDate() : null)
 const tiers: readonly PlanTier[] = ['free', 'pro', 'wedding']
+const scopeOf = (v: unknown): 'iomixo' | 'miolove' => (v === 'miolove' ? 'miolove' : 'iomixo')     // no scope = IOMIXO
 
 function fromDoc(uid: string, d: DocumentData): UserDoc {
   const tier = tiers.includes(d.plan?.tier) ? d.plan.tier : 'free'
   return {
     uid,
+    ...(d.miolovePlan ? { miolovePlan: { tier: tiers.includes(d.miolovePlan.tier) ? d.miolovePlan.tier : 'free', source: d.miolovePlan.source ?? 'default', validUntil: toDate(d.miolovePlan.validUntil) } } : {}),
     ...(d.accountType === 'dj' || d.accountType === 'couple' ? { accountType: d.accountType as AccountType } : {}),
     email:       d.email ?? '',
     displayName: d.displayName ?? null,
     avatarUrl:   d.avatarUrl ?? null,
     avatarPath:  d.avatarPath ?? null,
     plan:        { tier, source: d.plan?.source ?? 'default', validUntil: toDate(d.plan?.validUntil) },
+    ...(d.miolovePlan ? { miolovePlan: { tier: tiers.includes(d.miolovePlan.tier) ? d.miolovePlan.tier : 'free', source: d.miolovePlan.source ?? 'default', validUntil: toDate(d.miolovePlan.validUntil) } } : {}),
     legacySupabaseId: d.legacySupabaseId,
     createdAt:   toDate(d.createdAt),
     updatedAt:   toDate(d.updatedAt),
@@ -60,7 +63,7 @@ export async function listEventPasses(db: Firestore, uid: string, max = 50): Pro
     return [{
       id: s.id, status: d.status, validUntil: until,
       legacySessionId: d.legacySessionId ?? null, eventId: d.eventId ?? null, legacySupabaseId: d.legacySupabaseId ?? null,
-      stripePaymentIntentId: d.stripePaymentIntentId ?? null, amountCents: d.amountCents ?? 0, currency: d.currency ?? 'eur',
+      stripePaymentIntentId: d.stripePaymentIntentId ?? null, amountCents: d.amountCents ?? 0, currency: d.currency ?? 'eur', productScope: scopeOf(d.productScope),
       createdAt: toDate(d.createdAt), updatedAt: toDate(d.sourceUpdatedAt) ?? toDate(d.updatedAt),
     }]
   })
@@ -74,7 +77,7 @@ export async function listSubscriptions(db: Firestore, uid: string, max = 20): P
     const d = s.data()
     return {
       id: s.id, status: String(d.status ?? d.legacyStatus ?? ''), historical: d.historical === true, stale: d.stale === true,
-      tier: tiers.includes(d.tier) ? d.tier : null, stripeSubscriptionId: d.stripeSubscriptionId ?? s.id, stripeCustomerId: d.stripeCustomerId ?? null,
+      tier: tiers.includes(d.tier) ? d.tier : null, stripeSubscriptionId: d.stripeSubscriptionId ?? s.id, stripeCustomerId: d.stripeCustomerId ?? null, productScope: scopeOf(d.productScope),
       currentPeriodStart: toDate(d.currentPeriodStart), currentPeriodEnd: toDate(d.currentPeriodEnd), cancelAtPeriodEnd: d.cancelAtPeriodEnd === true, createdAt: toDate(d.createdAt),
     }
   })
@@ -85,6 +88,6 @@ export async function listPayments(db: Firestore, uid: string, max = 50): Promis
   const snap = await getDocs(query(collection(db, 'users', uid, 'payments'), limit(max)))
   return snap.docs.map((s): PaymentDoc => {
     const d = s.data()
-    return { id: s.id, userRef: uid, stripePaymentIntentId: d.stripePaymentIntentId ?? d.stripeCheckoutSessionId ?? s.id, amountCents: d.amountCents ?? 0, currency: d.currency ?? 'eur', status: String(d.status ?? 'succeeded'), description: d.description ?? '', createdAt: toDate(d.createdAt) }
+    return { id: s.id, userRef: uid, stripePaymentIntentId: d.stripePaymentIntentId ?? d.stripeCheckoutSessionId ?? s.id, amountCents: d.amountCents ?? 0, currency: d.currency ?? 'eur', status: String(d.status ?? 'succeeded'), description: d.description ?? '', createdAt: toDate(d.createdAt), productScope: scopeOf(d.productScope) }
   }).sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0))
 }

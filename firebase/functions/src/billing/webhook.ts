@@ -5,6 +5,7 @@ import { isStripeError, type StripeApi } from './stripeApi'
 import { priceInfo, UnknownPriceError, type PriceTable } from './prices'
 import { resolveUid, UnresolvedAccountError } from './accounts'
 import type { PlanTier } from '../entitlements/plans'
+import { scopeOf, type ProductScope } from '../entitlements/scope'
 
 /**
  * Stripe webhook → Firestore. Source of truth for plans/passes from now on (plan.source = 'stripe').
@@ -103,10 +104,14 @@ async function dispatch(deps: WebhookDeps, event: Stripe.Event, now: Date): Prom
 const periodOf = (sub: Stripe.Subscription, k: 'current_period_start' | 'current_period_end'): number | null | undefined =>
   sub[k] ?? (sub.items.data[0] as unknown as Record<string, number | undefined> | undefined)?.[k]
 
+/** Scope of a price from the server table; a price without one (or an old record) is IOMIXO. */
+const priceScope = (deps: WebhookDeps, priceId: string | null | undefined): ProductScope => (priceId ? deps.prices.get(priceId)?.scope : undefined) ?? 'iomixo'
+
 // ── subscriptions ────────────────────────────────────────────────────────────────────────────────
-async function upsertSubscription(deps: WebhookDeps, uid: string, sub: Stripe.Subscription, eventCreated: number, now: Date): Promise<'live' | 'other'> {
+async function upsertSubscription(deps: WebhookDeps, uid: string, sub: Stripe.Subscription, eventCreated: number, now: Date): Promise<ProductScope> {
   const live = LIVE_STATUSES.includes(sub.status)
   const priceId = sub.items.data[0]?.price.id
+  const scope = priceScope(deps, priceId)
   // strict for a live subscription (an unknown price must not silently grant or deny a plan); a finished one may carry a retired price
   const tier = live ? priceInfo(deps.prices, priceId).tier : deps.prices.get(priceId ?? '')?.tier ?? null
   const ref = deps.db.doc(`users/${uid}/subscriptions/${safeId(sub.id)}`)
@@ -114,32 +119,35 @@ async function upsertSubscription(deps: WebhookDeps, uid: string, sub: Stripe.Su
     const cur = await tx.get(ref)
     if (cur.exists && typeof cur.data()!.lastEventCreated === 'number' && cur.data()!.lastEventCreated > eventCreated) return          // an older event never overwrites a newer state
     tx.set(ref, {
-      stripeSubscriptionId: sub.id, stripeCustomerId: str(sub.customer), priceId: priceId ?? null, tier, status: sub.status,
+      stripeSubscriptionId: sub.id, stripeCustomerId: str(sub.customer), priceId: priceId ?? null, tier, status: sub.status, productScope: scope,
       currentPeriodStart: ts(periodOf(sub, 'current_period_start')), currentPeriodEnd: ts(periodOf(sub, 'current_period_end')), cancelAtPeriodEnd: sub.cancel_at_period_end === true,
       canceledAt: ts(sub.canceled_at), trialStart: ts(sub.trial_start), trialEnd: ts(sub.trial_end),
       historical: false, stale: false, source: 'stripe', lastEventCreated: eventCreated, uid, updatedAt: Timestamp.fromDate(now),
       ...(cur.exists ? {} : { createdAt: ts(sub.created) ?? Timestamp.fromDate(now) }),
     }, { merge: true })
   })
-  return live ? 'live' : 'other'
+  return scope
 }
 
-/** Plan = the best subscription STILL live in Stripe (read from the API, so event order cannot matter). */
-async function recomputePlan(deps: WebhookDeps, uid: string, customerId: string | null, now: Date) {
+/** Plan of ONE product = the best subscription of that scope STILL live in Stripe (read from the API, so event order cannot matter). IOMIXO writes users.plan, MIOLOVE users.miolovePlan. */
+async function recomputePlan(deps: WebhookDeps, uid: string, customerId: string | null, now: Date, scope: ProductScope) {
   let best: { tier: 'pro' | 'wedding'; end: number } | null = null
   if (customerId) {
     const subs = await deps.stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 100 })
     for (const s of subs.data) {
       if (!LIVE_STATUSES.includes(s.status)) continue
-      const tier = priceInfo(deps.prices, s.items.data[0]?.price.id).tier!
+      const priceId = s.items.data[0]?.price.id
+      if (priceScope(deps, priceId) !== scope) continue
+      const tier = priceInfo(deps.prices, priceId).tier!
       if (!best || RANK[tier] >= RANK[best.tier]) best = { tier, end: periodOf(s, 'current_period_end') ?? 0 }
     }
   }
   const ref = deps.db.doc(`users/${uid}`)
+  const field = scope === 'miolove' ? 'miolovePlan' : 'plan'
   await deps.db.runTransaction(async (tx) => {
     if (!(await tx.get(ref)).exists) throw new UnresolvedAccountError()
     tx.update(ref, {
-      plan: best ? { tier: best.tier, source: 'stripe', validUntil: Timestamp.fromMillis((best.end + PLAN_GRACE_DAYS * 86400) * 1000) } : { tier: 'free', source: 'stripe' },
+      [field]: best ? { tier: best.tier, source: 'stripe', validUntil: Timestamp.fromMillis((best.end + PLAN_GRACE_DAYS * 86400) * 1000) } : { tier: 'free', source: 'stripe' },
       planSourceUpdatedAt: Timestamp.fromDate(now),
     })
   })
@@ -152,22 +160,22 @@ async function onSubscriptionCheckout(deps: WebhookDeps, event: Stripe.Event, s:
   const subId = str(s.subscription)
   if (!subId) throw new Error('checkout_without_subscription')
   const sub = await deps.stripe.subscriptions.retrieve(subId)
-  await upsertSubscription(deps, uid, sub, event.created, now)
+  const scope = await upsertSubscription(deps, uid, sub, event.created, now)
   if (customerId) {
-    // a plan switch: keep only the newest subscription, so nobody is billed for two plans
+    // a plan switch: keep only the newest subscription OF THE SAME PRODUCT, so nobody is billed for two plans (and a MIOLOVE purchase never cancels an IOMIXO plan)
     const all = await deps.stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 100 })
-    for (const o of all.data) if (o.id !== sub.id && ['active', 'trialing', 'past_due'].includes(o.status)) {
+    for (const o of all.data) if (o.id !== sub.id && priceScope(deps, o.items.data[0]?.price.id) === scope && ['active', 'trialing', 'past_due'].includes(o.status)) {
       try { await deps.stripe.subscriptions.cancel(o.id) } catch (e) { logger.warn('stripe_cancel_superseded_failed', { message: (e as Error).message }) }
     }
   }
-  await recomputePlan(deps, uid, customerId, now)
+  await recomputePlan(deps, uid, customerId, now, scope)
 }
 
 async function onSubscriptionChange(deps: WebhookDeps, event: Stripe.Event, sub: Stripe.Subscription, now: Date) {
   const customerId = str(sub.customer)
   const uid = await resolveUid(deps.db, { firebaseUid: sub.metadata?.firebaseUid, customerId, legacyUserId: sub.metadata?.legacySupabaseId ?? sub.metadata?.user_id })
-  await upsertSubscription(deps, uid, sub, event.created, now)
-  await recomputePlan(deps, uid, customerId, now)
+  const scope = await upsertSubscription(deps, uid, sub, event.created, now)
+  await recomputePlan(deps, uid, customerId, now, scope)
 }
 
 // ── payments ledger ──────────────────────────────────────────────────────────────────────────────
@@ -198,9 +206,11 @@ async function onInvoice(deps: WebhookDeps, event: Stripe.Event, inv: Stripe.Inv
   const { subId, meta, pi } = await invoiceRefs(deps, inv)
   const uid = await resolveUid(deps.db, { customerId, firebaseUid: meta?.firebaseUid, legacyUserId: meta?.user_id })
   const id = outcome === 'succeeded' ? (pi ?? invoicePaymentId(inv.id!)) : invoicePaymentId(inv.id!)
+  const subSnap = subId ? await deps.db.doc(`users/${uid}/subscriptions/${safeId(subId)}`).get() : null
   await createOnce(deps.db.doc(`users/${uid}/payments/${id}`), {
     stripePaymentIntentId: pi, stripeInvoiceId: inv.id, stripeCheckoutSessionId: null, amountCents: outcome === 'succeeded' ? inv.amount_paid : inv.amount_due,
     currency: inv.currency, status: outcome, description: 'Subscription payment', kind: 'subscription', historical: false, source: 'stripe', uid,
+    productScope: scopeOf(subSnap?.data()?.productScope),
     createdAt: ts(event.created), updatedAt: ts(event.created),
   })
   if (outcome === 'failed' && subId) {
@@ -216,6 +226,7 @@ async function onEventPassCheckout(deps: WebhookDeps, event: Stripe.Event, s: St
   const items = await deps.stripe.checkout.sessions.listLineItems(s.id, { limit: 10 })
   const infos = items.data.map((i) => priceInfo(deps.prices, i.price?.id))
   if (!infos.some((i) => i.product === 'event_pass')) throw new UnknownPriceError(items.data[0]?.price?.id)
+  const scope = infos.find((i) => i.product === 'event_pass')!.scope
   const customerId = str(s.customer)
   const uid = await resolveUid(deps.db, { firebaseUid: s.metadata?.firebaseUid, customerId, legacyUserId: s.metadata?.legacySupabaseId ?? s.metadata?.user_id })
 
@@ -231,12 +242,14 @@ async function onEventPassCheckout(deps: WebhookDeps, event: Stripe.Event, s: St
   const created = await createOnce(deps.db.doc(`users/${uid}/eventPasses/${key}`), {
     status: validUntilMs > now.getTime() ? 'active' : 'expired', validUntil: Timestamp.fromMillis(validUntilMs), legacySessionId: s.metadata?.session_id ?? null, eventId,
     source: 'stripe', stripePaymentIntentId: str(s.payment_intent), stripeCheckoutSessionId: s.id, amountCents: s.amount_total ?? 0, currency: s.currency ?? 'eur',
+    productScope: scope,
     sourceUpdatedAt: ts(event.created), createdAt: ts(event.created),
   })
   if (created) {
     await createOnce(deps.db.doc(`users/${uid}/payments/${key}`), {
       stripePaymentIntentId: str(s.payment_intent), stripeCheckoutSessionId: s.id, stripeInvoiceId: null, amountCents: s.amount_total ?? 0, currency: s.currency ?? 'eur',
       status: 'succeeded', description: `Event Pass 24H — valido fino al ${new Date(validUntilMs).toISOString()}`, kind: 'event_pass', historical: false, source: 'stripe', uid,
+      productScope: scope,
       createdAt: ts(event.created), updatedAt: ts(event.created),
     })
   }

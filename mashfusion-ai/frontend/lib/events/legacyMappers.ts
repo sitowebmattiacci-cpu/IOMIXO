@@ -40,6 +40,8 @@ export function eventToSession(e: EventDoc): LiveSession {
 /** Plan with the same expiry rule as resolveEntitlements: a plan whose validUntil has passed counts as free. */
 export function userToLegacy(uid: string, u: UserDoc | null, email: string | null, now = new Date()): User {
   const expired = !!u?.plan.validUntil && u.plan.validUntil.getTime() <= now.getTime()
+  const mp = u?.miolovePlan
+  const mioloveExpired = !!mp?.validUntil && mp.validUntil.getTime() <= now.getTime()
   return {
     id: u?.legacySupabaseId ?? uid,
     email: u?.email || email || '',
@@ -47,6 +49,7 @@ export function userToLegacy(uid: string, u: UserDoc | null, email: string | nul
     accountType: u?.accountType === 'couple' ? 'couple' : 'dj', // no field = legacy account = DJ
     avatar_url: u?.avatarUrl ?? null,
     plan: (expired ? 'free' : u?.plan.tier ?? 'free') as User['plan'],
+    miolove_plan: (mioloveExpired ? 'free' : mp?.tier ?? 'free') as User['plan'],
     credits_remaining: 0,            // not in Firestore (legacy AI-studio credits; no consumer left in the UI)
     credits_reset_at: null,
     created_at: u?.createdAt?.toISOString() ?? '',

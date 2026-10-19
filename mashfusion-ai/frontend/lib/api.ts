@@ -52,8 +52,8 @@ export const billing = {
     return need(await (await billingFs()).checkout(priceId, { trial: opts?.trial, eventId: sessionId, portal: opts?.portal }))
   },
 
-  async getEventPasses() {
-    return need(await (await billingFs()).eventPasses()).data
+  async getEventPasses(scope: 'iomixo' | 'miolove' = 'iomixo') {
+    return need(await (await billingFs()).eventPasses(scope)).data
   },
 
   /** @deprecated use getEventPasses */
@@ -65,12 +65,12 @@ export const billing = {
     return need(await (await billingFs()).portal(portal))
   },
 
-  async getSubscription(): Promise<Subscription | null> {
-    return need(await (await billingFs()).subscription()).data
+  async getSubscription(scope: 'iomixo' | 'miolove' = 'iomixo'): Promise<Subscription | null> {
+    return need(await (await billingFs()).subscription(scope)).data
   },
 
-  async getPaymentHistory(limit = 10): Promise<Payment[]> {
-    return need(await (await billingFs()).payments(limit)).data
+  async getPaymentHistory(limit = 10, scope: 'iomixo' | 'miolove' = 'iomixo'): Promise<Payment[]> {
+    return need(await (await billingFs()).payments(limit, scope)).data
   },
 }
 

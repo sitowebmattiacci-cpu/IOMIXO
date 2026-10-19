@@ -29,7 +29,7 @@ const account = async (type: 'dj' | 'couple' | undefined, tier: Tier = 'free', w
   if (withDoc) await seedSet(`users/${c.uid}`, { uid: c.uid, email: c.email, ...(type ? { accountType: type } : {}), plan: { tier, source: tier === 'free' ? 'default' : 'legacy' } })
   return c
 }
-const giveEventPass = (uid: string) => seedSet(`users/${uid}/eventPasses/pass${Date.now()}`, { status: 'active', validUntil: new Date(Date.now() + 3_600_000), createdAt: new Date() })
+const giveEventPass = (uid: string, scope: 'iomixo' | 'miolove' = 'iomixo') => seedSet(`users/${uid}/eventPasses/pass${Date.now()}`, { status: 'active', validUntil: new Date(Date.now() + 3_600_000), createdAt: new Date(), productScope: scope })
 const create = (c: TestClient, over: Record<string, unknown> = {}) => callAs<{ eventId: string; slug: string; created: boolean }>(c, 'createEvent', { requestId: rid(), title: 'Album', type: 'wedding', occasionType: 'birthday', ...over })
 const eventOf = async (c: TestClient, id: string) => (await getDoc(doc(c.db, 'events', id))).data()!
 const reservation = async (uid: string) => (await fsGet(`trialAlbums/${uid}`)).fields
@@ -86,16 +86,17 @@ test('F. DJ + Free + Event Pass: unchanged (Wedding created, NO accessMode)', as
   const r = await create(dj); assert.equal((await eventOf(dj, r.eventId)).accessMode, undefined); assert.equal((await reservation(dj.uid)), undefined)
 })
 
-test('G. couple with paid access is NOT a trial: Advance or Event Pass → accessMode activated, no reservation, more albums allowed', async () => {
+test('G. couple with paid MIOLOVE access is NOT a trial: MIOLOVE plan or MIOLOVE Event Pass → accessMode activated, no reservation, more albums allowed', async () => {
   const adv = await account('couple', 'wedding')
+  await seedSet(`users/${adv.uid}`, { uid: adv.uid, email: adv.email, accountType: 'couple', plan: { tier: 'free', source: 'default' }, miolovePlan: { tier: 'wedding', source: 'stripe' } })
   const a1 = await create(adv), a2 = await create(adv)
   for (const r of [a1, a2]) assert.equal((await eventOf(adv, r.eventId)).accessMode, 'activated')
   assert.equal((await reservation(adv.uid)), undefined)
-  const pass = await account('couple'); await giveEventPass(pass.uid)
+  const pass = await account('couple'); await giveEventPass(pass.uid, 'miolove')
   const p = await create(pass); assert.equal((await eventOf(pass, p.eventId)).accessMode, 'activated'); assert.equal((await reservation(pass.uid)), undefined)
   // a trial couple that later pays: the trial album stays trial, the next album is a normal paid one
   const later = await account('couple'); const t1 = await create(later)
-  await seedSet(`users/${later.uid}`, { uid: later.uid, email: later.email, accountType: 'couple', plan: { tier: 'wedding', source: 'legacy' } })
+  await seedSet(`users/${later.uid}`, { uid: later.uid, email: later.email, accountType: 'couple', plan: { tier: 'free', source: 'default' }, miolovePlan: { tier: 'wedding', source: 'stripe' } })
   const t2 = await create(later)
   assert.deepEqual([(await eventOf(later, t1.eventId)).accessMode, (await eventOf(later, t2.eventId)).accessMode], ['trial', 'activated'])
 })

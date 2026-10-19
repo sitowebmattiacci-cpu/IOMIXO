@@ -1,4 +1,5 @@
 import type { PlanTier } from '../entitlements/plans'
+import type { ProductScope } from '../entitlements/scope'
 
 /**
  * Server-side price table. The ONLY source of truth for "which Stripe price means what":
@@ -15,12 +16,14 @@ export interface PriceInfo {
   mode: 'subscription' | 'payment'
   /** false = recognised when a webhook arrives (old subscriptions) but never offered at checkout. */
   checkout: boolean
+  /** Product the purchase unlocks. Decided HERE (never by the client): every current price is IOMIXO; a future MIOLOVE price is added with scope 'miolove'. */
+  scope: ProductScope
 }
 export class UnknownPriceError extends Error {
   constructor(public priceId: string | null | undefined) { super('unknown_price') }
 }
 
-const CURRENT: Array<[string, Omit<PriceInfo, 'checkout'>]> = [
+const CURRENT: Array<[string, Omit<PriceInfo, 'checkout' | 'scope'>]> = [
   ['STRIPE_PRICE_PRO_EUR',        { product: 'pro',        tier: 'pro',     mode: 'subscription' }],
   ['STRIPE_PRICE_PRO_USD',        { product: 'pro',        tier: 'pro',     mode: 'subscription' }],
   ['STRIPE_PRICE_ADVANCE_EUR',    { product: 'advance',    tier: 'wedding', mode: 'subscription' }],
@@ -29,7 +32,7 @@ const CURRENT: Array<[string, Omit<PriceInfo, 'checkout'>]> = [
   ['STRIPE_PRICE_EVENT_PASS_USD', { product: 'event_pass', tier: null,      mode: 'payment' }],
 ]
 /** Older prices still attached to existing subscriptions (comma-separated lists). Recognised by the webhook only. */
-const LEGACY: Array<[string, Omit<PriceInfo, 'checkout'>]> = [
+const LEGACY: Array<[string, Omit<PriceInfo, 'checkout' | 'scope'>]> = [
   ['STRIPE_PRICE_LEGACY_PRO',     { product: 'pro',     tier: 'pro',     mode: 'subscription' }],
   ['STRIPE_PRICE_LEGACY_ADVANCE', { product: 'advance', tier: 'wedding', mode: 'subscription' }],
 ]
@@ -38,8 +41,8 @@ export type PriceTable = ReadonlyMap<string, PriceInfo>
 
 export function buildPriceTable(env: Record<string, string | undefined> = process.env): PriceTable {
   const t = new Map<string, PriceInfo>()
-  for (const [key, info] of CURRENT) { const id = env[key]?.trim(); if (id) t.set(id, { ...info, checkout: true }) }
-  for (const [key, info] of LEGACY) for (const id of (env[key] ?? '').split(',').map((s) => s.trim()).filter(Boolean)) if (!t.has(id)) t.set(id, { ...info, checkout: false })
+  for (const [key, info] of CURRENT) { const id = env[key]?.trim(); if (id) t.set(id, { ...info, checkout: true, scope: 'iomixo' }) }
+  for (const [key, info] of LEGACY) for (const id of (env[key] ?? '').split(',').map((s) => s.trim()).filter(Boolean)) if (!t.has(id)) t.set(id, { ...info, checkout: false, scope: 'iomixo' })
   return t
 }
 

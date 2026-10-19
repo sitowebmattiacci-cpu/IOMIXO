@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useI18n } from '@/lib/i18n'
+import { useAccountRole } from '@/lib/roles'
 import toast from 'react-hot-toast'
 import type { User as UserType } from '@/types'
 import Image from 'next/image'
@@ -26,6 +27,8 @@ const PLAN_COLORS: Record<string, string> = {
 export default function SettingsPage() {
   const { t } = useI18n()
   const { data: me, isLoading } = useSWR<UserType>('me', () => auth.me())
+  const { portal } = useAccountRole()
+  const shownPlan = portal === 'miolove' ? me?.miolove_plan : me?.plan
 
   // ── Profile form state ────────────────────────────────────────
   const [fullName,    setFullName]    = useState('')
@@ -257,8 +260,8 @@ export default function SettingsPage() {
               <span className="text-white/10">·</span>
               <div className="flex items-center gap-2">
                 <span className="text-white/50">{t('settings.plan')}</span>
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${PLAN_COLORS[me?.plan ?? 'free']}`}>
-                  {me?.plan ?? 'free'}
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${PLAN_COLORS[shownPlan ?? 'free']}`}>
+                  {shownPlan ?? 'free'}
                 </span>
               </div>
             </div>

@@ -330,7 +330,7 @@ export default function LiveSessionsPage() {
       ) : (
         <div className="space-y-2">
           {sessions.map((s) => {
-            const locked = isPremiumSession(s) && !isAdvance && !(isCouple && s.access_mode === 'trial')
+            const locked = isPremiumSession(s) && !isAdvance && !(isCouple && (s.access_mode === 'trial' || s.access_mode === 'activated'))
             return (
             <Link key={s.id} href={`/sessions/${s.id}`}>
               <Card className={`px-5 py-4 flex items-center justify-between hover:bg-white/5 transition ${locked ? 'opacity-70' : ''}`}>

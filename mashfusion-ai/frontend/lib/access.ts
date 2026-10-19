@@ -12,6 +12,7 @@
 import useSWR from 'swr'
 import { auth, billing } from '@/lib/api'
 import { isAdvancePlan, isProPlan } from '@/lib/plan'
+import { useAccountRole } from '@/lib/roles'
 import type { User, EventPass } from '@/types'
 
 export type EffectivePlan = 'free' | 'pro' | 'wedding' | 'event_pass'
@@ -124,20 +125,23 @@ export interface EffectiveAccess {
  * 'event-passes') delle altre pagine così la cache è condivisa.
  */
 export function useEffectiveAccess(): EffectiveAccess {
+  // Entitlements are per product: on miolovealbum.com only MIOLOVE ones count, on iomixo.com only IOMIXO ones (records without a scope are IOMIXO).
+  const { portal } = useAccountRole()
   const { data: user, isLoading: loadingUser } = useSWR<User>('me', () => auth.me(), {
     dedupingInterval: 30_000,
   })
   const { data: passes, isLoading: loadingPasses } = useSWR(
-    'event-passes',
-    () => billing.getEventPasses(),
+    ['event-passes', portal],
+    () => billing.getEventPasses(portal),
     { onError: () => {} },
   )
 
+  const planOfProduct = portal === 'miolove' ? user?.miolove_plan : user?.plan
   const activePass = findActiveEventPass(passes as EventPass[] | undefined)
   const hasActiveEventPass = !!activePass
-  const effectivePlan = computeEffectivePlan(user?.plan, hasActiveEventPass)
-  const hasAdvanceAccess = isAdvancePlan(user?.plan) || hasActiveEventPass
-  const hasProAccess = isProPlan(user?.plan) || isAdvancePlan(user?.plan) || hasActiveEventPass
+  const effectivePlan = computeEffectivePlan(planOfProduct, hasActiveEventPass)
+  const hasAdvanceAccess = isAdvancePlan(planOfProduct) || hasActiveEventPass
+  const hasProAccess = isProPlan(planOfProduct) || isAdvancePlan(planOfProduct) || hasActiveEventPass
 
   return {
     user,

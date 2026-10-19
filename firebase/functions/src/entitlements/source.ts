@@ -1,7 +1,8 @@
 import type { Firestore, DocumentData } from 'firebase-admin/firestore'
 import { logger } from 'firebase-functions/logger'
-import { readAccount } from './load'
-import { resolveEntitlements, type Entitlements } from './resolve'
+import { readAccount, resolveForEvent } from './load'
+import { type Entitlements } from './resolve'
+import { eventBrandOf } from '../owner/brand'
 
 /**
  * Which source decides the premium gates of an event during the Supabase → Firebase transition.
@@ -27,10 +28,12 @@ export async function selectEventEntitlements(
 ): Promise<EventEntitlementDecision> {
   const ownerUid = String(ev.ownerUid ?? '')
   const legacyBacked = Boolean(ev.legacySupabaseId)
-  const acc = await readAccount(db, { uid: ownerUid }, now)
+  const scope = await eventBrandOf(db, ev)                           // the event's own product decides which entitlements count
+  const acc = await readAccount(db, { uid: ownerUid }, now, scope)
   const hasServerPlan = acc.planSource !== null && SERVER_PLAN_SOURCES.includes(acc.planSource)
-  if (legacyBacked && !hasServerPlan) return { source: 'legacy_projected_fallback', ent: null, ownerUid }
-  const ent = resolveEntitlements({ plan: acc.plan, passes: acc.passes, event: { id: eventId, legacySessionId: ev.legacySupabaseId ?? null }, now })
+  // The legacy projection only ever described IOMIXO plans: it never decides a MIOLOVE album.
+  if (scope === 'iomixo' && legacyBacked && !hasServerPlan) return { source: 'legacy_projected_fallback', ent: null, ownerUid }
+  const ent = resolveForEvent(scope, acc, eventId, ev, now)
   return { source: 'firestore', ent, ownerUid }
 }
 

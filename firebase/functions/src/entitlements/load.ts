@@ -1,11 +1,13 @@
-import { Timestamp, type Firestore } from 'firebase-admin/firestore'
+import { Timestamp, type DocumentData, type Firestore } from 'firebase-admin/firestore'
 import { HttpsError } from 'firebase-functions/v2/https'
 import { resolveEntitlements, type Entitlements, type EventPassDoc, type EventRef, type PassStatus, type PlanDoc } from './resolve'
+import { scopeOf, type ProductScope } from './scope'
+import { eventBrandOf } from '../owner/brand'
 
 /**
- * Firestore loaders around resolveEntitlements (Admin SDK: server side only).
- *   users/{uid}                    { plan: { tier, source, validUntil? }, legacySupabaseId? }
- *   users/{uid}/eventPasses/{key}  { status, validUntil, eventId?, legacySessionId?, ... }  (server-written)
+ * Firestore loaders around resolveEntitlements (Admin SDK: server side only). Entitlements are SCOPED by product (see ./scope):
+ *   users/{uid}                    { plan: { tier, source, validUntil? } (IOMIXO), miolovePlan: { ... } (MIOLOVE), legacySupabaseId? }
+ *   users/{uid}/eventPasses/{key}  { status, validUntil, eventId?, legacySessionId?, productScope?, ... }  (server-written; no scope = IOMIXO)
  * No composite index is needed: passes are read with a single-field range on validUntil and filtered in memory.
  */
 const STATUSES: readonly PassStatus[] = ['active', 'expired', 'refunded']
@@ -24,7 +26,7 @@ export async function resolveAccountUid(db: Firestore, who: AccountRef): Promise
 /** Raw account data behind an entitlement verdict. `planSource` tells whether a SERVER wrote the plan (legacy projection / Stripe). */
 export interface AccountData { uid: string | null; plan: PlanDoc | null; planSource: string | null; passes: EventPassDoc[] }
 
-export async function readAccount(db: Firestore, who: AccountRef, now: Date = new Date()): Promise<AccountData> {
+export async function readAccount(db: Firestore, who: AccountRef, now: Date = new Date(), scope: ProductScope = 'iomixo'): Promise<AccountData> {
   const uid = await resolveAccountUid(db, who)
   if (!uid) return { uid: null, plan: null, planSource: null, passes: [] }
   const userRef = db.collection('users').doc(uid)
@@ -33,20 +35,32 @@ export async function readAccount(db: Firestore, who: AccountRef, now: Date = ne
     userRef.collection('eventPasses').where('validUntil', '>', Timestamp.fromDate(now)).limit(50).get(),
   ])
   const d = user.data()
-  const plan: PlanDoc | null = d?.plan ? { tier: String(d.plan.tier ?? 'free'), source: d.plan.source, validUntil: toDate(d.plan.validUntil) } : null
+  const planDoc = scope === 'miolove' ? d?.miolovePlan : d?.plan
+  const plan: PlanDoc | null = planDoc ? { tier: String(planDoc.tier ?? 'free'), source: planDoc.source, validUntil: toDate(planDoc.validUntil) } : null
   const passes: EventPassDoc[] = passSnap.docs.flatMap((s) => {
     const p = s.data(), until = toDate(p.validUntil)
-    if (!until || !STATUSES.includes(p.status)) return []
+    if (!until || !STATUSES.includes(p.status) || scopeOf(p.productScope) !== scope) return []
     return [{ id: s.id, status: p.status as PassStatus, validUntil: until, eventId: p.eventId ?? null, legacySessionId: p.legacySessionId ?? null }]
   })
-  return { uid, plan, planSource: d?.plan?.source ? String(d.plan.source) : null, passes }
+  return { uid, plan, planSource: planDoc?.source ? String(planDoc.source) : null, passes }
 }
 
 export async function loadEntitlements(
-  db: Firestore, who: AccountRef, event: EventRef | null = null, now: Date = new Date(),
+  db: Firestore, who: AccountRef, event: EventRef | null = null, now: Date = new Date(), scope: ProductScope = 'iomixo',
 ): Promise<Entitlements> {
-  const acc = await readAccount(db, who, now)
+  const acc = await readAccount(db, who, now, scope)
   return resolveEntitlements({ plan: acc.plan, passes: acc.passes, event, now })      // unknown account → free, no passes
+}
+
+/**
+ * Entitlements that govern ONE event: the scope is the event's own product (brand), so an IOMIXO plan / pass never counts on a MIOLOVE album and the reverse.
+ * A MIOLOVE album already marked `activated` keeps the full feature set it was activated with (that mark is its MIOLOVE entitlement record).
+ */
+export function resolveForEvent(scope: ProductScope, acc: AccountData, eventId: string, ev: DocumentData, now: Date): Entitlements {
+  const event: EventRef = { id: eventId, legacySessionId: ev.legacySupabaseId ?? null }
+  const ent = resolveEntitlements({ plan: acc.plan, passes: acc.passes, event, now })
+  if (scope === 'miolove' && ev.accessMode === 'activated' && !ent.eventAccess) return resolveEntitlements({ plan: { tier: 'wedding', source: 'miolove_activated' }, passes: [], event, now })
+  return ent
 }
 
 /** Entitlements of the DJ who owns an event, evaluated for THAT event (what hasEventAccess(dj_id, session_id) does today). */
@@ -55,8 +69,9 @@ export async function loadEventEntitlements(db: Firestore, eventId: string, now:
   if (!ev.exists) throw new HttpsError('not-found', 'Event not found', { reason: 'event_not_found' })
   const e = ev.data()!
   const ownerUid = String(e.ownerUid ?? '')
-  const ent = await loadEntitlements(db, { uid: ownerUid }, { id: eventId, legacySessionId: e.legacySupabaseId ?? null }, now)
-  return { ...ent, ownerUid }
+  const scope = await eventBrandOf(db, e)
+  const acc = await readAccount(db, { uid: ownerUid }, now, scope)
+  return { ...resolveForEvent(scope, acc, eventId, e, now), ownerUid }
 }
 
 /** hasEventAccess replacement: throws a typed business error instead of returning false. */

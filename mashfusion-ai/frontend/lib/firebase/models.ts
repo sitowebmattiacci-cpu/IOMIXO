@@ -23,6 +23,8 @@ export interface UserDoc {
   avatarUrl?:  string | null
   avatarPath?: string | null
   plan:        PlanState
+  /** Server-written MIOLOVE plan. `plan` above is the IOMIXO one (also every record written before scopes existed). */
+  miolovePlan?: PlanState
   /** TRANSITIONAL, server-only: Supabase users.id of the owner / legacy records. */
   legacySupabaseId?: string
   createdAt:   Date | null
@@ -41,6 +43,8 @@ export interface EventPassDoc {
   stripePaymentIntentId?: string | null
   amountCents: number
   currency:   string
+  /** Product the pass unlocks. Missing on records written before scopes existed = IOMIXO. */
+  productScope: 'iomixo' | 'miolove'
   createdAt:  Date | null
   updatedAt:  Date | null
 }
@@ -49,14 +53,14 @@ export interface EventPassDoc {
 /** users/{uid}/subscriptions/{stripeSubscriptionId} — server-written. `historical` docs come from the legacy backfill (their status is NOT authoritative). */
 export interface SubscriptionDoc {
   id: string; status: string; historical: boolean; stale: boolean; tier: PlanTier | null
-  stripeSubscriptionId: string; stripeCustomerId: string | null
+  stripeSubscriptionId: string; stripeCustomerId: string | null; productScope: 'iomixo' | 'miolove'
   currentPeriodStart: Date | null; currentPeriodEnd: Date | null; cancelAtPeriodEnd: boolean; createdAt: Date | null
 }
 
 /** users/{uid}/payments/{id} — billing ledger, server-written. */
 export interface PaymentDoc {
   id: string; userRef: string; stripePaymentIntentId: string; amountCents: number; currency: string
-  status: string; description: string; createdAt: Date | null
+  status: string; description: string; createdAt: Date | null; productScope: 'iomixo' | 'miolove'
 }
 
 export type UserProfilePatch = Partial<Pick<UserDoc, 'displayName'>>

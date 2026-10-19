@@ -330,7 +330,9 @@ export default function SessionDetailPage() {
   // La sessione resta salvata e visibile in lista, ma non apre la regia interna
   // finché l'Event Pass 24H non viene riattivato o si passa ad Advance.
   // MIOLOVE: the couple's free trial album (accessMode 'trial', written only by the server) always opens; a missing value never means trial.
-  const isTrialAlbum = isCouple && session.access_mode === 'trial'
+  // MIOLOVE: an album the server marked 'trial' or 'activated' always opens (that mark is its MIOLOVE access; IOMIXO plans never grant it, and a missing value is neither).
+  const isTrialAlbum = isCouple && (session.access_mode === 'trial' || session.access_mode === 'activated')
+  const advanceAccess = hasAdvanceAccess || (isCouple && session.access_mode === 'activated')
   if (isPremiumSession(session) && !hasAdvanceAccess && !isTrialAlbum) {
     return <SessionLockScreen sessionType={session.session_type} eventName={session.event_name} />
   }
@@ -479,7 +481,7 @@ export default function SessionDetailPage() {
           <GamesPanel sessionId={session.id} session={session} />
         </WdPage>
       )}
-      {tab === 'privacy' && <GuestVisibilityPanel sessionId={session.id} session={session} sessionType="wedding" hasAccess={hasAdvanceAccess} couple={isCouple} />}
+      {tab === 'privacy' && <GuestVisibilityPanel sessionId={session.id} session={session} sessionType="wedding" hasAccess={advanceAccess} couple={isCouple} />}
       {tab === 'poster' && (isCouple ? <MiolovePosterEditor session={session} /> : <WeddingPosterPage session={session} />)}
       {tab === 'booth' && <WeddingPhotosPage session={session} initialSource="booth" />}
       {(tab === 'settings' || tab === 'screen') && (

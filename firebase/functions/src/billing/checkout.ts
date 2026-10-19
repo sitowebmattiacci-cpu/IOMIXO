@@ -81,7 +81,7 @@ export async function createCheckoutSession(
 
   const customer = await ensureCustomer(db, stripe, auth.uid, auth.token.email ?? '')
   const checkoutType = price.mode === 'payment' ? 'event_pass' : trial ? 'trial' : 'subscription'
-  const metadata: Record<string, string> = { firebaseUid: auth.uid, plan: price.tier ?? 'event_pass', checkoutType, product: price.product }
+  const metadata: Record<string, string> = { firebaseUid: auth.uid, plan: price.tier ?? 'event_pass', checkoutType, product: price.product, productScope: price.scope }
   if (legacyId) metadata.legacySupabaseId = legacyId
   if (eventId) metadata.eventId = eventId
 

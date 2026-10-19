@@ -25,7 +25,8 @@ const label = (t: Type) => t ?? 'missing'
 
 const account = async (type: Type, tier: 'free' | 'wedding' = 'wedding') => {
   const c = await mk()
-  await seedSet(`users/${c.uid}`, { uid: c.uid, email: c.email, ...(type ? { accountType: type } : {}), plan: { tier, source: tier === 'free' ? 'default' : 'legacy' } })
+  // a paid account here holds BOTH products' entitlements (IOMIXO Advance + MIOLOVE plan); the scoping itself is tested in entitlementScope.test.ts
+  await seedSet(`users/${c.uid}`, { uid: c.uid, email: c.email, ...(type ? { accountType: type } : {}), plan: { tier, source: tier === 'free' ? 'default' : 'legacy' }, ...(tier === 'wedding' ? { miolovePlan: { tier, source: 'stripe' } } : {}) })
   return c
 }
 const create = (c: TestClient, over: Record<string, unknown> = {}) =>
