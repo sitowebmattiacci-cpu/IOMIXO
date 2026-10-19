@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Send, Music2, Mic, Gamepad2, Camera, Smartphone, QrCode, BookHeart, Presentation, type LucideIcon } from 'lucide-react'
-import { signUp, resendVerification, authErrorMessage } from '@/lib/auth'
+import { signUp, resendVerification, authErrorText } from '@/lib/auth'
 import { Button } from '@/components/ui/Button'
 import { WdButton, WdInput } from '@/components/wedding/admin/WeddingAdminUI'
 import { PortalBrand } from '@/components/portal/PortalBrand'
@@ -39,14 +39,14 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!fullName || !email || !password) { toast.error('Please fill in all fields'); return }
-    if (password.length < 8) { toast.error('Password must be at least 8 characters'); return }
+    if (!fullName || !email || !password) { toast.error(t('auth.fillAllFields')); return }
+    if (password.length < 8) { toast.error(t('auth.passwordMin8')); return }
     setLoading(true)
     try {
       await signUp(email.trim().toLowerCase(), password, fullName.trim(), accountType)
       setDone(true)
     } catch (err: unknown) {
-      toast.error(authErrorMessage(err, 'Registration failed'))
+      toast.error(authErrorText(err, t))
     } finally {
       setLoading(false)
     }
@@ -56,9 +56,9 @@ export default function RegisterPage() {
     setResending(true)
     try {
       await resendVerification(email.trim().toLowerCase())
-      toast.success('New verification email sent!')
+      toast.success(t('auth.newVerificationSent'))
     } catch {
-      toast.error('Failed to resend. Try again in a moment.')
+      toast.error(t('auth.resendFailed'))
     } finally {
       setResending(false)
     }
@@ -81,18 +81,18 @@ export default function RegisterPage() {
         {done ? (
           <div className="relative w-full max-w-md rounded-3xl border border-wd-border bg-white p-10 text-center shadow-xl">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-wd-active text-wd-pink"><Mail className="h-8 w-8" /></div>
-            <h2 className="mt-5 text-2xl font-bold">Check your inbox</h2>
+            <h2 className="mt-5 text-2xl font-bold">{t('auth.checkInbox')}</h2>
             <p className="mt-2 text-sm leading-relaxed text-wd-muted">
-              We&apos;ve sent a verification link to <span className="font-medium text-wd-pink">{email}</span>. Click it to activate your account.
+              {t('auth.sentVerification')} <span className="font-medium text-wd-pink">{email}</span>{t('auth.clickActivate')}
             </p>
             <div className="mt-6 space-y-3">
               <Link href={COUPLE_HOME} className="block">
                 <WdButton className="w-full !py-3" data-testid="register-continue" icon={<ArrowRight className="h-4 w-4" />}>{t('roles.createFirstAlbum')}</WdButton>
               </Link>
-              <WdButton variant="secondary" className="w-full !py-3" onClick={handleResend} disabled={resending} icon={<Send className="h-4 w-4" />}>Resend verification email</WdButton>
-              <Link href="/login" className="block"><WdButton variant="ghost" className="w-full !py-3">Back to sign in</WdButton></Link>
+              <WdButton variant="secondary" className="w-full !py-3" onClick={handleResend} disabled={resending} icon={<Send className="h-4 w-4" />}>{t('auth.resendVerification')}</WdButton>
+              <Link href="/login" className="block"><WdButton variant="ghost" className="w-full !py-3">{t('auth.backToSignIn')}</WdButton></Link>
             </div>
-            <p className="mt-5 text-xs text-wd-muted">Link expires in 24 hours</p>
+            <p className="mt-5 text-xs text-wd-muted">{t('auth.linkExpires24h')}</p>
           </div>
         ) : (
           <div className="grid w-full max-w-4xl items-center gap-10 md:grid-cols-2">
@@ -123,30 +123,30 @@ export default function RegisterPage() {
 
               <div className="space-y-5 rounded-3xl border border-wd-border bg-white p-8 shadow-xl">
                 <div>
-                  <h2 className="text-xl font-bold">Create your account</h2>
-                  <p className="mt-1 text-sm text-wd-muted">Free forever — no credit card needed</p>
+                  <h2 className="text-xl font-bold">{t('auth.createAccount')}</h2>
+                  <p className="mt-1 text-sm text-wd-muted">{t('auth.freeForever')}</p>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-4" data-gramm="false">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-wd-muted">Full name</label>
+                    <label className="text-xs font-medium text-wd-muted">{t('auth.fullName')}</label>
                     <div className="relative">
                       <User className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-wd-muted" />
                       <WdInput type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Anna & Marco" className={field} autoComplete="name" required spellCheck={false} />
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-wd-muted">Email</label>
+                    <label className="text-xs font-medium text-wd-muted">{t('auth.email')}</label>
                     <div className="relative">
                       <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-wd-muted" />
-                      <WdInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className={field} autoComplete="email" required spellCheck={false} />
+                      <WdInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('auth.emailPh')} className={field} autoComplete="email" required spellCheck={false} />
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-wd-muted">Password</label>
+                    <label className="text-xs font-medium text-wd-muted">{t('auth.password')}</label>
                     <div className="relative">
                       <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-wd-muted" />
-                      <WdInput type={showPw ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 8 characters" className={`${field} pr-10`} autoComplete="new-password" required minLength={8} />
-                      <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-wd-muted hover:text-wd-ink" aria-label="Show password">
+                      <WdInput type={showPw ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('auth.passwordPhMin8')} className={`${field} pr-10`} autoComplete="new-password" required minLength={8} />
+                      <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-wd-muted hover:text-wd-ink" aria-label={t('auth.showPassword')}>
                         {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
@@ -159,11 +159,11 @@ export default function RegisterPage() {
                     )}
                   </div>
                   <WdButton type="submit" disabled={loading} className="w-full !py-3" icon={loading ? undefined : <ArrowRight className="h-4 w-4" />}>
-                    {loading ? 'Creating…' : 'Create account'}
+                    {loading ? t('auth.creating') : t('auth.createAccountBtn')}
                   </WdButton>
                 </form>
                 <div className="border-t border-wd-border" />
-                <Link href="/login" className="block"><WdButton variant="secondary" className="w-full !py-3">Sign in</WdButton></Link>
+                <Link href="/login" className="block"><WdButton variant="secondary" className="w-full !py-3">{t('auth.signIn')}</WdButton></Link>
               </div>
             </motion.div>
           </div>
@@ -209,22 +209,22 @@ export default function RegisterPage() {
               <Mail className="h-8 w-8 text-purple-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-white">Check your inbox</h2>
+              <h2 className="text-2xl font-black text-white">{t('auth.checkInbox')}</h2>
               <p className="text-sm text-white/40 mt-2 leading-relaxed">
-                We&apos;ve sent a verification link to{' '}
-                <span className="text-purple-400 font-medium">{email}</span>.
-                Click it to activate your account.
+                {t('auth.sentVerification')}{' '}
+                <span className="text-purple-400 font-medium">{email}</span>
+                {t('auth.clickActivate')}
               </p>
             </div>
             <div className="pt-2 space-y-3">
               <Button variant="secondary" className="w-full" loading={resending} onClick={handleResend} icon={<Send className="h-4 w-4" />}>
-                Resend verification email
+                {t('auth.resendVerification')}
               </Button>
               <Link href="/login">
-                <Button variant="ghost" className="w-full">Back to sign in</Button>
+                <Button variant="ghost" className="w-full">{t('auth.backToSignIn')}</Button>
               </Link>
             </div>
-            <p className="text-xs text-white/20">Link expires in 24 hours</p>
+            <p className="text-xs text-white/20">{t('auth.linkExpires24h')}</p>
           </div>
         </div>
       ) : (
@@ -244,37 +244,37 @@ export default function RegisterPage() {
 
             <div className="glass rounded-2xl p-8 space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-white">Create your account</h2>
-                <p className="text-sm text-white/40 mt-1">Free forever — no credit card needed</p>
+                <h2 className="text-xl font-bold text-white">{t('auth.createAccount')}</h2>
+                <p className="text-sm text-white/40 mt-1">{t('auth.freeForever')}</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4" data-gramm="false">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-white/50">Full name</label>
+                  <label className="text-xs font-medium text-white/50">{t('auth.fullName')}</label>
                   <div className="relative">
                     <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
                     <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)}
-                      placeholder="DJ Example" className="input-field pl-10" autoComplete="name" required spellCheck={false} />
+                      placeholder={t('auth.fullNamePh')} className="input-field pl-10" autoComplete="name" required spellCheck={false} />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-white/50">Email</label>
+                  <label className="text-xs font-medium text-white/50">{t('auth.email')}</label>
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com" className="input-field pl-10" autoComplete="email" required spellCheck={false} />
+                      placeholder={t('auth.emailPh')} className="input-field pl-10" autoComplete="email" required spellCheck={false} />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-white/50">Password</label>
+                  <label className="text-xs font-medium text-white/50">{t('auth.password')}</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
                     <input
                       type={showPw ? 'text' : 'password'} value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Min. 8 characters" className="input-field pl-10 pr-10"
+                      placeholder={t('auth.passwordPhMin8')} className="input-field pl-10 pr-10"
                       autoComplete="new-password" required minLength={8}
                     />
                     <button type="button" onClick={() => setShowPw(!showPw)}
@@ -296,14 +296,14 @@ export default function RegisterPage() {
                 </div>
 
                 <Button type="submit" loading={loading} className="w-full" icon={<ArrowRight className="h-4 w-4" />}>
-                  Create account
+                  {t('auth.createAccountBtn')}
                 </Button>
               </form>
 
               <div className="border-t border-white/6" />
 
               <Link href="/login">
-                <Button variant="secondary" className="w-full">Sign in</Button>
+                <Button variant="secondary" className="w-full">{t('auth.signIn')}</Button>
               </Link>
             </div>
           </motion.div>

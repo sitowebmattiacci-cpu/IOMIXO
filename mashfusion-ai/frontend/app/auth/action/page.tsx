@@ -2,7 +2,9 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
-import { confirmEmailVerification, mapAuthError } from '@/lib/firebase/auth'
+import { confirmEmailVerification } from '@/lib/firebase/auth'
+import { authErrorText } from '@/lib/auth'
+import { useI18n } from '@/lib/i18n'
 import { actionHopOrigin } from '@/lib/portal'
 
 /**
@@ -11,8 +13,9 @@ import { actionHopOrigin } from '@/lib/portal'
  */
 function ActionContent() {
   const router = useRouter()
+  const { t } = useI18n()
   const params = useSearchParams()
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | { code: string } | null>(null)
 
   useEffect(() => {
     const mode = params.get('mode')
@@ -21,20 +24,20 @@ function ActionContent() {
     // (only to a known portal origin taken from continueUrl, never an arbitrary URL).
     const hop = actionHopOrigin(params.get('continueUrl'), window.location.hostname)
     if (hop) { window.location.replace(`${hop}/auth/action?${params.toString()}`); return }
-    if (!oobCode) { setError('This link is invalid or has expired'); return }
+    if (!oobCode) { setError({ code: 'auth/invalid-action-code' }); return }
     if (mode === 'resetPassword') { router.replace(`/reset-password?oobCode=${encodeURIComponent(oobCode)}`); return }
     if (mode === 'verifyEmail') {
       confirmEmailVerification(oobCode)
         .then(() => router.replace('/login?verified=1'))
-        .catch((e) => setError(mapAuthError(e)))
+        .catch((e) => setError(e ?? {}))
       return
     }
-    setError('Unsupported action')
+    setError('unsupported')
   }, [params, router])
 
   return (
     <div className="min-h-screen bg-surface-400 flex items-center justify-center p-4 text-center">
-      {error ? <p className="text-white/60 text-sm">{error}</p> : <Loader2 className="h-8 w-8 text-purple-400 animate-spin" />}
+      {error ? <p className="text-white/60 text-sm">{error === 'unsupported' ? t('auth.unsupportedAction') : authErrorText(error, t)}</p> : <Loader2 className="h-8 w-8 text-purple-400 animate-spin" />}
     </div>
   )
 }

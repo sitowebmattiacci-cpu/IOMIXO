@@ -5,12 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Sparkles, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react'
-import { authErrorMessage } from '@/lib/auth'
+import { authErrorText } from '@/lib/auth'
+import { useI18n } from '@/lib/i18n'
 import { completePasswordReset } from '@/lib/firebase/auth'
 import { Button } from '@/components/ui/Button'
 import toast from 'react-hot-toast'
 
 function ResetPasswordContent() {
+  const { t } = useI18n()
   const router = useRouter()
   // Firebase email links carry ?oobCode=...
   const oobCode = useSearchParams().get('oobCode')
@@ -33,17 +35,17 @@ function ResetPasswordContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (password.length < 8) { toast.error('Password must be at least 8 characters'); return }
-    if (password !== confirm)  { toast.error('Passwords do not match'); return }
+    if (password.length < 8) { toast.error(t('auth.passwordMin8')); return }
+    if (password !== confirm)  { toast.error(t('auth.passwordsMismatch')); return }
 
     setLoading(true)
     try {
-      if (!oobCode) throw new Error('This link is invalid or has expired')
+      if (!oobCode) throw { code: 'auth/invalid-action-code' }
       await completePasswordReset(oobCode, password)
       setDone(true)
       setTimeout(() => router.push('/login'), 2500)
     } catch (err: unknown) {
-      toast.error(authErrorMessage(err, 'Reset failed. The link may have expired.'))
+      toast.error(authErrorText(err, t))
     } finally {
       setLoading(false)
     }
@@ -65,10 +67,10 @@ function ResetPasswordContent() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6"><PortalBrand onDark /></Link>
           <h1 className="text-2xl font-bold text-white">
-            {done ? 'Password updated!' : 'Set new password'}
+            {done ? t('auth.passwordUpdated') : t('auth.setNewPassword')}
           </h1>
           <p className="mt-1 text-sm text-white/40">
-            {done ? 'Redirecting to sign in…' : 'Choose a strong password for your account'}
+            {done ? t('auth.redirecting') : t('auth.chooseStrong')}
           </p>
         </div>
 
@@ -77,20 +79,20 @@ function ResetPasswordContent() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* New password */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-white/50">New password</label>
+                <label className="text-xs font-medium text-white/50">{t('auth.newPassword')}</label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
                   <input
                     type={showPw ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Min. 8 characters"
+                    placeholder={t('auth.passwordPhMin8')}
                     className="input-field pl-10 pr-10"
                     autoComplete="new-password"
                     required
                     minLength={8}
                   />
-                  <button type="button" onClick={() => setShowPw(!showPw)}
+                  <button type="button" onClick={() => setShowPw(!showPw)} aria-label={showPw ? t('auth.hidePassword') : t('auth.showPassword')}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors">
                     {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -110,27 +112,27 @@ function ResetPasswordContent() {
 
               {/* Confirm password */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-white/50">Confirm password</label>
+                <label className="text-xs font-medium text-white/50">{t('auth.confirmPassword')}</label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
                   <input
                     type={showCf ? 'text' : 'password'}
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
-                    placeholder="Repeat your password"
+                    placeholder={t('auth.repeatPassword')}
                     className={`input-field pl-10 pr-10 ${
                       confirm && confirm !== password ? 'border-red-500/50' : ''
                     }`}
                     autoComplete="new-password"
                     required
                   />
-                  <button type="button" onClick={() => setShowCf(!showCf)}
+                  <button type="button" onClick={() => setShowCf(!showCf)} aria-label={showCf ? t('auth.hidePassword') : t('auth.showPassword')}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors">
                     {showCf ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
                 {confirm && confirm !== password && (
-                  <p className="text-xs text-red-400 mt-1">Passwords do not match</p>
+                  <p className="text-xs text-red-400 mt-1">{t('auth.passwordsMismatch')}</p>
                 )}
               </div>
 
@@ -141,11 +143,11 @@ function ResetPasswordContent() {
                 className="w-full"
                 icon={<ArrowRight className="h-4 w-4" />}
               >
-                Update password
+                {t('auth.updatePassword')}
               </Button>
 
               <Link href="/login">
-                <Button variant="ghost" className="w-full mt-1">Back to sign in</Button>
+                <Button variant="ghost" className="w-full mt-1">{t('auth.backToSignIn')}</Button>
               </Link>
             </form>
           ) : (
@@ -157,7 +159,7 @@ function ResetPasswordContent() {
               <div className="h-14 w-14 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto">
                 <CheckCircle2 className="h-7 w-7 text-green-400" />
               </div>
-              <p className="text-white/60 text-sm">Taking you back to sign in…</p>
+              <p className="text-white/60 text-sm">{t('auth.takingYouBack')}</p>
               <div className="flex gap-1 justify-center">
                 {[0, 1, 2].map((i) => (
                   <div key={i} className="h-1.5 w-1.5 rounded-full bg-purple-400 animate-bounce"

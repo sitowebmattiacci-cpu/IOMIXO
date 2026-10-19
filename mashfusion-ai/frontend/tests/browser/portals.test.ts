@@ -111,7 +111,7 @@ test('PT3. sign-up on iomixo.com saves accountType dj with no choice; unknown ho
     await page.goto(`${I()}/register`, { waitUntil: 'networkidle', timeout: 120_000 })
     await page.locator('input[type="text"]').first().fill('DJ Test'); await page.locator('input[type="email"]').fill(email); await page.locator('input[type="password"]').fill('password123')
     await page.locator('button[type="submit"]').click()
-    await page.getByText(/Check your inbox/i).first().waitFor({ timeout: 60_000 })
+    await page.getByText(/Check your inbox|Controlla la tua casella/i).first().waitFor({ timeout: 60_000 })
     assert.equal(await page.getByTestId('register-continue').count(), 0, 'no Sposi continue button for a DJ')
     const u = await until(async () => ((await fsGet('users?pageSize=1000')).documents ?? []).find((d: any) => d.fields.email?.stringValue === email), 20_000, 'users doc')
     assert.equal(u.fields.accountType.stringValue, 'dj')
