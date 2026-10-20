@@ -8,6 +8,8 @@ import { livePhotos } from '@/lib/api'
 import { fetchPublicLive } from '@/lib/events/publicEventService'
 import { useEventBrand } from '@/lib/events/useEventBrand'
 import { compressImage } from '@/lib/imageCompress'
+import { UPLOAD_ERROR_KEYS } from '@/lib/media/uploadErrors'
+import { GuestMediaUploader } from '@/components/wedding/guest/GuestMediaUploader'
 import {
   WeddingGuestShell, WeddingGuestPageTitle, WeddingGuestPanel, WeddingGuestButton, WeddingGuestHelper,
   WeddingGuestNotice, WeddingGuestBackLink, formatWeddingGuestDate, WEDDING_GUEST_TOAST,
@@ -21,16 +23,7 @@ import { occasionText } from '@/lib/occasion'
 import toast from 'react-hot-toast'
 
 /** Server reasons of the photo callables → translated guest message (the server texts are not localized). */
-const REASON_KEYS: Record<string, string> = {
-  miolove_trial_expired: 'guestAlbum.trialEnded',
-  miolove_trial_photo_limit_reached: 'guestAlbum.limitReached',
-  cooldown: 'guestAlbum.err.cooldown',
-  guest_limit: 'guestAlbum.err.guestLimit',
-  file_too_large: 'guestAlbum.err.tooLarge',
-  unsupported_format: 'guestAlbum.err.format',
-  upload_missing: 'guestAlbum.err.retry',
-  event_ended: 'booth.sessionEnded',
-}
+const REASON_KEYS = UPLOAD_ERROR_KEYS
 
 export default function LiveBoothPage() {
   const { t, locale } = useI18n()
@@ -319,7 +312,9 @@ export default function LiveBoothPage() {
   // estetica (objectURL) e NON è richiesta per l'upload.
   const openFilePicker = () => fileInputRef.current?.click()
 
+  // MIOLOVE album: the ORIGINAL is uploaded as it is (the derived copies are made inside the upload). Only a non-album event still pre-compresses.
   const prepareFile = (file: File) => {
+    if (isAlbum) return
     preparedRef.current = compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.82 })
   }
 
@@ -365,10 +360,10 @@ export default function LiveBoothPage() {
           setUploading(false)
           return
         }
-        // Ridimensiona/comprime lato client (file enormi 8/12 MB); difensivo: se fallisce usa l'originale.
-        optimized = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.82 })
+        // Album: the original goes up untouched. Other events: resize/compress client-side (8/12 MB phone files); defensive, on failure the original is used.
+        optimized = isAlbum ? file : await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.82 })
       }
-      await livePhotos.boothUpload(slug!, optimized, {}, setUploadPct)
+      await livePhotos.boothUpload(slug!, optimized, {}, setUploadPct, { album: isAlbum })
       toast.success(isWedding
         ? t('booth.uploadedWedding')
         : t('booth.uploadedParty'), isWedding ? WEDDING_GUEST_TOAST : undefined)
@@ -655,13 +650,23 @@ export default function LiveBoothPage() {
             <WeddingGuestNotice
               tone="error"
               title={t('booth.cameraUnavailableTitle')}
-              action={<WeddingGuestButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />}>{t('booth.uploadPhoto')}</WeddingGuestButton>}
+              action={isAlbum ? undefined : <WeddingGuestButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />}>{t('booth.uploadPhoto')}</WeddingGuestButton>}
             >
               {t('booth.cameraUnavailableText')}
             </WeddingGuestNotice>
           </div>
         )}
 
+        {isAlbum ? (
+          // MIOLOVE album: photos AND videos, several at once, original quality. The camera stays for a quick single photo (not on iOS: its picker already offers it).
+          <div className="space-y-5">
+            {!isIOS && (
+              <WeddingGuestButton variant="secondary" onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />}>{t('booth.openCamera')}</WeddingGuestButton>
+            )}
+            <GuestMediaUploader slug={slug!} guestName={undefined} />
+            <WeddingGuestHelper tone="pink">{t('booth.weddingApprovalNote')}</WeddingGuestHelper>
+          </div>
+        ) : (
         <div className="space-y-3">
           {isIOS ? (
             <WeddingGuestButton onClick={openFilePicker} icon={<ImagePlus className="h-5 w-5" />}>{t('booth.uploadPhoto')}</WeddingGuestButton>
@@ -674,6 +679,7 @@ export default function LiveBoothPage() {
           )}
           <WeddingGuestHelper tone="pink">{t('booth.weddingApprovalNote')}</WeddingGuestHelper>
         </div>
+        )}
       </WeddingGuestPanel>
       <div className="flex justify-center">
         <WeddingGuestBackLink href={`/live/${slug}`} label={t('booth.backToMain')} />

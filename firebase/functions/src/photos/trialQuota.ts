@@ -1,7 +1,11 @@
 import { Timestamp, type DocumentData } from 'firebase-admin/firestore'
 
-/** Photos a MIOLOVE free-trial album may collect. The only definition: the event also carries it as `trialPhotoLimit` for the UI. */
+/**
+ * Contents (photos and videos TOGETHER: 40 photos + 10 videos = 50) a MIOLOVE free-trial album may collect. The only definition: the event also
+ * carries it as `trialPhotoLimit` for the UI. The field / constant names say "photo" for historical reasons; they count every content.
+ */
 export const MIOLOVE_TRIAL_PHOTO_LIMIT = 50
+export const MIOLOVE_TRIAL_MEDIA_LIMIT = MIOLOVE_TRIAL_PHOTO_LIMIT
 export const TRIAL_PHOTO_LIMIT_REASON = 'miolove_trial_photo_limit_reached'
 
 /** Wedding album created by a couple on the free trial (events without `accessMode` are never trial). */

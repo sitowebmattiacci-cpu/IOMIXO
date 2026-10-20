@@ -3,6 +3,7 @@
 // Two offers only: the 7-day free trial and the FULL ALBUM, a single payment of €19.99. No subscription, no monthly plan, no Event Pass,
 // no IOMIXO plan. A feature is shown to people ONLY if it really exists: every item below points at a `FeatureId`, and the lists skip the ones
 // whose status is still 'planned' (audit 2026-10-19, see MIOLOVE_GO_LIVE.md). Flip a status the day the feature ships and the pages follow.
+// Media engine shipped: video, original quality and download-everything are 'available'; only the 12-month retention is still planned.
 
 export const ALBUM_PRICE_EUR = 19.99
 export const TRIAL_DAYS = 7
@@ -15,7 +16,7 @@ export type FeatureId =
 
 export const FEATURE_STATUS: Record<FeatureId, FeatureStatus> = {
   photos: 'available',          // guest photo upload, gallery, moderation, TV slideshow
-  video: 'planned',             // NOT implemented: uploads are jpg / png / webp only (createPhotoUpload, storage rules, UI)
+  video: 'available',           // guest + owner upload of mp4 / mov / webm (max 150 MB each), gallery player, slideshow playback; the trial counts photos + videos together
   guests: 'available',          // no guest cap (only an anti-spam cap per guest)
   noApp: 'available',           // web pages, QR + link
   qrLink: 'available',
@@ -24,8 +25,8 @@ export const FEATURE_STATUS: Record<FeatureId, FeatureStatus> = {
   basicCustom: 'available',     // names, date, venue, description, occasion
   brandVisible: 'available',    // MIOLOVE mark on guest page / booth / screen of a trial album
   months12: 'planned',          // NOT implemented: no activatedAt / expiresAt, no retention policy
-  originalQuality: 'planned',   // NOT implemented: photos are resized (1920px, JPEG 82%) in the browser before upload, 8 MB hard cap
-  downloadAll: 'planned',       // NOT implemented: only per-photo downloads (a ZIP / server export is missing)
+  originalQuality: 'available', // the ORIGINAL file of every new photo / video is stored as sent; the album shows derived copies; download = original
+  downloadAll: 'available',     // owner: one click → server-built ZIP of every original (requestAlbumExport / onAlbumExportCreated); locked on the free trial
   whiteLabel: 'available',      // an `activated` album shows no MIOLOVE mark (guest page, booth, screen)
   posterCard: 'available',      // poster / QR card editor, locked unless the album is `activated`
 }

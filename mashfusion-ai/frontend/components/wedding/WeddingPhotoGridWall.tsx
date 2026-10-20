@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useI18n } from '@/lib/i18n'
 import { useGridSlideshow } from '@/lib/useGridSlideshow'
@@ -54,7 +54,9 @@ export function WeddingPhotoGridWall({
   className = '',
 }: WeddingPhotoGridWallProps) {
   const { t } = useI18n()
-  const { grid, hasPhotos } = useGridSlideshow(photos, cells, intervalMs)
+  // The wall swaps still cells: a video takes part through its poster frame (no poster = left out); only the single-frame slideshow plays videos.
+  const stills = useMemo(() => photos.flatMap((p) => (p.media_type === 'video' ? (p.thumb_url ? [{ ...p, url: p.thumb_url, media_type: undefined }] : []) : [p])), [photos])
+  const { grid, hasPhotos } = useGridSlideshow(stills, cells, intervalMs)
   const date = formatWeddingDate(weddingDate)
 
   if (!hasPhotos) {

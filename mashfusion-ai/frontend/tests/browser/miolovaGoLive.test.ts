@@ -66,8 +66,9 @@ for (const w of [390, 768, 1280, 1440]) {
       assert.match(await page.getByTestId('hero-note').innerText(), /7 giorni di prova gratis · Nessuna carta di credito/)
       assert.equal(await page.getByTestId('album-price').innerText(), '€19,99')
       const body = await noReassure(page); assert.doesNotMatch(body, FORBIDDEN)
-      for (const s of ['Prova gratis', 'Album completo', 'Foto illimitate', 'Slideshow live', 'Logo MIOLOVE visibile']) assert.ok(body.includes(s), s)
-      for (const planned of ['Qualità originale', '12 mesi', 'Scarica tutto con un click', 'foto e video']) assert.ok(!body.includes(planned), `"${planned}" is not implemented: it must not be advertised`)
+      for (const s of ['Prova gratis', 'Album completo', 'Foto e video illimitati', 'Slideshow live', 'Logo MIOLOVE visibile']) assert.ok(body.includes(s), s)
+      for (const planned of ['12 mesi']) assert.ok(!body.includes(planned), `"${planned}" is not implemented: it must not be advertised`)
+      for (const live of ['Foto e video illimitati', 'Qualità originale', 'Scarica tutto con un click']) assert.ok(body.includes(live), `"${live}" ships with the media engine: it must be advertised`)
       assert.equal(await page.getByTestId('hero-cta-primary').getAttribute('href'), '/register')
       assert.equal(await overflow(page), false, 'overflow')
       // reviews: development shows the DEMO layout only under a visible demo badge
@@ -218,7 +219,7 @@ test('GUEST2. photos are OFF by the owner: a clear message, not a lock; a closed
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const page = await ctx.newPage()
   try {
     await page.goto(`${M()}/live/${off.slug}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
-    await page.getByText("L'invio di foto non è attivo").waitFor({ timeout: 90_000 })
+    await page.getByText("L'invio di foto e video non è attivo").waitFor({ timeout: 90_000 })
     await page.goto(`${M()}/live/${ended.slug}`, { waitUntil: 'domcontentloaded' })
     await page.getByTestId('guest-notice').waitFor({ timeout: 90_000 })
     assert.match(await page.getByTestId('guest-notice').innerText(), /prova gratuita di questo album è terminata/)

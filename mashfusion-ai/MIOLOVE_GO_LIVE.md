@@ -55,7 +55,37 @@ Source: `firebase/functions/.env.iomixo-494817`, `functions/src/billing/prices.t
 
 1. **B1 – Stripe product + checkout + webhook for the €19.99 album** (§2). Without it nobody can activate: the public price is shown but cannot be bought.
 2. Google provider + authorized domains in the Firebase console (manual).
-3. Video upload, original quality, download-all (ZIP), 12-month retention: hidden from all MIOLOVE copy until implemented (single switch: `lib/miolove/plans.ts → FEATURE_STATUS`).
+3. 12-month retention: hidden from all MIOLOVE copy until implemented (single switch: `lib/miolove/plans.ts → FEATURE_STATUS`). Video, original quality and download-all are implemented, see §6.
 4. Real reviews: the home hides the section in production (`lib/miolove/reviews.ts`); demo layout shows only in development / `NEXT_PUBLIC_MIOLOVE_SHOW_DEMO_REVIEWS=true`.
 5. Trial-expired media policy (§3).
 6. `www`/apex DNS + `NEXT_PUBLIC_MIOLOVE_LIVE=true` when miolovealbum.com answers.
+
+## 6. Media engine (photos + videos, originals, download-all) — implemented, awaiting review
+
+**Model** (`firebase/functions/src/photos/media.ts`). Per media, under `events/{e}/photos/{p}/`:
+`original.{jpg|png|webp|mp4|mov|webm}` = EXACTLY what the guest sent (never transcoded, never replaced; the only file the owner downloads) ·
+`optimized.jpg` (photos: 1920 px, what gallery / TV show) · `thumb.jpg` (photo thumbnail, or the poster frame of a video). Doc fields (absent on legacy photos,
+which are read as one compressed photo and keep working): `mediaType, originalPath, optimizedPath, thumbPath, originalFilename, size (original), maxBytes, width, height, durationSec`.
+
+**Limits.** Technical per-file limits only: video 150 MB (`MEDIA_LIMITS.videoBytes`, 150 MiB), original photo 50 MB, legacy single-file photo 8 MB.
+No limit on the NUMBER of photos/videos of an activated album. Per-guest anti-abuse cap on a MIOLOVE album: 500 uploads (cooldown 500 ms); IOMIXO events keep 60 / 2 s.
+**Trial = 50 CONTENTS TOTAL** (photos + videos share the counter `trialPhotoCount`, taken in the `finalizePhoto` transaction, freed by delete, never taken by a failed upload).
+
+**Security.** `storage.rules`: a guest may create only the object(s) written in the photo doc created by `createPhotoUpload` (exact path, own uid, declared type, size ≤ `maxBytes`, no overwrite).
+Reading: the OWNER reads everything; guests / TV read only APPROVED media and only what they need to show it: optimized image, thumbnail, the video file itself (no transcoded copy
+exists, so a video's file must be readable to be played), and the single file of a legacy photo. The ORIGINAL of a new photo is NOT readable by guests. No listing for anyone. The
+export path is closed to every client; export docs are readable by the owner only.
+
+**Download everything** = server-side, streamed (never in the browser's memory): `requestAlbumExport` (owner, paid album only) → Firestore trigger `onAlbumExportCreated` streams every
+original (approved + pending; not rejected / unfinished) through a store-only ZIP into `events/{e}/exports/{x}/album.zip`, updating `processed` → `getAlbumExportUrl` gives the owner a fresh
+tokenised URL → one download (`album.zip`). Archives expire after 24 h; `purgeAlbumExports` (scheduled, hourly) and every new request delete the expired ones. Trigger: 1 GiB, 540 s.
+
+**TV / slideshow.** A video plays once, MUTED (browsers refuse autoplay with sound and a TV has nobody to unmute; the original with sound stays downloadable), then the slideshow moves on
+(ended / error / 15 s without progress / 120 s cap — never an endless loop). A lone video restarts. Grid wall: videos take part as poster frames. IOMIXO events never contain videos.
+
+**Not done / known limits (deliberate, to be decided):**
+- No server transcoding: a video the guest's / owner's browser cannot decode (e.g. HEVC `.mov` outside Safari) is stored intact and downloadable, shown with a "download the original" message in the player (no poster if the uploader's browser could not decode it either).
+- HEIC / GIF / AVI are refused with a clear message (iOS normally converts HEIC to JPEG in the picker when `accept` lists JPEG/PNG/WebP — NOT verified on a real iPhone / Android in this sprint, only in headless Chrome).
+- Failed uploads leave an `uploading` doc + partial files (never counted, never shown); there is no sweeper for them yet.
+- Deploy prerequisites to verify BEFORE going live: the Functions service account needs Storage object read/write/delete (it already deletes objects); Cloud Scheduler enabled for `purgeAlbumExports`;
+  the Firestore trigger region must match the Firestore database location; the `archiver` dependency is new in `firebase/functions`.

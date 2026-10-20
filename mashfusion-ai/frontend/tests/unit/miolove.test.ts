@@ -26,12 +26,20 @@ test('PRICING. only features that really exist are shown (planned ones are skipp
   const shown = [...visibleItems(TRIAL_INCLUDED), ...visibleItems(TRIAL_EXCLUDED), ...visibleItems(ALBUM_INCLUDED)]
   for (const i of shown) if (i.feature) assert.equal(FEATURE_STATUS[i.feature], 'available', i.key)
   const keys = shown.map((i) => i.key)
-  for (const planned of ['trialQuotaMedia', 'albumMedia', 'months12Upload', 'months12Storage', 'originalQuality', 'downloadAll', 'noDownloadAll']) assert.ok(!keys.includes(planned), `${planned} must stay hidden until implemented`)
-  assert.ok(keys.includes('trialQuotaPhotos') && keys.includes('albumMediaPhotos') && keys.includes('poster') && keys.includes('noBrand'))
+  // The media engine shipped (video, original quality, download-everything); the 12-month retention has not: it must stay hidden.
+  for (const planned of ['months12Upload', 'months12Storage']) assert.ok(!keys.includes(planned), `${planned} must stay hidden until implemented`)
+  assert.equal(FEATURE_STATUS.months12, 'planned')
+  for (const f of ['video', 'originalQuality', 'downloadAll'] as const) assert.equal(FEATURE_STATUS[f], 'available', f)
+  assert.ok(keys.includes('trialQuotaMedia') && keys.includes('albumMedia') && keys.includes('originalQuality') && keys.includes('downloadAll') && keys.includes('noDownloadAll'))
+  assert.ok(!keys.includes('trialQuotaPhotos') && !keys.includes('albumMediaPhotos'), 'the "photos only" wording is replaced once video exists')
+  assert.ok(keys.includes('poster') && keys.includes('noBrand'))
   // flipping a status makes the page follow
+  const photosOnly = { ...FEATURE_STATUS, video: 'planned' } as Record<FeatureId, 'available' | 'planned'>
+  const k1 = visibleItems(ALBUM_INCLUDED, photosOnly).map((i) => i.key)
+  assert.ok(k1.includes('albumMediaPhotos') && !k1.includes('albumMedia'))
   const all = Object.fromEntries(Object.keys(FEATURE_STATUS).map((k) => [k, 'available'])) as Record<FeatureId, 'available'>
   const k2 = visibleItems(ALBUM_INCLUDED, all).map((i) => i.key)
-  assert.ok(k2.includes('albumMedia') && !k2.includes('albumMediaPhotos') && k2.includes('downloadAll'))
+  assert.ok(k2.includes('albumMedia') && !k2.includes('albumMediaPhotos') && k2.includes('downloadAll') && k2.includes('months12Storage'))
 })
 
 test('COPY. the four languages have the same MIOLOVE keys; every plan item has a text; no IOMIXO / Event Pass / monthly wording outside the reassurances', () => {

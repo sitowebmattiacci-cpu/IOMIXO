@@ -36,3 +36,23 @@ export async function rotateDownloadToken(path: string): Promise<boolean> {
   try { await bucket().file(path).setMetadata({ metadata: { firebaseStorageDownloadTokens: randomUUID() } }); return true }
   catch (e) { console.error('[storage] token rotation failed', (e as Error).message); return false }
 }
+
+// ── Export support (album ZIP) ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** Streams, never buffers: an album may weigh many GB. */
+export const readStream = (path: string) => bucket().file(path).createReadStream()
+export const objectExists = async (path: string): Promise<boolean> => (await bucket().file(path).exists())[0]
+export const writeStream = (path: string, contentType: string, contentDisposition: string) =>
+  bucket().file(path).createWriteStream({ resumable: true, contentType, metadata: { contentType, contentDisposition, cacheControl: 'private,max-age=0' } })
+
+/**
+ * Gives an object a FRESH download token (the previous ones stop working) and returns the URL that carries it. Used for the export archive only:
+ * the token is the capability, it is handed to the event owner alone, and the archive is deleted when its export expires.
+ */
+export async function issueDownloadUrl(path: string): Promise<string> {
+  const token = randomUUID()
+  await bucket().file(path).setMetadata({ metadata: { firebaseStorageDownloadTokens: token } })
+  const emulator = process.env.FIREBASE_STORAGE_EMULATOR_HOST || process.env.STORAGE_EMULATOR_HOST
+  const base = emulator ? (/^https?:\/\//.test(emulator) ? emulator : `http://${emulator}`) : 'https://firebasestorage.googleapis.com'
+  return `${base}/v0/b/${bucketName()}/o/${encodeURIComponent(path)}?alt=media&token=${token}`
+}

@@ -426,6 +426,22 @@ export interface LivePhoto {
   is_featured?: boolean
   source?: 'guest_upload' | 'live_booth' | string
   created_at: string
+  /** Absent on legacy photos (= 'photo'). `url` is the file to SHOW: the optimized image of a photo, the video file itself of a video. */
+  media_type?: 'photo' | 'video'
+  /** Grid thumbnail of a photo / poster frame of a video (null = none: show a placeholder). */
+  thumb_url?: string | null
+  /** Owner gallery: `url` is left null and the Storage path of the file to show is here; the viewer resolves it when the media is opened (`livePhotos.originalUrl(path)` reads any path the owner may read). */
+  url_path?: string | null
+  /** Owner only: the Storage path of the ORIGINAL (what "download" gives). */
+  original_path?: string | null
+  /** True when `original_path` holds the original as sent (new pipeline); false for a legacy photo, whose single file was compressed by the old client. */
+  has_original?: boolean
+  filename?: string | null
+  content_type?: string | null
+  size?: number | null
+  duration_sec?: number | null
+  width?: number | null
+  height?: number | null
 }
 
 export const liveDedications = {
@@ -510,13 +526,27 @@ export const livePhotos = {
   async remove(id: string): Promise<void> {
     need(await (await owner()).photos.moderate(id, { action: 'delete' }), 'Foto non trovata')
   },
+  /** Owner: URL of the ORIGINAL file (what "download" gives). */
+  async originalUrl(path: string): Promise<string> {
+    return need(await (await owner()).photos.originalUrl(path))
+  },
+  /** Owner: "download everything" as one archive of the originals (server-side export; follow it with watchExport). */
+  async requestExport(sessionId: string) {
+    return need(await (await owner()).photos.requestExport(sessionId), NOT_FOUND)
+  },
+  async watchExport(eventId: string, exportId: string, onChange: (x: import('./firebase/repositories/photoRepository').ExportDoc | null) => void, onError?: (e: Error) => void) {
+    return (await owner()).photos.watchExport(eventId, exportId, onChange, onError)
+  },
+  async exportUrl(eventId: string, exportId: string) {
+    return (await owner()).photos.exportUrl(eventId, exportId)
+  },
   // Guest album: createPhotoUpload → Storage → finalizePhoto
-  async publicUpload(slug: string, file: File, meta: { guest_name?: string; caption?: string }, onProgress?: (pct: number) => void): Promise<{ id: string }> {
-    return need(await (await photoGuest()).uploadGuestPhoto(slug, file, meta, 'guest_upload', onProgress), NOT_FOUND)
+  async publicUpload(slug: string, file: File, meta: { guest_name?: string; caption?: string }, onProgress?: (pct: number) => void, opts?: { album?: boolean }): Promise<{ id: string }> {
+    return need(await (await photoGuest()).uploadGuestPhoto(slug, file, meta, 'guest_upload', onProgress, opts), NOT_FOUND)
   },
   // Live Booth: same flow, different source
-  async boothUpload(slug: string, file: File, meta: { guest_name?: string; caption?: string }, onProgress?: (pct: number) => void): Promise<{ id: string }> {
-    return need(await (await photoGuest()).uploadGuestPhoto(slug, file, meta, 'live_booth', onProgress), NOT_FOUND)
+  async boothUpload(slug: string, file: File, meta: { guest_name?: string; caption?: string }, onProgress?: (pct: number) => void, opts?: { album?: boolean }): Promise<{ id: string }> {
+    return need(await (await photoGuest()).uploadGuestPhoto(slug, file, meta, 'live_booth', onProgress, opts), NOT_FOUND)
   },
   warmUpload(slug: string): void {
     void photoGuest().then((m) => m.warmGuestPhotoUpload(slug)).catch(() => {})

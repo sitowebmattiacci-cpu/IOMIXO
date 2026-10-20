@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { getFirebaseDb, getFirebaseStorage } from '../firebase/client'
 import { onAuthChange } from '../firebase/auth'
 import { authProvider } from '../auth'
-import { subscribeApprovedPhotos, subscribeOwnerPhotos, photoUrl } from '../firebase/repositories/photoRepository'
+import { subscribeApprovedPhotos, subscribeOwnerPhotos, photoUrl, docToLivePhoto } from '../firebase/repositories/photoRepository'
 import { useEventChildSignal } from './useRequests'
 import type { LivePhoto } from '../api'
 
@@ -25,10 +25,7 @@ export function useApprovedPhotos(eventId: string | undefined, max = 12): LivePh
       const storage = getFirebaseStorage()
       unsubscribe = subscribeApprovedPhotos(getFirebaseDb(), eventId, max, async (docs) => {
         const mine = ++seq
-        const rows = await Promise.all(docs.filter((d) => d.storagePath).map(async (d): Promise<LivePhoto> => ({
-          id: d.id, guest_name: d.guestName, caption: d.caption, url: await photoUrl(storage, d.storagePath),
-          is_featured: d.isFeatured, source: d.source, created_at: (d.createdAt ?? new Date()).toISOString(),
-        })))
+        const rows = await Promise.all(docs.filter((d) => d.storagePath).map((d) => docToLivePhoto(storage, d)))
         if (!cancelled && mine === seq) setPhotos(rows.filter((r) => r.url))        // a newer snapshot already won: drop this one
       }, () => !cancelled && setPhotos(undefined))
     })

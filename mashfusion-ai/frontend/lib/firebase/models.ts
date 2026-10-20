@@ -228,7 +228,18 @@ export interface PhotoDoc {
   source:      PhotoSource
   status:      PhotoStatus
   isFeatured:  boolean
+  /** The ORIGINAL file (what the owner downloads). For a legacy photo it is also the only file, and the one shown. */
   storagePath: string
+  /** Media model (photos / videos uploaded to a MIOLOVE album with the new pipeline). Absent on legacy photos, which are read as `photo`. */
+  mediaType?:        'photo' | 'video'
+  optimizedPath?:    string | null
+  thumbPath?:        string | null
+  contentType?:      string | null
+  size?:             number | null
+  originalFilename?: string | null
+  width?:            number | null
+  height?:           number | null
+  durationSec?:      number | null
   legacySupabaseId?: string
   legacyStoragePath?: string
   createdAt:   Date | null

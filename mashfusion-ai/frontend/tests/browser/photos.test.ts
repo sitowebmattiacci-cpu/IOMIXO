@@ -56,9 +56,8 @@ test('H1. MIOLOVE album: guest uploads from the Live Booth → approved immediat
 
     // guest: Live Booth, native file picker path (no camera in headless)
     const guest = await guestCtx.newPage(); await guest.goto(`${app.url}/booth/${s.slug}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
-    await guest.locator('input[type="file"]').first().waitFor({ state: 'attached', timeout: 90_000 })
-    await guest.locator('input[type="file"]').first().setInputFiles({ name: 'selfie.png', mimeType: 'image/png', buffer: PNG })
-    await guest.getByRole('button', { name: /^Invia$|Usa questa foto/ }).first().click({ timeout: 30_000 })
+    await guest.getByTestId('guest-upload-input').waitFor({ state: 'attached', timeout: 90_000 })
+    await guest.getByTestId('guest-upload-input').setInputFiles({ name: 'selfie.png', mimeType: 'image/png', buffer: PNG })      // the album uploader sends it on its own
     const photo = await until(async () => (await fsList(`events/${s.id}/photos`))[0], 30_000, 'photo doc')
     const photoId = photo.name.split('/').pop()
     // Wedding: no moderation. Finalize makes the photo approved and the TV shows it live.

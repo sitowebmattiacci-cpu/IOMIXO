@@ -16,6 +16,7 @@ import { WdPage, WdCard, WdButton, WdLinkButton } from './WeddingAdminUI'
 import { TrialQuota } from './TrialQuota'
 import { PhonePreview, MonitorPreview } from './LivePreviews'
 import { occasionText } from '@/lib/occasion'
+import { isVideoMedia } from '@/lib/media/mediaTypes'
 
 export const isVideoUrl = (u: string | null | undefined) => !!u && /\.(mp4|mov|webm|m4v|ogv)(\?|#|$)/i.test(u)
 
@@ -80,9 +81,9 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
   const dateLabel = session.wedding_date ? new Date(session.wedding_date).toLocaleDateString(({ it: 'it-IT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES' } as Record<string, string>)[locale] ?? 'it-IT', { dateStyle: 'long' }) : null
 
   const all = photos ?? []
-  const videoCount = all.filter((p) => isVideoUrl(p.url)).length
-  const stills = all.filter((p) => p.url && !isVideoUrl(p.url) && p.status !== 'rejected')
-  const hero = stills[0]?.url ?? null
+  const videoCount = all.filter((p) => isVideoMedia(p)).length
+  const stills = all.filter((p) => (p.thumb_url ?? p.url) && !isVideoMedia(p) && p.status !== 'rejected')
+  const hero = stills[0]?.thumb_url ?? stills[0]?.url ?? null
 
   // Song requests are moderated by the DJ only: a Sposi album never offers them to guests. An IOMIXO Wedding DJ event never offers photos.
   const guestItems = buildWeddingGuestActions(getWeddingGuestActionKeys(session.guest_config).filter((k) => (couple ? k !== 'requests' : k !== 'photos')), t)

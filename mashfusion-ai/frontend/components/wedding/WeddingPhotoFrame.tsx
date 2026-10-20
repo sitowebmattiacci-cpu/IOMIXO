@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useI18n } from '@/lib/i18n'
 import { useSlideshow } from '@/lib/useSlideshow'
 import { useFrameTitle } from '@/components/brand/eventBrandContext'
+import { SlideVideo } from '@/components/media/SlideVideo'
 
 // ════════════════════════════════════════════════════════════════
 // IOMIXO — Wedding Edition · "Oggi Sposi" photo frame
@@ -45,6 +46,10 @@ export interface WeddingPhotoFrameProps {
   /** screen = TV/proiettore (grande) · compact = dashboard/album. */
   variant?: 'screen' | 'compact'
   className?: string
+  /** 'video': `url` is a video file, played once inside the frame (poster while it loads) and `onVideoDone` is called when it is over. */
+  mediaType?: string
+  poster?: string | null
+  onVideoDone?: () => void
 }
 
 export function WeddingPhotoFrame({
@@ -55,6 +60,9 @@ export function WeddingPhotoFrame({
   featured = false,
   variant = 'screen',
   className = '',
+  mediaType,
+  poster,
+  onVideoDone,
 }: WeddingPhotoFrameProps) {
   const { t } = useI18n()
   const frameTitle = useFrameTitle()
@@ -107,7 +115,10 @@ export function WeddingPhotoFrame({
         className="w-full overflow-hidden rounded-lg border"
         style={{ borderColor: '#E8DED6' }}
       >
-        {url ? (
+        {url && mediaType === 'video' ? (
+          <SlideVideo src={url} poster={poster} onDone={onVideoDone ?? (() => {})}
+            className={`w-full bg-black object-contain ${isScreen ? 'aspect-[4/3]' : 'aspect-square'}`} />
+        ) : url ? (
           <img
             src={url}
             alt={caption ?? ''}
@@ -153,6 +164,9 @@ export interface SlideshowPhoto {
   url?: string | null
   caption?: string | null
   is_featured?: boolean
+  /** 'video' = a video file (plays once, then the slideshow moves on). Absent / 'photo' = a still image. */
+  media_type?: string
+  thumb_url?: string | null
 }
 
 export interface WeddingPhotoSlideshowProps {
@@ -172,7 +186,7 @@ export function WeddingPhotoSlideshow({
   className = '',
 }: WeddingPhotoSlideshowProps) {
   const { t } = useI18n()
-  const { photo, hasPhotos } = useSlideshow(photos, intervalMs)
+  const { photo, hasPhotos, next, cycle } = useSlideshow(photos, intervalMs)
 
   // Placeholder elegante quando non ci sono foto approvate.
   if (!hasPhotos) {
@@ -195,7 +209,7 @@ export function WeddingPhotoSlideshow({
       <AnimatePresence>
         {photo && (
           <motion.div
-            key={photo.id}
+            key={photo.media_type === 'video' ? `${photo.id}:${cycle}` : photo.id}      /* a lone video restarts: new key = new <video> */
             style={{ gridArea: '1 / 1' }}
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -210,6 +224,9 @@ export function WeddingPhotoSlideshow({
               weddingDate={weddingDate}
               featured={photo.is_featured}
               variant="screen"
+              mediaType={photo.media_type}
+              poster={photo.thumb_url}
+              onVideoDone={next}
             />
           </motion.div>
         )}

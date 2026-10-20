@@ -1,13 +1,19 @@
 rules_version = '2';
 // Event photos. Least privilege: everything is closed except the two paths below. Cross-service rules read Firestore (events, photos).
 //
-//   events/{eventId}/photos/{photoId}/original.{jpg|jpeg|png|webp}   guest album + Live Booth
+//   events/{eventId}/photos/{photoId}/original.{jpg|jpeg|png|webp|mp4|mov|webm}   guest album + Live Booth: the ORIGINAL, exactly as sent
+//   events/{eventId}/photos/{photoId}/optimized.jpg | thumb.jpg      what the album / TV show for a photo (1920 px JPEG) and its thumbnail / video poster
+//   events/{eventId}/exports/...                                      album ZIP built by a Function: closed to every client (the owner gets a short-lived URL from a callable)
 //   events/{eventId}/winner/{groom|bride}-<random>.{ext}             winner-announcement photos (owner)
 //   profiles/{uid}/avatar/{user|dj}-<random>.{jpg|png|webp}          profile avatars (owner only, ≤5 MB; committed by the commitAvatar callable)
 //
 // Never listable. No client may overwrite or delete anything: removals / token rotation / cleanup are done by Cloud Functions (Admin SDK).
 // The Firestore photo doc is created by the createPhotoUpload callable (event live + plan + anti-spam) BEFORE the bytes: the write is accepted only
-// for that exact path, by the guest it was issued to, once, with the declared image type and at most 8 MB.
+// for the exact path(s) written in that doc, by the guest it was issued to, once, with the declared type and at most `maxBytes` (a server decision:
+// 8 MB for a legacy single-file photo, 50 MB for an original photo, 150 MB for a video; derivatives are capped here).
+// Reading: the OWNER reads everything. Guests / the TV read only APPROVED media, and only what they need to SHOW it: the optimized image and thumbnail,
+// the video file itself (there is no transcoded copy to show instead) and, for legacy photos that never had an optimized copy, their single file.
+// The ORIGINAL of a new photo is therefore not readable by guests.
 service firebase.storage {
   match /b/{bucket}/o {
     function signedIn() { return request.auth != null; }
@@ -18,21 +24,44 @@ service firebase.storage {
       return request.resource.size > 0 && request.resource.size <= 8 * 1024 * 1024
         && request.resource.contentType.matches('image/(jpeg|png|webp)');
     }
+    function validDerivative(maxBytes) {
+      return request.resource.size > 0 && request.resource.size <= maxBytes && request.resource.contentType == 'image/jpeg';
+    }
 
     match /events/{eventId}/photos/{photoId}/{file} {
       function photo() { return firestore.get(/databases/(default)/documents/events/$(eventId)/photos/$(photoId)).data; }
+      function path() { return 'events/' + eventId + '/photos/' + photoId + '/' + file; }
+      // Server-chosen ceiling for the original (docs created before the media model carry none: the old 8 MB).
+      function maxOriginal(ph) { return 'maxBytes' in ph ? ph.maxBytes : 8 * 1024 * 1024; }
+
+      // Every Firestore document is read ONCE per request (the photo doc and the event doc are passed down as arguments): each firestore.get() is a
+      // billed read in production and a round trip between emulators, so the rules never call photo() / event() twice.
+      function canCreate(ph, ev) {
+        return ph.status == 'uploading'
+          && ph.guestUid == request.auth.uid
+          && ev.status == 'live' && !('deletedAt' in ev)
+          && (
+            (file.matches('original\\.(jpg|jpeg|png|webp|mp4|mov|webm)')
+              && ph.storagePath == path()
+              && request.resource.contentType == ph.contentType
+              && request.resource.size > 0 && request.resource.size <= maxOriginal(ph))
+            || (file == 'optimized.jpg' && 'optimizedPath' in ph && ph.optimizedPath == path() && validDerivative(4 * 1024 * 1024))
+            || (file == 'thumb.jpg' && 'thumbPath' in ph && ph.thumbPath == path() && validDerivative(1024 * 1024))
+          );
+      }
+      // Guests / TV: approved media of a not-deleted event, and never the ORIGINAL of a photo that has an optimized copy.
+      function guestCanRead(ph, ev) {
+        return ph.status == 'approved' && !('deletedAt' in ev)
+          && (file == 'optimized.jpg' || file == 'thumb.jpg'
+              || (file.matches('original\\..*')
+                  && (('mediaType' in ph && ph.mediaType == 'video') || !('optimizedPath' in ph) || ph.optimizedPath == null)));
+      }
+      function canRead(ev) { return (isAccount() && ev.ownerUid == request.auth.uid) || guestCanRead(photo(), ev); }
 
       // `resource == null`: the object must not exist yet (an overwrite is an update, which is never allowed; stated explicitly for the emulator too).
-      allow create: if signedIn() && resource == null
-        && file.matches('original\\.(jpg|jpeg|png|webp)')
-        && photo().status == 'uploading'
-        && photo().guestUid == request.auth.uid
-        && photo().storagePath == ('events/' + eventId + '/photos/' + photoId + '/' + file)
-        && request.resource.contentType == photo().contentType
-        && validImage()
-        && event(eventId).status == 'live' && !('deletedAt' in event(eventId));
-      // Read one file: approved photos of a not-deleted event by any signed-in viewer (guest page, TV), everything by the event owner. No listing.
-      allow get: if signedIn() && ((photo().status == 'approved' && !('deletedAt' in event(eventId))) || isEventOwner(eventId));
+      allow create: if signedIn() && resource == null && canCreate(photo(), event(eventId));
+      // Read one file, never list. Owner: everything. Guests / TV: see guestCanRead.
+      allow get: if signedIn() && canRead(event(eventId));
       allow list, update, delete: if false;
     }
 

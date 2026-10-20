@@ -47,9 +47,9 @@ const quota = (p: Page) => p.getByTestId('trial-quota-count').first()
 /** One guest upload through the Live Booth page; resolves with the page so the caller can read what the guest sees. */
 async function guestUpload(ctxGuest: Awaited<ReturnType<Browser['newContext']>>, slug: string) {
   const g = await ctxGuest.newPage(); await g.goto(`${M()}/booth/${slug}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
-  await g.locator('input[type="file"]').first().waitFor({ state: 'attached', timeout: 90_000 })
-  await g.locator('input[type="file"]').first().setInputFiles({ name: 'selfie.png', mimeType: 'image/png', buffer: PNG })
-  await g.getByRole('button', { name: /^Invia$|Usa questa foto/ }).first().click({ timeout: 30_000 })
+  // The album uploader sends a picked file on its own (no "send" button): photos AND videos, original quality.
+  await g.getByTestId('guest-upload-input').waitFor({ state: 'attached', timeout: 90_000 })
+  await g.getByTestId('guest-upload-input').setInputFiles({ name: 'selfie.png', mimeType: 'image/png', buffer: PNG })
   return g
 }
 
@@ -64,9 +64,9 @@ for (const vp of vps) {
 
       // Home: "Prova gratuita", 0 / 50 foto, bar, hint, no payment CTA yet
       await quota(page).waitFor({ timeout: 90_000 })
-      assert.equal((await quota(page).innerText()).replace(/\s+/g, ' '), `0 / ${LIMIT} foto`)
+      assert.equal((await quota(page).innerText()).replace(/\s+/g, ' '), `0 / ${LIMIT} contenuti`)
       const home = await page.evaluate(() => document.body.innerText)
-      assert.match(home, /Prova gratuita/); assert.match(home, new RegExp(`Puoi raccogliere fino a ${LIMIT} foto gratuitamente\\.`))
+      assert.match(home, /Prova gratuita/); assert.match(home, new RegExp(`Puoi raccogliere fino a ${LIMIT} contenuti \\(foto o video, insieme\\) gratuitamente\\.`))
       assert.doesNotMatch(home, FORBIDDEN); assert.equal(await page.getByText('Attiva il mio album').count(), 0)
       assert.equal(await page.getByRole('progressbar').first().getAttribute('aria-valuenow'), '0')
       assert.equal(await overflow(page), false, 'home overflow')
@@ -75,7 +75,7 @@ for (const vp of vps) {
       // Photos: guest QR / link + quota
       await goTab(page, /^Foto$|Foto/)
       await page.getByTestId('wd-photos-guest-link').waitFor({ timeout: 60_000 })
-      assert.equal((await quota(page).innerText()).replace(/\s+/g, ' '), `0 / ${LIMIT} foto`)
+      assert.equal((await quota(page).innerText()).replace(/\s+/g, ' '), `0 / ${LIMIT} contenuti`)
       assert.equal(await overflow(page), false, 'photos overflow')
 
       // Live Booth: not paywalled, link + QR + copy + open
@@ -90,7 +90,7 @@ for (const vp of vps) {
       // guest uploads -> counter 1, shown in the owner's page
       const g1 = await guestUpload(guestCtx, a.slug)
       await until(async () => (await countOf(a.id)) === 1, 40_000, 'counter 1')
-      await until(async () => /^1 \/ 50 foto$/.test((await quota(page).innerText().catch(() => '')).replace(/\s+/g, ' ')), 30_000, 'owner sees 1 / 50')
+      await until(async () => /^1 \/ 50 contenuti$/.test((await quota(page).innerText().catch(() => '')).replace(/\s+/g, ' ')), 30_000, 'owner sees 1 / 50')
       await g1.close()
 
       // 49 -> the 50th is accepted; 50 / 50 shows the limit and the placeholder CTA
@@ -99,7 +99,7 @@ for (const vp of vps) {
       await until(async () => (await countOf(a.id)) === LIMIT, 40_000, '50th photo accepted'); await g50.close()
       await page.goto(`${M()}/sessions/${a.id}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
       await quota(page).waitFor({ timeout: 90_000 })
-      assert.equal((await quota(page).innerText()).replace(/\s+/g, ' '), `${LIMIT} / ${LIMIT} foto`)
+      assert.equal((await quota(page).innerText()).replace(/\s+/g, ' '), `${LIMIT} / ${LIMIT} contenuti`)
       await page.getByText('Limite della prova gratuita raggiunto').waitFor({ timeout: 30_000 })
       const cta = page.getByRole('link', { name: 'Attiva il mio album' }); assert.match((await cta.getAttribute('href')) ?? '', /\/billing$/)
       assert.equal(await overflow(page), false, 'full overflow')
@@ -108,7 +108,7 @@ for (const vp of vps) {
       // guest over the limit: friendly message, album still open and photos still visible, nothing created
       const before = (await fsDoc(`events/${a.id}/photos`)).documents?.length ?? 0
       const gOver = await guestUpload(guestCtx, a.slug)
-      await gOver.getByText(/Questo album ha raggiunto il limite della prova gratuita\./).first().waitFor({ timeout: 40_000 })
+      await gOver.getByText(/Questo album ha raggiunto il limite della prova gratuita/).first().waitFor({ timeout: 40_000 })
       assert.doesNotMatch(await gOver.evaluate(() => document.body.innerText), FORBIDDEN)
       assert.equal(await overflow(gOver), false, 'guest overflow'); await gOver.screenshot({ path: `/tmp/trial-guest-limit-${vp.width}.png` }).catch(() => {})
       assert.equal(await countOf(a.id), LIMIT); assert.equal((await fsDoc(`events/${a.id}/photos`)).documents?.length ?? 0, before, 'the refused slot left no document')
@@ -129,7 +129,7 @@ for (const vp of vps) {
       await page.locator('div.group', { has: page.locator('img') }).first().hover()
       await page.locator('button[title="Elimina"]').first().click()
       await until(async () => (await countOf(a.id)) === LIMIT - 1, 30_000, 'counter 49')
-      await until(async () => /^49 \/ 50 foto$/.test((await quota(page).innerText().catch(() => '')).replace(/\s+/g, ' ')), 30_000, 'owner sees 49 / 50')
+      await until(async () => /^49 \/ 50 contenuti$/.test((await quota(page).innerText().catch(() => '')).replace(/\s+/g, ' ')), 30_000, 'owner sees 49 / 50')
       const gAgain = await guestUpload(guestCtx, a.slug)
       await until(async () => (await countOf(a.id)) === LIMIT, 40_000, 'new upload accepted after the delete'); await gAgain.close()
     } finally { await ctx.close(); await guestCtx.close() }

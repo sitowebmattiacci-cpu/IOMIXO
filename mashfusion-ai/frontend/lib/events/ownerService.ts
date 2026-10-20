@@ -7,7 +7,7 @@ import { dashboardFlag, ownerCallablesFlag } from './flags'
 import { eventToSession } from './legacyMappers'
 import { getEventById, getOwnerEventByLegacyId } from '../firebase/repositories/eventRepository'
 import { getLatestGame } from '../firebase/repositories/gameRepository'
-import { listOwnerPhotos, photoUrl, forgetPhotoUrl } from '../firebase/repositories/photoRepository'
+import { listOwnerPhotos, photoUrl, forgetPhotoUrl, subscribeExport, type ExportDoc } from '../firebase/repositories/photoRepository'
 import { toLegacyPhotos, extensionOf } from './photoService'
 import { ref as storageRef, uploadBytes } from 'firebase/storage'
 import { getEventIdBySlug } from '../firebase/repositories/eventRepository'
@@ -51,6 +51,11 @@ const MESSAGES: Record<string, string> = {
   photo_not_found:       'Foto non trovata',
   photo_not_ready:       'Il caricamento della foto non è terminato',
   photos_unavailable:    'Album foto disponibile solo per sessioni Party Mode o Wedding Edition.',
+  export_requires_album: 'Scaricare tutto è incluso nell\'Album completo.',
+  export_empty:          'L\'album non contiene ancora foto o video.',
+  export_not_ready:      'L\'archivio non è ancora pronto.',
+  export_expired:        'L\'archivio è scaduto: preparane uno nuovo.',
+  export_not_found:      'Archivio non trovato.',
 }
 
 async function callOwner<Out>(name: string, payload: object): Promise<Out> {
@@ -137,7 +142,7 @@ export const ownerOps = {
       const ev = await forDashboard(sessionId); if (!ev) return null
       const docs = await listOwnerPhotos(getFirebaseDb(), ev.id)
       docs.forEach((p) => owners.photo.set(p.id, ev.id))
-      const rows = await toLegacyPhotos(docs.filter((p) => !onlyBooth || p.source === 'live_booth'))
+      const rows = await toLegacyPhotos(docs.filter((p) => !onlyBooth || p.source === 'live_booth'), { owner: true })
       return rows.map((r) => ({ ...r, session_id: sessionId } as LivePhoto))
     },
     async moderate(photoId: string, body: { action: 'set_status'; status: 'pending' | 'approved' | 'rejected' } | { action: 'set_featured'; isFeatured: boolean } | { action: 'delete' }): Promise<boolean> {
@@ -145,6 +150,24 @@ export const ownerOps = {
       await callOwner('moderatePhoto', { eventId, photoId, ...body })
       const doc = owners.photo.get(photoId); void doc
       return true
+    },
+    /** URL of the ORIGINAL file of one media (owner only: storage.rules give nobody else the original of a new photo). null = not applicable. */
+    async originalUrl(path: string): Promise<string | null> {
+      if (!dashboardOn() || !path) return null
+      return photoUrl(getFirebaseStorage(), path)
+    },
+    /** "Download everything": asks the server for ONE archive with the originals. The progress comes from `watchExport`. */
+    async requestExport(sessionId: string): Promise<{ exportId: string; eventId: string; status: string; total: number } | null> {
+      const ev = await forDashboard(sessionId); if (!ev) return null
+      const r = await callOwner<{ exportId: string; status: string; total: number }>('requestAlbumExport', { eventId: ev.id })
+      return { ...r, eventId: ev.id }
+    },
+    watchExport(eventId: string, exportId: string, onChange: (x: ExportDoc | null) => void, onError?: (e: Error) => void): (() => void) {
+      return subscribeExport(getFirebaseDb(), eventId, exportId, onChange, onError)
+    },
+    /** A fresh, short-lived URL of a READY archive. */
+    async exportUrl(eventId: string, exportId: string): Promise<{ url: string; bytes: number | null; expiresAt: number }> {
+      return callOwner('getAlbumExportUrl', { eventId, exportId })
     },
     /** Winner-announcement photo: straight to Storage under the event's winner folder (rules: owner only). Returns the path stored in screenConfig. */
     async uploadWinnerPhoto(slug: string, file: File, role: 'groom' | 'bride'): Promise<{ storage_path: string } | null> {

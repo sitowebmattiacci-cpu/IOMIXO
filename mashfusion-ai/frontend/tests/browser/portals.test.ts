@@ -338,7 +338,7 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
       // What a guest scanning the QR really gets: a photo action, no song request
       const guest = await ctx.newPage()
       await guest.goto(`${M()}/live/${slug}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
-      await guest.getByText('Invia una foto').first().waitFor({ timeout: 60_000 })
+      await guest.getByText('Invia foto e video').first().waitFor({ timeout: 60_000 })
       const gt = await guest.evaluate(() => document.body.innerText)
       assert.doesNotMatch(gt, /canzone|brano|\bDJ\b/i, 'guest page: no song request'); assert.equal(await overflow(guest), false, 'guest overflow')
     } finally { await ctx.close() }

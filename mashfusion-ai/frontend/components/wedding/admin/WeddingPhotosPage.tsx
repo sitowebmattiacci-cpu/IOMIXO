@@ -4,14 +4,19 @@ import useSWR from 'swr'
 import { QRCodeSVG } from 'qrcode.react'
 import toast from 'react-hot-toast'
 import { Download, Check, Trash2, Star, Copy, Camera, Play, CheckCircle2, Image as ImageIcon, Video } from 'lucide-react'
+import { MediaLightbox } from '@/components/media/MediaLightbox'
+import { downloadOriginal } from '@/lib/media/download'
+import { MEDIA_ACCEPT, isVideoMedia, formatDuration } from '@/lib/media/mediaTypes'
+import { UPLOAD_ERROR_KEYS } from '@/lib/media/uploadErrors'
 import { livePhotos, type LivePhoto } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { usePhotosSignal } from '@/lib/events/usePhotos'
 import { WEDDING_BRAND_FILE_PREFIX } from '@/lib/brand/wedding'
 import { cn } from '@/lib/utils'
 import { WdPage, WdCard, WdButton, WdLinkButton, wdStatusLabel } from './WeddingAdminUI'
-import { publicOrigin, isVideoUrl } from './WeddingHomePage'
+import { publicOrigin } from './WeddingHomePage'
 import { TrialQuota } from './TrialQuota'
+import { AlbumExportButton } from './AlbumExport'
 
 type MediaFilter = 'all' | 'photo' | 'video'
 
@@ -26,6 +31,7 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
   const [uploading, setUploading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [copiedGuest, setCopiedGuest] = useState(false)
+  const [viewer, setViewer] = useState<number | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // One query feeds both tabs (the Live Booth is the same collection filtered by source).
@@ -34,12 +40,12 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
   useEffect(() => { if (photoSignal.tick > 0) refresh() }, [photoSignal.tick, refresh])
 
   const all: LivePhoto[] = (source === 'album' ? album : album?.filter((p) => p.source === 'live_booth')) ?? []
-  const items = all.filter((p) => filter === 'all' || (filter === 'video') === isVideoUrl(p.url))
-  const videoCount = all.filter((p) => isVideoUrl(p.url)).length
+  const items = all.filter((p) => filter === 'all' || (filter === 'video') === isVideoMedia(p))
+  const videoCount = all.filter((p) => isVideoMedia(p)).length
 
   const boothUrl = `${publicOrigin()}/booth/${slug ?? sessionId}`
   const guestUrl = `${publicOrigin()}/live/${slug ?? sessionId}`
-  const err = (e: any) => toast.error(e?.message ?? t('common.errorGeneric'))
+  const err = (e: any) => toast.error(UPLOAD_ERROR_KEYS[e?.reason] ? t(UPLOAD_ERROR_KEYS[e.reason]) : (e?.message ?? t('common.errorGeneric')))
 
   const toggleSel = (id: string) => setSelected((prev) => {
     const next = new Set(prev)
@@ -53,7 +59,7 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
     if (!files?.length) return
     setUploading(true)
     try {
-      for (const f of Array.from(files)) await livePhotos.publicUpload(slug, f, { guest_name: session.couple_names ?? undefined })
+      for (const f of Array.from(files)) await livePhotos.publicUpload(slug, f, { guest_name: session.couple_names ?? undefined }, undefined, { album: couple })
       toast.success(t('wdAdmin.photos.uploaded'))
       refresh()
     } catch (e: any) { err(e) } finally {
@@ -62,14 +68,11 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
     }
   }
 
+  // The ORIGINALS of the given media, one after the other (a short pause keeps browsers from blocking a burst of downloads).
   const downloadItems = (list: LivePhoto[]) => {
     list.forEach((p, i) => {
-      if (!p.url) return
-      setTimeout(() => {
-        const a = document.createElement('a')
-        a.href = p.url!; a.download = `${WEDDING_BRAND_FILE_PREFIX}-${p.id}`; a.target = '_blank'; a.rel = 'noopener noreferrer'
-        document.body.appendChild(a); a.click(); a.remove()
-      }, i * 250)
+      if (!p.url && !p.original_path) return
+      setTimeout(() => { downloadOriginal(p, WEDDING_BRAND_FILE_PREFIX).catch(err) }, i * 400)
     })
   }
 
@@ -88,18 +91,22 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
     <WdPage width="wide" title={t('wdAdmin.nav.photos')}>
       <TrialQuota session={session} />
       <div className="-mt-2 flex flex-wrap items-center justify-between gap-3">
-        <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => onUpload(e.target.files)} />
+        <input ref={fileRef} type="file" accept={couple ? MEDIA_ACCEPT : 'image/*'} multiple hidden onChange={(e) => onUpload(e.target.files)} data-testid="photos-upload-input" />
         <WdButton className="!px-6 !py-3.5 !rounded-2xl" onClick={() => fileRef.current?.click()} disabled={uploading}>
           {uploading ? t('common.loading') : t('wdAdmin.photos.upload')}
         </WdButton>
         <div className="flex flex-wrap items-center gap-3">
-          {/* MIOLOVE: "download everything" is part of the paid album; a trial can still download the photos it selects. */}
-          <WdButton className="!rounded-2xl !py-3" variant="secondary" icon={<Download className="h-4 w-4 text-wd-muted" />}
-            data-testid="photos-download"
-            title={downloadAllLocked && !selectedItems.length ? t('albumPlan.downloadAllLocked') : undefined}
-            onClick={() => downloadItems(selectedItems.length ? selectedItems : items)} disabled={items.length === 0 || (downloadAllLocked && !selectedItems.length)}>
-            {selectedItems.length ? `${t('wdAdmin.photos.download')} (${selectedItems.length})` : t('wdAdmin.photos.downloadAll')}
-          </WdButton>
+          {/* MIOLOVE album: a selection downloads those ORIGINALS; no selection = ONE server-built archive of every original (paid album). IOMIXO events keep the file-by-file download. */}
+          {couple && !selectedItems.length ? (
+            <AlbumExportButton sessionId={sessionId} disabled={items.length === 0 || downloadAllLocked} title={downloadAllLocked ? t('albumPlan.downloadAllLocked') : undefined} />
+          ) : (
+            <WdButton className="!rounded-2xl !py-3" variant="secondary" icon={<Download className="h-4 w-4 text-wd-muted" />}
+              data-testid="photos-download"
+              title={downloadAllLocked && !selectedItems.length ? t('albumPlan.downloadAllLocked') : undefined}
+              onClick={() => downloadItems(selectedItems.length ? selectedItems : items)} disabled={items.length === 0 || (downloadAllLocked && !selectedItems.length)}>
+              {selectedItems.length ? `${t('wdAdmin.photos.download')} (${selectedItems.length})` : t('wdAdmin.photos.downloadAll')}
+            </WdButton>
+          )}
           <div className="inline-flex rounded-2xl border border-wd-border bg-white p-1">
             {([['album', t('weddingPanels.guestAlbum')], ['booth', t('weddingPanels.liveBooth')]] as const).map(([v, l]) => (
               <button key={v} onClick={() => { setSource(v); setSelected(new Set()) }}
@@ -180,18 +187,24 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
         </WdCard>
       ) : (
         <div className="grid grid-cols-2 gap-3 pt-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {items.map((p) => {
+          {items.map((p, idx) => {
             const sel = selected.has(p.id)
-            const video = isVideoUrl(p.url)
+            const video = isVideoMedia(p)
+            const shown = p.thumb_url ?? (video ? null : p.url)
             return (
-              <div key={p.id} className={cn('group relative aspect-square overflow-hidden rounded-2xl bg-wd-active shadow-sm', sel && 'ring-[3px] ring-wd-pink')}>
-                {p.url && (video
-                  // eslint-disable-next-line jsx-a11y/media-has-caption
-                  ? <video src={p.url} className="h-full w-full object-cover" muted playsInline preload="metadata" />
-                  // eslint-disable-next-line @next/next/no-img-element
-                  : <img src={p.url} alt={p.caption ?? ''} className="h-full w-full object-cover" loading="lazy" />)}
+              <div key={p.id} data-testid="photo-tile" data-media={video ? 'video' : 'photo'} className={cn('group relative aspect-square overflow-hidden rounded-2xl bg-wd-active shadow-sm', sel && 'ring-[3px] ring-wd-pink')}>
+                <button type="button" onClick={() => setViewer(idx)} aria-label={t(video ? 'media.gallery.openVideo' : 'media.gallery.openPhoto')} data-testid="photo-open"
+                  className="absolute inset-0 h-full w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink">
+                  {shown
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={shown} alt={p.caption ?? ''} className="h-full w-full object-cover" loading="lazy" />
+                    : <span className="flex h-full w-full items-center justify-center bg-wd-ink/80 text-white/70"><Video className="h-8 w-8" /></span>}
+                </button>
                 {video && (
                   <span className="pointer-events-none absolute left-1/2 top-1/2 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white"><Play className="h-5 w-5" /></span>
+                )}
+                {video && formatDuration(p.duration_sec) && (
+                  <span className="pointer-events-none absolute bottom-9 right-2 rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-white">{formatDuration(p.duration_sec)}</span>
                 )}
                 <button
                   type="button"
@@ -202,14 +215,15 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
                 >
                   <Check className="h-3.5 w-3.5" />
                 </button>
-                {p.is_featured && <span className="absolute right-10 top-2 rounded-full bg-wd-pink p-1 text-white"><Star className="h-3 w-3 fill-current" /></span>}
+                {p.is_featured && <span className="pointer-events-none absolute right-10 top-2 rounded-full bg-wd-pink p-1 text-white"><Star className="h-3 w-3 fill-current" /></span>}
                 <div className="absolute left-2 top-2 hidden flex-col gap-1 group-hover:flex group-focus-within:flex">
                   {source === 'booth' && (
                     <button onClick={() => run(() => livePhotos.setFeatured(p.id, !p.is_featured))} title={t('weddingPanels.toggleFeatured')} className="rounded-full bg-white/95 p-1.5 text-wd-pink"><Star className="h-3.5 w-3.5" /></button>
                   )}
-                  <button onClick={() => { if (confirm(t('wdAdmin.photos.confirmDelete'))) run(() => livePhotos.remove(p.id)) }} title={t('common.delete')} className="rounded-full bg-white/95 p-1.5 text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => downloadOriginal(p, WEDDING_BRAND_FILE_PREFIX).catch(err)} title={t('media.gallery.downloadOriginal')} data-testid="photo-download-one" className="rounded-full bg-white/95 p-1.5 text-wd-ink"><Download className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => { if (confirm(t('wdAdmin.photos.confirmDelete'))) run(() => livePhotos.remove(p.id)) }} title={t('common.delete')} data-testid="photo-delete" className="rounded-full bg-white/95 p-1.5 text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
-                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-1 p-2">
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-1 p-2">
                   {p.status && p.status !== 'approved'
                     ? <span className="shrink-0 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold uppercase text-wd-muted">{wdStatusLabel(t, p.status)}</span>
                     : <span />}
@@ -219,6 +233,10 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
             )
           })}
         </div>
+      )}
+    {viewer !== null && items[viewer] && (
+        <MediaLightbox items={items} index={viewer} onIndex={setViewer} onClose={() => setViewer(null)}
+          onDownload={(p) => downloadOriginal(p, WEDDING_BRAND_FILE_PREFIX).catch(err)} />
       )}
     </WdPage>
   )

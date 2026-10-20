@@ -1,5 +1,7 @@
 import { setGlobalOptions } from 'firebase-functions/v2'
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https'
+import { onDocumentCreated } from 'firebase-functions/v2/firestore'
+import { onSchedule } from 'firebase-functions/v2/scheduler'
 import { defineSecret, defineBoolean } from 'firebase-functions/params'
 import { logger } from 'firebase-functions/logger'
 import { initializeApp, getApps } from 'firebase-admin/app'
@@ -17,6 +19,7 @@ import { parseConfigInput, updateEventConfig as updateEventConfigImpl } from './
 import { parseCreateEventInput, parseEventRefInput, createEvent as createEventImpl, deleteEvent as deleteEventImpl, restoreEvent as restoreEventImpl } from './owner/sessions'
 import { parseGameActionInput, parseGameConfigInput, gameAction as gameActionImpl, setGameConfig as setGameConfigImpl } from './owner/games'
 import { parseCreatePhotoUploadInput, parsePhotoRefInput, parseModeratePhotoInput, createPhotoUpload as createPhotoUploadImpl, finalizePhoto as finalizePhotoImpl, moderatePhoto as moderatePhotoImpl } from './photos/photos'
+import { parseRequestExportInput, parseExportRefInput, requestAlbumExport as requestAlbumExportImpl, getAlbumExportUrl as getAlbumExportUrlImpl, runAlbumExport, purgeExpiredExports } from './photos/exports'
 import { parseCommitAvatarInput, parseRemoveAvatarInput, commitAvatar as commitAvatarImpl, removeAvatar as removeAvatarImpl } from './profile/avatar'
 import { buildPriceTable } from './billing/prices'
 import { makeStripe } from './billing/stripeApi'
@@ -132,6 +135,20 @@ export const commitAvatar      = ownerCall('commitAvatar',       parseCommitAvat
 export const removeAvatar      = ownerCall('removeAvatar',       parseRemoveAvatarInput, (r, i) => removeAvatarImpl(getFirestore(), r as any, i))
 
 export const moderatePhoto      = ownerCall('moderatePhoto',      parseModeratePhotoInput, (r, i) => moderatePhotoImpl(getFirestore(), r, i))
+
+// Album export ("download everything" as ONE archive of the originals). The owner asks, a Firestore trigger builds the ZIP by streaming (photos/exports.ts),
+// the owner follows the export doc and fetches a fresh URL when it is ready. Two operations of the same App Check family as the other owner callables.
+export const requestAlbumExport = ownerCall('requestAlbumExport', parseRequestExportInput, (r, i) => requestAlbumExportImpl(getFirestore(), r, i))
+export const getAlbumExportUrl  = ownerCall('getAlbumExportUrl',  parseExportRefInput,     (r, i) => getAlbumExportUrlImpl(getFirestore(), r, i))
+export const onAlbumExportCreated = onDocumentCreated(
+  { document: 'events/{eventId}/exports/{exportId}', memory: '1GiB', timeoutSeconds: 540, maxInstances: 3, serviceAccount: SERVICE_ACCOUNT },
+  async (event) => { await runAlbumExport(getFirestore(), event.params.eventId, event.params.exportId) },
+)
+// An export archive is a private download link: this deletes the expired ones (24 h) even when the owner never asks again. Needs Cloud Scheduler at deploy time.
+export const purgeAlbumExports = onSchedule(
+  { schedule: 'every 60 minutes', timeZone: 'Europe/Rome', memory: '256MiB', timeoutSeconds: 300, maxInstances: 1, serviceAccount: SERVICE_ACCOUNT },
+  async () => { const r = await purgeExpiredExports(getFirestore()); logger.info('purgeAlbumExports', r) },
+)
 
 // Guest photo callables: identity = verified token (anonymous allowed). Bytes never pass through them (the client writes to Storage under storage.rules).
 const photoCallOptions = { ...guestCallOptions(ENFORCE_PHOTO), secrets: [] }

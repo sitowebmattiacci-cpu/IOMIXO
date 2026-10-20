@@ -24,6 +24,22 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 export interface SlideItem {
   id: string
   url?: string | null
+  /** 'video' = a video file: it plays until it ends (or errors / stalls), then the slideshow moves on. Anything else is a still image. */
+  media_type?: string
+  thumb_url?: string | null
+}
+
+/** A video never holds the screen longer than this (the component ends it earlier); the hook's own safety net is slightly above. */
+export const MAX_VIDEO_SCREEN_MS = 120_000
+const VIDEO_SAFETY_MS = MAX_VIDEO_SCREEN_MS + 15_000
+
+/** Ready-to-show check of a slide: a still image is decoded first; a video is shown at once (its poster is only warmed up, failures ignored). */
+export function preloadSlide(item: SlideItem): Promise<void> {
+  if (item.media_type === 'video') {
+    if (item.thumb_url) preloadImage(item.thumb_url).catch(() => {})
+    return Promise.resolve()
+  }
+  return preloadImage(item.url as string)
 }
 
 /** Cache globale degli URL già decodificati (condivisa tra le istanze). */
@@ -67,6 +83,10 @@ export interface SlideshowState<T extends SlideItem> {
   hasPhotos: boolean
   /** true mentre la prima foto si sta caricando (foto presenti ma nessuna ancora pronta). */
   isLoadingFirst: boolean
+  /** Moves on now (a video calls it when it ends). With a single item it only bumps `cycle`, so a lone video restarts. */
+  next: () => void
+  /** Increments on every advance attempt: key a <video> with it to replay it. */
+  cycle: number
 }
 
 /**
@@ -78,6 +98,7 @@ export function useSlideshow<T extends SlideItem>(
   intervalMs = 8000,
 ): SlideshowState<T> {
   const [photo, setPhoto] = useState<T | null>(null)
+  const [cycle, setCycle] = useState(0)
 
   const photosRef = useRef<T[]>(photos)
   const bagRef = useRef<T[]>([])
@@ -143,7 +164,7 @@ export function useSlideshow<T extends SlideItem>(
       const only = available[0]
       if (displayedRef.current?.id === only.id) return
       try {
-        await preloadImage(only.url as string)
+        await preloadSlide(only)
       } catch {
         return
       }
@@ -162,7 +183,7 @@ export function useSlideshow<T extends SlideItem>(
         // Mai la stessa foto due volte di seguito (se evitabile).
         if (candidate.id === displayedRef.current?.id) continue
         try {
-          await preloadImage(candidate.url)
+          await preloadSlide(candidate)
         } catch {
           // Preload fallito → salta questa foto e prova la successiva.
           continue
@@ -172,15 +193,21 @@ export function useSlideshow<T extends SlideItem>(
         setPhoto(candidate)
         // Precarica le prossime foto della coda per una rotazione fluida.
         peekUpcoming(3).forEach((it) => {
-          if (it.url) preloadImage(it.url).catch(() => {})
+          if (it.url) preloadSlide(it).catch(() => {})
         })
         return
       }
       // Nessuna foto nuova pronta → continua a mostrare quella corrente.
     } finally {
       switchingRef.current = false
+      setCycle((c) => c + 1)            // re-arms the rotation timer even when nothing changed
     }
   }, [takeNext, peekUpcoming])
+
+  const next = useCallback(() => {
+    if (photosRef.current.filter((p) => !!p.url).length <= 1) setCycle((c) => c + 1)
+    else void advance()
+  }, [advance])
 
   // Quando cambia il set di foto: ricostruisci la coda e mostra subito la
   // prima (o sostituisci quella corrente se è stata rimossa).
@@ -196,17 +223,21 @@ export function useSlideshow<T extends SlideItem>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature])
 
-  // Rotazione automatica.
+  // Rotazione automatica: a still stays `intervalMs`; a video stays until it ends (it calls `next`), with a safety net.
   useEffect(() => {
-    if (withUrl.length <= 1) return
-    const id = setInterval(() => { void advance() }, intervalMs)
-    return () => clearInterval(id)
+    if (!photo) return
+    const isVideo = photo.media_type === 'video'
+    if (!isVideo && withUrl.length <= 1) return
+    const id = setTimeout(() => { void advance() }, isVideo ? VIDEO_SAFETY_MS : intervalMs)
+    return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signature, intervalMs, withUrl.length])
+  }, [photo?.id, cycle, signature, intervalMs, withUrl.length])
 
   return {
     photo,
     hasPhotos,
     isLoadingFirst: hasPhotos && photo === null,
+    next,
+    cycle,
   }
 }

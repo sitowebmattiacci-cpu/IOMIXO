@@ -9,7 +9,7 @@
       "namesLabel": "Couple names",
       "namesDesc": "The names shown on the guest page, on the screen and on the poster.",
       "namesPlaceholder": "Anna & Marco",
-      "boothIntro": "Take a photo and add it to the wedding album. It will show up on the screen right away!",
+      "boothIntro": "Take a photo or pick photos and videos from your gallery: they go into the wedding album and show up on the screen right away!",
       "frameTitle": "Just Married",
       "homeSubtitle": "Everything under control for your big day.",
       "photoTitle": "Share your photos of the wedding"
@@ -18,7 +18,7 @@
       "namesLabel": "Name of the birthday person",
       "namesDesc": "The name shown on the guest page, on the screen and on the poster.",
       "namesPlaceholder": "Martina",
-      "boothIntro": "Take a photo and add it to the birthday album. It will show up on the screen right away!",
+      "boothIntro": "Take a photo or pick photos and videos from your gallery: they go into the birthday album and show up on the screen right away!",
       "frameTitle": "Happy birthday",
       "homeSubtitle": "Everything under control for your party.",
       "photoTitle": "Share your photos of the party"
@@ -27,7 +27,7 @@
       "namesLabel": "Child's name",
       "namesDesc": "The name shown on the guest page, on the screen and on the poster.",
       "namesPlaceholder": "Leonardo",
-      "boothIntro": "Take a photo and add it to the baptism album. It will show up on the screen right away!",
+      "boothIntro": "Take a photo or pick photos and videos from your gallery: they go into the baptism album and show up on the screen right away!",
       "frameTitle": "Welcome",
       "homeSubtitle": "Everything under control for this special day.",
       "photoTitle": "Share your photos of the baptism"
@@ -36,23 +36,24 @@
       "namesLabel": "Name to display",
       "namesDesc": "The name shown on the guest page, on the screen and on the poster.",
       "namesPlaceholder": "Our event",
-      "boothIntro": "Take a photo and add it to the event album. It will show up on the screen right away!",
+      "boothIntro": "Take a photo or pick photos and videos from your gallery: they go into the event album and show up on the screen right away!",
       "frameTitle": "A lovely memory",
       "homeSubtitle": "Everything under control for your event.",
       "photoTitle": "Share your photos of the event"
     }
   },
   "guestAlbum": {
-    "trialEnded": "The free trial of this album has ended: new photos can no longer be added. The ones already uploaded stay visible.",
-    "limitReached": "This album has reached the free trial limit.",
-    "photosOff": "Photo sharing is not active right now. Please try again later.",
-    "photoTitle": "Send your photos",
+    "trialEnded": "The free trial of this album has ended: new photos or videos can no longer be added. The ones already uploaded stay visible.",
+    "limitReached": "This album has reached the free trial limit (50 items, photos and videos together).",
+    "photosOff": "Sharing photos and videos is not active right now. Please try again later.",
+    "photoTitle": "Send photos and videos",
     "err": {
       "cooldown": "Try again in a few seconds.",
-      "guestLimit": "You have already sent a lot of photos: thank you!",
-      "tooLarge": "File too large (max 8 MB).",
-      "format": "Unsupported format (jpg, png, webp).",
-      "retry": "Upload failed, please try again."
+      "guestLimit": "You have already sent a huge number of files: thank you!",
+      "tooLarge": "The photo is too large (max 50 MB).",
+      "format": "Unsupported format. Use JPG, PNG or WebP photos, or MP4, MOV or WebM videos.",
+      "retry": "Upload failed, please try again.",
+      "videoTooLarge": "The video exceeds the maximum of 150 MB."
     }
   },
   "wdAdmin": {
@@ -60,7 +61,9 @@
       "daysLeft": "{n} days left",
       "dayLeft": "1 day left",
       "expiredTitle": "The free trial has ended",
-      "expiredHint": "Your album stays readable and your photos are kept. Activate the album to add new content again."
+      "expiredHint": "Your album stays readable and your photos are kept. Activate the album to add new content again.",
+      "unit": "items",
+      "hint": "You can collect up to {max} items (photos and videos together) for free."
     }
   },
   "albumPlan": {
@@ -74,7 +77,7 @@
     "statusNone": "No album yet",
     "trialLeft": "{n} days left",
     "trialLeftOne": "1 day left",
-    "mediaUsed": "{n} / {max} photos",
+    "mediaUsed": "{n} / {max} items",
     "trialName": "Free trial",
     "trialPrice": "Free",
     "trialSub": "7 days · No credit card",
@@ -101,7 +104,7 @@
     "history": "Payments",
     "f": {
       "trialQuotaPhotos": "50 photos",
-      "trialQuotaMedia": "50 photos and videos",
+      "trialQuotaMedia": "50 items, photos and videos together",
       "guests": "Unlimited guests",
       "noApp": "No app to install",
       "qrLink": "QR code and link",
@@ -388,5 +391,46 @@
       "rights": "All rights reserved.",
       "language": "Language"
     }
+  },
+  "media": {
+    "guest": {
+      "pick": "Choose photos or videos",
+      "more": "Add more files",
+      "hint": "You can pick several files at once. Videos up to 150 MB each.",
+      "queue": "Your files",
+      "waiting": "Waiting",
+      "preparing": "Preparing…",
+      "sending": "Sending {pct}%",
+      "done": "Sent",
+      "retry": "Retry",
+      "remove": "Remove",
+      "allDone": "Thank you! Your files are in the album.",
+      "keepOpen": "Keep this page open until your files are sent."
+    },
+    "gallery": {
+      "close": "Close",
+      "prev": "Previous",
+      "next": "Next",
+      "openPhoto": "Open photo",
+      "openVideo": "Play video",
+      "downloadOriginal": "Download original",
+      "videoUnsupported": "Your browser can't play this video. Download the original to watch it."
+    },
+    "export": {
+      "starting": "Starting…",
+      "preparing": "Preparing archive… {done} of {total}",
+      "ready": "Archive ready: the download has started.",
+      "again": "Download again",
+      "failed": "Preparation failed.",
+      "retry": "Retry",
+      "empty": "The album doesn't contain any photos or videos yet.",
+      "expired": "The archive has expired: prepare a new one.",
+      "hint": "One ZIP file with the originals of every photo and video.",
+      "keepOpen": "You can keep using the album while we prepare the archive."
+    }
+  },
+  "guestMenu": {
+    "photos": "Send photos and videos",
+    "photosDesc": "Take a photo or pick photos and videos from your gallery"
   }
 }

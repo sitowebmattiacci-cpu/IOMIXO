@@ -224,6 +224,12 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Album export (the "download everything" archive): progress / result of one export, read by the event owner only; written by Functions alone.
+      match /exports/{exportId} {
+        allow get, list: if isEventOwner(eventId);
+        allow write: if false;
+      }
+
       // Game rounds (wedding_roulette, shoe_game), projected from the legacy live_game_rounds rows (Supabase is
       // authoritative; the DJ drives them through the legacy routes). The product already shows the round state
       // (shoe question, roulette slots and result) to every participant, guests and TV included, so any signed-in

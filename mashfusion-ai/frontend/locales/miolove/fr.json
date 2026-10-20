@@ -9,7 +9,7 @@
       "namesLabel": "Noms des mariés",
       "namesDesc": "Les noms affichés sur la page des invités, à l'écran et sur l'affiche.",
       "namesPlaceholder": "Anna et Marco",
-      "boothIntro": "Prenez une photo et ajoutez-la à l'album du mariage. Elle apparaîtra aussitôt à l'écran !",
+      "boothIntro": "Prenez une photo ou choisissez photos et vidéos dans votre galerie : elles rejoignent l'album du mariage et s'affichent aussitôt à l'écran !",
       "frameTitle": "Jeunes mariés",
       "homeSubtitle": "Tout est sous contrôle pour votre grand jour.",
       "photoTitle": "Partagez vos photos du mariage"
@@ -18,7 +18,7 @@
       "namesLabel": "Nom de la personne fêtée",
       "namesDesc": "Le nom affiché sur la page des invités, à l'écran et sur l'affiche.",
       "namesPlaceholder": "Martina",
-      "boothIntro": "Prenez une photo et ajoutez-la à l'album d'anniversaire. Elle apparaîtra aussitôt à l'écran !",
+      "boothIntro": "Prenez une photo ou choisissez photos et vidéos dans votre galerie : elles rejoignent l'album d'anniversaire et s'affichent aussitôt à l'écran !",
       "frameTitle": "Joyeux anniversaire",
       "homeSubtitle": "Tout est sous contrôle pour votre fête.",
       "photoTitle": "Partagez vos photos de la fête"
@@ -27,7 +27,7 @@
       "namesLabel": "Prénom de l'enfant",
       "namesDesc": "Le nom affiché sur la page des invités, à l'écran et sur l'affiche.",
       "namesPlaceholder": "Leonardo",
-      "boothIntro": "Prenez une photo et ajoutez-la à l'album du baptême. Elle apparaîtra aussitôt à l'écran !",
+      "boothIntro": "Prenez une photo ou choisissez photos et vidéos dans votre galerie : elles rejoignent l'album du baptême et s'affichent aussitôt à l'écran !",
       "frameTitle": "Bienvenue",
       "homeSubtitle": "Tout est sous contrôle pour cette journée spéciale.",
       "photoTitle": "Partagez vos photos du baptême"
@@ -36,23 +36,24 @@
       "namesLabel": "Nom à afficher",
       "namesDesc": "Le nom affiché sur la page des invités, à l'écran et sur l'affiche.",
       "namesPlaceholder": "Notre événement",
-      "boothIntro": "Prenez une photo et ajoutez-la à l'album de l'événement. Elle apparaîtra aussitôt à l'écran !",
+      "boothIntro": "Prenez une photo ou choisissez photos et vidéos dans votre galerie : elles rejoignent l'album de l'événement et s'affichent aussitôt à l'écran !",
       "frameTitle": "Un beau souvenir",
       "homeSubtitle": "Tout est sous contrôle pour votre événement.",
       "photoTitle": "Partagez vos photos de l'événement"
     }
   },
   "guestAlbum": {
-    "trialEnded": "L'essai gratuit de cet album est terminé : il n'est plus possible d'ajouter de nouvelles photos. Celles déjà envoyées restent visibles.",
-    "limitReached": "Cet album a atteint la limite de l'essai gratuit.",
-    "photosOff": "L'envoi de photos n'est pas actif pour le moment. Réessayez plus tard.",
-    "photoTitle": "Envoyez vos photos",
+    "trialEnded": "L'essai gratuit de cet album est terminé : il n'est plus possible d'ajouter de nouvelles photos ou vidéos. Celles déjà envoyées restent visibles.",
+    "limitReached": "Cet album a atteint la limite de l'essai gratuit (50 contenus, photos et vidéos confondues).",
+    "photosOff": "L'envoi de photos et de vidéos n'est pas actif pour le moment. Réessayez plus tard.",
+    "photoTitle": "Envoyez photos et vidéos",
     "err": {
       "cooldown": "Réessayez dans quelques secondes.",
-      "guestLimit": "Vous avez déjà envoyé beaucoup de photos : merci !",
-      "tooLarge": "Fichier trop volumineux (max 8 Mo).",
-      "format": "Format non pris en charge (jpg, png, webp).",
-      "retry": "Échec de l'envoi, réessayez."
+      "guestLimit": "Vous avez déjà envoyé énormément de fichiers : merci !",
+      "tooLarge": "La photo est trop volumineuse (max 50 Mo).",
+      "format": "Format non pris en charge. Utilisez des photos JPG, PNG ou WebP, ou des vidéos MP4, MOV ou WebM.",
+      "retry": "Échec de l'envoi, réessayez.",
+      "videoTooLarge": "La vidéo dépasse la limite maximale de 150 Mo."
     }
   },
   "wdAdmin": {
@@ -60,7 +61,9 @@
       "daysLeft": "{n} jours restants",
       "dayLeft": "1 jour restant",
       "expiredTitle": "L'essai gratuit est terminé",
-      "expiredHint": "Votre album reste consultable et vos photos sont conservées. Activez l'album pour ajouter de nouveaux contenus."
+      "expiredHint": "Votre album reste consultable et vos photos sont conservées. Activez l'album pour ajouter de nouveaux contenus.",
+      "unit": "contenus",
+      "hint": "Vous pouvez collecter jusqu'à {max} contenus (photos et vidéos confondues) gratuitement."
     }
   },
   "albumPlan": {
@@ -74,7 +77,7 @@
     "statusNone": "Pas encore d'album",
     "trialLeft": "{n} jours restants",
     "trialLeftOne": "1 jour restant",
-    "mediaUsed": "{n} / {max} photos",
+    "mediaUsed": "{n} / {max} contenus",
     "trialName": "Essai gratuit",
     "trialPrice": "Gratuit",
     "trialSub": "7 jours · Sans carte bancaire",
@@ -101,7 +104,7 @@
     "history": "Paiements",
     "f": {
       "trialQuotaPhotos": "50 photos",
-      "trialQuotaMedia": "50 photos et vidéos",
+      "trialQuotaMedia": "50 contenus, photos et vidéos confondues",
       "guests": "Invités illimités",
       "noApp": "Aucune application à installer",
       "qrLink": "QR code et lien",
@@ -388,5 +391,46 @@
       "rights": "Tous droits réservés.",
       "language": "Langue"
     }
+  },
+  "media": {
+    "guest": {
+      "pick": "Choisir photos ou vidéos",
+      "more": "Ajouter d'autres fichiers",
+      "hint": "Vous pouvez choisir plusieurs fichiers à la fois. Vidéos jusqu'à 150 Mo chacune.",
+      "queue": "Vos fichiers",
+      "waiting": "En attente",
+      "preparing": "Préparation…",
+      "sending": "Envoi {pct} %",
+      "done": "Envoyé",
+      "retry": "Réessayer",
+      "remove": "Retirer",
+      "allDone": "Merci ! Vos fichiers sont dans l'album.",
+      "keepOpen": "Gardez cette page ouverte jusqu'à la fin de l'envoi."
+    },
+    "gallery": {
+      "close": "Fermer",
+      "prev": "Précédent",
+      "next": "Suivant",
+      "openPhoto": "Ouvrir la photo",
+      "openVideo": "Lire la vidéo",
+      "downloadOriginal": "Télécharger l'original",
+      "videoUnsupported": "Votre navigateur ne peut pas lire cette vidéo. Téléchargez l'original pour la regarder."
+    },
+    "export": {
+      "starting": "Démarrage…",
+      "preparing": "Préparation de l'archive… {done} sur {total}",
+      "ready": "Archive prête : le téléchargement a démarré.",
+      "again": "Télécharger à nouveau",
+      "failed": "La préparation a échoué.",
+      "retry": "Réessayer",
+      "empty": "L'album ne contient pas encore de photos ni de vidéos.",
+      "expired": "L'archive a expiré : préparez-en une nouvelle.",
+      "hint": "Un seul fichier ZIP avec les originaux de toutes les photos et vidéos.",
+      "keepOpen": "Vous pouvez continuer à utiliser l'album pendant la préparation de l'archive."
+    }
+  },
+  "guestMenu": {
+    "photos": "Envoyer photos et vidéos",
+    "photosDesc": "Prenez une photo ou choisissez photos et vidéos dans votre galerie"
   }
 }

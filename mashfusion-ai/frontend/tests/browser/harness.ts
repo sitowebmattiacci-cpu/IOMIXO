@@ -34,15 +34,21 @@ export async function startFakeRender(): Promise<FakeRender> {
 const freePort = () => new Promise<number>((resolve) => { const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const p = (s.address() as net.AddressInfo).port; s.close(() => resolve(p)) }) })
 
 export interface App { url: string; port: number; stop(): Promise<void> }
+/**
+ * NEXT_START=1 serves the PRE-BUILT production bundle (`next start`, after a `next build` with the same NEXT_PUBLIC_* values) instead of `next dev`.
+ * `next dev` compiles routes on demand and now and then serves a page whose client bundle never hydrates: a test double-checked with NEXT_START=1
+ * tells a real regression from that dev-server flake. Default (unset) = `next dev`, exactly as before.
+ */
+const PROD = process.env.NEXT_START === '1'
 export async function startNext(render: FakeRender, extraEnv: Record<string, string> = {}): Promise<App> {
   const port = await freePort()
   const env: NodeJS.ProcessEnv = {
-    ...process.env, NODE_ENV: 'development', NEXT_TELEMETRY_DISABLED: '1',
+    ...process.env, NODE_ENV: PROD ? 'production' : 'development', NEXT_TELEMETRY_DISABLED: '1',
     NEXT_PUBLIC_FIREBASE_USE_EMULATORS: 'true', NEXT_PUBLIC_API_URL: render.url,
     NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:1', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'unused-in-emulator-mode',        // never the real project
     NEXT_PUBLIC_FIRESTORE_OWNER_OPS: 'true', NEXT_PUBLIC_FIRESTORE_PUBLIC_READ: 'true', ...extraEnv,
   }
-  const child: ChildProcess = spawn('npx', ['next', 'dev', '-p', String(port)], { env, stdio: ['ignore', 'pipe', 'pipe'] })
+  const child: ChildProcess = spawn('npx', ['next', PROD ? 'start' : 'dev', '-p', String(port)], { env, stdio: ['ignore', 'pipe', 'pipe'] })
   let log = ''; child.stdout!.on('data', (d) => { log += d }); child.stderr!.on('data', (d) => { log += d })
   const t0 = Date.now()
   for (;;) {
