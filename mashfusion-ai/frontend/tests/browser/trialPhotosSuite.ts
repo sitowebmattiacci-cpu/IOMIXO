@@ -22,7 +22,7 @@ async function until<T>(fn: () => Promise<T | undefined | false>, ms = 30_000, l
   for (;;) { const v = await fn(); if (v) return v as T; if (Date.now() - t0 > ms) throw new Error(`timeout waiting for ${label}`); await new Promise((r) => setTimeout(r, 500)) }
 }
 const overflow = (p: Page) => p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)
-const FORBIDDEN = /Advance|Event Pass|IOMIXO|permission|denied|Piano/i
+const FORBIDDEN = /Advance|Event Pass|IOMIXO|permission|denied|Piano (Advance|Pro|Free)/i
 
 async function trialAlbum() {
   const owner = await newClient('account'), id = `tpb${Date.now()}`, slug = `tpbs${Date.now()}`

@@ -6,6 +6,7 @@ import { loadEventEntitlements } from '../entitlements/load'
 import { PLAN_LIMITS } from '../entitlements/plans'
 import type { AccountType } from './guard'
 import { parseBrand } from './brand'
+import { hasMiolovePhotoAccess, isTrialExpired, trialExpiresAt } from '../photos/trialQuota'
 
 /**
  * Owner account type for the PUBLIC payload (brand of the guest pages: a couple's album is MIOLOVE, everything a DJ runs is IOMIXO).
@@ -62,6 +63,16 @@ export async function getPublicEvent(db: Firestore, slug: string, now: Date = ne
   const p = profileSnap.data()
   const social = (v: unknown) => (limits.profileSocials ? (v ?? null) : null)
   const used = counter.exists ? Number(counter.data()!.total ?? 0) : 0
+  // A MIOLOVE album (trial or activated) is NOT decided by the IOMIXO plan tiers: photo album and screen/slideshow belong to every album, whatever
+  // the owner's DJ plan is; DJ-only interactions (dedications, games, polls) never exist there. The event date plays no part: a future date never gates anything.
+  const miolove = hasMiolovePhotoAccess(e)
+  const features = miolove
+    ? { weddingDedications: false, weddingGames: false, livePolls: false, guestPhotoAlbum: true, screenMode: true }
+    : {
+      weddingDedications: limits.weddingDedications, weddingGames: limits.weddingGames, livePolls: limits.livePolls,
+      guestPhotoAlbum: limits.guestPhotoAlbum, screenMode: limits.screenMode,
+    }
+  const trialEnd = e.accessMode === 'trial' ? trialExpiresAt(e) : null
   return {
     eventId,
     session: {
@@ -71,6 +82,11 @@ export async function getPublicEvent(db: Firestore, slug: string, now: Date = ne
       owner_account_type: ownerAccountType,
       event_brand: parseBrand(e.brand),
       access_mode: e.accessMode === 'trial' || e.accessMode === 'activated' ? e.accessMode : null,
+      ...(miolove ? {
+        occasion_type: ['wedding', 'birthday', 'baptism', 'other'].includes(e.occasionType) ? e.occasionType : null,
+        trial_expires_at: trialEnd ? trialEnd.toISOString() : null,
+        trial_expired: isTrialExpired(e, now),
+      } : {}),
     },
     profile: p ? {
       display_name: p.displayName ?? null, bio: p.bio ?? null, avatar_url: p.avatarUrl ?? null,
@@ -80,10 +96,7 @@ export async function getPublicEvent(db: Firestore, slug: string, now: Date = ne
     events: dates,
     plan: ent.effectiveTier,
     branding: limits.customBranding,
-    features: {
-      weddingDedications: limits.weddingDedications, weddingGames: limits.weddingGames, livePolls: limits.livePolls,
-      guestPhotoAlbum: limits.guestPhotoAlbum, screenMode: limits.screenMode,
-    },
+    features,
     requestsRemaining: Number.isFinite(limits.maxRequestsPerSession) ? Math.max(0, limits.maxRequestsPerSession - used) : null,
   }
 }

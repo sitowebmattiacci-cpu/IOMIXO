@@ -1,10 +1,10 @@
 import { createHash, randomInt } from 'node:crypto'
-import { FieldValue, type Firestore } from 'firebase-admin/firestore'
+import { FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore'
 import { HttpsError } from 'firebase-functions/v2/https'
 import { str } from '../requests/validation'
 import { fail } from '../shared/guard'
 import { loadEntitlements } from '../entitlements/load'
-import { MIOLOVE_TRIAL_PHOTO_LIMIT } from '../photos/trialQuota'
+import { MIOLOVE_TRIAL_PHOTO_LIMIT, trialExpiryFrom } from '../photos/trialQuota'
 import { idField, requireAccount, requireEventOwner, loadAccountType, type AccountType, type CallerAuth } from './guard'
 import { brandFromEvent, parseBrand, type EventBrand } from './brand'
 
@@ -133,6 +133,7 @@ export async function createEvent(db: Firestore, request: CallerAuth, input: Cre
     const slug = randomSlug(10 + attempt)                                            // grows on collision, like the legacy uniqueSlug
     const slugRef = db.collection('eventSlugs').doc(slug)
     const trialRef = trialReservation(db, uid)
+    const startedAt = new Date()                                                     // server clock: the 7 days are measured from here, never from the client
     const outcome = await db.runTransaction(async (tx) => {
       const [again, s] = [await tx.get(ref), await tx.get(slugRef)]
       if (again.exists) return { slug: String(again.data()!.slug), created: false }
@@ -150,8 +151,8 @@ export async function createEvent(db: Firestore, request: CallerAuth, input: Cre
         coupleNames: input.coupleNames, weddingDate: input.weddingDate, venueName: input.venueName,
         occasionType: input.occasionType,
         ...(accessMode ? { accessMode } : {}),
-        ...(accessMode === 'trial' ? { trialPhotoCount: 0, trialPhotoLimit: MIOLOVE_TRIAL_PHOTO_LIMIT } : {}),
-        screenModeEnabled: input.screenModeEnabled, guestConfig: null, screenConfig: null,
+        ...(accessMode === 'trial' ? { trialPhotoCount: 0, trialPhotoLimit: MIOLOVE_TRIAL_PHOTO_LIMIT, trialStartsAt: Timestamp.fromDate(startedAt), trialExpiresAt: Timestamp.fromDate(trialExpiryFrom(startedAt)) } : {}),
+        screenModeEnabled: brand === 'miolove' ? true : input.screenModeEnabled,        guestConfig: null, screenConfig: null,         // (a MIOLOVE album always has the monitor / slideshow)
         createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
       })
       return { slug, created: true }

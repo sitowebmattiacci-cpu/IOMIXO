@@ -2,6 +2,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useI18n } from '@/lib/i18n'
 import { useSlideshow } from '@/lib/useSlideshow'
+import { useFrameTitle } from '@/components/brand/eventBrandContext'
 
 // ════════════════════════════════════════════════════════════════
 // IOMIXO — Wedding Edition · "Oggi Sposi" photo frame
@@ -56,6 +57,7 @@ export function WeddingPhotoFrame({
   className = '',
 }: WeddingPhotoFrameProps) {
   const { t } = useI18n()
+  const frameTitle = useFrameTitle()
   const date = formatWeddingDate(weddingDate)
   const isScreen = variant === 'screen'
 
@@ -96,7 +98,7 @@ export function WeddingPhotoFrame({
         <p
           className={`font-wedding-cinzel font-semibold uppercase text-[#8F1D2C] ${titleClass} leading-none text-center`}
         >
-          {t('wedding.photoFrameTitle')}
+          {frameTitle ?? t('wedding.photoFrameTitle')}
         </p>
       </div>
 

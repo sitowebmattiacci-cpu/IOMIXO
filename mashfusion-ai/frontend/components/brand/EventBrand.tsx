@@ -6,7 +6,7 @@ import { useEventBrand } from './eventBrandContext'
 import { WEDDING_BRAND_LOGO } from '@/lib/brand/wedding'
 import { cn } from '@/lib/utils'
 
-export { EventBrandProvider, useEventBrand, useEventBrandName } from './eventBrandContext'
+export { EventBrandProvider, useEventBrand, useEventBrandName, WhiteLabelProvider, useWhiteLabel } from './eventBrandContext'
 
 /** IOMIXO mark for the light Wedding theme: app icon + wordmark in the page ink colour. */
 export function IomixoWeddingMark({ height = 32, className }: { height?: number; className?: string }) {

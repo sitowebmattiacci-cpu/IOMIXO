@@ -28,6 +28,8 @@ export function fromEventDoc(id: string, d: DocumentData): EventDoc {
     brand:             d.brand === 'iomixo' || d.brand === 'miolove' ? d.brand : null,
     trialPhotoCount:   typeof d.trialPhotoCount === 'number' ? d.trialPhotoCount : null,
     trialPhotoLimit:   typeof d.trialPhotoLimit === 'number' ? d.trialPhotoLimit : null,
+    trialStartsAt:     toDate(d.trialStartsAt),
+    trialExpiresAt:    toDate(d.trialExpiresAt),
     posterConfig:      d.posterConfig && typeof d.posterConfig === 'object' && !Array.isArray(d.posterConfig) ? d.posterConfig : null,
     status,
     coupleNames:       d.coupleNames ?? null,

@@ -24,7 +24,9 @@ import {
 } from '@/components/wedding/guest/WeddingGuestUI'
 import { hasPhotoFeatures, EVENT_BRAND_NAME } from '@/lib/brand/eventBrand'
 import { useEventBrand } from '@/lib/events/useEventBrand'
-import { EventBrandProvider } from '@/components/brand/EventBrand'
+import { EventBrandProvider, WhiteLabelProvider } from '@/components/brand/EventBrand'
+import { COUPLE_DEFAULT_GUEST_CONFIG } from '@/lib/coupleAlbum'
+import { occasionEyebrow, occasionText } from '@/lib/occasion'
 
 const STATUS_STYLE: Record<LiveRequestStatus, string> = {
   pending:  'bg-amber-500/15 text-amber-300 border-amber-500/30',
@@ -39,7 +41,7 @@ const STATUS_ICON: Record<LiveRequestStatus, React.ReactNode> = {
 
 export default function PublicLivePage() {
   const { slug } = useParams<{ slug: string }>()
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   // Realtime event state (Firestore). When available it replaces the 15s polling of
   // the session fields; the backend payload is still fetched for profile/plan/features.
   const liveEvent = useLiveEvent(slug)
@@ -117,7 +119,16 @@ export default function PublicLivePage() {
   const guestOn = (key: string) => (key === 'requests' ? gc.requests !== false : (gc as Record<string, boolean | undefined>)[key] === true)
 
   if (isWedding) {
-    const weddingKeys = getWeddingGuestActionKeys(gc as Record<string, boolean | undefined>, features).filter((k) => photosAllowed || k !== 'photos')
+    // A MIOLOVE album is NOT gated by the owner's DJ plan or by its date: its only guest entry point is the photo album (Live Booth), on from the first
+    // minute (a missing guest_config means the album defaults). Song requests, dedications, games and polls belong to the DJ product.
+    const isAlbum = brand === 'miolove'
+    const albumGc = isAlbum ? { ...COUPLE_DEFAULT_GUEST_CONFIG, ...(gc as object) } : gc
+    const weddingKeys = getWeddingGuestActionKeys(albumGc as Record<string, boolean | undefined>, isAlbum ? null : features)
+      .filter((k) => photosAllowed || k !== 'photos')
+      .filter((k) => !isAlbum || k === 'photos')
+    // Trial over (server flag, or the end instant passed while the page was open): the album stays readable, new uploads are closed.
+    const trialExpired = isAlbum && session.access_mode === 'trial' && (session.trial_expired === true || (!!session.trial_expires_at && Date.now() >= Date.parse(session.trial_expires_at)))
+    const whiteLabel = isAlbum && session.access_mode === 'activated'
     const weddingItems = buildWeddingGuestActions(weddingKeys, t)
     const weddingNodes: Record<WeddingGuestActionKey, React.ReactNode> = {
       requests: (
@@ -155,7 +166,7 @@ export default function PublicLivePage() {
             </form>
           </WeddingGuestPanel>
       ),
-      photos: <LiveBoothCard slug={slug!} session={session} />,
+      photos: <LiveBoothCard slug={slug!} session={session} album={isAlbum} expired={trialExpired} />,
       dedications: <DedicationsPublic slug={slug!} eventId={liveEvent?.id} />,
       games: <ShoeGamePublic slug={slug!} eventId={liveEvent?.id} />,
       polls: <PollPublic slug={slug!} eventId={liveEvent?.id} />,
@@ -163,17 +174,18 @@ export default function PublicLivePage() {
     const activeWeddingKey = weddingKeys.find((k) => k === activeGuestSection) ?? null
 
     const names = session.couple_names ?? session.event_name
-    const notice = (closed || limitReached) ? (
-      <div className="mb-5 flex items-center gap-3 rounded-[18px] border border-wd-border bg-wd-active px-4 py-3.5 text-[15px] text-wd-ink">
-        {closed ? <Lock className="h-5 w-5 shrink-0 text-wd-pink" /> : <AlertTriangle className="h-5 w-5 shrink-0 text-wd-pink" />}
-        <span>{closed ? t('live.endedSession') : t('live.limitReached')}</span>
+    const notice = (closed || (limitReached && !isAlbum) || trialExpired) ? (
+      <div className="mb-5 flex items-center gap-3 rounded-[18px] border border-wd-border bg-wd-active px-4 py-3.5 text-[15px] text-wd-ink" data-testid="guest-notice">
+        {closed || trialExpired ? <Lock className="h-5 w-5 shrink-0 text-wd-pink" /> : <AlertTriangle className="h-5 w-5 shrink-0 text-wd-pink" />}
+        <span>{closed ? t('live.endedSession') : trialExpired ? t('guestAlbum.trialEnded') : t('live.limitReached')}</span>
       </div>
     ) : undefined
     const languageSlot = <LanguageSwitcher variant="wedding" />
 
     return (
       <EventBrandProvider brand={brand ?? 'iomixo'}>
-      <div className="min-h-screen w-full bg-wd-bg font-sans text-wd-ink antialiased">
+      <WhiteLabelProvider whiteLabel={whiteLabel}>
+      <div className="min-h-screen w-full bg-wd-bg font-sans text-wd-ink antialiased" data-occasion={isAlbum ? session.occasion_type ?? 'wedding' : undefined}>
         <div className="mx-auto w-full max-w-[520px] px-5 pb-12 pt-5">
           {activeWeddingKey ? (
             <>
@@ -187,9 +199,11 @@ export default function PublicLivePage() {
           ) : (
             <WeddingGuestHome
               names={names}
-              date={formatWeddingGuestDate(session.wedding_date)}
+              date={formatWeddingGuestDate(session.wedding_date, locale)}
               venue={session.venue_name}
               items={weddingItems}
+              eyebrow={isAlbum ? occasionEyebrow(t, session.occasion_type) : undefined}
+              emptyText={isAlbum ? t('guestAlbum.photosOff') : undefined}
               onSelect={setActiveGuestSection}
               languageSlot={languageSlot}
               notice={notice}
@@ -219,9 +233,10 @@ export default function PublicLivePage() {
           <FollowDjSection tone="wedding" profile={profile} events={events} t={t} />
 
           <WeddingGuestTitle prefix={names} />
-          <p className="mt-12 text-center text-[12px] font-semibold tracking-wide text-wd-muted">{EVENT_BRAND_NAME[brand ?? 'iomixo']}</p>
+          {!whiteLabel && <p className="mt-12 text-center text-[12px] font-semibold tracking-wide text-wd-muted">{EVENT_BRAND_NAME[brand ?? 'iomixo']}</p>}
         </div>
       </div>
+      </WhiteLabelProvider>
       </EventBrandProvider>
     )
   }
@@ -837,14 +852,14 @@ function DedicationsPublic({ slug: _slug, eventId }: { slug: string; eventId?: s
   )
 }
 
-function LiveBoothCard({ slug, session }: { slug: string; session: any }) {
+function LiveBoothCard({ slug, session, album = false, expired = false }: { slug: string; session: any; album?: boolean; expired?: boolean }) {
   const { t } = useI18n()
   const boothUrl = `/booth/${slug}`
   return (
-    <LocalCard title={t('live.booth.title')} icon={<Camera className="h-5 w-5" />}>
+    <LocalCard title={album ? t('guestAlbum.photoTitle') : t('live.booth.title')} icon={<Camera className="h-5 w-5" />}>
       <div className="text-center space-y-4">
         <p className="text-[15px] text-wd-muted">
-          {t('live.booth.intro')}
+          {album ? occasionText(t, session.occasion_type, 'boothIntro') : t('live.booth.intro')}
         </p>
         <div className="bg-wd-bg rounded-2xl border border-wd-border p-5">
           <div className="flex items-center justify-center gap-2 mb-3">
@@ -853,14 +868,18 @@ function LiveBoothCard({ slug, session }: { slug: string; session: any }) {
               {session.couple_names ?? session.event_name}
             </p>
           </div>
-          <p className="text-[14px] text-wd-muted mb-4">
+          {!album && <p className="text-[14px] text-wd-muted mb-4">
             {t('live.booth.withFrame')}
-          </p>
-          <a href={boothUrl} className="block">
-            <WeddingGuestButton icon={<Camera className="h-5 w-5" />}>
-              {t('live.booth.open')}
-            </WeddingGuestButton>
-          </a>
+          </p>}
+          {expired ? (
+            <p className="text-[14px] font-semibold text-wd-muted" data-testid="guest-trial-ended">{t('guestAlbum.trialEnded')}</p>
+          ) : (
+            <a href={boothUrl} className="block">
+              <WeddingGuestButton icon={<Camera className="h-5 w-5" />}>
+                {t('live.booth.open')}
+              </WeddingGuestButton>
+            </a>
+          )}
         </div>
       </div>
     </LocalCard>

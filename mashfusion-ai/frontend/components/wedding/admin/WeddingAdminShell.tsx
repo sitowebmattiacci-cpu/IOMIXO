@@ -116,7 +116,7 @@ export function WeddingAdminShell({ eventName, active, onSelect, badges, couple 
         </div>
         <div className="mt-3 grid grid-cols-[1.4fr_1fr] gap-2">
           <Link href="/billing" className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-wd-border bg-white px-2 py-2 text-xs font-semibold text-wd-ink hover:bg-wd-active whitespace-nowrap">
-            <CreditCard className="h-3.5 w-3.5 shrink-0" /> {t('sidebar.subscription')}
+            <CreditCard className="h-3.5 w-3.5 shrink-0" /> {couple ? t('albumPlan.navLabel') : t('sidebar.subscription')}
           </Link>
           <button onClick={logout} className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-wd-border bg-white px-2 py-2 text-xs font-semibold text-wd-ink hover:bg-wd-active">
             <LogOut className="h-3.5 w-3.5 shrink-0" /> {t('sidebar.logout')}

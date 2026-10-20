@@ -5,7 +5,7 @@ import { fail, loadLiveEvent, reserveSlot, releaseSlot } from '../shared/guard'
 import { selectEventEntitlements, logEntitlementDecision } from '../entitlements/source'
 import { idField, requireEventOwner, requireOwnerEventAccess, type CallerAuth } from '../owner/guard'
 import { deleteObjects, objectInfo, rotateDownloadToken } from './storage'
-import { MIOLOVE_TRIAL_PHOTO_LIMIT, TRIAL_PHOTO_LIMIT_REASON, isTrialAlbum, hasMiolovePhotoAccess, trialPhotoCount } from './trialQuota'
+import { MIOLOVE_TRIAL_PHOTO_LIMIT, TRIAL_PHOTO_LIMIT_REASON, TRIAL_EXPIRED_REASON, isTrialAlbum, isTrialExpired, hasMiolovePhotoAccess, trialPhotoCount } from './trialQuota'
 
 /**
  * Event photos (guest album + Live Booth) on Firestore + Storage, replacing routes/livePhotos.ts.
@@ -69,6 +69,8 @@ export async function createPhotoUpload(db: Firestore, uid: string, input: Creat
   const allowed = (decision.ent ? decision.ent.gates.photos : ev.dedicationsEnabled === true) || hasMiolovePhotoAccess(ev)
   logEntitlementDecision('createPhotoUpload', decision, allowed ? 'allow' : 'deny', 'photos')
   if (!allowed) throw fail('permission-denied', 'Photos require the Advance plan or an Event Pass', 'photos_unavailable')
+  // The 7-day trial ran out (server clock): reading stays open, new uploads do not.
+  if (isTrialExpired(ev, new Date(now()))) throw fail('failed-precondition', 'The free trial has ended', TRIAL_EXPIRED_REASON)
   // UX only: finalizePhoto is the authoritative quota check.
   if (isTrialAlbum(ev) && (trialPhotoCount(ev) ?? 0) >= MIOLOVE_TRIAL_PHOTO_LIMIT) throw fail('resource-exhausted', 'The free trial photo limit was reached', TRIAL_PHOTO_LIMIT_REASON)
 
@@ -105,6 +107,12 @@ export async function finalizePhoto(db: Firestore, uid: string, input: PhotoRefI
     await deleteObjects([String(p.storagePath)])
     await photoRef.delete()
     throw fail('failed-precondition', 'Invalid file', 'invalid_upload')
+  }
+  if (isTrialExpired(ev, new Date())) {
+    // Started before the end, finished after it: the file is not kept (it never held a slot) and the trial stays closed.
+    await deleteObjects([String(p.storagePath)]).catch((e) => console.error('[finalizePhoto] cleanup failed', (e as Error).message))
+    await photoRef.delete().catch(() => {})
+    throw fail('failed-precondition', 'The free trial has ended', TRIAL_EXPIRED_REASON)
   }
   const status = finalStatus(ev.type)
   if (!isTrialAlbum(ev)) {

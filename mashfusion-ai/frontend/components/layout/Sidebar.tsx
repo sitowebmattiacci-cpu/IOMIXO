@@ -18,6 +18,7 @@ import toast from 'react-hot-toast'
 import { Logo } from '@/components/Logo'
 import { MioloveLogo } from '@/components/brand/MioloveLogo'
 import { useAccountRole } from '@/lib/roles'
+import { useAlbumPlan } from '@/lib/miolove/useAlbumPlan'
 
 const NAV_ITEMS = [
   { href: '/dashboard', key: 'dashboard',     icon: LayoutDashboard, proOnly: false },
@@ -31,7 +32,7 @@ const NAV_ITEMS = [
 // Sposi: album tools only (the album itself opens on its Home tab).
 const COUPLE_NAV_ITEMS = [
   { href: '/sessions', key: 'albums',       icon: LayoutDashboard, proOnly: false },
-  { href: '/billing',  key: 'subscription', icon: CreditCard,      proOnly: false },
+  { href: '/billing',  key: 'plan',         icon: CreditCard,      proOnly: false },
   { href: '/settings', key: 'settings',     icon: Settings,        proOnly: false },
 ] as const
 
@@ -54,7 +55,13 @@ export function Sidebar() {
     } catch {}
   }, [])
 
-  const { user, effectiveLabel, isFree, hasActiveEventPass, activePass } = useEffectiveAccess()
+  const { user, effectiveLabel: ownLabel, isFree: ownIsFree, hasActiveEventPass: ownPass, activePass } = useEffectiveAccess()
+  // MIOLOVE: the plan is the album's (free trial / full album), never an IOMIXO plan or Event Pass.
+  const { state: albumState } = useAlbumPlan()
+  const planKey = { none: 'albumPlan.statusNone', trial: 'albumPlan.trialName', trialEnded: 'albumPlan.statusTrialEnded', active: 'albumPlan.albumName' }[albumState.kind]
+  const effectiveLabel = isCouple ? t(planKey) : ownLabel
+  const isFree = isCouple ? false : ownIsFree
+  const hasActiveEventPass = isCouple ? false : ownPass
 
   const sessionIdMatch = pathname?.match(/^\/sessions\/([^/]+)/)
   const sessionId = sessionIdMatch?.[1]
@@ -127,7 +134,7 @@ export function Sidebar() {
                     )}
                   >
                     <Icon className="h-5 w-5 shrink-0" />
-                    <span className="flex-1">{key === 'albums' ? t('roles.myAlbums') : t(`sidebar.${key}`)}</span>
+                    <span className="flex-1">{key === 'albums' ? t('roles.myAlbums') : key === 'plan' ? t('albumPlan.navLabel') : t(`sidebar.${key}`)}</span>
                     {key === 'sessionsLive' && currentSession?.is_active && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-[#F4FF3A] px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-[#0A0A0D]">Live</span>
                     )}
@@ -202,7 +209,7 @@ export function Sidebar() {
         {NAV.map(({ href, key, icon: Icon, proOnly }) => {
           const active = pathname === href || (href !== '/dashboard' && pathname?.startsWith(href))
           const locked = proOnly && isFree
-          const label = key === 'albums' ? t('roles.myAlbums') : t(`sidebar.${key}`)
+          const label = key === 'albums' ? t('roles.myAlbums') : key === 'plan' ? t('albumPlan.navLabel') : t(`sidebar.${key}`)
           return (
             <Link key={href} href={href}>
               <motion.div

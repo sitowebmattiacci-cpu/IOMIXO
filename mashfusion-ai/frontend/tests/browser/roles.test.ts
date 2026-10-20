@@ -85,7 +85,7 @@ test('S1. Sposi on miolovealbum.com: sign-up WITHOUT any role choice (390px) sav
   try {
     await page.goto(`${M}/register`, { waitUntil: 'networkidle', timeout: 120_000 })
     // the role comes from the DOMAIN: no choice exists in the UI, the page is MIOLOVE only
-    await page.locator(':visible', { hasText: /^Il tuo matrimonio, raccontato da chi lo vive\.$/ }).first().waitFor({ timeout: 30_000 })
+    await page.locator(':visible', { hasText: /^I tuoi ricordi, raccontati da chi li vive\.$/ }).first().waitFor({ timeout: 30_000 })
     for (const gone of ['account-type-choice', 'account-type-dj', 'account-type-couple']) assert.equal(await page.getByTestId(gone).count(), 0, gone)
     assert.equal(await page.getByText('Come vuoi usare la piattaforma?').count(), 0)
     assert.ok(await page.locator('[role="img"][aria-label="MIOLOVE ALBUM"]:visible').first().isVisible())

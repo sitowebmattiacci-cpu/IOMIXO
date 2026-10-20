@@ -2,6 +2,7 @@ import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut,
   signInAnonymously, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification,
   confirmPasswordReset, verifyPasswordResetCode, applyActionCode, updateProfile,
+  GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo,
   type User, type Unsubscribe,
 } from 'firebase/auth'
 import { getFirebaseAuth } from './client'
@@ -24,6 +25,17 @@ const actionSettings = () => {
 export async function signInWithEmail(email: string, password: string): Promise<User> {
   const cred = await signInWithEmailAndPassword(getFirebaseAuth(), email, password)
   return cred.user
+}
+
+/**
+ * Google sign-in (popup) with the EXISTING Firebase Auth project. Google proves the e-mail, so no verification mail is sent. The Firebase uid is the
+ * account's identity everywhere: an e-mail that already signed up (on either portal) gets its own uid back and its Firestore profile is kept.
+ */
+export async function signInWithGoogle(): Promise<{ user: User; isNewUser: boolean }> {
+  const provider = new GoogleAuthProvider()
+  provider.setCustomParameters({ prompt: 'select_account' })
+  const cred = await signInWithPopup(getFirebaseAuth(), provider)
+  return { user: cred.user, isNewUser: getAdditionalUserInfo(cred)?.isNewUser === true }
 }
 
 /** Creates the account, stores the display name and sends the verification email. */

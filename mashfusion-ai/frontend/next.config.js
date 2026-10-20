@@ -25,6 +25,15 @@ const nextConfig = {
           { key: 'Permissions-Policy',         value: 'camera=(self), microphone=(), geolocation=()' },
         ],
       },
+      // The owner's dashboard previews embed the REAL guest page and TV screen (same origin only: other sites still cannot frame them).
+      {
+        source: '/live/:slug',
+        headers: [{ key: 'X-Frame-Options', value: 'SAMEORIGIN' }],
+      },
+      {
+        source: '/screen/:slug',
+        headers: [{ key: 'X-Frame-Options', value: 'SAMEORIGIN' }],
+      },
     ]
   },
   // Redirect dei vecchi percorsi MashFusion AI (studio remix / progetti / download)

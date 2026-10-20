@@ -17,12 +17,12 @@ const LOGIN: Record<L, string[]> = {
   es: ['Bienvenido de nuevo', 'Iniciar sesión', '¿Olvidaste tu contraseña?', 'Crear una cuenta gratuita'],
 }
 const REGISTER: Record<L, string[]> = {
-  it: ['Crea il tuo account', 'Gratis per sempre', 'Nome completo', 'Crea account', 'Accedi'],
-  en: ['Create your account', 'Free forever', 'Full name', 'Create account', 'Sign in'],
-  fr: ['Créer votre compte', 'Gratuit pour toujours', 'Nom complet', 'Créer un compte', 'Se connecter'],
-  es: ['Crea tu cuenta', 'Gratis para siempre', 'Nombre completo', 'Crear cuenta', 'Iniciar sesión'],
+  it: ['Crea il tuo account', '7 giorni di prova gratis', 'Nome completo', 'Crea account', 'Accedi'],
+  en: ['Create your account', '7-day free trial', 'Full name', 'Create account', 'Sign in'],
+  fr: ['Créer votre compte', '7 jours d’essai gratuit', 'Nom complet', 'Créer un compte', 'Se connecter'],
+  es: ['Crea tu cuenta', '7 días de prueba gratis', 'Nombre completo', 'Crear cuenta', 'Iniciar sesión'],
 }
-const ENGLISH = /Welcome back|Sign in|Forgot password|Create a free account|Create your account|Create account|Full name|Free forever|Signing in|Creating…|Min\. 8 characters|Check your inbox/
+const ENGLISH = /Welcome back|Sign in|Forgot password|Create a free account|Create your account|Create account|Full name|Free forever|7-day free trial|Signing in|Creating…|Min\. 8 characters|Check your inbox/
 const NAMES: Record<L, string> = { it: 'Italiano', en: 'English', fr: 'Français', es: 'Español' }
 const overflow = (p: Page) => p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)
 const body = (p: Page) => p.evaluate(() => document.body.innerText)

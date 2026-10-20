@@ -130,8 +130,9 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) fo
       await page.screenshot({ path: `/tmp/onboarding-home-${vp.width}-${m.occasion}.png` }).catch(() => {})
       const home = await page.evaluate(() => document.body.innerText)
       assert.doesNotMatch(home, /IOMIXO|\bDJ\b|\bParty\b/i); assert.equal(await overflow(page), false, 'home overflow')
-      if (m.occasion === 'wedding') assert.match(home, /wedding edition/i)
-      else { assert.doesNotMatch(home, WEDDING_COPY, 'no wedding copy on a non-wedding Home'); assert.doesNotMatch(home, /wedding edition/i) }
+      assert.doesNotMatch(home, /wedding edition/i, 'MIOLOVE never says "Wedding Edition"')
+      if (m.occasion === 'wedding') assert.match(home, /grande giorno/i)
+      else assert.doesNotMatch(home, WEDDING_COPY, 'no wedding copy on a non-wedding Home')
       // the onboarding never comes back for an account that has an album
       await page.goto(`${M()}/onboarding`, { waitUntil: 'domcontentloaded', timeout: 120_000 }); await page.waitForURL(/\/sessions$/, { timeout: 60_000 })
     } finally { await ctx.close() }

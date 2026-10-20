@@ -27,6 +27,8 @@ export function eventToSession(e: EventDoc): LiveSession {
     brand: e.brand ?? undefined,
     trial_photo_count: e.trialPhotoCount ?? undefined,
     trial_photo_limit: e.trialPhotoLimit ?? undefined,
+    trial_starts_at: e.trialStartsAt?.toISOString(),
+    trial_expires_at: e.trialExpiresAt?.toISOString(),
     poster_config: e.posterConfig ?? undefined,
     couple_names: e.coupleNames,
     wedding_date: e.weddingDate,

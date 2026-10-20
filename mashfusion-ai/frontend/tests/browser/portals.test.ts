@@ -82,7 +82,7 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
       const text = await page.evaluate(() => document.body.innerText)
       assert.doesNotMatch(text, /Come vuoi usare la piattaforma|IOMIXO|Live Hub|Party|karaoke|Regia|Remote|DJ Example/i)
       assert.doesNotMatch(text, LEGACY)
-      await page.locator(':visible', { hasText: /^Il tuo matrimonio, raccontato da chi lo vive\.$/ }).first().waitFor({ timeout: 10_000 })
+      await page.locator(':visible', { hasText: /^I tuoi ricordi, raccontati da chi li vive\.$/ }).first().waitFor({ timeout: 10_000 })
       assert.ok(await page.locator('[role="img"][aria-label="MIOLOVE ALBUM"]:visible').first().isVisible()); assert.equal(await page.locator('img[alt="IOMIXO Logo"]').count(), 0)
       assert.equal(await overflow(page), false, 'register overflow')
       const h = await head(page)
@@ -92,7 +92,7 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
 
       await page.goto(`${M()}/login`, { waitUntil: 'networkidle', timeout: 120_000 }); await page.waitForTimeout(800)
       const lt = await page.evaluate(() => document.body.innerText)
-      assert.match(lt, /Accedi per gestire il tuo album matrimonio\./); assert.doesNotMatch(lt, /IOMIXO|Live Hub|DJ|Party|studio/i); assert.doesNotMatch(lt, LEGACY)
+      assert.match(lt, /Accedi per gestire i tuoi album\./); assert.doesNotMatch(lt, /IOMIXO|Live Hub|DJ|Party|studio/i); assert.doesNotMatch(lt, LEGACY)
       assert.equal(await page.locator('[data-portal]').first().getAttribute('data-portal'), 'miolove'); assert.equal(await overflow(page), false, 'login overflow')
       for (const other of ['forgot-password', 'verify-email']) {
         await page.goto(`${M()}/${other}`, { waitUntil: 'networkidle', timeout: 120_000 })
@@ -100,7 +100,8 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
         assert.equal(await overflow(page), false, `${other} overflow`)
       }
       // MIOLOVE has no marketing landing: the root goes to the sign-in
-      await page.goto(`${M()}/`, { waitUntil: 'domcontentloaded', timeout: 120_000 }); await page.waitForURL(/\/login$/, { timeout: 30_000 })
+      await page.goto(`${M()}/`, { waitUntil: 'domcontentloaded', timeout: 120_000 }); await page.getByTestId('miolove-home').waitFor({ timeout: 30_000 }); assert.equal(new URL(page.url()).pathname, '/', 'the root is the public home, not the sign-in')
+      await page.goto(`${M()}/login`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
     } finally { await ctx.close() }
   })
 }
@@ -257,7 +258,7 @@ test('PT8. www.miolovealbum.com is a permanent alias of the apex (path + query k
     const r = await rawGet('www.miolovealbum.com', path)
     assert.equal(r.status, 308, path); assert.equal(r.location, to, path)
   }
-  const apexRoot = await rawGet('miolovealbum.com', '/'); assert.equal(apexRoot.status, 307); assert.match(apexRoot.location ?? '', /\/login$/)
+  const apexRoot = await rawGet('miolovealbum.com', '/'); assert.equal(apexRoot.status, 200, 'MIOLOVE root is its public home now, not a redirect'); assert.equal(apexRoot.location, null)
   assert.equal((await rawGet('miolovealbum.com', '/login')).status, 200)
   for (const host of ['iomixo.com', 'www.iomixo.com']) { const r = await rawGet(host, '/login'); assert.equal(r.status, 200, host); assert.equal(r.location, null) }
   assert.equal((await rawGet('127.0.0.1', '/login')).status, 200)

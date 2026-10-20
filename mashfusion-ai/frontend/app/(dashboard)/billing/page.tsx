@@ -11,6 +11,7 @@ import toast from 'react-hot-toast'
 import { useState } from 'react'
 import { useI18n } from '@/lib/i18n'
 import { useAccountRole } from '@/lib/roles'
+import { MioloveBilling } from '@/components/miolove/MioloveBilling'
 import { normalisePlan as normalisePlanShared } from '@/lib/plan'
 import {
   currencyForLocale, formatPrice, planPriceId, eventPassPriceId,
@@ -34,7 +35,14 @@ function normalisePlan(p: string | undefined): Plan {
   return normalisePlanShared(p) as Plan
 }
 
+/** MIOLOVE gets its own page (free trial / full album, single payment); the IOMIXO plans below are untouched. */
 export default function BillingPage() {
+  const { isCouple, ready } = useAccountRole()
+  if (!ready) return <div className="flex-1 p-8 text-white/50" aria-busy="true" />
+  return isCouple ? <MioloveBilling /> : <IomixoBillingPage />
+}
+
+function IomixoBillingPage() {
   const { t, locale } = useI18n()
   const { isCouple, portal } = useAccountRole()
   // Sposi: wedding-album wording where one exists, the common text otherwise.

@@ -14,7 +14,8 @@ import { useI18n } from '@/lib/i18n'
 import { useEffectiveAccess, isPremiumSession } from '@/lib/access'
 import { useAccountRole } from '@/lib/roles'
 import { sessionsOfBrand } from '@/lib/brand/eventBrand'
-import { COUPLE_DEFAULT_GUEST_CONFIG, ONBOARDING_PATH } from '@/lib/coupleAlbum'
+import { COUPLE_DEFAULT_GUEST_CONFIG, ONBOARDING_PATH, OCCASIONS, type OccasionType } from '@/lib/coupleAlbum'
+import { occasionText } from '@/lib/occasion'
 
 type SessionType = 'standard' | 'party' | 'wedding'
 
@@ -27,6 +28,7 @@ const EMPTY_FORM = {
   wedding_date: '',
   venue_name: '',
   screen_mode_enabled: false,
+  occasion_type: 'wedding' as OccasionType,
 }
 
 // Step in the create-session flow.
@@ -97,6 +99,7 @@ export default function LiveSessionsPage() {
         description: form.description || undefined,
         session_type: form.session_type,
         brand: portal,
+        ...(isCouple ? { occasion_type: form.occasion_type } : {}),
       }
       if (form.session_type === 'wedding') {
         payload.couple_names = form.couple_names || undefined
@@ -246,20 +249,33 @@ export default function LiveSessionsPage() {
               />
             </div>
 
+            {isCouple && (
+              <div>
+                <label className="text-xs text-white/60">{t('onboarding.eventType')}</label>
+                <select
+                  value={form.occasion_type} data-testid="album-occasion"
+                  onChange={(e) => setForm({ ...form, occasion_type: e.target.value as OccasionType })}
+                  className="w-full mt-1 rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-pink-400"
+                >
+                  {OCCASIONS.map((o) => <option key={o} value={o}>{t(`onboarding.occasion.${o}`)}</option>)}
+                </select>
+              </div>
+            )}
+
             {isWeddingForm && (
               <div className="space-y-3 rounded-xl border border-pink-400/20 bg-pink-500/5 p-4">
                 <div>
-                  <label className="text-xs text-white/60">{t('sessions.coupleNames')}</label>
+                  <label className="text-xs text-white/60">{isCouple ? occasionText(t, form.occasion_type, 'namesLabel') : t('sessions.coupleNames')}</label>
                   <input
                     value={form.couple_names}
                     onChange={(e) => setForm({ ...form, couple_names: e.target.value })}
                     className="w-full mt-1 rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-pink-400"
-                    placeholder="Anna & Marco"
+                    placeholder={isCouple ? occasionText(t, form.occasion_type, 'namesPlaceholder') : 'Anna & Marco'}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-white/60">{t('sessions.weddingDate')}</label>
+                    <label className="text-xs text-white/60">{isCouple ? t('onboarding.date') : t('sessions.weddingDate')}</label>
                     <input
                       type="date"
                       value={form.wedding_date}

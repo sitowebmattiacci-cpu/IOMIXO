@@ -111,6 +111,7 @@ const config: Config = {
       fontFamily: {
         sans:    ['var(--font-inter)', 'system-ui', 'sans-serif'],
         mono:    ['var(--font-mono)', 'monospace'],
+        album:   ['var(--font-fraunces)', 'Fraunces', 'Georgia', 'serif'],
         wedding: ['var(--font-cormorant)', 'Cormorant Garamond', 'Didot', 'Georgia', 'serif'],
         'wedding-playfair': ['var(--font-playfair)', 'Playfair Display', 'serif'],
         'wedding-great-vibes': ['var(--font-great-vibes)', 'Great Vibes', 'cursive'],

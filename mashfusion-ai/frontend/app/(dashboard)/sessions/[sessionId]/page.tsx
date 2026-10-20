@@ -50,6 +50,8 @@ import { useI18n } from '@/lib/i18n'
 import { useEffectiveAccess, isPremiumSession } from '@/lib/access'
 import { useAccountRole, isCoupleWeddingTab, isMioloveOnlyTab, COUPLE_HOME } from '@/lib/roles'
 import { ownedEventBrand } from '@/lib/brand/eventBrand'
+import { occasionText } from '@/lib/occasion'
+import { PosterLocked } from '@/components/wedding/admin/PosterLocked'
 import { EventBrandProvider } from '@/components/brand/EventBrand'
 import { resolveVideoSource, formatRelativeTime } from '@/lib/utils'
 import type { VideoLiveCommand } from '@/lib/api'
@@ -481,11 +483,13 @@ export default function SessionDetailPage() {
           <GamesPanel sessionId={session.id} session={session} />
         </WdPage>
       )}
-      {tab === 'privacy' && <GuestVisibilityPanel sessionId={session.id} session={session} sessionType="wedding" hasAccess={advanceAccess} couple={isCouple} />}
-      {tab === 'poster' && (isCouple ? <MiolovePosterEditor session={session} /> : <WeddingPosterPage session={session} />)}
+      {/* MIOLOVE: privacy belongs to every album (trial or activated), whatever the owner's DJ plan is. IOMIXO keeps its Advance / Event Pass gate. */}
+      {tab === 'privacy' && <GuestVisibilityPanel sessionId={session.id} session={session} sessionType="wedding" hasAccess={isCouple || advanceAccess} couple={isCouple} />}
+      {/* MIOLOVE: the QR card / poster is included in the paid album only. The server mark `activated` is the single source; a trial (or an unknown mode) is locked. */}
+      {tab === 'poster' && (isCouple ? (session.access_mode === 'activated' ? <MiolovePosterEditor session={session} /> : <PosterLocked />) : <WeddingPosterPage session={session} />)}
       {tab === 'booth' && <WeddingPhotosPage session={session} initialSource="booth" />}
       {(tab === 'settings' || tab === 'screen') && (
-        <WeddingSettingsPage key={tab} mode={tab === 'screen' ? 'screen' : 'event'} session={session} togglingActive={togglingActive} onToggle={toggleActive} onDelete={removeSession} />
+        <WeddingSettingsPage key={tab} mode={tab === 'screen' ? 'screen' : 'event'} session={session} togglingActive={togglingActive} onToggle={toggleActive} onDelete={removeSession} couple={isCouple} />
       )}
     </>
   )
@@ -506,8 +510,8 @@ export default function SessionDetailPage() {
   )
 }
 
-function WeddingSettingsPage({ session, togglingActive, onToggle, onDelete, mode }: {
-  session: any; togglingActive: boolean; onToggle: () => void; onDelete: () => void; mode: 'event' | 'screen';
+function WeddingSettingsPage({ session, togglingActive, onToggle, onDelete, mode, couple = false }: {
+  session: any; togglingActive: boolean; onToggle: () => void; onDelete: () => void; mode: 'event' | 'screen'; couple?: boolean;
 }) {
   const { t } = useI18n()
   const slug: string = session.public_slug
@@ -630,8 +634,16 @@ function WeddingSettingsPage({ session, togglingActive, onToggle, onDelete, mode
         <WdSection title={t('wdAdmin.settings.eventName')} description={t('wdAdmin.settings.eventNameDesc')}>
           <WdInput value={details.event_name} maxLength={200} onChange={(e) => setDetails({ ...details, event_name: e.target.value })} />
         </WdSection>
-        <WdSection title={t('wdAdmin.settings.coupleNames')} description={t('wdAdmin.settings.coupleNamesDesc')}>
-          <WdInput value={details.couple_names} maxLength={200} onChange={(e) => setDetails({ ...details, couple_names: e.target.value })} />
+        {/* The label follows what the album is for: "Nomi degli sposi" only for a wedding (and for the IOMIXO Wedding DJ event). */}
+        <WdSection
+          title={couple ? occasionText(t, session.occasion_type, 'namesLabel') : t('wdAdmin.settings.coupleNames')}
+          description={couple ? occasionText(t, session.occasion_type, 'namesDesc') : t('wdAdmin.settings.coupleNamesDesc')}
+        >
+          <WdInput
+            value={details.couple_names} maxLength={200} data-testid="settings-names-input"
+            placeholder={couple ? occasionText(t, session.occasion_type, 'namesPlaceholder') : undefined}
+            onChange={(e) => setDetails({ ...details, couple_names: e.target.value })}
+          />
         </WdSection>
         <WdSection title={t('wdAdmin.settings.date')} description={t('wdAdmin.settings.dateDesc')}>
           <WdInput type="date" value={details.wedding_date} onChange={(e) => setDetails({ ...details, wedding_date: e.target.value })} />
@@ -1022,11 +1034,18 @@ function GuestVisibilityPanel({
   // Song requests are visible by default; every other function is hidden until enabled.
   const isOn = (key: string) => (key === 'requests' ? cfg.requests !== false : cfg[key] === true)
 
+  // Photos on the monitor live in screen_config (default ON for a MIOLOVE album); everything else in guest_config.
+  const screenCfg: Record<string, any> = session?.screen_config ?? {}
+  const isOn2 = (key: string) => (key === 'show_photos' ? screenCfg.show_photos !== false : isOn(key))
   const toggle = async (key: string) => {
     setSaving(true)
     try {
+      if (key === 'show_photos') {
+        await live.updateSession(sessionId, { screen_config: { ...screenCfg, show_photos: !isOn2(key) } as any })
+      } else {
       const next = { ...cfg, [key]: !isOn(key) }
       await live.updateSession(sessionId, { guest_config: next })
+      }
       await mutate(['session', sessionId])
       toast.success(t('guestVisibility.saved'))
     } catch (e: any) {
@@ -1042,9 +1061,10 @@ function GuestVisibilityPanel({
     { key: 'shoe_game',   icon: <Footprints className="h-4 w-4" />, label: t('guestVisibility.shoeGame') },
     { key: 'polls',       icon: <ListChecks className="h-4 w-4" />, label: t('guestVisibility.polls') },
   ]
-  // MIOLOVE album only: the guests' photo entry point (Live Booth).
+  // MIOLOVE album: what concerns the album's photos and who sees them (guests' photo entry point, photos on the monitor).
   const coupleItems = [
-    { key: 'live_booth',  icon: <Camera className="h-4 w-4" />,     label: t('guestVisibility.liveBooth') },
+    { key: 'live_booth',  icon: <Camera className="h-4 w-4" />,     label: t('albumPrivacy.guestUpload') },
+    { key: 'show_photos', icon: <Tv className="h-4 w-4" />,         label: t('albumPrivacy.screenPhotos') },
   ]
   const partyItems = [
     { key: 'requests',     icon: <Music2 className="h-4 w-4" />,     label: t('guestVisibility.requests') },
@@ -1099,11 +1119,12 @@ function GuestVisibilityPanel({
     dedications: 'wdAdmin.privacy.dedicationsDesc',
     shoe_game: 'wdAdmin.privacy.shoeGameDesc',
     polls: 'wdAdmin.privacy.pollsDesc',
-    live_booth: 'wdAdmin.privacy.liveBoothDesc',
+    live_booth: couple ? 'albumPrivacy.guestUploadDesc' : 'wdAdmin.privacy.liveBoothDesc',
+    show_photos: 'albumPrivacy.screenPhotosDesc',
   }
   return (
     <WdPage width="narrow" title={t('wdAdmin.privacy.pageTitle')}>
-      {!hasAccess ? (
+      {!hasAccess && !couple ? (
         <WdCard title={t('guestVisibility.lockedTitle')} description={t('guestVisibility.lockedMsg')}>
           <Link href="/billing"><WdButton>{t('guestVisibility.lockedCta')}</WdButton></Link>
         </WdCard>
@@ -1115,8 +1136,8 @@ function GuestVisibilityPanel({
               section
               title={it.label}
               description={t(weddingDescKey[it.key] ?? '')}
-              status={isOn(it.key) ? t('wdAdmin.privacy.on') : t('wdAdmin.privacy.off')}
-              checked={isOn(it.key)}
+              status={isOn2(it.key) ? t('wdAdmin.privacy.on') : t('wdAdmin.privacy.off')}
+              checked={isOn2(it.key)}
               onChange={() => toggle(it.key)}
               disabled={saving}
             />

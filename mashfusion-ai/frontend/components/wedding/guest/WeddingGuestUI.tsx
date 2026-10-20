@@ -5,7 +5,7 @@ import type { ToastOptions } from 'react-hot-toast'
 import { Music2, Camera, Heart, Gamepad2, BarChart3, ChevronRight, ChevronLeft, ArrowLeft, CheckCircle2, AlertTriangle, Info } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 import { useWeddingTitle } from '@/components/brand/MioloveLogo'
-import { WeddingBrandLogo, useEventBrandName } from '@/components/brand/EventBrand'
+import { WeddingBrandLogo, useEventBrandName, useWhiteLabel, WhiteLabelProvider } from '@/components/brand/EventBrand'
 import { cn } from '@/lib/utils'
 
 // Shared Wedding guest UI. Used by the real guest page (/live/[slug]) AND by the
@@ -62,16 +62,19 @@ export function buildWeddingGuestActions(keys: WeddingGuestActionKey[], t: (k: s
   })
 }
 
-export function formatWeddingGuestDate(raw: string | null | undefined): string | null {
+const DATE_LOCALE: Record<string, string> = { it: 'it-IT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES' }
+/** Long date in the visitor's language (the page used to always print it in Italian). */
+export function formatWeddingGuestDate(raw: string | null | undefined, locale: string = 'it'): string | null {
   if (!raw) return null
   const d = new Date(raw)
-  return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString('it-IT', { dateStyle: 'long' })
+  return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString(DATE_LOCALE[locale] ?? 'it-IT', { dateStyle: 'long' })
 }
 
 export function WeddingGuestTopBar({ languageSlot }: { languageSlot?: ReactNode }) {
+  const whiteLabel = useWhiteLabel()
   return (
-    <div className="flex items-center justify-between gap-3">
-      <WeddingBrandLogo height={30} className="text-wd-ink" />
+    <div className="flex items-center justify-between gap-3" data-testid="guest-topbar" data-whitelabel={whiteLabel ? 'true' : 'false'}>
+      {whiteLabel ? <span /> : <WeddingBrandLogo height={30} className="text-wd-ink" />}
       {languageSlot}
     </div>
   )
@@ -129,7 +132,7 @@ export function WeddingGuestActionList({ items, onSelect }: { items: WeddingGues
 
 /** Full guest home: top bar, hero, notices, actions. Rendered as-is inside the dashboard phone preview. */
 export function WeddingGuestHome({
-  names, date, venue, items, onSelect, languageSlot, notice, footer, eyebrow,
+  names, date, venue, items, onSelect, languageSlot, notice, footer, eyebrow, emptyText,
 }: {
   names: string
   date?: string | null
@@ -140,6 +143,8 @@ export function WeddingGuestHome({
   notice?: ReactNode
   footer?: ReactNode
   eyebrow?: string
+  /** Shown when the owner turned every guest function off (default: the generic "available soon" text of the DJ product). */
+  emptyText?: string
 }) {
   const { t } = useI18n()
   return (
@@ -149,7 +154,7 @@ export function WeddingGuestHome({
       {notice}
       {items.length === 0 ? (
         <div className="rounded-[20px] border border-wd-border bg-white p-5 text-center text-[15px] text-wd-muted">
-          {t('guestVisibility.emptyState')}
+          {emptyText ?? t('guestVisibility.emptyState')}
         </div>
       ) : (
         <>
@@ -233,17 +238,21 @@ export function WeddingGuestTitle({ prefix }: { prefix?: string }) {
   return null
 }
 
-export function WeddingGuestShell({ children, languageSlot, centered = false }: { children: ReactNode; languageSlot?: ReactNode; centered?: boolean }) {
+export function WeddingGuestShell({ children, languageSlot, centered = false, whiteLabel }: { children: ReactNode; languageSlot?: ReactNode; centered?: boolean; whiteLabel?: boolean }) {
   const brandName = useEventBrandName()
+  const inherited = useWhiteLabel()
+  const wl = whiteLabel ?? inherited
   return (
-    <div className="min-h-screen w-full bg-wd-bg font-sans text-wd-ink antialiased">
-      <WeddingGuestTitle />
-      <div className={cn('mx-auto flex min-h-screen w-full max-w-[520px] flex-col px-5 pb-12 pt-5', centered && 'justify-center')}>
-        <WeddingGuestTopBar languageSlot={languageSlot} />
-        <div className="pt-6">{children}</div>
-        <p className="mt-12 text-center text-[12px] font-semibold tracking-wide text-wd-muted">{brandName}</p>
+    <WhiteLabelProvider whiteLabel={wl}>
+      <div className="min-h-screen w-full bg-wd-bg font-sans text-wd-ink antialiased">
+        <WeddingGuestTitle />
+        <div className={cn('mx-auto flex min-h-screen w-full max-w-[520px] flex-col px-5 pb-12 pt-5', centered && 'justify-center')}>
+          <WeddingGuestTopBar languageSlot={languageSlot} />
+          <div className="pt-6">{children}</div>
+          {!wl && <p className="mt-12 text-center text-[12px] font-semibold tracking-wide text-wd-muted">{brandName}</p>}
+        </div>
       </div>
-    </div>
+    </WhiteLabelProvider>
   )
 }
 

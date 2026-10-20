@@ -19,6 +19,7 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
   const { t } = useI18n()
   const sessionId: string = session.id
   const slug: string = session.public_slug
+  const downloadAllLocked = couple && session.access_mode !== 'activated'
   const [source, setSource] = useState<'album' | 'booth'>(initialSource)
   const [filter, setFilter] = useState<MediaFilter>('all')
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -92,8 +93,11 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
           {uploading ? t('common.loading') : t('wdAdmin.photos.upload')}
         </WdButton>
         <div className="flex flex-wrap items-center gap-3">
+          {/* MIOLOVE: "download everything" is part of the paid album; a trial can still download the photos it selects. */}
           <WdButton className="!rounded-2xl !py-3" variant="secondary" icon={<Download className="h-4 w-4 text-wd-muted" />}
-            onClick={() => downloadItems(selectedItems.length ? selectedItems : items)} disabled={items.length === 0}>
+            data-testid="photos-download"
+            title={downloadAllLocked && !selectedItems.length ? t('albumPlan.downloadAllLocked') : undefined}
+            onClick={() => downloadItems(selectedItems.length ? selectedItems : items)} disabled={items.length === 0 || (downloadAllLocked && !selectedItems.length)}>
             {selectedItems.length ? `${t('wdAdmin.photos.download')} (${selectedItems.length})` : t('wdAdmin.photos.downloadAll')}
           </WdButton>
           <div className="inline-flex rounded-2xl border border-wd-border bg-white p-1">

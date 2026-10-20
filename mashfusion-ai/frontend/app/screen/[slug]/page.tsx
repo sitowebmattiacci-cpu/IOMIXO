@@ -13,6 +13,9 @@ import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
 import { EVENT_BRAND_NAME, hasPhotoFeatures } from '@/lib/brand/eventBrand'
 import { useEventBrand } from '@/lib/events/useEventBrand'
+import { screenShowsPhotos } from '@/lib/events/screenModel'
+import { FrameTitleProvider } from '@/components/brand/eventBrandContext'
+import { occasionText } from '@/lib/occasion'
 import { Logo } from '@/components/Logo'
 import { WeddingPhotoDisplay } from '@/components/wedding/WeddingPhotoGridWall'
 import { RouletteWheel } from '@/components/wedding/RouletteWheel'
@@ -68,9 +71,12 @@ function normalizeStandUpGuess(raw: any): StandUpGuessConfig {
   }
 }
 
+const DATE_LOCALES: Record<string, string> = { it: 'it-IT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES' }
+
 export default function ScreenModePage() {
   const { slug } = useParams<{ slug: string }>()
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const dateLoc = DATE_LOCALES[locale] ?? 'it-IT'
   // Poll results arrive in realtime from Firestore (open poll + tally shards; never the votes).
   const liveEvent = useLiveEvent(slug)
   const rtPoll = useActivePoll(liveEvent?.id)
@@ -82,8 +88,10 @@ export default function ScreenModePage() {
   // Photos on the TV exist only for a MIOLOVE album: an IOMIXO event (Party, Wedding DJ) never subscribes to them, whatever show_photos holds.
   const brand = useEventBrand(slug, liveEvent?.type)
   const photosAllowed = !!brand && hasPhotoFeatures(brand)
-  const brandName = EVENT_BRAND_NAME[brand ?? 'iomixo']
-  const showPhotosCfg = photosAllowed && (liveEvent?.screenConfig as Record<string, unknown> | null | undefined)?.show_photos === true
+  // White label: an activated (paid) MIOLOVE album shows no MIOLOVE mark on the TV. Trial albums keep it.
+  const whiteLabel = brand === 'miolove' && liveEvent?.accessMode === 'activated'
+  const brandName = whiteLabel ? '' : EVENT_BRAND_NAME[brand ?? 'iomixo']
+  const showPhotosCfg = photosAllowed && !!liveEvent && screenShowsPhotos(liveEvent, ((liveEvent.screenConfig ?? {}) as Record<string, unknown>))
   const rtPhotos = useApprovedPhotos(showPhotosCfg ? liveEvent?.id : undefined)
   const winnerUrls = useWinnerUrls((liveEvent?.screenConfig as Record<string, unknown> | null | undefined)?.winner_announcement)
   // Not a MIOLOVE album (or brand still unknown): photos are known to be empty, so the TV never waits for them nor falls back to the legacy payload.
@@ -157,7 +165,7 @@ export default function ScreenModePage() {
     return (
       <WeddingShell variant="stage">
         <div className="min-h-screen flex items-center justify-center">
-          <p className="text-3xl text-wedding-ivory/40">Sessione non trovata.</p>
+          <p className="text-3xl text-wedding-ivory/40">{t('live.notFound')}</p>
         </div>
       </WeddingShell>
     )
@@ -204,7 +212,8 @@ export default function ScreenModePage() {
   const enabledShoeGame   = cfg.show_shoe_game  === true
   const enabledPolls      = cfg.show_polls      === true
   const enabledDedications = cfg.show_dedications === true
-  const enabledPhotos     = photosAllowed && cfg.show_photos === true
+  // photosAllowed = MIOLOVE album: its guests' photos play by default, unless the owner switched them off.
+  const enabledPhotos     = photosAllowed && cfg.show_photos !== false
   const standUpGuess = normalizeStandUpGuess(cfg.stand_up_guess)
   const enabledStandUpGuess = standUpGuess.enabled === true
   const standUpRound = standUpGuess.rounds.find((round) => round.id === standUpGuess.current_round_id)
@@ -287,6 +296,7 @@ export default function ScreenModePage() {
   const mediumFontSize = mediumSizeMap[coupleFontSize] ?? mediumSizeMap['medium']
 
   return (
+    <FrameTitleProvider title={brand === 'miolove' ? occasionText(t, liveEvent?.occasionType, 'frameTitle') : null}>
     <WeddingShell variant="stage">
       {videoConfigured && <VideoLiveAudioUnlock theme="wedding" />}
       {showRouletteWheel && wheelPenitenze.length > 0 && (
@@ -319,7 +329,7 @@ export default function ScreenModePage() {
               </h1>
               {session.wedding_date && (
                 <p className="font-wedding text-5xl italic text-wedding-champagne/90 mt-8">
-                  {new Date(session.wedding_date).toLocaleDateString('it-IT', { dateStyle: 'long' })}
+                  {new Date(session.wedding_date).toLocaleDateString(dateLoc, { dateStyle: 'long' })}
                 </p>
               )}
               {session.venue_name && (
@@ -343,7 +353,7 @@ export default function ScreenModePage() {
               </h1>
               {session.wedding_date && (
                 <p className="font-wedding text-2xl italic text-wedding-champagne/80">
-                  {new Date(session.wedding_date).toLocaleDateString('it-IT', { dateStyle: 'long' })}
+                  {new Date(session.wedding_date).toLocaleDateString(dateLoc, { dateStyle: 'long' })}
                 </p>
               )}
             </div>
@@ -426,7 +436,7 @@ export default function ScreenModePage() {
                             — {d.guest_name ?? 'Anonimo'}
                           </p>
                           <p className="text-sm uppercase tracking-[0.18em] text-wedding-ivory/50 tabular-nums">
-                            {new Date(d.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(d.created_at).toLocaleTimeString(dateLoc, { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                       </div>
@@ -470,7 +480,7 @@ export default function ScreenModePage() {
               </h1>
               {session.wedding_date && (
                 <p className="font-wedding text-2xl italic text-wedding-champagne/80">
-                  {new Date(session.wedding_date).toLocaleDateString('it-IT', { dateStyle: 'long' })}
+                  {new Date(session.wedding_date).toLocaleDateString(dateLoc, { dateStyle: 'long' })}
                 </p>
               )}
             </div>
@@ -528,7 +538,7 @@ export default function ScreenModePage() {
             </h1>
             {session.wedding_date && (
               <p className="font-wedding text-3xl italic text-wedding-champagne/80 mt-4">
-                {new Date(session.wedding_date).toLocaleDateString('it-IT', { dateStyle: 'long' })}
+                {new Date(session.wedding_date).toLocaleDateString(dateLoc, { dateStyle: 'long' })}
               </p>
             )}
             {session.venue_name && (
@@ -617,7 +627,7 @@ export default function ScreenModePage() {
                             — {d.guest_name ?? 'Anonimo'}
                           </p>
                           <p className="text-xs uppercase tracking-[0.18em] text-wedding-ivory/50 tabular-nums">
-                            {new Date(d.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(d.created_at).toLocaleTimeString(dateLoc, { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                       </div>
@@ -654,6 +664,7 @@ export default function ScreenModePage() {
         )}
       </div>
     </WeddingShell>
+    </FrameTitleProvider>
   )
 }
 

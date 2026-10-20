@@ -115,6 +115,9 @@ export interface EventDoc {
   /** Trial albums only (server-managed): approved photos held / allowed. */
   trialPhotoCount?:  number | null
   trialPhotoLimit?:  number | null
+  /** Trial albums only (server-written, 7 days from creation). Absent on trial albums created before the field: those never expire. */
+  trialStartsAt?:    Date | null
+  trialExpiresAt?:   Date | null
   /** MIOLOVE table sign: the owner's overrides of the poster defaults. */
   posterConfig?:     Record<string, unknown> | null
   status:            EventStatus

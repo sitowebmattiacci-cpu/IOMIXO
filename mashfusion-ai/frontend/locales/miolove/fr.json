@@ -1,0 +1,392 @@
+{
+  "onboarding": {
+    "eyebrow": {
+      "wedding": "Mariage"
+    }
+  },
+  "occasion": {
+    "wedding": {
+      "namesLabel": "Noms des mariés",
+      "namesDesc": "Les noms affichés sur la page des invités, à l'écran et sur l'affiche.",
+      "namesPlaceholder": "Anna et Marco",
+      "boothIntro": "Prenez une photo et ajoutez-la à l'album du mariage. Elle apparaîtra aussitôt à l'écran !",
+      "frameTitle": "Jeunes mariés",
+      "homeSubtitle": "Tout est sous contrôle pour votre grand jour.",
+      "photoTitle": "Partagez vos photos du mariage"
+    },
+    "birthday": {
+      "namesLabel": "Nom de la personne fêtée",
+      "namesDesc": "Le nom affiché sur la page des invités, à l'écran et sur l'affiche.",
+      "namesPlaceholder": "Martina",
+      "boothIntro": "Prenez une photo et ajoutez-la à l'album d'anniversaire. Elle apparaîtra aussitôt à l'écran !",
+      "frameTitle": "Joyeux anniversaire",
+      "homeSubtitle": "Tout est sous contrôle pour votre fête.",
+      "photoTitle": "Partagez vos photos de la fête"
+    },
+    "baptism": {
+      "namesLabel": "Prénom de l'enfant",
+      "namesDesc": "Le nom affiché sur la page des invités, à l'écran et sur l'affiche.",
+      "namesPlaceholder": "Leonardo",
+      "boothIntro": "Prenez une photo et ajoutez-la à l'album du baptême. Elle apparaîtra aussitôt à l'écran !",
+      "frameTitle": "Bienvenue",
+      "homeSubtitle": "Tout est sous contrôle pour cette journée spéciale.",
+      "photoTitle": "Partagez vos photos du baptême"
+    },
+    "other": {
+      "namesLabel": "Nom à afficher",
+      "namesDesc": "Le nom affiché sur la page des invités, à l'écran et sur l'affiche.",
+      "namesPlaceholder": "Notre événement",
+      "boothIntro": "Prenez une photo et ajoutez-la à l'album de l'événement. Elle apparaîtra aussitôt à l'écran !",
+      "frameTitle": "Un beau souvenir",
+      "homeSubtitle": "Tout est sous contrôle pour votre événement.",
+      "photoTitle": "Partagez vos photos de l'événement"
+    }
+  },
+  "guestAlbum": {
+    "trialEnded": "L'essai gratuit de cet album est terminé : il n'est plus possible d'ajouter de nouvelles photos. Celles déjà envoyées restent visibles.",
+    "limitReached": "Cet album a atteint la limite de l'essai gratuit.",
+    "photosOff": "L'envoi de photos n'est pas actif pour le moment. Réessayez plus tard.",
+    "photoTitle": "Envoyez vos photos",
+    "err": {
+      "cooldown": "Réessayez dans quelques secondes.",
+      "guestLimit": "Vous avez déjà envoyé beaucoup de photos : merci !",
+      "tooLarge": "Fichier trop volumineux (max 8 Mo).",
+      "format": "Format non pris en charge (jpg, png, webp).",
+      "retry": "Échec de l'envoi, réessayez."
+    }
+  },
+  "wdAdmin": {
+    "trial": {
+      "daysLeft": "{n} jours restants",
+      "dayLeft": "1 jour restant",
+      "expiredTitle": "L'essai gratuit est terminé",
+      "expiredHint": "Votre album reste consultable et vos photos sont conservées. Activez l'album pour ajouter de nouveaux contenus."
+    }
+  },
+  "albumPlan": {
+    "navLabel": "Formule",
+    "title": "Formule",
+    "subtitle": "Choisissez comment vivre votre album.",
+    "yourPlan": "Votre formule",
+    "statusTrial": "Essai gratuit en cours",
+    "statusTrialEnded": "Essai gratuit terminé",
+    "statusActive": "Album complet actif",
+    "statusNone": "Pas encore d'album",
+    "trialLeft": "{n} jours restants",
+    "trialLeftOne": "1 jour restant",
+    "mediaUsed": "{n} / {max} photos",
+    "trialName": "Essai gratuit",
+    "trialPrice": "Gratuit",
+    "trialSub": "7 jours · Sans carte bancaire",
+    "albumName": "Album complet",
+    "albumOnce": "une fois",
+    "albumSub": "Paiement unique",
+    "oneTime": "Paiement unique",
+    "notMonthly": "Pas au mois",
+    "notPerGuest": "Pas par invité",
+    "noSubscription": "Pas d'engagement",
+    "noUpgrade": "Aucune montée en gamme",
+    "included": "Inclus",
+    "notIncluded": "Non inclus",
+    "current": "Formule actuelle",
+    "popular": "Recommandé",
+    "activate": "Activer l'album",
+    "tryFree": "Essayer gratuitement",
+    "startFree": "Commencer par l'essai gratuit",
+    "activateSoon": "L'activation en ligne de l'album sera bientôt disponible.",
+    "posterLockedTitle": "Les cartes et affiches QR sont incluses dans l'Album complet",
+    "posterLockedDesc": "Pendant l'essai gratuit, vous pouvez utiliser le QR code et le lien. Avec l'Album complet, vous imprimez la carte de table et l'affiche avec le QR de votre album.",
+    "downloadAllLocked": "Tout télécharger est inclus dans l'Album complet",
+    "noPayments": "Aucun paiement",
+    "history": "Paiements",
+    "f": {
+      "trialQuotaPhotos": "50 photos",
+      "trialQuotaMedia": "50 photos et vidéos",
+      "guests": "Invités illimités",
+      "noApp": "Aucune application à installer",
+      "qrLink": "QR code et lien",
+      "trialDays": "7 jours pour l'essayer",
+      "slideshow": "Diaporama en direct",
+      "basicCustom": "Personnalisation de base",
+      "brandVisible": "Logo MIOLOVE visible",
+      "noPoster": "Cartes et affiches QR à imprimer",
+      "noDownloadAll": "Tout télécharger en un clic",
+      "noWhiteLabel": "Retrait de la marque MIOLOVE",
+      "albumMediaPhotos": "Photos illimitées",
+      "albumMedia": "Photos et vidéos illimitées",
+      "months12Upload": "12 mois pour envoyer et télécharger",
+      "months12Storage": "12 mois de stockage",
+      "originalQuality": "Qualité originale",
+      "downloadAll": "Tout télécharger en un clic",
+      "noBrand": "Aucune marque MIOLOVE",
+      "poster": "Cartes et affiches QR à imprimer",
+      "allIncluded": "Toutes les fonctionnalités MIOLOVE incluses"
+    }
+  },
+  "albumPrivacy": {
+    "guestUpload": "Envoi de photos par les invités",
+    "guestUploadDesc": "Les invités peuvent prendre et envoyer des photos dans l'album.",
+    "screenPhotos": "Photos à l'écran",
+    "screenPhotosDesc": "Les photos des invités défilent sur le moniteur (diaporama en direct)."
+  },
+  "auth": {
+    "google": {
+      "continue": "Continuer avec Google",
+      "loading": "Connexion à Google…",
+      "or": "ou",
+      "closed": "Vous avez fermé la fenêtre Google avant la fin. Réessayez quand vous voulez.",
+      "blocked": "Votre navigateur a bloqué la fenêtre Google. Autorisez les pop-ups pour ce site et réessayez.",
+      "collision": "Un compte avec cet e-mail existe déjà, créé avec une autre méthode de connexion. Connectez-vous avec e-mail et mot de passe.",
+      "unavailable": "La connexion avec Google n'est pas disponible pour le moment. Utilisez e-mail et mot de passe.",
+      "failed": "La connexion avec Google a échoué. Réessayez."
+    }
+  },
+  "albumAuth": {
+    "registerSub": "7 jours d’essai gratuit · Sans carte bancaire",
+    "namePh": "Marie Dupont"
+  },
+  "roles": {
+    "albumsSubtitle": "Créez et gérez vos albums.",
+    "weddingOnly": "MIOLOVE ALBUM crée des albums pour vos événements.",
+    "coupleDesc": "Créez votre album, collectez les photos des invités et gérez votre événement.",
+    "authPage": {
+      "coupleHeadline": "Vos souvenirs, racontés par ceux qui les vivent.",
+      "coupleSub": "Rassemblez les photos de vos invités, partagez le QR code et créez un album numérique de votre événement.",
+      "couplePerk2": "QR code à partager à l'événement",
+      "loginSubtitleCouple": "Connectez-vous pour gérer vos albums."
+    }
+  },
+  "home": {
+    "meta": {
+      "title": "MIOLOVE ALBUM — L’album photo numérique de vos événements",
+      "description": "Les invités scannent un QR code et partagent les photos de votre mariage, anniversaire ou baptême dans un seul album, avec diaporama en direct. Sans application. Essai gratuit de 7 jours.",
+      "ogTitle": "MIOLOVE ALBUM — Vos souvenirs, racontés par ceux qui les vivent"
+    },
+    "nav": {
+      "how": "Comment ça marche",
+      "features": "Ce qui est inclus",
+      "pricing": "Tarifs",
+      "faq": "FAQ",
+      "reviews": "Avis",
+      "login": "Se connecter",
+      "tryFree": "Essai gratuit",
+      "myAlbums": "Mes albums",
+      "menu": "Menu"
+    },
+    "hero": {
+      "badge": "Mariages, anniversaires, baptêmes et toutes les occasions",
+      "titleA": "Vos souvenirs,",
+      "titleB": "racontés par ceux qui les vivent.",
+      "sub": "Un seul album où tous vos invités partagent leurs photos en temps réel. Aucune application à installer : il suffit de scanner un QR code.",
+      "ctaPrimary": "Essai gratuit",
+      "ctaSecondary": "Découvrir comment ça marche",
+      "note": "7 jours d’essai gratuit · Sans carte bancaire",
+      "newPhoto": "Nouvelle photo dans l'album",
+      "qrLabel": "Scannez et partagez",
+      "album": "Votre album"
+    },
+    "how": {
+      "eyebrow": "Comment ça marche",
+      "title": "Prêt en une minute, simple pour tous",
+      "sub": "Vous créez l’album. Vos invités font le reste.",
+      "s1": {
+        "title": "Créez votre album",
+        "text": "Choisissez l'occasion, nommez l'album et fixez la date. Moins d'une minute."
+      },
+      "s2": {
+        "title": "Partagez le QR code",
+        "text": "Montrez-le sur les tables, envoyez le lien ou imprimez-le. Les invités le scannent avec leur téléphone."
+      },
+      "s3": {
+        "title": "Les invités envoient leurs photos",
+        "text": "Depuis le navigateur, sans application ni inscription : ils prennent ou choisissent une photo et l’envoient."
+      },
+      "s4": {
+        "title": "Revivez les souvenirs",
+        "text": "Les photos arrivent dans l'album et défilent en direct sur grand écran grâce au diaporama."
+      }
+    },
+    "features": {
+      "eyebrow": "Ce qui est inclus",
+      "title": "Tout ce qu’il faut, sans complication",
+      "sub": "Des outils pensés pour profiter de l'événement, pas pour le compliquer.",
+      "qr": {
+        "title": "QR code et lien",
+        "text": "Un QR code et un lien dédiés à votre album, à partager comme vous voulez."
+      },
+      "guests": {
+        "title": "Invités illimités",
+        "text": "Aucune limite au nombre de personnes qui peuvent participer."
+      },
+      "noApp": {
+        "title": "Aucune application",
+        "text": "Ça fonctionne dans le navigateur du téléphone : pas de téléchargement, pas de compte pour les invités."
+      },
+      "slideshow": {
+        "title": "Diaporama en direct",
+        "text": "Les photos arrivent sur grand écran au moment où elles sont prises."
+      },
+      "booth": {
+        "title": "Live Booth",
+        "text": "Les invités prennent une photo avec compte à rebours depuis la page de l’événement."
+      },
+      "privacy": {
+        "title": "Confidentialité maîtrisée",
+        "text": "Vous décidez si les invités peuvent envoyer des photos et si elles s'affichent à l'écran."
+      },
+      "custom": {
+        "title": "Personnalisation",
+        "text": "Nom, date, lieu et occasion : la page des invités vous ressemble."
+      },
+      "poster": {
+        "title": "Cartes et affiches QR",
+        "text": "Imprimez la carte de table et l'affiche avec le QR de votre album (Album complet)."
+      },
+      "languages": {
+        "title": "4 langues",
+        "text": "Italien, anglais, français et espagnol, en un geste."
+      }
+    },
+    "benefits": {
+      "eyebrow": "Pourquoi le choisir",
+      "title": "Les plus belles photos sont dans les téléphones de vos invités",
+      "b1": {
+        "title": "Tout au même endroit",
+        "text": "Fini les photos éparpillées entre conversations, groupes et pellicules : chaque cliché va dans le même album."
+      },
+      "b2": {
+        "title": "Zéro effort pour les invités",
+        "text": "On scanne, on photographie, on envoie. Même pour ceux qui n’aiment pas la technologie."
+      },
+      "b3": {
+        "title": "Un souvenir qui vit en direct",
+        "text": "Le diaporama affiche les photos sur grand écran pendant l'événement, pas des semaines plus tard."
+      },
+      "b4": {
+        "title": "Pour toutes les occasions",
+        "text": "Mariage, anniversaire, baptême ou tout autre événement : la même simplicité."
+      }
+    },
+    "whatsapp": {
+      "eyebrow": "Pourquoi pas WhatsApp",
+      "title": "Un groupe n’est pas un album",
+      "sub": "WhatsApp est fait pour discuter. MIOLOVE ALBUM est fait pour collecter des souvenirs.",
+      "colA": "Groupe WhatsApp",
+      "colB": "MIOLOVE ALBUM",
+      "r1": {
+        "a": "Il faut le numéro de chacun et un groupe à créer",
+        "b": "Un simple QR code à scanner"
+      },
+      "r2": {
+        "a": "Les photos se perdent entre messages et vocaux",
+        "b": "Les photos sont rangées dans un album dédié"
+      },
+      "r3": {
+        "a": "Ceux qui ne sont pas dans le groupe restent dehors",
+        "b": "Toute personne avec le QR ou le lien peut participer"
+      },
+      "r4": {
+        "a": "Aucun écran pour montrer les photos",
+        "b": "Diaporama en direct sur grand écran"
+      },
+      "r5": {
+        "a": "Tout récupérer après la fête est une chasse au trésor",
+        "b": "Tout est déjà rassemblé, au même endroit"
+      }
+    },
+    "events": {
+      "eyebrow": "Toutes les occasions",
+      "title": "Un album pour chaque moment à retenir",
+      "sub": "Choisissez l'occasion en créant l'album : la page des invités s'adapte.",
+      "wedding": {
+        "title": "Mariage",
+        "text": "Le jour le plus attendu, vu par tous les invités."
+      },
+      "birthday": {
+        "title": "Anniversaire",
+        "text": "Gâteau, toasts et rires : toutes les photos de la fête."
+      },
+      "baptism": {
+        "title": "Baptême",
+        "text": "Un souvenir précieux, rassemblé par la famille."
+      },
+      "other": {
+        "title": "Autre événement",
+        "text": "Anniversaires de mariage, diplômes, fêtes : chaque événement mérite son album."
+      }
+    },
+    "preview": {
+      "eyebrow": "Aperçu du produit",
+      "title": "Téléphone, album et grand écran, toujours synchronisés",
+      "sub": "Ce que vous voyez dans le panneau est ce que voient les invités et ce qui s’affiche à l’écran.",
+      "guest": "Page des invités",
+      "screen": "Grand écran",
+      "album": "Votre album",
+      "sample": "Aperçu illustratif",
+      "sampleName": "Anniversaire de Martina"
+    },
+    "reviews": {
+      "eyebrow": "Avis",
+      "title": "Ce que l’on dit de MIOLOVE ALBUM",
+      "sub": "Les expériences de ceux qui ont déjà rassemblé les souvenirs de leur événement.",
+      "demoBadge": "DÉMO · mise en page d’exemple",
+      "demoNote": "Témoignages d’exemple : ce ne sont pas de vrais avis."
+    },
+    "pricing": {
+      "eyebrow": "Tarifs",
+      "title": "Simple. Un seul paiement.",
+      "sub": "Commencez par 7 jours d'essai gratuit, sans carte. Si l'album vous plaît, vous l'activez une fois, et c'est tout."
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title": "Questions fréquentes",
+      "q1": {
+        "q": "Dois-je installer une application ?",
+        "a": "Non. Vous gérez l'album dans le navigateur et les invités participent depuis le navigateur de leur téléphone en scannant le QR code."
+      },
+      "q2": {
+        "q": "Comment les invités participent-ils ?",
+        "a": "Ils scannent le QR code ou ouvrent le lien, prennent ou choisissent une photo et l’envoient. Aucune inscription."
+      },
+      "q3": {
+        "q": "Que se passe-t-il après les 7 jours d’essai ?",
+        "a": "Vous pouvez toujours consulter l'album et vos photos sont conservées. Les nouveaux envois s'arrêtent tant que vous n'avez pas activé l'Album complet."
+      },
+      "q4": {
+        "q": "Combien ça coûte ?",
+        "a": "L'essai est gratuit. L'Album complet coûte 19,99 € une seule fois : ce n'est pas un abonnement, ce n'est pas mensuel et ce n'est pas par invité."
+      },
+      "q5": {
+        "q": "Faut-il une carte bancaire pour essayer ?",
+        "a": "Non, l’essai gratuit ne demande aucune carte bancaire."
+      },
+      "q6": {
+        "q": "Puis-je l’utiliser pour autre chose qu’un mariage ?",
+        "a": "Oui : mariage, anniversaire, baptême ou tout autre événement. Choisissez l'occasion en créant l'album."
+      },
+      "q7": {
+        "q": "Les photos sont-elles privées ?",
+        "a": "Seules les personnes qui ont le QR code ou le lien peuvent participer. Dans les réglages de confidentialité, vous décidez si les invités peuvent envoyer des photos et si elles s'affichent à l'écran."
+      },
+      "q8": {
+        "q": "Dans quelles langues est-ce disponible ?",
+        "a": "Italien, anglais, français et espagnol, pour vous comme pour vos invités."
+      }
+    },
+    "cta": {
+      "title": "Créez votre album en une minute",
+      "text": "Essayez gratuitement pendant 7 jours. Sans carte bancaire.",
+      "button": "Essai gratuit"
+    },
+    "footer": {
+      "tagline": "Vos souvenirs, racontés par ceux qui les vivent.",
+      "product": "Produit",
+      "account": "Compte",
+      "legal": "Mentions légales",
+      "privacy": "Confidentialité",
+      "terms": "Conditions d’utilisation",
+      "rights": "Tous droits réservés.",
+      "language": "Langue"
+    }
+  }
+}

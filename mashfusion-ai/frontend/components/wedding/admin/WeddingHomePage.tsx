@@ -14,6 +14,8 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { WeddingGuestHome, getWeddingGuestActionKeys, buildWeddingGuestActions } from '../guest/WeddingGuestUI'
 import { WdPage, WdCard, WdButton, WdLinkButton } from './WeddingAdminUI'
 import { TrialQuota } from './TrialQuota'
+import { PhonePreview, MonitorPreview } from './LivePreviews'
+import { occasionText } from '@/lib/occasion'
 
 export const isVideoUrl = (u: string | null | undefined) => !!u && /\.(mp4|mov|webm|m4v|ogv)(\?|#|$)/i.test(u)
 
@@ -50,7 +52,7 @@ interface Props {
 }
 
 export function WeddingHomePage({ session, pendingRequests, togglingActive, onToggleActive, couple = false }: Props) {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const sessionId: string = session.id
   const slug: string = session.public_slug
   const url = `${publicOrigin(couple)}/live/${slug}`
@@ -75,7 +77,7 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
   }
 
   const names: string = session.couple_names ?? session.event_name
-  const dateLabel = session.wedding_date ? new Date(session.wedding_date).toLocaleDateString('it-IT', { dateStyle: 'long' }) : null
+  const dateLabel = session.wedding_date ? new Date(session.wedding_date).toLocaleDateString(({ it: 'it-IT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES' } as Record<string, string>)[locale] ?? 'it-IT', { dateStyle: 'long' }) : null
 
   const all = photos ?? []
   const videoCount = all.filter((p) => isVideoUrl(p.url)).length
@@ -90,7 +92,7 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
     <WdPage
       width="wide"
       title={session.event_name}
-      subtitle={session.description || (session.occasion_type && session.occasion_type !== 'wedding' ? t('onboarding.homeSubtitle') : t('wdAdmin.home.subtitle'))}
+      subtitle={session.description || (couple ? occasionText(t, session.occasion_type, 'homeSubtitle') : t('wdAdmin.home.subtitle'))}
       actions={
         <WdButton variant="secondary" onClick={onToggleActive} disabled={togglingActive} icon={<Power className="h-4 w-4" />}>
           {session.is_active ? t('common.close') : t('common.open')}
@@ -149,6 +151,7 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
           </label>
         </div>
 
+        {couple ? <PhonePreview slug={slug} /> : (
         <div className="mx-auto w-[240px]" data-testid="wd-guest-preview">
           <div className="relative h-[500px] overflow-hidden rounded-[34px] border-[5px] border-wd-ink bg-wd-bg">
             {/* Real guest components rendered at 390px and scaled down: faithful, non-interactive. */}
@@ -164,7 +167,9 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
             </div>
           </div>
         </div>
+        )}
 
+        {couple && <div className="min-w-0 md:col-span-2 lg:col-span-1"><MonitorPreview slug={slug} live={session.is_active} /></div>}
         {!couple && <div className="min-w-0 md:col-span-2 lg:col-span-1">
           <h2 className="text-base font-bold text-wd-ink">{t('wdAdmin.home.screenPreview')}</h2>
           <p className="mt-1 mb-3 text-[13px] text-wd-muted">{t('wdAdmin.home.screenPreviewDesc')}</p>

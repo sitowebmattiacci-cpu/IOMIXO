@@ -18,6 +18,14 @@ export type LegacyReason = 'no_event' | 'not_screen_type' | 'screen_not_allowed'
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 
+/**
+ * Photos on the TV. A MIOLOVE album (trial or activated) shows its guests' photos by default (the slideshow is the album's monitor); the owner can
+ * switch it off (show_photos === false). Any other event shows photos only when the DJ explicitly enabled them. A `show_photos: false` is final.
+ */
+export const isMioloveAlbumDoc = (event: Pick<EventDoc, 'type' | 'accessMode'>): boolean => event.type === 'wedding' && (event.accessMode === 'trial' || event.accessMode === 'activated')
+export const screenShowsPhotos = (event: Pick<EventDoc, 'type' | 'accessMode'>, cfg: Record<string, unknown>): boolean =>
+  cfg.show_photos === true || (cfg.show_photos === undefined && isMioloveAlbumDoc(event))
+
 /** What the photo-bearing sections need besides the event: realtime approved photos and the resolved winner URLs (undefined = still loading). */
 export interface ScreenExtras { photos?: LivePhoto[]; winnerUrls?: WinnerUrls | null }
 
@@ -32,7 +40,7 @@ export function screenEligibility(
   const cfg = isObject(event.screenConfig) ? event.screenConfig : {}
   if (screenAllowed === null) return { ok: false, legacyReason: 'pending' }
   if (screenAllowed === false) return { ok: false, legacyReason: 'screen_not_allowed' }
-  if (cfg.show_photos === true && extras.photos === undefined) return { ok: false, legacyReason: 'pending' }
+  if (screenShowsPhotos(event, cfg) && extras.photos === undefined) return { ok: false, legacyReason: 'pending' }
   const w = cfg.winner_announcement
   if (isObject(w) && hasFirebaseWinnerPath(w) && extras.winnerUrls === undefined) return { ok: false, legacyReason: 'pending' }
   if ((cfg.show_roulette === true || cfg.show_shoe_game === true) && games === undefined) return { ok: false, legacyReason: 'pending' }
@@ -60,6 +68,6 @@ export function composeScreenPayload(
     shoe_game:   cfg.show_shoe_game === true ? games?.shoeGame ?? null : null,
     active_poll: cfg.show_polls === true && poll ? (toLegacyPoll(poll) as ScreenPayload['active_poll']) : null,
     dedications: cfg.show_dedications === true ? wall : [],
-    photos:      cfg.show_photos === true ? (extras.photos ?? []).slice(0, 12) : [],
+    photos:      screenShowsPhotos(event, cfg) ? (extras.photos ?? []).slice(0, 12) : [],
   }
 }

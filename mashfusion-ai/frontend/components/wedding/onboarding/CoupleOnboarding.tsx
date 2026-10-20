@@ -65,7 +65,7 @@ export function CoupleOnboarding() {
       <main className="mx-auto w-full max-w-[620px] px-4 pb-14 pt-6 sm:pt-10">
         <form onSubmit={create} className="rounded-[28px] border border-wd-border bg-white p-6 shadow-[0_10px_40px_rgba(240,106,155,0.08)] sm:p-10">
           <p className="mb-3 text-center text-sm text-wd-muted sm:hidden" data-testid="onboarding-welcome-mobile">{welcome}</p>
-          <h1 className="text-center font-wedding text-[34px] font-semibold leading-tight sm:text-[40px]">{t('onboarding.title')}</h1>
+          <h1 className="text-center font-album text-[34px] font-semibold leading-tight sm:text-[40px]">{t('onboarding.title')}</h1>
           <p className="mx-auto mt-3 max-w-[420px] text-center text-[15px] leading-relaxed text-wd-muted">{t('onboarding.subtitle')}</p>
 
           <div className="mt-8" role="radiogroup" aria-label={t('onboarding.eventType')}>

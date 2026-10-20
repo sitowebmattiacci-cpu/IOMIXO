@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { WEDDING_BRAND_LOGO, WEDDING_BRAND_LOGO_CANVAS, WEDDING_BRAND_LOGO_CROP, WEDDING_BRAND_NAME } from '@/lib/brand/wedding'
 import { cn } from '@/lib/utils'
-import { useEventBrandName } from './eventBrandContext'
+import { useEventBrandName, useWhiteLabel } from './eventBrandContext'
 
 /** Official MIOLOVE ALBUM logo, never stretched (height driven, width auto). Falls back to the plain brand name if the asset is missing. */
 export function MioloveLogo({ height = 32, variant = 'default', className }: {
@@ -45,9 +45,10 @@ export function MioloveLogo({ height = 32, variant = 'default', className }: {
 /** Sets the tab title for Wedding pages (MIOLOVE ALBUM, or IOMIXO for a Wedding DJ event) and restores the previous one on unmount. */
 export function useWeddingTitle(prefix?: string) {
   const brandName = useEventBrandName()
+  const whiteLabel = useWhiteLabel()
   useEffect(() => {
     const prev = document.title
-    document.title = prefix ? `${prefix} · ${brandName}` : brandName
+    document.title = whiteLabel ? (prefix ?? prev) : prefix ? `${prefix} · ${brandName}` : brandName
     return () => { document.title = prev }
-  }, [prefix, brandName])
+  }, [prefix, brandName, whiteLabel])
 }

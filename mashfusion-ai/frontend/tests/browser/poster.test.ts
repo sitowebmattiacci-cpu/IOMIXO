@@ -24,7 +24,7 @@ const overflow = (p: Page) => p.evaluate(() => document.documentElement.scrollWi
 async function album(occasion: string, opts: { date?: string | null; accessMode?: 'trial' | 'activated'; title?: string } = {}) {
   const owner = await newClient('account'), stamp = `${Date.now()}${Math.floor(Math.random() * 1000)}`, id = `pst${stamp}`, slug = `pslug${stamp}`
   await seedSet(`users/${owner.uid}`, { uid: owner.uid, email: owner.email, displayName: 'Enrico Rossi', accountType: 'couple', plan: { tier: opts.accessMode === 'activated' ? 'wedding' : 'free', source: 'default' }, createdAt: new Date(), updatedAt: new Date() })
-  await seedSet(`events/${id}`, eventFields(owner.uid, slug, { type: 'wedding', title: opts.title ?? 'Album di prova', legacySupabaseId: undefined, occasionType: occasion, accessMode: opts.accessMode ?? 'trial', weddingDate: opts.date === undefined ? '2027-06-12' : opts.date, guestConfig: { requests: false, live_booth: true } }))
+  await seedSet(`events/${id}`, eventFields(owner.uid, slug, { type: 'wedding', title: opts.title ?? 'Album di prova', legacySupabaseId: undefined, occasionType: occasion, accessMode: opts.accessMode ?? 'activated', weddingDate: opts.date === undefined ? '2027-06-12' : opts.date, guestConfig: { requests: false, live_booth: true } }))
   await seedSet(`eventSlugs/${slug}`, { eventId: id })
   return { owner, id, slug }
 }
@@ -56,7 +56,7 @@ const edit = async (page: Page, id: string, value: string) => { const before = a
 
 const DEFAULTS: Record<string, { t2: string; t3: string }> = { wedding: { t2: "l'", t3: 'amore' }, birthday: { t2: 'la', t3: 'festa' }, baptism: { t2: 'questo', t3: 'momento' }, other: { t2: 'questo', t3: 'momento' } }
 for (const [occasion, vp] of [['wedding', 390], ['wedding', 1280], ['birthday', 1280], ['baptism', 1280], ['other', 1280]] as const) {
-  test(`PO1. poster defaults @${vp} (${occasion}, trial album): occasion copy, event name + date, A4, QR = guest URL, no overflow`, async () => {
+  test(`PO1. poster defaults @${vp} (${occasion}, activated album): occasion copy, event name + date, A4, QR = guest URL, no overflow`, async () => {
     const a = await album(occasion, { title: 'Festa di Enrico' }), ctx = await browser.newContext({ viewport: { width: vp, height: vp === 390 ? 844 : 900 } }), page = await ctx.newPage()
     try {
       await openPoster(page, a)
@@ -67,7 +67,7 @@ for (const [occasion, vp] of [['wedding', 390], ['wedding', 1280], ['birthday', 
       assert.ok(Math.abs((await ratio(page)) - 210 / 297) < 0.01, 'A4 proportions')
       assert.equal(await px(page, 8, 8), '#FFF7FA', 'sheet colour')
       if (occasion !== 'wedding') assert.doesNotMatch(await page.evaluate(() => document.body.innerText), /\bamore\b|sposi|matrimon|nozze/i)
-      assert.doesNotMatch(await page.evaluate(() => document.body.innerText), /Advance|Event Pass|IOMIXO/i, 'no paywall on a trial album')
+      assert.doesNotMatch(await page.evaluate(() => document.body.innerText), /Advance|Event Pass|IOMIXO/i, 'no IOMIXO paywall on a MIOLOVE album')
       assert.equal(await page.getByTestId('poster-qr-note').count(), 1); assert.equal(await page.locator('input[value^="https://"]').count(), 0, 'the link is not editable')
       assert.equal(await overflow(page), false, 'overflow')
       // preview is large enough to judge on a phone

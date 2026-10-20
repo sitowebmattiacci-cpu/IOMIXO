@@ -8,6 +8,7 @@ import { signIn, authErrorText } from '@/lib/auth'
 import { Button } from '@/components/ui/Button'
 import { WdButton, WdInput } from '@/components/wedding/admin/WeddingAdminUI'
 import { PortalBrand } from '@/components/portal/PortalBrand'
+import { GoogleButton, OrDivider } from '@/components/auth/GoogleButton'
 import { usePortal } from '@/components/portal/PortalProvider'
 import { useI18n } from '@/lib/i18n'
 import toast from 'react-hot-toast'
@@ -47,7 +48,9 @@ export default function LoginPage() {
             <h1 className="text-2xl font-bold">{t('auth.welcomeBack')}</h1>
             <p className="mt-1 text-sm text-wd-muted">{t('roles.authPage.loginSubtitleCouple')}</p>
           </div>
-          <div className="space-y-5 rounded-3xl border border-wd-border bg-white p-8 shadow-xl">
+          <div className="space-y-5 rounded-3xl border border-wd-border bg-white p-6 shadow-xl sm:p-8">
+            <GoogleButton />
+            <OrDivider />
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-wd-muted">{t('auth.email')}</label>

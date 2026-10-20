@@ -192,6 +192,9 @@ export interface LiveSession {
   brand?: 'iomixo' | 'miolove'
   trial_photo_count?: number
   trial_photo_limit?: number
+  /** Trial albums: server-written start / end of the 7 free days (ISO). Absent on trial albums created before the field. */
+  trial_starts_at?: string
+  trial_expires_at?: string
   poster_config?: Record<string, unknown> | null
   couple_names?: string | null
   wedding_date?: string | null
@@ -276,6 +279,11 @@ export interface PublicLivePayload {
     access_mode?: 'trial' | 'activated' | null
     /** Product the event was created in (explicit); null/absent on events created before the field. */
     event_brand?: 'iomixo' | 'miolove' | null
+    /** MIOLOVE albums: what the album is for. */
+    occasion_type?: OccasionType | null
+    /** Trial albums: end of the 7 free days (ISO) and whether the SERVER clock says it has passed (new uploads are refused then). */
+    trial_expires_at?: string | null
+    trial_expired?: boolean
   }
   profile: Omit<DjProfile, 'public_slug' | 'id' | 'user_id'> | null
   events: Array<Omit<DjEvent, 'is_public'>>

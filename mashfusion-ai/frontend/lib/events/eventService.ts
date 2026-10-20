@@ -37,5 +37,7 @@ export function eventToPublicSession(e: EventDoc) {
     venue_name:          e.venueName,
     screen_mode_enabled: e.screenModeEnabled,
     guest_config:        e.guestConfig as any,
+    occasion_type:       e.occasionType ?? null,
+    ...(e.accessMode === 'trial' && e.trialExpiresAt ? { trial_expires_at: e.trialExpiresAt.toISOString() } : {}),
   }
 }

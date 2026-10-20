@@ -1,0 +1,392 @@
+{
+  "onboarding": {
+    "eyebrow": {
+      "wedding": "Matrimonio"
+    }
+  },
+  "occasion": {
+    "wedding": {
+      "namesLabel": "Nomi degli sposi",
+      "namesDesc": "I nomi mostrati sulla pagina degli ospiti, sullo schermo e sul poster.",
+      "namesPlaceholder": "Anna e Marco",
+      "boothIntro": "Scatta una foto e aggiungila all'album del matrimonio. Apparirà subito sullo schermo!",
+      "frameTitle": "Oggi Sposi",
+      "homeSubtitle": "Tutto sotto controllo per il vostro grande giorno.",
+      "photoTitle": "Condividi le tue foto del matrimonio"
+    },
+    "birthday": {
+      "namesLabel": "Nome del festeggiato/a",
+      "namesDesc": "Il nome mostrato sulla pagina degli ospiti, sullo schermo e sul poster.",
+      "namesPlaceholder": "Martina",
+      "boothIntro": "Scatta una foto e aggiungila all'album del compleanno. Apparirà subito sullo schermo!",
+      "frameTitle": "Buon compleanno",
+      "homeSubtitle": "Tutto sotto controllo per la tua festa.",
+      "photoTitle": "Condividi le tue foto della festa"
+    },
+    "baptism": {
+      "namesLabel": "Nome del bambino/a",
+      "namesDesc": "Il nome mostrato sulla pagina degli ospiti, sullo schermo e sul poster.",
+      "namesPlaceholder": "Leonardo",
+      "boothIntro": "Scatta una foto e aggiungila all'album del battesimo. Apparirà subito sullo schermo!",
+      "frameTitle": "Benvenuto",
+      "homeSubtitle": "Tutto sotto controllo per questa giornata speciale.",
+      "photoTitle": "Condividi le tue foto del battesimo"
+    },
+    "other": {
+      "namesLabel": "Nome da mostrare",
+      "namesDesc": "Il nome mostrato sulla pagina degli ospiti, sullo schermo e sul poster.",
+      "namesPlaceholder": "Il nostro evento",
+      "boothIntro": "Scatta una foto e aggiungila all'album dell'evento. Apparirà subito sullo schermo!",
+      "frameTitle": "Un bel ricordo",
+      "homeSubtitle": "Tutto sotto controllo per il tuo evento.",
+      "photoTitle": "Condividi le tue foto dell'evento"
+    }
+  },
+  "guestAlbum": {
+    "trialEnded": "La prova gratuita di questo album è terminata: non è più possibile aggiungere nuove foto. Quelle già caricate restano visibili.",
+    "limitReached": "Questo album ha raggiunto il limite della prova gratuita.",
+    "photosOff": "L'invio di foto non è attivo in questo momento. Riprova più tardi.",
+    "photoTitle": "Invia le tue foto",
+    "err": {
+      "cooldown": "Riprova tra qualche secondo.",
+      "guestLimit": "Hai già inviato molte foto: grazie!",
+      "tooLarge": "File troppo grande (max 8 MB).",
+      "format": "Formato non supportato (jpg, png, webp).",
+      "retry": "Caricamento non riuscito, riprova."
+    }
+  },
+  "wdAdmin": {
+    "trial": {
+      "daysLeft": "{n} giorni rimasti",
+      "dayLeft": "1 giorno rimasto",
+      "expiredTitle": "La prova gratuita è terminata",
+      "expiredHint": "Il tuo album resta leggibile e le foto sono conservate. Attiva l'album per tornare a caricare nuovi contenuti."
+    }
+  },
+  "albumPlan": {
+    "navLabel": "Piano",
+    "title": "Piano",
+    "subtitle": "Scegli come vivere il tuo album.",
+    "yourPlan": "Il tuo piano",
+    "statusTrial": "Prova gratis in corso",
+    "statusTrialEnded": "Prova gratis terminata",
+    "statusActive": "Album completo attivo",
+    "statusNone": "Nessun album ancora",
+    "trialLeft": "{n} giorni rimasti",
+    "trialLeftOne": "1 giorno rimasto",
+    "mediaUsed": "{n} / {max} foto",
+    "trialName": "Prova gratis",
+    "trialPrice": "Gratis",
+    "trialSub": "7 giorni · Nessuna carta di credito",
+    "albumName": "Album completo",
+    "albumOnce": "una volta",
+    "albumSub": "Pagamento unico",
+    "oneTime": "Pagamento unico",
+    "notMonthly": "Non al mese",
+    "notPerGuest": "Non per invitato",
+    "noSubscription": "Nessun abbonamento",
+    "noUpgrade": "Nessun upgrade",
+    "included": "Incluso",
+    "notIncluded": "Non incluso",
+    "current": "Piano attuale",
+    "popular": "Consigliato",
+    "activate": "Attiva album",
+    "tryFree": "Prova gratis",
+    "startFree": "Inizia con la prova gratis",
+    "activateSoon": "L'attivazione online dell'album sarà disponibile a breve.",
+    "posterLockedTitle": "Card e poster QR sono inclusi nell'Album completo",
+    "posterLockedDesc": "Durante la prova gratis puoi usare il QR code e il link. Con l'Album completo stampi la card da tavolo e il poster con il QR del tuo album.",
+    "downloadAllLocked": "Scaricare tutto è incluso nell'Album completo",
+    "noPayments": "Nessun pagamento",
+    "history": "Pagamenti",
+    "f": {
+      "trialQuotaPhotos": "50 foto",
+      "trialQuotaMedia": "50 foto e video",
+      "guests": "Invitati illimitati",
+      "noApp": "Nessuna app da installare",
+      "qrLink": "QR code e link",
+      "trialDays": "7 giorni per provare",
+      "slideshow": "Slideshow live",
+      "basicCustom": "Personalizzazione base",
+      "brandVisible": "Logo MIOLOVE visibile",
+      "noPoster": "Card e poster QR da stampare",
+      "noDownloadAll": "Scarica tutto con un click",
+      "noWhiteLabel": "Rimozione del marchio MIOLOVE",
+      "albumMediaPhotos": "Foto illimitate",
+      "albumMedia": "Foto e video illimitati",
+      "months12Upload": "12 mesi per caricare e scaricare",
+      "months12Storage": "12 mesi di archiviazione",
+      "originalQuality": "Qualità originale",
+      "downloadAll": "Scarica tutto con un click",
+      "noBrand": "Nessun marchio MIOLOVE",
+      "poster": "Card e poster QR da stampare",
+      "allIncluded": "Tutte le funzionalità MIOLOVE incluse"
+    }
+  },
+  "albumPrivacy": {
+    "guestUpload": "Invio foto degli ospiti",
+    "guestUploadDesc": "Gli invitati possono scattare e caricare foto nell'album.",
+    "screenPhotos": "Foto sullo schermo",
+    "screenPhotosDesc": "Le foto degli invitati scorrono sul monitor (slideshow live)."
+  },
+  "auth": {
+    "google": {
+      "continue": "Continua con Google",
+      "loading": "Connessione a Google…",
+      "or": "oppure",
+      "closed": "Hai chiuso la finestra di Google prima di finire. Riprova quando vuoi.",
+      "blocked": "Il browser ha bloccato la finestra di Google. Consenti i popup per questo sito e riprova.",
+      "collision": "Esiste già un account con questa email creato con un altro metodo di accesso. Accedi con email e password.",
+      "unavailable": "L'accesso con Google non è disponibile al momento. Usa email e password.",
+      "failed": "Accesso con Google non riuscito. Riprova."
+    }
+  },
+  "albumAuth": {
+    "registerSub": "7 giorni di prova gratis · Nessuna carta di credito",
+    "namePh": "Maria Rossi"
+  },
+  "roles": {
+    "albumsSubtitle": "Crea e gestisci i tuoi album.",
+    "weddingOnly": "MIOLOVE ALBUM crea album per i tuoi eventi.",
+    "coupleDesc": "Crea il tuo album, raccogli le foto degli invitati e gestisci il tuo evento.",
+    "authPage": {
+      "coupleHeadline": "I tuoi ricordi, raccontati da chi li vive.",
+      "coupleSub": "Raccogli le foto degli invitati, condividi il QR code e crea un album digitale del tuo evento.",
+      "couplePerk2": "QR code da condividere all'evento",
+      "loginSubtitleCouple": "Accedi per gestire i tuoi album."
+    }
+  },
+  "home": {
+    "meta": {
+      "title": "MIOLOVE ALBUM — Album fotografico digitale per i tuoi eventi",
+      "description": "Gli invitati scansionano un QR code e condividono le foto del tuo matrimonio, compleanno o battesimo in un unico album, con slideshow live. Senza app. Prova gratis 7 giorni.",
+      "ogTitle": "MIOLOVE ALBUM — I tuoi ricordi, raccontati da chi li vive"
+    },
+    "nav": {
+      "how": "Come funziona",
+      "features": "Cosa include",
+      "pricing": "Prezzi",
+      "faq": "FAQ",
+      "reviews": "Recensioni",
+      "login": "Accedi",
+      "tryFree": "Prova gratis",
+      "myAlbums": "I miei album",
+      "menu": "Menu"
+    },
+    "hero": {
+      "badge": "Matrimoni, compleanni, battesimi e ogni occasione",
+      "titleA": "I tuoi ricordi,",
+      "titleB": "raccontati da chi li vive.",
+      "sub": "Un solo album dove tutti i tuoi invitati condividono le loro foto in tempo reale. Nessuna app da installare: basta inquadrare un QR code.",
+      "ctaPrimary": "Prova gratis",
+      "ctaSecondary": "Scopri come funziona",
+      "note": "7 giorni di prova gratis · Nessuna carta di credito",
+      "newPhoto": "Nuova foto nell'album",
+      "qrLabel": "Inquadra e condividi",
+      "album": "Il tuo album"
+    },
+    "how": {
+      "eyebrow": "Come funziona",
+      "title": "Pronto in un minuto, semplice per tutti",
+      "sub": "Tu crei l’album. Gli invitati fanno il resto.",
+      "s1": {
+        "title": "Crea il tuo album",
+        "text": "Scegli l'occasione, dai un nome all'album e imposta la data. Ci metti meno di un minuto."
+      },
+      "s2": {
+        "title": "Condividi il QR code",
+        "text": "Mostralo sui tavoli, invia il link o stampalo. Gli invitati lo inquadrano con il telefono."
+      },
+      "s3": {
+        "title": "Gli invitati caricano le foto",
+        "text": "Dal browser, senza app e senza registrarsi: scattano o scelgono una foto e la inviano."
+      },
+      "s4": {
+        "title": "Rivivi i ricordi",
+        "text": "Le foto compaiono nell'album e scorrono in diretta sul maxischermo con lo slideshow."
+      }
+    },
+    "features": {
+      "eyebrow": "Cosa include",
+      "title": "Tutto quello che serve, niente di complicato",
+      "sub": "Strumenti pensati per vivere l'evento, non per complicarlo.",
+      "qr": {
+        "title": "QR code e link",
+        "text": "Un QR code e un link dedicati al tuo album, da condividere come preferisci."
+      },
+      "guests": {
+        "title": "Invitati illimitati",
+        "text": "Nessun limite al numero di persone che possono partecipare."
+      },
+      "noApp": {
+        "title": "Nessuna app",
+        "text": "Funziona dal browser del telefono: niente download, niente account per gli ospiti."
+      },
+      "slideshow": {
+        "title": "Slideshow live",
+        "text": "Le foto arrivano sul maxischermo mentre vengono scattate."
+      },
+      "booth": {
+        "title": "Live Booth",
+        "text": "Gli invitati scattano una foto con il countdown direttamente dalla pagina dell’evento."
+      },
+      "privacy": {
+        "title": "Privacy sotto controllo",
+        "text": "Decidi se gli invitati possono inviare foto e se mostrarle sullo schermo."
+      },
+      "custom": {
+        "title": "Personalizzazione",
+        "text": "Nome, data, luogo e occasione: la pagina degli ospiti parla di te."
+      },
+      "poster": {
+        "title": "Card e poster QR",
+        "text": "Stampa la card da tavolo e il poster con il QR del tuo album (Album completo)."
+      },
+      "languages": {
+        "title": "4 lingue",
+        "text": "Italiano, inglese, francese e spagnolo, cambiabili in un tocco."
+      }
+    },
+    "benefits": {
+      "eyebrow": "Perché sceglierlo",
+      "title": "Le foto più belle sono nei telefoni degli invitati",
+      "b1": {
+        "title": "Tutto in un posto solo",
+        "text": "Niente più foto sparse tra chat, gruppi e rullini: ogni scatto finisce nello stesso album."
+      },
+      "b2": {
+        "title": "Zero fatica per gli ospiti",
+        "text": "Si inquadra, si scatta, si invia. Funziona anche per chi non ama la tecnologia."
+      },
+      "b3": {
+        "title": "Un ricordo che vive in diretta",
+        "text": "Lo slideshow porta le foto sul maxischermo durante l'evento, non settimane dopo."
+      },
+      "b4": {
+        "title": "Per ogni occasione",
+        "text": "Matrimonio, compleanno, battesimo o qualsiasi altro evento: stessa semplicità."
+      }
+    },
+    "whatsapp": {
+      "eyebrow": "Perché non WhatsApp",
+      "title": "Un gruppo non è un album",
+      "sub": "WhatsApp è nato per chiacchierare. MIOLOVE ALBUM è nato per raccogliere ricordi.",
+      "colA": "Gruppo WhatsApp",
+      "colB": "MIOLOVE ALBUM",
+      "r1": {
+        "a": "Serve il numero di tutti e un gruppo da creare",
+        "b": "Basta un QR code da inquadrare"
+      },
+      "r2": {
+        "a": "Le foto si perdono tra messaggi e vocali",
+        "b": "Le foto sono ordinate in un album dedicato"
+      },
+      "r3": {
+        "a": "Chi non è nel gruppo resta fuori",
+        "b": "Chiunque abbia il QR o il link può partecipare"
+      },
+      "r4": {
+        "a": "Nessuno schermo per mostrare le foto",
+        "b": "Slideshow live sul maxischermo"
+      },
+      "r5": {
+        "a": "Raccogliere tutto a fine serata è una caccia al tesoro",
+        "b": "Hai tutto già raccolto, in un unico posto"
+      }
+    },
+    "events": {
+      "eyebrow": "Ogni occasione",
+      "title": "Un album per ogni momento da ricordare",
+      "sub": "Scegli l'occasione quando crei l'album: la pagina degli ospiti si adatta.",
+      "wedding": {
+        "title": "Matrimonio",
+        "text": "Il giorno più atteso, visto da tutti gli invitati."
+      },
+      "birthday": {
+        "title": "Compleanno",
+        "text": "Torta, brindisi e risate: tutte le foto della festa."
+      },
+      "baptism": {
+        "title": "Battesimo",
+        "text": "Un ricordo prezioso, raccolto dalla famiglia."
+      },
+      "other": {
+        "title": "Altro evento",
+        "text": "Anniversari, lauree, feste: qualsiasi evento merita il suo album."
+      }
+    },
+    "preview": {
+      "eyebrow": "Anteprima del prodotto",
+      "title": "Telefono, album e maxischermo, sempre allineati",
+      "sub": "Quello che vedi nel pannello è ciò che vedono gli invitati e ciò che appare sullo schermo.",
+      "guest": "Pagina degli ospiti",
+      "screen": "Maxischermo",
+      "album": "Il tuo album",
+      "sample": "Anteprima illustrativa",
+      "sampleName": "Compleanno di Martina"
+    },
+    "reviews": {
+      "eyebrow": "Recensioni",
+      "title": "Cosa dicono di MIOLOVE ALBUM",
+      "sub": "Le esperienze di chi ha già raccolto i ricordi del proprio evento.",
+      "demoBadge": "DEMO · layout di esempio",
+      "demoNote": "Testimonianze di esempio: non sono recensioni reali."
+    },
+    "pricing": {
+      "eyebrow": "Prezzi",
+      "title": "Semplice. Un solo pagamento.",
+      "sub": "Parti con 7 giorni di prova gratis, senza carta. Se l'album ti piace, lo attivi una volta e basta."
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title": "Domande frequenti",
+      "q1": {
+        "q": "Devo installare un’app?",
+        "a": "No. Tu gestisci l'album dal browser e gli invitati partecipano dal browser del telefono, inquadrando il QR code."
+      },
+      "q2": {
+        "q": "Come partecipano gli invitati?",
+        "a": "Inquadrano il QR code o aprono il link, scattano o scelgono una foto e la inviano. Non devono registrarsi."
+      },
+      "q3": {
+        "q": "Cosa succede dopo i 7 giorni di prova?",
+        "a": "L'album resta consultabile da te e le foto vengono conservate. I nuovi caricamenti si fermano finché non attivi l'Album completo."
+      },
+      "q4": {
+        "q": "Quanto costa?",
+        "a": "La prova è gratis. L'Album completo costa €19,99 una volta sola: non è un abbonamento, non si paga al mese e non si paga per invitato."
+      },
+      "q5": {
+        "q": "Serve la carta di credito per provare?",
+        "a": "No, la prova gratis non richiede nessuna carta di credito."
+      },
+      "q6": {
+        "q": "Posso usarlo per eventi diversi da un matrimonio?",
+        "a": "Sì: matrimonio, compleanno, battesimo o altro evento. Scegli l’occasione quando crei l’album."
+      },
+      "q7": {
+        "q": "Le foto sono private?",
+        "a": "Possono partecipare solo le persone che hanno il QR code o il link. Dalle impostazioni di privacy decidi se gli invitati possono inviare foto e se mostrarle sullo schermo."
+      },
+      "q8": {
+        "q": "In quali lingue è disponibile?",
+        "a": "Italiano, inglese, francese e spagnolo, sia per te sia per i tuoi invitati."
+      }
+    },
+    "cta": {
+      "title": "Crea il tuo album in un minuto",
+      "text": "Prova gratis per 7 giorni. Nessuna carta di credito.",
+      "button": "Prova gratis"
+    },
+    "footer": {
+      "tagline": "I tuoi ricordi, raccontati da chi li vive.",
+      "product": "Prodotto",
+      "account": "Account",
+      "legal": "Legale",
+      "privacy": "Privacy",
+      "terms": "Termini di servizio",
+      "rights": "Tutti i diritti riservati.",
+      "language": "Lingua"
+    }
+  }
+}

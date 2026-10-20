@@ -7,6 +7,7 @@ import { signUp, resendVerification, authErrorText } from '@/lib/auth'
 import { Button } from '@/components/ui/Button'
 import { WdButton, WdInput } from '@/components/wedding/admin/WeddingAdminUI'
 import { PortalBrand } from '@/components/portal/PortalBrand'
+import { GoogleButton, OrDivider } from '@/components/auth/GoogleButton'
 import { usePortal } from '@/components/portal/PortalProvider'
 import { useI18n } from '@/lib/i18n'
 import { COUPLE_HOME } from '@/lib/roles'
@@ -98,7 +99,7 @@ export default function RegisterPage() {
           <div className="grid w-full max-w-4xl items-center gap-10 md:grid-cols-2">
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="hidden md:block">
               <PortalBrand size={48} />
-              <h1 className="mt-8 font-wedding text-5xl font-semibold leading-[1.08] text-wd-ink">{t('roles.authPage.coupleHeadline')}</h1>
+              <h1 className="mt-8 font-album text-5xl font-semibold leading-[1.08] text-wd-ink">{t('roles.authPage.coupleHeadline')}</h1>
               <p className="mt-4 max-w-md leading-relaxed text-wd-muted">{t('roles.authPage.coupleSub')}</p>
               <ul className="mt-8 space-y-3">
                 {couplePerks.map(({ icon: Icon, text }) => (
@@ -113,7 +114,7 @@ export default function RegisterPage() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <div className="mb-6 pt-10 text-center md:hidden">
                 <Link href="/" className="inline-flex"><PortalBrand size={40} /></Link>
-                <p className="mx-auto mt-3 max-w-xs font-wedding text-2xl font-semibold leading-tight">{t('roles.authPage.coupleHeadline')}</p>
+                <p className="mx-auto mt-3 max-w-xs font-album text-2xl font-semibold leading-tight">{t('roles.authPage.coupleHeadline')}</p>
                 <ul className="mx-auto mt-3 flex max-w-xs flex-col gap-1.5 text-left">
                   {couplePerks.slice(0, 3).map(({ icon: Icon, text }) => (
                     <li key={text} className="flex items-center gap-2.5 text-[13px] text-wd-muted"><Icon className="h-4 w-4 shrink-0 text-wd-pink" />{text}</li>
@@ -124,14 +125,16 @@ export default function RegisterPage() {
               <div className="space-y-5 rounded-3xl border border-wd-border bg-white p-8 shadow-xl">
                 <div>
                   <h2 className="text-xl font-bold">{t('auth.createAccount')}</h2>
-                  <p className="mt-1 text-sm text-wd-muted">{t('auth.freeForever')}</p>
+                  <p className="mt-1 text-sm text-wd-muted">{t('albumAuth.registerSub')}</p>
                 </div>
+                <GoogleButton />
+                <OrDivider />
                 <form onSubmit={handleSubmit} className="space-y-4" data-gramm="false">
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-wd-muted">{t('auth.fullName')}</label>
                     <div className="relative">
                       <User className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-wd-muted" />
-                      <WdInput type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Anna & Marco" className={field} autoComplete="name" required spellCheck={false} />
+                      <WdInput type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t('albumAuth.namePh')} className={field} autoComplete="name" required spellCheck={false} />
                     </div>
                   </div>
                   <div className="space-y-1.5">

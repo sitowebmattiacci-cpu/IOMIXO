@@ -17,10 +17,23 @@ import {
 } from '@/components/party/PartyUI'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useI18n } from '@/lib/i18n'
+import { occasionText } from '@/lib/occasion'
 import toast from 'react-hot-toast'
 
+/** Server reasons of the photo callables → translated guest message (the server texts are not localized). */
+const REASON_KEYS: Record<string, string> = {
+  miolove_trial_expired: 'guestAlbum.trialEnded',
+  miolove_trial_photo_limit_reached: 'guestAlbum.limitReached',
+  cooldown: 'guestAlbum.err.cooldown',
+  guest_limit: 'guestAlbum.err.guestLimit',
+  file_too_large: 'guestAlbum.err.tooLarge',
+  unsupported_format: 'guestAlbum.err.format',
+  upload_missing: 'guestAlbum.err.retry',
+  event_ended: 'booth.sessionEnded',
+}
+
 export default function LiveBoothPage() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const { slug } = useParams<{ slug: string }>()
   const { data, error } = useSWR(
     slug ? ['public-live', slug] : null,
@@ -115,6 +128,10 @@ export default function LiveBoothPage() {
   const { session } = data
   const isParty   = session.session_type === 'party'
   const isWedding = session.session_type === 'wedding'
+  // MIOLOVE album: occasion-aware copy, no MIOLOVE mark once activated (paid), uploads closed once the 7-day trial is over (server flag or end instant).
+  const isAlbum = brand === 'miolove'
+  const whiteLabel = isAlbum && session.access_mode === 'activated'
+  const trialExpired = isAlbum && session.access_mode === 'trial' && (session.trial_expired === true || (!!session.trial_expires_at && Date.now() >= Date.parse(session.trial_expires_at)))
 
   if (brand === undefined) {
     return <PartyShell><div className="min-h-screen" /></PartyShell>
@@ -146,7 +163,7 @@ export default function LiveBoothPage() {
 
   if (!session.is_active) {
     return isWedding ? (
-      <WeddingGuestShell languageSlot={<LanguageSwitcher variant="wedding" />}>
+      <WeddingGuestShell whiteLabel={whiteLabel} languageSlot={<LanguageSwitcher variant="wedding" />}>
         <WeddingGuestNotice tone="info">{t('booth.sessionEnded')}</WeddingGuestNotice>
         <div className="flex justify-center"><WeddingGuestBackLink href={`/live/${slug}`} label={t('booth.backToMain')} /></div>
       </WeddingGuestShell>
@@ -362,7 +379,10 @@ export default function LiveBoothPage() {
     } catch (err: any) {
       setUploadFailed(true)
       const msg = err?.message ?? t('booth.uploadError')
-      if (msg.includes('Advance') || msg.includes('Pass') || msg.includes('sospese')) {
+      const known = REASON_KEYS[err?.reason as string]
+      if (known) {
+        toast.error(t(known), isWedding ? WEDDING_GUEST_TOAST : undefined)
+      } else if (msg.includes('Advance') || msg.includes('Pass') || msg.includes('sospese')) {
         toast.error(t('booth.uploadAccessError'), isWedding ? WEDDING_GUEST_TOAST : undefined)
       } else {
         toast.error(msg, isWedding ? WEDDING_GUEST_TOAST : undefined)
@@ -551,13 +571,23 @@ export default function LiveBoothPage() {
 
   // ─── WEDDING UI ──────────────────────────────────────────────
   const names = session.couple_names ?? session.event_name
-  const weddingDate = formatWeddingGuestDate(session.wedding_date)
+  const weddingDate = formatWeddingGuestDate(session.wedding_date, locale)
   const languageSlot = <LanguageSwitcher variant="wedding" />
   const frame = 'overflow-hidden rounded-[20px] border border-wd-border bg-white'
 
+  if (trialExpired) {
+    return (
+      <WeddingGuestShell whiteLabel={whiteLabel} languageSlot={languageSlot}>
+        <WeddingGuestPageTitle eyebrow="Live Booth" title={names} />
+        <div data-testid="booth-trial-ended"><WeddingGuestNotice tone="info">{t('guestAlbum.trialEnded')}</WeddingGuestNotice></div>
+        <div className="flex justify-center"><WeddingGuestBackLink href={`/live/${slug}`} label={t('booth.backToMain')} /></div>
+      </WeddingGuestShell>
+    )
+  }
+
   if (photo) {
     return (
-      <WeddingGuestShell languageSlot={languageSlot}>
+      <WeddingGuestShell whiteLabel={whiteLabel} languageSlot={languageSlot}>
         <WeddingGuestPageTitle eyebrow="Live Booth" title={names} />
         <div className={`${frame} p-2`}>
           {photo === 'pending' ? (
@@ -579,7 +609,7 @@ export default function LiveBoothPage() {
 
   if (cameraActive) {
     return (
-      <WeddingGuestShell languageSlot={languageSlot}>
+      <WeddingGuestShell whiteLabel={whiteLabel} languageSlot={languageSlot}>
         <WeddingGuestPageTitle eyebrow="Live Booth" title={names} />
         <div className={`relative ${frame}`}>
           <video ref={videoRef} autoPlay playsInline muted className={`h-auto w-full ${facingMode === 'user' ? 'mirror' : ''}`} />
@@ -611,11 +641,11 @@ export default function LiveBoothPage() {
   }
 
   return (
-    <WeddingGuestShell languageSlot={languageSlot}>
+    <WeddingGuestShell whiteLabel={whiteLabel} languageSlot={languageSlot}>
       <WeddingGuestPageTitle eyebrow="Live Booth" title={names} subtitle={weddingDate ?? undefined} />
       <WeddingGuestPanel>
         <p className="mb-5 text-center text-[16px] leading-snug text-wd-muted">
-          {isIOS ? t('booth.iosIntro') : t('booth.weddingIntro')}
+          {isIOS ? t('booth.iosIntro') : isAlbum ? occasionText(t, session.occasion_type, 'boothIntro') : t('booth.weddingIntro')}
         </p>
 
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleNativePhotoSelected} className="hidden" />

@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Cormorant_Garamond, Playfair_Display, Great_Vibes, Dancing_Script, Cinzel, Tangerine } from 'next/font/google'
+import { Inter, Cormorant_Garamond, Playfair_Display, Great_Vibes, Dancing_Script, Cinzel, Tangerine, Fraunces } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
+import { headers } from 'next/headers'
 import { I18nProvider } from '@/lib/i18n'
+import { isLocale } from '@/lib/locales'
 import { AuthProvider } from '@/lib/auth/AuthProvider'
 import './globals.css'
 import { getRequestPortal } from '@/lib/portalServer'
@@ -46,6 +48,15 @@ const cinzel = Cinzel({
   weight: ['400', '700'],
   variable: '--font-cinzel',
   display: 'swap',
+})
+
+// MIOLOVE headline font: soft, warm, contemporary serif (variable, optical size + "soft" axes). Not preloaded: only MIOLOVE pages use it.
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-fraunces',
+  display: 'swap',
+  axes: ['SOFT', 'opsz'],
+  preload: false,
 })
 
 const tangerine = Tangerine({
@@ -114,14 +125,17 @@ const FIREBASE_ORIGINS = process.env.NEXT_PUBLIC_FIREBASE_USE_EMULATORS === 'tru
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const { config, matched } = getRequestPortal()
+  // MIOLOVE home language pages (/?lang=en): the middleware forwards the language so the very first HTML is already in it (SEO + no flash).
+  const urlLang = headers().get('x-ml-lang')
+  const lang = isLocale(urlLang) ? urlLang : undefined
   return (
-    <html lang="it" className={`${inter.variable} ${cormorant.variable} ${playfair.variable} ${greatVibes.variable} ${dancingScript.variable} ${cinzel.variable} ${tangerine.variable} dark`} suppressHydrationWarning>
+    <html lang={lang ?? 'it'} className={`${inter.variable} ${cormorant.variable} ${playfair.variable} ${greatVibes.variable} ${dancingScript.variable} ${cinzel.variable} ${tangerine.variable} ${fraunces.variable} dark`} suppressHydrationWarning>
       <head>
         {/* Guest critical path: App Check (reCAPTCHA) → anonymous sign-in → callable → Firestore. Open those connections during HTML parse. */}
         {FIREBASE_ORIGINS.map((o) => <link key={o} rel="preconnect" href={o} crossOrigin="anonymous" />)}
       </head>
       <body className="bg-surface-400 text-white antialiased" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false">
-        <I18nProvider>
+        <I18nProvider initialLocale={lang}>
           <PortalProvider portalId={config.id} matched={matched}>
           <AuthProvider>{children}</AuthProvider>
           </PortalProvider>
