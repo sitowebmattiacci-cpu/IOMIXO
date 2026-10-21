@@ -56,6 +56,9 @@ const MESSAGES: Record<string, string> = {
   export_not_ready:      'L\'archivio non è ancora pronto.',
   export_expired:        'L\'archivio è scaduto: preparane uno nuovo.',
   export_not_found:      'Archivio non trovato.',
+  export_media_invalid:  'Alcuni contenuti non fanno parte di questo album.',
+  export_busy:           'Stiamo già preparando un altro archivio: riprova tra poco.',
+  export_selection_too_large: 'Hai selezionato troppi contenuti: scegline meno o scarica tutto.',
 }
 
 async function callOwner<Out>(name: string, payload: object): Promise<Out> {
@@ -157,9 +160,9 @@ export const ownerOps = {
       return photoUrl(getFirebaseStorage(), path)
     },
     /** "Download everything": asks the server for ONE archive with the originals. The progress comes from `watchExport`. */
-    async requestExport(sessionId: string): Promise<{ exportId: string; eventId: string; status: string; total: number } | null> {
+    async requestExport(sessionId: string, mediaIds?: string[]): Promise<{ exportId: string; eventId: string; status: string; total: number } | null> {
       const ev = await forDashboard(sessionId); if (!ev) return null
-      const r = await callOwner<{ exportId: string; status: string; total: number }>('requestAlbumExport', { eventId: ev.id })
+      const r = await callOwner<{ exportId: string; status: string; total: number }>('requestAlbumExport', mediaIds?.length ? { eventId: ev.id, mediaIds } : { eventId: ev.id })
       return { ...r, eventId: ev.id }
     },
     watchExport(eventId: string, exportId: string, onChange: (x: ExportDoc | null) => void, onError?: (e: Error) => void): (() => void) {

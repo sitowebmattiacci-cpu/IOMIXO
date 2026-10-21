@@ -531,8 +531,8 @@ export const livePhotos = {
     return need(await (await owner()).photos.originalUrl(path))
   },
   /** Owner: "download everything" as one archive of the originals (server-side export; follow it with watchExport). */
-  async requestExport(sessionId: string) {
-    return need(await (await owner()).photos.requestExport(sessionId), NOT_FOUND)
+  async requestExport(sessionId: string, mediaIds?: string[]) {
+    return need(await (await owner()).photos.requestExport(sessionId, mediaIds), NOT_FOUND)
   },
   async watchExport(eventId: string, exportId: string, onChange: (x: import('./firebase/repositories/photoRepository').ExportDoc | null) => void, onError?: (e: Error) => void) {
     return (await owner()).photos.watchExport(eventId, exportId, onChange, onError)

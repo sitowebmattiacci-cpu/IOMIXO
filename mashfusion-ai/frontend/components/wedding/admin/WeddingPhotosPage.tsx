@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { Download, Check, Trash2, Star, Copy, Camera, Play, CheckCircle2, Image as ImageIcon, Video } from 'lucide-react'
 import { cleanGuestName, displayGuestName } from '@/lib/media/guestName'
 import { MediaLightbox } from '@/components/media/MediaLightbox'
+import Link from 'next/link'
 import { downloadOriginal } from '@/lib/media/download'
 import { MEDIA_ACCEPT, isVideoMedia, formatDuration } from '@/lib/media/mediaTypes'
 import { UPLOAD_ERROR_KEYS } from '@/lib/media/uploadErrors'
@@ -98,9 +99,16 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
           {uploading ? t('common.loading') : t('wdAdmin.photos.upload')}
         </WdButton>
         <div className="flex flex-wrap items-center gap-3">
-          {/* MIOLOVE album: a selection downloads those ORIGINALS; no selection = ONE server-built archive of every original (paid album). IOMIXO events keep the file-by-file download. */}
-          {couple && !selectedItems.length ? (
-            <AlbumExportButton sessionId={sessionId} disabled={items.length === 0 || downloadAllLocked} title={downloadAllLocked ? t('albumPlan.downloadAllLocked') : undefined} />
+          {/* MIOLOVE album: 1 selected media = its ORIGINAL straight away; 2+ selected = ONE server-built ZIP of those originals; none selected = ONE ZIP of the whole album (paid).
+              IOMIXO events keep the file-by-file download (browsers only let the first of several scripted downloads through, hence the ZIP). */}
+          {couple && downloadAllLocked && selectedItems.length >= 2 ? (
+            <div className="flex max-w-sm flex-col items-end gap-2 rounded-2xl border border-wd-border bg-white px-4 py-3 text-right" data-testid="download-many-locked">
+              <p className="text-[13px] font-medium text-wd-ink">{t('albumPlan.downloadManyLocked')}</p>
+              <Link href="/billing" className="inline-flex min-h-[40px] items-center rounded-xl bg-wd-pink px-4 text-sm font-semibold text-white" data-testid="download-many-activate">{t('albumPlan.activate')}</Link>
+            </div>
+          ) : couple && selectedItems.length !== 1 ? (
+            <AlbumExportButton sessionId={sessionId} mediaIds={selectedItems.length >= 2 ? selectedItems.map((p) => p.id) : undefined}
+              disabled={items.length === 0 || (downloadAllLocked && !selectedItems.length)} title={downloadAllLocked && !selectedItems.length ? t('albumPlan.downloadAllLocked') : undefined} />
           ) : (
             <WdButton className="!rounded-2xl !py-3" variant="secondary" icon={<Download className="h-4 w-4 text-wd-muted" />}
               data-testid="photos-download"

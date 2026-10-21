@@ -426,3 +426,80 @@ test('ZIP-F1. the archive has a sensible name (from the album title), the owner 
   const listing = await (await fetch(`http://127.0.0.1:9199/v0/b/demo-iomixo.firebasestorage.app/o?prefix=${encodeURIComponent(`events/${id}/exports/`)}`, { headers: { authorization: 'Bearer owner' } })).json() as any
   assert.equal((listing.items ?? []).length, 1, 'one archive, not one per file')
 })
+
+// ─────────────────────────────────────────── DOWNLOAD OF A SELECTION (ONE ZIP) ───────────────────────────────────────────
+
+async function exportOf(owner: TestClient, id: string, mediaIds?: string[]) {
+  const r = await callAs<{ exportId: string }>(owner, 'requestAlbumExport', mediaIds ? { eventId: id, mediaIds } : { eventId: id })
+  const f = await waitExport(id, r.exportId); assert.equal(f.status.stringValue, 'ready')
+  const u = await callAs<{ url: string; fileName: string }>(owner, 'getAlbumExportUrl', { eventId: id, exportId: r.exportId })
+  return { r, f, u }
+}
+async function addAll(id: string, ms: Media[]) { const out = []; for (const m of ms) out.push(await addMedia(id, m)); return out }
+
+test('SEL-1. 2 / 5 photos selected → ONE archive with exactly those ORIGINALS, byte for byte, nothing else; named "<title>-miolove-selezione.zip"', async () => {
+  const { owner, id } = await setup(activated({ title: 'Festa di Lia' }))
+  const ms = [1, 2, 3, 4, 5, 6].map((i) => photoMedia(400 + i, 30_000 + i)); const slots = await addAll(id, ms)
+  for (const k of [2, 5]) {
+    const pick = slots.slice(0, k).map((s) => s.photoId)
+    const { f, u } = await exportOf(owner, id, pick)
+    assert.equal(Number(f.processed.integerValue), k); assert.equal(u.fileName, 'festa-di-lia-miolove-selezione.zip')
+    const z = await fetchZip(u.url, `sel-photos-${k}`); assert.equal(z.names.length, k, 'only the selected media')
+    assert.deepEqual(z.names.map((n) => sha(z.read(n))).sort(), ms.slice(0, k).map((m) => sha(m.original)).sort())
+    for (const m of ms) assert.ok(!z.names.some((n) => sha(z.read(n)) === sha(m.optimized!)), 'no optimized copy')
+    await new Promise((r) => setTimeout(r, 700))
+  }
+})
+
+test('SEL-2. photo + video and video only → ONE archive with the original files', async () => {
+  const { owner, id } = await setup(activated())
+  const ph = photoMedia(411, 40_000), v1 = videoMedia(412, 'mp4', 90_000), v2 = videoMedia(413, 'mov', 70_000), other = photoMedia(414, 20_000)
+  const [a, b, c] = await addAll(id, [ph, v1, v2, other])
+  const mixed = await exportOf(owner, id, [a.photoId, b.photoId]); const z1 = await fetchZip(mixed.u.url, 'sel-mixed')
+  assert.deepEqual(z1.names.map((n) => sha(z1.read(n))).sort(), [ph.original, v1.original].map(sha).sort()); assert.ok(z1.names.some((n) => n.endsWith('.mp4')))
+  const vids = await exportOf(owner, id, [b.photoId, c.photoId]); const z2 = await fetchZip(vids.u.url, 'sel-videos')
+  assert.deepEqual(z2.names.map((n) => sha(z2.read(n))).sort(), [v1.original, v2.original].map(sha).sort())
+})
+
+test('SEL-3. duplicated mediaIds are packed once; a selection is capped; an empty selection is refused', async () => {
+  const { owner, id } = await setup(activated()); const [a, b] = await addAll(id, [photoMedia(421, 10_000), photoMedia(422, 10_000)])
+  const { u } = await exportOf(owner, id, [a.photoId, a.photoId, b.photoId, a.photoId]); assert.equal((await fetchZip(u.url, 'sel-dup')).names.length, 2)
+  assert.match(String(await fails(callAs(owner, 'requestAlbumExport', { eventId: id, mediaIds: [] }))), /invalid-argument/)
+  assert.match(String(await fails(callAs(owner, 'requestAlbumExport', { eventId: id, mediaIds: Array.from({ length: 501 }, (_, i) => `m${i}`) }))), /invalid-argument:export_selection_too_large/)
+  assert.match(String(await fails(callAs(owner, 'requestAlbumExport', { eventId: id, mediaIds: 'nope' }))), /invalid-argument/)
+})
+
+test('SEL-4. security: a media of ANOTHER album, a made-up id, a path, a guest, another owner → refused; nothing is packed', async () => {
+  const A = await setup(activated()), B = await setup(activated()); const [mine] = await addAll(A.id, [photoMedia(431, 10_000)]); const [theirs] = await addAll(B.id, [photoMedia(432, 10_000)])
+  assert.equal(await fails(callAs(A.owner, 'requestAlbumExport', { eventId: A.id, mediaIds: [mine.photoId, theirs.photoId] })), 'permission-denied:export_media_invalid')
+  assert.equal(await fails(callAs(A.owner, 'requestAlbumExport', { eventId: A.id, mediaIds: ['doesnotexist'] })), 'permission-denied:export_media_invalid')
+  assert.match(String(await fails(callAs(A.owner, 'requestAlbumExport', { eventId: A.id, mediaIds: [`events/${B.id}/photos/${theirs.photoId}/original.jpg`] }))), /invalid-argument/)
+  assert.equal(await fails(callAs(await guest(), 'requestAlbumExport', { eventId: A.id, mediaIds: [mine.photoId] })), 'permission-denied:account_required')
+  assert.equal(await fails(callAs(B.owner, 'requestAlbumExport', { eventId: A.id, mediaIds: [mine.photoId] })), 'not-found:event_not_found')
+  const exports = (await fsGet(`events/${A.id}/exports`)).documents ?? []; assert.equal(exports.length, 0, 'no export was created by a refused request')
+})
+
+test('SEL-5. TRIAL: no archive at all — a selection (2, 5, 50 ids, real or not) and "download all" are denied server-side; nothing is created', async () => {
+  const { owner, id } = await setup(trial(0)); const [a, b] = await addAll(id, [photoMedia(441, 10_000), photoMedia(442, 10_000)])
+  assert.equal(await fails(callAs(owner, 'requestAlbumExport', { eventId: id })), 'permission-denied:export_requires_album')
+  assert.equal(await fails(callAs(owner, 'requestAlbumExport', { eventId: id, mediaIds: [a.photoId, b.photoId] })), 'permission-denied:export_requires_album')
+  assert.equal(await fails(callAs(owner, 'requestAlbumExport', { eventId: id, mediaIds: [a.photoId] })), 'permission-denied:export_requires_album', 'a direct call, even for one media, gets no archive')
+  assert.equal(await fails(callAs(owner, 'requestAlbumExport', { eventId: id, mediaIds: Array.from({ length: 50 }, (_, i) => `m${i}`) })), 'permission-denied:export_requires_album')
+  assert.equal(((await fsGet(`events/${id}/exports`)).documents ?? []).length, 0, 'no export record')
+})
+
+test('SEL-5b. ACTIVATED: a selection may include a REJECTED media (the owner decides what to download, moderation only decides what guests see)', async () => {
+  const { owner, id } = await setup(activated()); const [a, b, c] = await addAll(id, [photoMedia(443, 10_000), photoMedia(444, 10_000), photoMedia(445, 10_000)])
+  await callAs(owner, 'moderatePhoto', { eventId: id, photoId: b.photoId, action: 'set_status', status: 'rejected' })
+  const { u } = await exportOf(owner, id, [a.photoId, b.photoId, c.photoId]); assert.equal((await fetchZip(u.url, 'sel-rejected')).names.length, 3, 'the rejected one is in')
+  const all = await exportOf(owner, id); assert.equal((await fetchZip(all.u.url, 'all-no-rejected')).names.length, 2, '"download all" still leaves rejected media out')
+})
+
+test('SEL-6. one export at a time: the same selection follows the running one, a different scope is told to wait; "download all" still works afterwards', async () => {
+  const { owner, id } = await setup(activated()); const [a, b] = await addAll(id, [photoMedia(451, 10_000), photoMedia(452, 10_000)])
+  await seedSet(`events/${id}/exports/run1`, { ownerUid: owner.uid, status: 'preparing', total: 2, processed: 0, zipPath: 'x', mediaIds: [a.photoId, b.photoId].sort(), createdAt: new Date(), updatedAt: new Date(), expiresAt: new Date(Date.now() + 1e6) })
+  assert.equal((await callAs<{ exportId: string }>(owner, 'requestAlbumExport', { eventId: id, mediaIds: [b.photoId, a.photoId] })).exportId, 'run1')
+  assert.equal(await fails(callAs(owner, 'requestAlbumExport', { eventId: id })), 'failed-precondition:export_busy')
+  await seedUpdate(`events/${id}/exports/run1`, { status: 'failed' })
+  const all = await exportOf(owner, id); assert.equal((await fetchZip(all.u.url, 'sel-after-all')).names.length, 2); assert.equal(all.u.fileName.endsWith('miolove-originals.zip'), true)
+})

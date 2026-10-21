@@ -23,14 +23,22 @@ export const EXPORT_DEADLINE_MS = 500 * 1000
 /** An export that has not moved for this long is considered dead (function killed / timed out): a new request replaces it. */
 export const EXPORT_STALE_MS = 20 * 60 * 1000
 export type ExportStatus = 'queued' | 'preparing' | 'ready' | 'failed'
+/** A media the owner may pick for a selection: finished uploads of any moderation state (an owner may want a hidden one too). */
+const SELECTABLE = (p: Record<string, unknown>) => p.status === 'approved' || p.status === 'pending' || p.status === 'rejected'
 /** Which photo docs go in: everything the owner can see except rejected media and unfinished uploads. */
 const EXPORT_STATUSES = ['approved', 'pending']
 
 export interface ExportRefInput { eventId: string; exportId: string }
-export interface RequestExportInput { eventId: string }
+/** `mediaIds` = a SELECTION of the album (the owner ticked some media): at most this many in one archive. */
+export const MAX_SELECTION = 500
+export interface RequestExportInput { eventId: string; mediaIds?: string[] }
 export const parseRequestExportInput = (data: unknown): RequestExportInput => {
   const d = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>
-  return { eventId: idField(d.eventId, 'eventId') }
+  if (d.mediaIds === undefined || d.mediaIds === null) return { eventId: idField(d.eventId, 'eventId') }
+  if (!Array.isArray(d.mediaIds) || d.mediaIds.length === 0 || d.mediaIds.length > MAX_SELECTION * 4) throw fail('invalid-argument', 'mediaIds invalid', 'invalid_payload')
+  const mediaIds = Array.from(new Set(d.mediaIds.map((m) => idField(m, 'mediaIds'))))                  // duplicates are packed once
+  if (mediaIds.length > MAX_SELECTION) throw fail('invalid-argument', `At most ${MAX_SELECTION} media per archive`, 'export_selection_too_large')
+  return { eventId: idField(d.eventId, 'eventId'), mediaIds }
 }
 export const parseExportRefInput = (data: unknown): ExportRefInput => {
   const d = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>
@@ -70,23 +78,42 @@ export async function purgeExpiredExports(db: Firestore, now: number = Date.now(
 
 export async function requestAlbumExport(db: Firestore, request: CallerAuth, input: RequestExportInput, now: () => number = Date.now): Promise<{ exportId: string; status: ExportStatus; total: number }> {
   const owner = await requireEventOwner(db, request, input.eventId)
-  // "Download everything" belongs to the paid album: a free trial still downloads the files it selects one by one.
+  const selection = input.mediaIds
+  // Archives (the whole album OR a selection of 2+) belong to the paid album: a free trial downloads ONE media at a time (a client never asks an archive for it).
+  // A selection must not become a way around "download all" (select the 50 trial media → same result), so the same gate applies to both.
   if (isTrialAlbum(owner.data)) throw fail('permission-denied', 'Download all is part of the full album', 'export_requires_album')
   const t = now()
   await purgeExports(owner.ref, input.eventId, t)
 
-  // One export at a time: a second click while one is running follows the running one.
+  // The selection is resolved HERE, inside this album: an id that is not one of its (finished) media is refused, nothing else is ever read.
+  let selectedIds: string[] | null = null
+  if (selection) {
+    const refs = selection.map((id) => owner.ref.collection('photos').doc(id))
+    const docs = await db.getAll(...refs)
+    if (docs.some((d) => !d.exists || !SELECTABLE(d.data()!) || !originalPathOf({ id: d.id, ...d.data()! }))) throw fail('permission-denied', 'Some media are not part of this album', 'export_media_invalid')
+    selectedIds = selection.slice().sort()
+  }
+
+  // One export at a time: a second click while one is running follows the running one (same scope); a different scope waits for it.
   const running = await owner.ref.collection('exports').where('status', 'in', ['queued', 'preparing']).get()
   const live = running.docs.find((d) => t - ms(d.data().updatedAt) <= EXPORT_STALE_MS)
-  if (live) return { exportId: live.id, status: live.data().status, total: Number(live.data().total ?? 0) }
+  if (live) {
+    const lv = live.data().mediaIds as string[] | undefined
+    if ((lv ? lv.join() : '') !== (selectedIds ? selectedIds.join() : '')) throw fail('failed-precondition', 'Another archive is being prepared', 'export_busy')
+    return { exportId: live.id, status: live.data().status, total: Number(live.data().total ?? 0) }
+  }
 
-  const media = await owner.ref.collection('photos').where('status', 'in', EXPORT_STATUSES).get()
-  const total = media.docs.filter((d) => originalPathOf(d.data())).length
-  if (total === 0) throw fail('failed-precondition', 'The album has no media to download', 'export_empty')
+  let total: number
+  if (selectedIds) total = selectedIds.length
+  else {
+    const media = await owner.ref.collection('photos').where('status', 'in', EXPORT_STATUSES).get()
+    total = media.docs.filter((d) => originalPathOf(d.data())).length
+    if (total === 0) throw fail('failed-precondition', 'The album has no media to download', 'export_empty')
+  }
   const ref = owner.ref.collection('exports').doc()
   await owner.ref.update({ hasExports: true })                                                // lets the periodic purge find this album
   await ref.create({
-    ownerUid: owner.uid, status: 'queued' as ExportStatus, total, processed: 0, skipped: 0, bytes: null, fileName: exportFileName(owner.data.title), zipPath: zipPathOf(input.eventId, ref.id), error: null,
+    ownerUid: owner.uid, status: 'queued' as ExportStatus, total, processed: 0, skipped: 0, bytes: null, fileName: exportFileName(owner.data.title, !!selectedIds), ...(selectedIds ? { mediaIds: selectedIds } : {}), zipPath: zipPathOf(input.eventId, ref.id), error: null,
     createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(), expiresAt: Timestamp.fromMillis(t + EXPORT_TTL_MS),
   })
   return { exportId: ref.id, status: 'queued', total }
@@ -102,7 +129,10 @@ export async function runAlbumExport(db: Firestore, eventId: string, exportId: s
   const fileName = typeof snap.data()!.fileName === 'string' ? String(snap.data()!.fileName) : 'album.zip'
   try {
     await ref.update({ status: 'preparing', updatedAt: FieldValue.serverTimestamp() })
-    const media = await db.collection('events').doc(eventId).collection('photos').where('status', 'in', EXPORT_STATUSES).get()          // no orderBy: it would need a composite index; sorted below
+    const chosen = snap.data()!.mediaIds as string[] | undefined
+    const photos = db.collection('events').doc(eventId).collection('photos')
+    const media = chosen ? { docs: (await db.getAll(...chosen.map((id) => photos.doc(id)))).filter((d) => d.exists && SELECTABLE(d.data()!)) }
+      : await photos.where('status', 'in', EXPORT_STATUSES).get()          // no orderBy: it would need a composite index; sorted below
     const items = media.docs.map((d) => ({ id: d.id, ...d.data() })).filter((p) => originalPathOf(p))
       .sort((a: any, b: any) => ms(a.createdAt) - ms(b.createdAt))
 

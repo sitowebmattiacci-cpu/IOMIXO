@@ -315,3 +315,57 @@ test('MEDIA-9. LEGACY photos (one compressed file, no new fields) still show in 
     if (got!.d) { const p = await got!.d.path(); assert.equal(p ? fileSha(p) : '', fileSha(F.jpg), 'legacy download = its (only) file') } else assert.match(decodeURIComponent(got!.tab ?? ''), /original\.jpg/, 'the legacy file opened')
   } finally { await ctx.close() }
 })
+
+test('MEDIA-SEL. owner Foto: 1 selected → its ORIGINAL straight away; 5 selected → click "Scarica (5)" → preparing → ONE ZIP with the 5 originals (no 5 separate downloads)', async () => {
+  const a = await album('activated'); const guestCtx = await newCtx()
+  await (await guestSends(guestCtx, a.slug, [F.jpg, F.jpg, F.jpg, F.mp4, F.mov])).close()
+  const ctx = await newCtx({ width: 1280, height: 800 }, 'it', true); const page = await ctx.newPage()
+  const files: Array<{ name: string; path: string }> = []
+  const hook = (p: Page) => p.on('download', async (d) => { const path = await d.path(); if (path) files.push({ name: d.suggestedFilename(), path }) })
+  hook(page); ctx.on('page', hook)
+  try {
+    await login(page, a.owner.email); await page.goto(`${M()}/sessions/${a.id}`, { waitUntil: 'domcontentloaded', timeout: 120_000 }); await goTab(page, /^Foto$|Foto/)
+    await until(async () => (await page.getByTestId('photo-tile').count()) === 5, 60_000, '5 tiles')
+    const pick = (i: number) => page.getByTestId('photo-tile').nth(i).locator('button[aria-pressed]').click()
+    const btn = page.getByTestId('photos-download')
+    // 1 selected: direct download of the original
+    await pick(0); await until(async () => /Scarica \(1\)/.test(await btn.innerText()), 15_000, 'Scarica (1)')
+    await btn.click(); await until(async () => files.length >= 1, 30_000, 'single original downloaded'); assert.ok(/\.(jpg|mp4|mov)$/.test(files[0].name), `a media file, not a zip: ${files[0].name}`)
+    assert.equal(await page.getByTestId('album-export').count(), 0, 'one media: no archive')
+    // 5 selected: ONE zip
+    files.length = 0
+    for (const i of [1, 2, 3, 4]) await pick(i)
+    await until(async () => /Scarica \(5\)/.test(await btn.innerText()), 15_000, 'Scarica (5)')
+    await btn.click()
+    await until(async () => ['requesting', 'queued', 'preparing', 'ready'].includes((await page.getByTestId('album-export').getAttribute('data-phase')) ?? ''), 20_000, 'preparation shown')
+    await until(async () => (await page.getByTestId('album-export').getAttribute('data-phase')) === 'ready', 60_000, 'ready')
+    await until(async () => files.length >= 1, 30_000, 'the archive download started'); await page.waitForTimeout(1500)
+    assert.equal(files.length, 1, 'ONE download, not five'); assert.equal(files[0].name, 'album-media-miolove-selezione.zip')
+    assert.match(await page.getByTestId('export-status').innerText(), /Download pronto/)
+    const dir = join(fx, 'sel'); execFileSync('unzip', ['-qo', files[0].path, '-d', dir]); const names = readdirSync(dir).sort(); assert.equal(names.length, 5)
+    assert.deepEqual(names.map((f) => sha(readFileSync(join(dir, f)))).sort(), [F.jpg, F.jpg, F.jpg, F.mp4, F.mov].map(fileSha).sort(), 'the 5 ORIGINALS')
+    rmSync(dir, { recursive: true, force: true })
+  } finally { await ctx.close(); await guestCtx.close() }
+})
+
+test('MEDIA-SEL-TRIAL. trial album: 1 selected → original straight away; 2+ selected → NO archive, a clear "activate" call to action instead; "download all" stays locked', async () => {
+  const a = await album('trial', 0); const guestCtx = await newCtx()
+  await (await guestSends(guestCtx, a.slug, [F.jpg, F.mp4, F.jpg])).close()
+  const ctx = await newCtx({ width: 1280, height: 800 }, 'it', true); const page = await ctx.newPage()
+  const files: Array<{ name: string; path: string }> = []
+  const hook = (p: Page) => p.on('download', async (d) => { const path = await d.path(); if (path) files.push({ name: d.suggestedFilename(), path }) })
+  hook(page); ctx.on('page', hook)
+  try {
+    await login(page, a.owner.email); await page.goto(`${M()}/sessions/${a.id}`, { waitUntil: 'domcontentloaded', timeout: 120_000 }); await goTab(page, /^Foto$|Foto/)
+    await until(async () => (await page.getByTestId('photo-tile').count()) === 3, 60_000, '3 tiles')
+    const btn = page.getByTestId('photos-download'); assert.equal(await btn.isDisabled(), true, '"Scarica tutto" locked in the trial')
+    const pick = (i: number) => page.getByTestId('photo-tile').nth(i).locator('button[aria-pressed]').click()
+    await pick(0); await until(async () => /Scarica \(1\)/.test(await btn.innerText()), 15_000, 'Scarica (1)')
+    assert.equal(await btn.isDisabled(), false); await btn.click(); await until(async () => files.length >= 1, 30_000, 'single original downloaded'); assert.ok(/\.(jpg|mp4)$/.test(files[0].name))
+    await pick(1)
+    const cta = page.getByTestId('download-many-locked'); await cta.waitFor({ timeout: 15_000 })
+    assert.match(await cta.innerText(), /Attiva l'album per scaricare più contenuti insieme/); assert.equal(await page.getByTestId('download-many-activate').getAttribute('href'), '/billing')
+    assert.equal(await page.getByTestId('album-export').count(), 0, 'no archive button'); assert.equal(await page.getByTestId('photos-download').count(), 0)
+    await pick(2); assert.equal(await cta.count(), 1); assert.equal(files.length, 1, 'nothing else was downloaded')
+  } finally { await ctx.close(); await guestCtx.close() }
+})

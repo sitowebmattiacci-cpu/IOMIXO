@@ -56,8 +56,8 @@ export function archiveEntryName(index: number, p: Record<string, unknown>): str
   return `${String(index).padStart(4, '0')}-${base || String(p.id ?? 'media')}.${ext}`
 }
 
-/** Download name of the album archive: "<album-title>-miolove-originals.zip", ASCII only (it travels in a header and is typed by the browser into the user's disk). */
-export function exportFileName(title: unknown): string {
+/** Download name of the album archive: "<album-title>-miolove-originals.zip" (whole album) or "<album-title>-miolove-selezione.zip" (a selection), ASCII only (it travels in a header and is typed by the browser into the user's disk). */
+export function exportFileName(title: unknown, selection = false): string {
   const slug = (typeof title === 'string' ? title : '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50).replace(/-+$/, '')
-  return `${slug ? `${slug}-` : ''}miolove-originals.zip`
+  return `${slug ? `${slug}-` : ''}miolove-${selection ? 'selezione' : 'originals'}.zip`
 }

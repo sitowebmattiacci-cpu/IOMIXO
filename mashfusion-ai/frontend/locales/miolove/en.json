@@ -125,7 +125,8 @@
       "poster": "Printable QR cards and posters",
       "allIncluded": "All MIOLOVE features included"
     },
-    "listPrice": "List price"
+    "listPrice": "List price",
+    "downloadManyLocked": "Activate the album to download several items together"
   },
   "albumPrivacy": {
     "guestUpload": "Guest photo uploads",
@@ -444,7 +445,13 @@
       "empty": "The album doesn't contain any photos or videos yet.",
       "expired": "The archive has expired: prepare a new one.",
       "hint": "One ZIP file with the originals of every photo and video.",
-      "keepOpen": "You can keep using the album while we prepare the archive."
+      "keepOpen": "You can keep using the album while we prepare the archive.",
+      "selectionPreparing": "Preparing download…",
+      "selectionReadyButton": "Download again",
+      "selectionReady": "Download ready: the ZIP file has started.",
+      "busy": "Another archive is already being prepared: try again shortly.",
+      "invalid": "Some items are not part of this album.",
+      "tooMany": "Too many items selected: pick fewer or download everything."
     }
   },
   "guestMenu": {

@@ -11,6 +11,7 @@ import { IDEAS_PATH, HOME_PATH, ideasLangOfPath, ideasPath, homePath } from '../
 import { mioloveIdeasMetadata, mioloveIdeasStructuredData, miolovePublicUrls, ideasUrl, SEO_LANGUAGES } from '../../lib/miolove/seo'
 import { OCCASION_COVERS, DEMO_PHOTOS } from '../../lib/miolove/demoMedia'
 import { exportFileName } from '../../../../firebase/functions/src/photos/media'
+import { parseRequestExportInput, MAX_SELECTION } from '../../../../firebase/functions/src/photos/exports'
 import { parseCreatePhotoUploadInput, PHOTO_LIMITS } from '../../../../firebase/functions/src/photos/photos'
 
 const D: Record<string, any> = { it, en, fr, es }
@@ -122,4 +123,13 @@ test('IDEAS-6. the guide targets the intents naturally (no keyword stuffing: eac
     assert.match(meta, intents[l]); assert.ok((meta.match(new RegExp(intents[l].source, 'gi')) ?? []).length <= 2, `${l} repeats its key phrase`)
     assert.match(meta, /QR/); assert.ok(/matrimon|wedding|mariage|boda/i.test(meta), l); assert.ok(/complean|birthday|anniversaire|cumplea/i.test(meta), l)
   }
+})
+
+test('ZIP-2. selection archive name and mediaIds parsing: dedupe, cap, no empty list, no non-ids', () => {
+  assert.equal(exportFileName('Festa di Lia', true), 'festa-di-lia-miolove-selezione.zip'); assert.equal(exportFileName('Festa di Lia'), 'festa-di-lia-miolove-originals.zip')
+  assert.deepEqual(parseRequestExportInput({ eventId: 'e1' }), { eventId: 'e1' })
+  assert.deepEqual(parseRequestExportInput({ eventId: 'e1', mediaIds: ['a', 'b', 'a'] }), { eventId: 'e1', mediaIds: ['a', 'b'] })
+  assert.throws(() => parseRequestExportInput({ eventId: 'e1', mediaIds: [] })); assert.throws(() => parseRequestExportInput({ eventId: 'e1', mediaIds: 'a' }))
+  assert.throws(() => parseRequestExportInput({ eventId: 'e1', mediaIds: ['events/x/photos/y/original.jpg'] }))
+  assert.throws(() => parseRequestExportInput({ eventId: 'e1', mediaIds: Array.from({ length: MAX_SELECTION + 1 }, (_, i) => `m${i}`) }))
 })

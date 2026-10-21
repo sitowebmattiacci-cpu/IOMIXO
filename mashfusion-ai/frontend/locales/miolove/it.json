@@ -125,7 +125,8 @@
       "poster": "Card e poster QR da stampare",
       "allIncluded": "Tutte le funzionalità MIOLOVE incluse"
     },
-    "listPrice": "Prezzo di listino"
+    "listPrice": "Prezzo di listino",
+    "downloadManyLocked": "Attiva l'album per scaricare più contenuti insieme"
   },
   "albumPrivacy": {
     "guestUpload": "Invio foto degli ospiti",
@@ -444,7 +445,13 @@
       "empty": "L'album non contiene ancora foto o video.",
       "expired": "L'archivio è scaduto: preparane uno nuovo.",
       "hint": "Un unico file ZIP con gli originali di tutte le foto e i video.",
-      "keepOpen": "Puoi continuare a usare l'album mentre prepariamo l'archivio."
+      "keepOpen": "Puoi continuare a usare l'album mentre prepariamo l'archivio.",
+      "selectionPreparing": "Preparazione download…",
+      "selectionReadyButton": "Scarica di nuovo",
+      "selectionReady": "Download pronto: il file ZIP è partito.",
+      "busy": "Stiamo già preparando un altro archivio: riprova tra poco.",
+      "invalid": "Alcuni contenuti non fanno parte di questo album.",
+      "tooMany": "Hai selezionato troppi contenuti: scegline meno o scarica tutto."
     }
   },
   "guestMenu": {

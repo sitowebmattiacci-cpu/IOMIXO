@@ -125,7 +125,8 @@
       "poster": "Cartes et affiches QR à imprimer",
       "allIncluded": "Toutes les fonctionnalités MIOLOVE incluses"
     },
-    "listPrice": "Prix catalogue"
+    "listPrice": "Prix catalogue",
+    "downloadManyLocked": "Activez l'album pour télécharger plusieurs contenus ensemble"
   },
   "albumPrivacy": {
     "guestUpload": "Envoi de photos par les invités",
@@ -444,7 +445,13 @@
       "empty": "L'album ne contient pas encore de photos ni de vidéos.",
       "expired": "L'archive a expiré : préparez-en une nouvelle.",
       "hint": "Un seul fichier ZIP avec les originaux de toutes les photos et vidéos.",
-      "keepOpen": "Vous pouvez continuer à utiliser l'album pendant la préparation de l'archive."
+      "keepOpen": "Vous pouvez continuer à utiliser l'album pendant la préparation de l'archive.",
+      "selectionPreparing": "Préparation du téléchargement…",
+      "selectionReadyButton": "Télécharger à nouveau",
+      "selectionReady": "Téléchargement prêt : le fichier ZIP a démarré.",
+      "busy": "Une autre archive est déjà en préparation : réessayez dans un instant.",
+      "invalid": "Certains éléments ne font pas partie de cet album.",
+      "tooMany": "Trop d'éléments sélectionnés : choisissez-en moins ou téléchargez tout."
     }
   },
   "guestMenu": {
