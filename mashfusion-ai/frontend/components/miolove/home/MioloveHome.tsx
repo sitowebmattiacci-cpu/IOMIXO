@@ -35,12 +35,12 @@ export function Header({ showReviews, base = '' }: { showReviews: boolean; base?
   useEffect(() => { if (open) { const f = () => setOpen(false); window.addEventListener('resize', f); return () => window.removeEventListener('resize', f) } }, [open])
   const links = [
     [`${base}#how`, t('home.nav.how')], [`${base}#features`, t('home.nav.features')], [ideasPath(locale), t('ideas.nav.label')], [`${base}#pricing`, t('home.nav.pricing')],
-    ...(showReviews ? [[`${base}#reviews`, t('home.nav.reviews')]] : []), [`${base}#faq`, t('home.nav.faq')],
+    ...(showReviews ? [[`${base}#reviews`, t('home.nav.reviews')]] : []),
   ] as const
   return (
     <header className="sticky top-0 z-50 border-b border-wd-border bg-white/90 backdrop-blur" data-testid="home-header">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-5 sm:px-8">
-        <Link href={base || '/'} aria-label="MIOLOVE ALBUM" className="shrink-0"><MioloveLogo height={34} /></Link>
+        <Link href={base || '/'} aria-label="MIOLOVE ALBUM" className="shrink-0"><MioloveLogo height={42} /></Link>
         <nav className="hidden items-center gap-7 text-[15px] font-medium text-wd-muted lg:flex" aria-label="Home">
           {links.map(([href, label]) => <a key={href} href={href} className="transition hover:text-wd-ink">{label}</a>)}
         </nav>
