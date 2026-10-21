@@ -3,7 +3,7 @@ import { FieldValue, Timestamp, type Firestore, type DocumentReference } from 'f
 import { fail } from '../shared/guard'
 import { idField, requireEventOwner, type CallerAuth } from '../owner/guard'
 import { deleteObjects, issueDownloadUrl, objectExists, readStream, writeStream } from './storage'
-import { archiveEntryName, originalPathOf } from './media'
+import { archiveEntryName, exportFileName, originalPathOf } from './media'
 import { isTrialAlbum } from './trialQuota'
 
 /**
@@ -18,6 +18,8 @@ import { isTrialAlbum } from './trialQuota'
  * the exports path to every client) and is deleted when it expires (24 h) or when the owner asks for a new export.
  */
 export const EXPORT_TTL_MS = 24 * 60 * 60 * 1000
+/** A Firestore-triggered function lives 540 s at most: past this the export stops and says so (the owner is not left waiting for a function that is gone). */
+export const EXPORT_DEADLINE_MS = 500 * 1000
 /** An export that has not moved for this long is considered dead (function killed / timed out): a new request replaces it. */
 export const EXPORT_STALE_MS = 20 * 60 * 1000
 export type ExportStatus = 'queued' | 'preparing' | 'ready' | 'failed'
@@ -84,7 +86,7 @@ export async function requestAlbumExport(db: Firestore, request: CallerAuth, inp
   const ref = owner.ref.collection('exports').doc()
   await owner.ref.update({ hasExports: true })                                                // lets the periodic purge find this album
   await ref.create({
-    ownerUid: owner.uid, status: 'queued' as ExportStatus, total, processed: 0, skipped: 0, bytes: null, zipPath: zipPathOf(input.eventId, ref.id), error: null,
+    ownerUid: owner.uid, status: 'queued' as ExportStatus, total, processed: 0, skipped: 0, bytes: null, fileName: exportFileName(owner.data.title), zipPath: zipPathOf(input.eventId, ref.id), error: null,
     createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(), expiresAt: Timestamp.fromMillis(t + EXPORT_TTL_MS),
   })
   return { exportId: ref.id, status: 'queued', total }
@@ -96,19 +98,22 @@ export async function runAlbumExport(db: Firestore, eventId: string, exportId: s
   const snap = await ref.get()
   if (!snap.exists || snap.data()!.status !== 'queued') return                 // a retried trigger must not run the same export twice
   const zipPath = zipPathOf(eventId, exportId)
+  const startedAt = Date.now()
+  const fileName = typeof snap.data()!.fileName === 'string' ? String(snap.data()!.fileName) : 'album.zip'
   try {
     await ref.update({ status: 'preparing', updatedAt: FieldValue.serverTimestamp() })
     const media = await db.collection('events').doc(eventId).collection('photos').where('status', 'in', EXPORT_STATUSES).get()          // no orderBy: it would need a composite index; sorted below
     const items = media.docs.map((d) => ({ id: d.id, ...d.data() })).filter((p) => originalPathOf(p))
       .sort((a: any, b: any) => ms(a.createdAt) - ms(b.createdAt))
 
-    const out = writeStream(zipPath, 'application/zip', 'attachment; filename="album.zip"')
+    const out = writeStream(zipPath, 'application/zip', `attachment; filename="${fileName}"`)
     const archive = archiver('zip', { store: true })
     const finished = new Promise<void>((resolve, reject) => { out.on('finish', () => resolve()); out.on('error', reject); archive.on('error', reject) })
     archive.pipe(out)
 
     let processed = 0, skipped = 0, lastWrite = Date.now()
     for (let i = 0; i < items.length; i++) {
+      if (Date.now() - startedAt > EXPORT_DEADLINE_MS) throw new Error('export_timeout')
       const p = items[i], path = originalPathOf(p)
       if (!(await objectExists(path))) { skipped++; continue }                  // a doc whose file is gone (never finalized / removed by hand): nothing to pack
       await new Promise<void>((resolve, reject) => {
@@ -130,12 +135,12 @@ export async function runAlbumExport(db: Firestore, eventId: string, exportId: s
   }
 }
 
-export async function getAlbumExportUrl(db: Firestore, request: CallerAuth, input: ExportRefInput, now: () => number = Date.now): Promise<{ url: string; bytes: number | null; expiresAt: number }> {
+export async function getAlbumExportUrl(db: Firestore, request: CallerAuth, input: ExportRefInput, now: () => number = Date.now): Promise<{ url: string; bytes: number | null; expiresAt: number; fileName: string }> {
   const owner = await requireEventOwner(db, request, input.eventId)
   const snap = await owner.ref.collection('exports').doc(input.exportId).get()
   if (!snap.exists || snap.data()!.ownerUid !== owner.uid) throw fail('not-found', 'Export not found', 'export_not_found')
   const x = snap.data()!
   if (x.status !== 'ready') throw fail('failed-precondition', 'The archive is not ready', 'export_not_ready')
   if (ms(x.expiresAt) <= now()) throw fail('failed-precondition', 'The archive has expired', 'export_expired')
-  return { url: await issueDownloadUrl(String(x.zipPath)), bytes: typeof x.bytes === 'number' ? x.bytes : null, expiresAt: ms(x.expiresAt) }
+  return { url: await issueDownloadUrl(String(x.zipPath)), bytes: typeof x.bytes === 'number' ? x.bytes : null, expiresAt: ms(x.expiresAt), fileName: typeof x.fileName === 'string' ? x.fileName : 'album.zip' }
 }

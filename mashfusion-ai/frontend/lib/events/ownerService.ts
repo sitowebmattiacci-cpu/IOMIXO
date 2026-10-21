@@ -166,7 +166,7 @@ export const ownerOps = {
       return subscribeExport(getFirebaseDb(), eventId, exportId, onChange, onError)
     },
     /** A fresh, short-lived URL of a READY archive. */
-    async exportUrl(eventId: string, exportId: string): Promise<{ url: string; bytes: number | null; expiresAt: number }> {
+    async exportUrl(eventId: string, exportId: string): Promise<{ url: string; bytes: number | null; expiresAt: number; fileName: string }> {
       return callOwner('getAlbumExportUrl', { eventId, exportId })
     },
     /** Winner-announcement photo: straight to Storage under the event's winner folder (rules: owner only). Returns the path stored in screenConfig. */

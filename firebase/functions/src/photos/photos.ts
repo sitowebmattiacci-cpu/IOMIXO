@@ -22,7 +22,7 @@ import { MIOLOVE_TRIAL_PHOTO_LIMIT, TRIAL_PHOTO_LIMIT_REASON, TRIAL_EXPIRED_REAS
  * 3. finalizePhoto (guest)      checks the object(s) really exist with the declared type / size, flips the doc to `approved` (Wedding) or `pending` (Party)
  * Owners moderate with moderatePhoto (approve / reject / feature / delete). Only `approved` photos are readable by guests / TV.
  */
-export const PHOTO_LIMITS = { guestName: 80, caption: 200, filename: 120, maxBytes: MEDIA_LIMITS.legacyPhotoBytes } as const
+export const PHOTO_LIMITS = { guestName: 40, caption: 200, filename: 120, maxBytes: MEDIA_LIMITS.legacyPhotoBytes } as const
 /** Anti-spam: legacy allowed 20 uploads per minute per client; here a short cooldown plus a per-guest cap for the whole event. */
 export const PHOTO_POLICY = { cooldownMs: 2_000, maxPerGuest: 60 } as const
 /** A MIOLOVE album takes photos AND videos from guests who may send many at once: technical anti-abuse cap per guest, not a commercial limit. */

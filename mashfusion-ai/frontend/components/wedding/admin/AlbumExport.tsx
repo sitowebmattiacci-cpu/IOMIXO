@@ -37,7 +37,7 @@ export function AlbumExportButton({ sessionId, disabled, title }: { sessionId: s
     try {
       const r = await livePhotos.exportUrl(eventId, exportId)
       if (!alive.current) return
-      triggerDownload(r.url, 'album.zip', { sameTab: true }); setPhase('ready'); setMessage(null)
+      triggerDownload(r.url, r.fileName || 'album.zip', { sameTab: true }); setPhase('ready'); setMessage(null)
     } catch (e) { fail(reasonText(e)) }
   }
   const arm = () => { if (stall.current) clearTimeout(stall.current); stall.current = setTimeout(() => fail(t('media.export.failed')), STALL_MS) }

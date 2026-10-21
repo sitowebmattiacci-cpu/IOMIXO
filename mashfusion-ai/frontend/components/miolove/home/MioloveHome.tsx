@@ -19,25 +19,28 @@ import { MIOLOVE_EMAIL } from '@/lib/legal/types'
 import { PORTAL_CONFIG } from '@/lib/portal'
 import { cn } from '@/lib/utils'
 import { DemoPhotoImg, PhoneMock, ScreenMock, Section, SectionHead } from './parts'
+import { IdeasTeaser } from '../ideas/IdeasTeaser'
+import { ideasPath } from '@/lib/miolove/paths'
 
-const btnPrimary = 'inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-wd-pink px-7 text-[16px] font-semibold text-white shadow-[0_10px_30px_rgba(240,106,155,0.35)] transition hover:bg-wd-pink-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/50'
-const btnSecondary = 'inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl border border-wd-border bg-white px-7 text-[16px] font-semibold text-wd-ink transition hover:bg-wd-active focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/40'
+export const btnPrimary = 'inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-wd-pink px-7 text-[16px] font-semibold text-white shadow-[0_10px_30px_rgba(240,106,155,0.35)] transition hover:bg-wd-pink-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/50'
+export const btnSecondary = 'inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl border border-wd-border bg-white px-7 text-[16px] font-semibold text-wd-ink transition hover:bg-wd-active focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/40'
 
 // ── Header ───────────────────────────────────────────────────────────────────
-function Header({ showReviews }: { showReviews: boolean }) {
-  const { t } = useI18n()
+/** `base`: where the section anchors live. '' on the home itself, the home's path (e.g. '/en') on other public pages such as the ideas guide. */
+export function Header({ showReviews, base = '' }: { showReviews: boolean; base?: string }) {
+  const { t, locale } = useI18n()
   const { user, isAnonymous } = useAuth()
   const signedIn = !!user && !isAnonymous
   const [open, setOpen] = useState(false)
   useEffect(() => { if (open) { const f = () => setOpen(false); window.addEventListener('resize', f); return () => window.removeEventListener('resize', f) } }, [open])
   const links = [
-    ['#how', t('home.nav.how')], ['#features', t('home.nav.features')], ['#pricing', t('home.nav.pricing')],
-    ...(showReviews ? [['#reviews', t('home.nav.reviews')]] : []), ['#faq', t('home.nav.faq')],
+    [`${base}#how`, t('home.nav.how')], [`${base}#features`, t('home.nav.features')], [ideasPath(locale), t('ideas.nav.label')], [`${base}#pricing`, t('home.nav.pricing')],
+    ...(showReviews ? [[`${base}#reviews`, t('home.nav.reviews')]] : []), [`${base}#faq`, t('home.nav.faq')],
   ] as const
   return (
     <header className="sticky top-0 z-50 border-b border-wd-border bg-white/90 backdrop-blur" data-testid="home-header">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-5 sm:px-8">
-        <Link href="/" aria-label="MIOLOVE ALBUM" className="shrink-0"><MioloveLogo height={34} /></Link>
+        <Link href={base || '/'} aria-label="MIOLOVE ALBUM" className="shrink-0"><MioloveLogo height={34} /></Link>
         <nav className="hidden items-center gap-7 text-[15px] font-medium text-wd-muted lg:flex" aria-label="Home">
           {links.map(([href, label]) => <a key={href} href={href} className="transition hover:text-wd-ink">{label}</a>)}
         </nav>
@@ -361,8 +364,8 @@ function FinalCta() {
   )
 }
 
-function Footer() {
-  const { t } = useI18n()
+export function Footer({ base = '' }: { base?: string }) {
+  const { t, locale } = useI18n()
   const col = 'space-y-3 text-[15px]'
   const link = 'text-wd-muted transition hover:text-wd-ink'
   return (
@@ -374,10 +377,11 @@ function Footer() {
         </div>
         <nav className={col} aria-label={t('home.footer.product')}>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-wd-ink">{t('home.footer.product')}</p>
-          <a className={cn(link, 'block')} href="#how">{t('home.nav.how')}</a>
-          <a className={cn(link, 'block')} href="#features">{t('home.nav.features')}</a>
-          <a className={cn(link, 'block')} href="#pricing">{t('home.nav.pricing')}</a>
-          <a className={cn(link, 'block')} href="#faq">{t('home.nav.faq')}</a>
+          <a className={cn(link, 'block')} href={`${base}#how`}>{t('home.nav.how')}</a>
+          <a className={cn(link, 'block')} href={`${base}#features`}>{t('home.nav.features')}</a>
+          <a className={cn(link, 'block')} href={ideasPath(locale)} data-testid="footer-ideas">{t('ideas.nav.label')}</a>
+          <a className={cn(link, 'block')} href={`${base}#pricing`}>{t('home.nav.pricing')}</a>
+          <a className={cn(link, 'block')} href={`${base}#faq`}>{t('home.nav.faq')}</a>
         </nav>
         <nav className={col} aria-label={t('home.footer.account')}>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-wd-ink">{t('home.footer.account')}</p>
@@ -409,6 +413,7 @@ export function MioloveHome() {
       <Benefits />
       <WhyNotWhatsapp />
       <EventTypes />
+      <IdeasTeaser />
       <Preview />
       {showReviews && <Reviews items={reviews.items} demo={reviews.demo} />}
       <Pricing />

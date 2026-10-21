@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { X, ChevronLeft, ChevronRight, Download } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 import { livePhotos, type LivePhoto } from '@/lib/api'
+import { displayGuestName } from '@/lib/media/guestName'
 import { isVideoMedia } from '@/lib/media/mediaTypes'
 
 /**
@@ -43,7 +44,7 @@ export function MediaLightbox({ items, index, onIndex, onClose, onDownload }: {
     <div role="dialog" aria-modal="true" aria-label={item.filename ?? item.guest_name ?? ''} data-testid="media-lightbox" data-media={video ? 'video' : 'photo'}
       className="fixed inset-0 z-50 flex flex-col bg-black/90" onClick={onClose}>
       <div className="flex items-center justify-between gap-3 p-3 sm:p-4" onClick={(e) => e.stopPropagation()}>
-        <p className="min-w-0 truncate text-sm font-semibold text-white/90">{item.guest_name ?? ''}</p>
+        <p className="min-w-0 truncate text-sm font-semibold text-white/90">{displayGuestName(item.guest_name, t('weddingPanels.anonymous'))}</p>
         <div className="flex items-center gap-2">
           {onDownload && (
             <button type="button" onClick={() => onDownload(item)} data-testid="media-download-original" className={`${btn} !w-auto gap-2 px-4 text-sm font-semibold`}>

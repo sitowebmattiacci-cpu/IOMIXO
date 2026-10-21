@@ -4,6 +4,7 @@ import useSWR from 'swr'
 import { QRCodeSVG } from 'qrcode.react'
 import toast from 'react-hot-toast'
 import { Download, Check, Trash2, Star, Copy, Camera, Play, CheckCircle2, Image as ImageIcon, Video } from 'lucide-react'
+import { cleanGuestName, displayGuestName } from '@/lib/media/guestName'
 import { MediaLightbox } from '@/components/media/MediaLightbox'
 import { downloadOriginal } from '@/lib/media/download'
 import { MEDIA_ACCEPT, isVideoMedia, formatDuration } from '@/lib/media/mediaTypes'
@@ -60,7 +61,7 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
     if (!files?.length) return
     setUploading(true)
     try {
-      for (const f of Array.from(files)) await livePhotos.publicUpload(slug, f, { guest_name: session.couple_names ?? undefined }, undefined, { album: couple })
+      for (const f of Array.from(files)) await livePhotos.publicUpload(slug, f, { guest_name: cleanGuestName(session.couple_names) }, undefined, { album: couple })
       toast.success(t('wdAdmin.photos.uploaded'))
       refresh()
     } catch (e: any) { err(e) } finally {
@@ -228,7 +229,7 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
                   {p.status && p.status !== 'approved'
                     ? <span className="shrink-0 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold uppercase text-wd-muted">{wdStatusLabel(t, p.status)}</span>
                     : <span />}
-                  <span className="min-w-0 max-w-full truncate rounded-full bg-wd-pink px-2.5 py-1 text-[11px] font-semibold text-white">{p.guest_name ?? t('weddingPanels.anonymous')}</span>
+                  <span className="min-w-0 max-w-full truncate rounded-full bg-wd-pink px-2.5 py-1 text-[11px] font-semibold text-white">{displayGuestName(p.guest_name, t('weddingPanels.anonymous'))}</span>
                 </div>
               </div>
             )

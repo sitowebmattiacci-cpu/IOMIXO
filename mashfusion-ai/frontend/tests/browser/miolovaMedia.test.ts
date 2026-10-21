@@ -229,7 +229,7 @@ test('MEDIA-5. "Scarica tutto": ONE click → preparing → ready → ONE archiv
       await until(async () => ['preparing', 'ready'].includes((await page.getByTestId('album-export').getAttribute('data-phase')) ?? ''), 30_000, 'preparation shown')
       await until(async () => (await page.getByTestId('album-export').getAttribute('data-phase')) === 'ready', 60_000, 'archive ready')
       await until(async () => files.length >= 1, 30_000, 'the archive download started')
-      assert.equal(files.length, 1, 'ONE download, not one per file'); assert.equal(files[0].name, 'album.zip')
+      assert.equal(files.length, 1, 'ONE download, not one per file'); assert.match(files[0].name, /^album-media-miolove-originals\.zip$/)
       if (lang === 'it') {
         const dir = join(fx, 'unz'); execFileSync('unzip', ['-qo', files[0].path, '-d', dir]); const names = readdirSync(dir).sort()
         assert.equal(names.length, 3); assert.deepEqual(names.map((f) => sha(readFileSync(join(dir, f)))).sort(), [F.jpg, F.mp4, F.mov].map(fileSha).sort(), 'the archive holds the three ORIGINALS')

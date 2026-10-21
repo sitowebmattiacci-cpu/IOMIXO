@@ -663,7 +663,7 @@ export default function LiveBoothPage() {
             {!isIOS && (
               <WeddingGuestButton variant="secondary" onClick={() => startCamera()} icon={<Camera className="h-5 w-5" />}>{t('booth.openCamera')}</WeddingGuestButton>
             )}
-            <GuestMediaUploader slug={slug!} guestName={undefined} />
+            <GuestMediaUploader slug={slug!} />
             <WeddingGuestHelper tone="pink">{t('booth.weddingApprovalNote')}</WeddingGuestHelper>
           </div>
         ) : (

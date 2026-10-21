@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getPortalFromHostname, normalizeHost, PORTAL_CONFIG } from '@/lib/portal'
+import { ideasLangOfPath } from '@/lib/miolove/paths'
 
 // MIOLOVE: its root is the public home (app/page.tsx picks the portal from the host); "/" no longer redirects to the sign-in.
 // IOMIXO and every non-portal host (localhost, hosted.app) keep the existing landing at "/".
@@ -27,6 +28,16 @@ export function middleware(req: NextRequest) {
       if (m && LANGS.includes(m[1])) headers.set('x-ml-lang', m[1])
       const init = { request: { headers } }
       if (m) { const url = req.nextUrl.clone(); url.pathname = '/'; return NextResponse.rewrite(url, init) }
+      return NextResponse.next(init)
+    }
+    // "Idee per usare MIOLOVE": one route (/idee) served at four public URLs (/idee, /en/ideas, /fr/idees, /es/ideas); same language-header rule as the home.
+    const ideasLang = ideasLangOfPath(path)
+    if (ideasLang) {
+      const headers = new Headers(req.headers)
+      headers.delete('x-ml-lang')
+      if (ideasLang !== 'it') headers.set('x-ml-lang', ideasLang)
+      const init = { request: { headers } }
+      if (path.replace(/\/+$/, '') !== '/idee') { const url = req.nextUrl.clone(); url.pathname = '/idee'; return NextResponse.rewrite(url, init) }
       return NextResponse.next(init)
     }
     if (PRIVATE_PREFIXES.some((p) => path.startsWith(p))) {

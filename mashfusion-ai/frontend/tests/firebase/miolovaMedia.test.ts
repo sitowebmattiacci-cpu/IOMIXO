@@ -400,3 +400,29 @@ test('EXPORT-7. an archive is a private link, so it really disappears at expiry:
   assert.equal(await objExists(zipPath), false, 'archive deleted'); assert.equal((await fsGet(`events/${id}/exports/${r.exportId}`)).fields, undefined, 'record deleted')
   assert.equal((await fsGet(`events/${id}`)).fields.hasExports.booleanValue, false, 'nothing left to purge for this album')
 })
+
+// ─────────────────────────────────────────── GUEST NAME + ARCHIVE NAME ───────────────────────────────────────────
+
+test('NAME-F1. guest name through the real callable: optional, trimmed, max 40 stored with photo AND video; absent → null; 41 characters refused', async () => {
+  const { id } = await setup(activated())
+  const slot = async (over: Record<string, unknown>) => callAs<Slot>(await guest(), 'createPhotoUpload', { eventId: id, ext: 'jpg', size: 1000, source: 'live_booth', ...over })
+  const nameOf = async (photoId: string) => (await fsGet(`events/${id}/photos/${photoId}`)).fields.guestName
+  const a = await slot({ guestName: '  Giulia Rossi  ' }); assert.equal((await nameOf(a.photoId)).stringValue, 'Giulia Rossi')
+  const v = await slot({ ext: 'mp4', guestName: 'Giulia Rossi', withThumb: true }); assert.equal((await nameOf(v.photoId)).stringValue, 'Giulia Rossi', 'a video carries the name too')
+  const none = await slot({}); assert.ok(!(await nameOf(none.photoId)) || (await nameOf(none.photoId)).nullValue === null, 'no name → null: the album shows "Anonimo"')
+  const blank = await slot({ guestName: '   ' }); const b = await nameOf(blank.photoId); assert.ok(!b || 'nullValue' in b, 'blank → null')
+  const max = await slot({ guestName: 'x'.repeat(40) }); assert.equal((await nameOf(max.photoId)).stringValue, 'x'.repeat(40))
+  assert.match(String(await fails(slot({ guestName: 'x'.repeat(41) }))), /invalid-argument:invalid_payload/)
+})
+
+test('ZIP-F1. the archive has a sensible name (from the album title), the owner is told it, the object downloads as that file; ONE archive object per export', async () => {
+  const { owner, id } = await setup(activated({ title: 'Matrimonio di Anna & Marco' }))
+  for (const m of [photoMedia(301, 50_000), videoMedia(302, 'mp4', 80_000)]) await addMedia(id, m)
+  const r = await callAs<{ exportId: string }>(owner, 'requestAlbumExport', { eventId: id }); const f = await waitExport(id, r.exportId)
+  assert.equal(f.status.stringValue, 'ready'); assert.equal(f.fileName.stringValue, 'matrimonio-di-anna-marco-miolove-originals.zip'); assert.equal(Number(f.processed.integerValue), 2)
+  const u = await callAs<{ url: string; fileName: string }>(owner, 'getAlbumExportUrl', { eventId: id, exportId: r.exportId })
+  assert.equal(u.fileName, 'matrimonio-di-anna-marco-miolove-originals.zip')
+  const res = await fetch(u.url); assert.equal(res.status, 200); assert.match(res.headers.get('content-disposition') ?? '', /filename="matrimonio-di-anna-marco-miolove-originals\.zip"/)
+  const listing = await (await fetch(`http://127.0.0.1:9199/v0/b/demo-iomixo.firebasestorage.app/o?prefix=${encodeURIComponent(`events/${id}/exports/`)}`, { headers: { authorization: 'Bearer owner' } })).json() as any
+  assert.equal((listing.items ?? []).length, 1, 'one archive, not one per file')
+})

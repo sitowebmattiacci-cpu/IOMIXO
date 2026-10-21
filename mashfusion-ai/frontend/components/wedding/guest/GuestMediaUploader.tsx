@@ -5,6 +5,7 @@ import { livePhotos } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { MEDIA_ACCEPT, classifyFile, refusalReason } from '@/lib/media/mediaTypes'
 import { UPLOAD_ERROR_KEYS, FINAL_UPLOAD_REASONS, ALBUM_CLOSED_REASONS } from '@/lib/media/uploadErrors'
+import { GUEST_NAME_MAX, cleanGuestName, loadGuestName, saveGuestName } from '@/lib/media/guestName'
 import { WeddingGuestButton } from './WeddingGuestUI'
 
 type Status = 'waiting' | 'uploading' | 'done' | 'failed'
@@ -17,8 +18,13 @@ let seq = 0
  * hold several 100 MB uploads at once); each one shows its progress, its error and a retry, and a refusal that retrying cannot fix says why. The ORIGINAL
  * of every file is what is stored (lib/events/photoService.ts).
  */
-export function GuestMediaUploader({ slug, onUploaded, guestName }: { slug: string; onUploaded?: () => void; guestName?: string }) {
+export function GuestMediaUploader({ slug, onUploaded }: { slug: string; onUploaded?: () => void }) {
   const { t } = useI18n()
+  // Optional name, remembered per event in this browser (read after mount: SSR has no localStorage). Read at send time through a ref so a change applies to the next file.
+  const [name, setName] = useState('')
+  const nameRef = useRef('')
+  useEffect(() => { const v = loadGuestName(slug); setName(v); nameRef.current = v }, [slug])
+  const onName = (v: string) => { setName(v); nameRef.current = v; saveGuestName(slug, v) }
   const inputRef = useRef<HTMLInputElement>(null)
   const [items, setItems] = useState<Item[]>([])
   const running = useRef(false)
@@ -40,7 +46,7 @@ export function GuestMediaUploader({ slug, onUploaded, guestName }: { slug: stri
     if (!next) return
     running.current = true
     patch(next.key, { status: 'uploading', pct: 0, reason: null })
-    livePhotos.boothUpload(slug, next.file, { guest_name: guestName }, (pct) => patch(next.key, { pct }), { album: true })
+    livePhotos.boothUpload(slug, next.file, { guest_name: cleanGuestName(nameRef.current) }, (pct) => patch(next.key, { pct }), { album: true })
       .then(() => { patch(next.key, { status: 'done', pct: 100 }); onUploaded?.() })
       .catch((e: any) => {
         const reason: string = e?.reason ?? 'upload_missing'
@@ -66,6 +72,13 @@ export function GuestMediaUploader({ slug, onUploaded, guestName }: { slug: stri
 
   return (
     <div data-testid="guest-uploader">
+      <div className="mb-4">
+        <label htmlFor="guest-name" className="mb-1.5 block text-[13px] font-semibold text-wd-ink">{t('media.guest.nameLabel')}</label>
+        <input id="guest-name" data-testid="guest-name-input" type="text" value={name} maxLength={GUEST_NAME_MAX} autoComplete="given-name" enterKeyHint="done"
+          onChange={(e) => onName(e.target.value)} placeholder={t('media.guest.namePlaceholder')}
+          className="min-h-[48px] w-full rounded-2xl border border-wd-border bg-white px-4 text-[16px] text-wd-ink placeholder:text-wd-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink" />
+        <p className="mt-1.5 text-[12px] text-wd-muted">{t('media.guest.nameHint')}</p>
+      </div>
       <input ref={inputRef} type="file" multiple accept={MEDIA_ACCEPT} className="hidden" data-testid="guest-upload-input"
         onChange={(e) => { add(e.target.files); e.target.value = '' }} />
       <WeddingGuestButton onClick={() => inputRef.current?.click()} icon={<ImagePlus className="h-5 w-5" />}>

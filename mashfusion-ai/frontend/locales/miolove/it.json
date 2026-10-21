@@ -401,10 +401,10 @@
       "martinaSelfie": "Selfie di gruppo di Martina e delle amiche alla festa di compleanno",
       "martinaGarden": "Una bambina ride davanti alla torta con le candeline durante la festa in giardino",
       "martinaQrTable": "Tavolo apparecchiato con il cartoncino MIOLOVE «Compleanno di Martina» e il QR code da inquadrare",
-      "weddingCeremony": "Gli sposi si abbracciano durante la cerimonia al tramonto, con gli invitati che applaudono",
       "weddingParty": "Gli sposi ballano con gli invitati durante la festa serale",
       "weddingGuestsPhones": "Invitati sorridenti fotografano gli sposi con il telefono",
-      "baptism": "Una famiglia ammira il neonato in abito bianco accanto al fonte battesimale"
+      "baptism": "Una famiglia ammira il neonato in abito bianco accanto al fonte battesimale",
+      "partyFriends": "Amici che ballano e brindano con un calice in mano a una festa serale in giardino, sotto le luci"
     }
   },
   "media": {
@@ -420,7 +420,10 @@
       "retry": "Riprova",
       "remove": "Rimuovi",
       "allDone": "Grazie! I tuoi file sono nell'album.",
-      "keepOpen": "Tieni aperta questa pagina finché i file non sono inviati."
+      "keepOpen": "Tieni aperta questa pagina finché i file non sono inviati.",
+      "nameLabel": "Il tuo nome (facoltativo)",
+      "namePlaceholder": "Es. Giulia",
+      "nameHint": "Comparirà accanto alle tue foto e ai tuoi video. Se lo lasci vuoto sarai \"Anonimo\"."
     },
     "gallery": {
       "close": "Chiudi",
@@ -447,5 +450,208 @@
   "guestMenu": {
     "photos": "Invia foto e video",
     "photosDesc": "Scatta una foto o scegli foto e video dalla galleria"
+  },
+  "ideas": {
+    "meta": {
+      "title": "Giochi fotografici per matrimonio e feste: 10 idee con QR",
+      "description": "Idee e giochi fotografici per matrimonio, compleanno, battesimo e feste: sfide semplici da fare con il QR MIOLOVE per far scattare foto vere ai tuoi invitati.",
+      "ogTitle": "10 idee per far scattare foto agli invitati con il QR MIOLOVE"
+    },
+    "nav": {
+      "label": "Idee",
+      "breadcrumbHome": "MIOLOVE ALBUM",
+      "breadcrumbIdeas": "Idee per usare MIOLOVE"
+    },
+    "hero": {
+      "eyebrow": "Idee per usare MIOLOVE",
+      "titleA": "Giochi fotografici per i tuoi invitati,",
+      "titleB": "con un solo QR",
+      "sub": "Matrimonio, compleanno, battesimo o una semplice festa: 10 idee originali per trasformare il QR dell'album in un gioco che fa scattare più foto, e più belle, a chi c'è.",
+      "ctaPrimary": "Crea il tuo album gratis",
+      "ctaSecondary": "Vai alle idee",
+      "note": "Nessuna app per gli invitati. Nessun motore di gioco: bastano le funzioni dell'album."
+    },
+    "concept": {
+      "title": "Cos'è un gioco fotografico con il QR",
+      "p1": "Il QR dell'album di solito resta un cartoncino sul tavolo: lo scansionano in pochi e poi se ne dimenticano. Un gioco fotografico gli dà un motivo per essere usato: una piccola sfida, un tema, una gara tra tavoli, che invita ognuno a guardarsi intorno e scattare.",
+      "p2": "Non serve configurare nulla di nuovo. Gli invitati inquadrano il QR, mandano foto e video dal telefono senza registrarsi, e tu vedi tutto nell'album e sul grande schermo. Il gioco lo decidi tu, a parole: sul cartoncino, dal microfono, con un bigliettino a tavola.",
+      "note": "Sono idee e consigli pratici, non regole fisse: prendi quella che ti somiglia e adattala al tuo evento."
+    },
+    "steps": {
+      "title": "Come funziona, in 3 passi",
+      "sub": "Dall'idea alla prima foto in meno di un minuto per ogni invitato.",
+      "s1": {
+        "t": "Scegli un'idea",
+        "d": "Prendi la sfida che si adatta all'evento e al tuo pubblico. Anche una sola, annunciata bene, basta."
+      },
+      "s2": {
+        "t": "Condividi il QR",
+        "d": "Stampa il cartoncino MIOLOVE e aggiungi in una riga la sfida: «Un colore, una foto» o «Caccia ai momenti»."
+      },
+      "s3": {
+        "t": "Guarda arrivare le foto",
+        "d": "Gli invitati inviano foto e video senza app né account. Tu li ritrovi nell'album, in qualità originale, e puoi mostrarli sul grande schermo."
+      }
+    },
+    "list": {
+      "title": "10 idee originali per far scattare gli invitati",
+      "sub": "Per ognuna trovi quanto è facile da organizzare, quando funziona meglio e perché fa la differenza.",
+      "difficulty": "Difficoltà",
+      "when": "Quando usarla",
+      "why": "Perché funziona",
+      "easy": "Facile",
+      "medium": "Media",
+      "fitsFor": "Adatta a"
+    },
+    "items": {
+      "hunt": {
+        "title": "Caccia ai momenti",
+        "text": "Una lista di piccoli momenti da catturare durante la serata: il primo brindisi, qualcuno che balla scalzo, un abbraccio tra nonni e nipoti, il dolce che arriva. Chi vede il momento, lo fotografa.",
+        "when": "Per tutta la festa, annunciando la lista all'inizio del ricevimento.",
+        "why": "Dà a ogni invitato un compito concreto: le foto arrivano proprio dai momenti che altrimenti nessuno scatterebbe."
+      },
+      "tables": {
+        "title": "Tavolo contro tavolo",
+        "text": "Ogni tavolo prova a raccontare la serata a modo suo. Chiedete di scrivere nel campo nome «Nome · Tavolo 4» e, a fine cena, guardate quale tavolo ha raccolto gli scatti più divertenti.",
+        "when": "Durante la cena, quando i tavoli sono già pieni e il clima è rilassato.",
+        "why": "Una sana competizione tra tavoli spinge anche i più timidi a partecipare e rende facile ritrovare chi ha scattato cosa."
+      },
+      "beforeAfter": {
+        "title": "Prima e dopo",
+        "text": "Chiedi due foto dello stesso posto o delle stesse persone: all'inizio della serata e a fine festa. Il tavolo apparecchiato e poi quello distrutto, il gruppo in posa e poi spettinato.",
+        "when": "Apri il gioco all'arrivo e chiudilo con l'ultimo ballo o il taglio della torta.",
+        "why": "Il confronto racconta il tempo che passa e la festa riuscita meglio di mille parole: è una piccola storia fatta di due scatti."
+      },
+      "colour": {
+        "title": "Un colore, una foto",
+        "text": "Scegli un colore (ad esempio il rosso) e invita tutti a trovare qualcosa di quel colore e fotografarlo in modo creativo. Cambia colore a ogni portata o a ogni ora.",
+        "when": "Aperitivo, attesa tra una portata e l'altra, momenti in cui si aspetta.",
+        "why": "Rende la foto un gioco di osservazione: si guarda l'ambiente con occhi nuovi e si trovano dettagli che nessuno avrebbe notato."
+      },
+      "generations": {
+        "title": "Generazioni insieme",
+        "text": "Invita a fare una foto con una persona di un'età diversa: nipote e nonna, cugino piccolo e zio, amica e mamma. Ogni coppia di generazioni diventa un ritratto da conservare.",
+        "when": "Dopo il momento formale, quando tutti si sono sciolti e si mescolano.",
+        "why": "Le foto di famiglia più care sono quelle tra generazioni, e di solito mancano perché nessuno pensa di organizzarle."
+      },
+      "details": {
+        "title": "Dettagli che sfuggono",
+        "text": "I fotografi si concentrano su momenti chiave; gli invitati vedono il resto. Chiedi loro di fotografare i dettagli: le scarpe, le mani, il centrotavola, un biglietto, il bicchiere dimenticato.",
+        "when": "Prima della cerimonia, durante l'allestimento o durante il ricevimento.",
+        "why": "Si ottiene un album di atmosfera, con piccole cose che ricordano la giornata più dei grandi momenti in posa."
+      },
+      "emoji": {
+        "title": "Emoji dal vivo",
+        "text": "Annuncia un'emoji alla volta: 😂 una risata, 😍 uno sguardo innamorato, 🥳 una faccia da festa. Gli invitati la interpretano dal vivo e mandano lo scatto.",
+        "when": "Nei momenti di pausa musicale, prima del dolce, o come riscaldamento a inizio festa.",
+        "why": "È immediato, buffo e funziona con tutte le età: anche chi non ama posare si diverte a fare la faccia giusta."
+      },
+      "angle": {
+        "title": "Prospettiva insolita",
+        "text": "Chiedi foto da un punto di vista inatteso: dal basso, da dietro, dall'alto di una sedia, riflesse in un bicchiere, solo ombre o piedi che ballano.",
+        "when": "In pista o a fine cena, quando c'è energia e voglia di sperimentare.",
+        "why": "Le foto diverse dal solito sono quelle che sorprendono: si vede la festa come la vedono gli invitati, non come un copione."
+      },
+      "candid": {
+        "title": "La foto più spontanea",
+        "text": "Nessuna posa: premia lo scatto più genuino della serata, quello in cui qualcuno ride senza accorgersi di essere fotografato. Alla fine, scegli insieme un vincitore.",
+        "when": "Durante tutta la serata, con un piccolo premio simbolico a fine festa.",
+        "why": "Le foto spontanee sono quelle che le persone amano riguardare, e mettere un obiettivo \"premiabile\" le incoraggia a cercarle."
+      },
+      "keepsake": {
+        "title": "Un ricordo per il festeggiato",
+        "text": "Ogni invitato manda una foto o un breve video con un augurio, un ricordo o un consiglio per chi festeggia: gli sposi, il compleanno, il bimbo battezzato. Si legge o guarda tutto insieme in seguito.",
+        "when": "Chiedilo prima della festa, oppure raccogli i messaggi durante il ricevimento.",
+        "why": "Diventa un regalo collettivo senza costi né organizzazione: un album di voci e volti che la persona festeggiata riguarderà per anni."
+      }
+    },
+    "occasions": {
+      "title": "Un'idea giusta per ogni occasione",
+      "sub": "Come adattare i giochi al tipo di festa, con i consigli che funzionano meglio.",
+      "ideasLabel": "Idee consigliate",
+      "wedding": {
+        "title": "Giochi fotografici per il matrimonio",
+        "text": "A un matrimonio gli invitati sono tanti e di gruppi diversi: i giochi che mescolano tavoli e generazioni funzionano molto bene. Meglio sfide leggere, che non tolgano nulla alla cerimonia.",
+        "tip": "Metti il QR al tavolo e sul cartoncino del programma, e annuncia il gioco con il microfono dopo l'antipasto."
+      },
+      "birthday": {
+        "title": "Giochi fotografici per il compleanno",
+        "text": "Per un compleanno si vuole divertimento immediato: sfide veloci, emoji, foto buffe. Se la festa è per un bambino, coinvolgi i grandi con l'idea del ricordo per il festeggiato.",
+        "tip": "Prepara una lista di 3 sfide e appendila vicino alla torta, dove tutti passano."
+      },
+      "baptism": {
+        "title": "Idee foto per il battesimo",
+        "text": "Il battesimo è una festa di famiglia: funzionano le foto tra generazioni, i dettagli e un messaggio di auguri per il piccolo che crescerà guardando l'album.",
+        "tip": "Chiedi ai nonni di iniziare: se partono loro, tutti gli altri li seguono."
+      },
+      "other": {
+        "title": "Album QR per feste e altri eventi",
+        "text": "Anniversari, lauree, addii al nubilato o al celibato, cene tra amici: qualsiasi occasione con un gruppo di persone può avere il suo album condiviso e la sua sfida.",
+        "tip": "Scegli un'unica sfida facile e ripetila: meglio una cosa chiara che un elenco lungo."
+      }
+    },
+    "benefits": {
+      "title": "Perché giocare con il QR rende l'album migliore",
+      "b1": {
+        "t": "Più foto, da più punti di vista",
+        "d": "Una sfida spinge anche chi di solito non scatta a partecipare: l'album racconta la festa da tanti occhi diversi."
+      },
+      "b2": {
+        "t": "Nessuna app, nessun account",
+        "d": "Gli invitati inquadrano il QR e inviano. Tu non devi spiegare nulla di complicato."
+      },
+      "b3": {
+        "t": "Qualità originale",
+        "d": "Foto e video restano nella qualità con cui sono stati scattati e puoi scaricarli tutti in un unico ZIP."
+      },
+      "b4": {
+        "t": "Tutto in un posto solo",
+        "d": "Niente chat sparse e link scaduti: ogni ricordo finisce nell'album dell'evento e può comparire sul grande schermo."
+      }
+    },
+    "faq": {
+      "title": "Domande frequenti sulle idee",
+      "q1": {
+        "q": "Serve configurare qualcosa per giocare?",
+        "a": "No. Le idee usano ciò che l'album fa già: gli invitati scansionano il QR e inviano foto e video. La sfida la annunci tu, a voce o con un cartoncino, senza impostazioni aggiuntive."
+      },
+      "q2": {
+        "q": "Gli invitati devono installare un'app o registrarsi?",
+        "a": "No. Si apre dal telefono dopo aver inquadrato il QR, senza app e senza account. Possono lasciare un nome, ma è facoltativo."
+      },
+      "q3": {
+        "q": "Come distinguo le foto di un tavolo o di una sfida?",
+        "a": "Chiedi agli invitati di scrivere un nome del tipo «Giulia · Tavolo 4» nel campo nome facoltativo: lo vedrai accanto a ogni foto nell'album."
+      },
+      "q4": {
+        "q": "Posso usare più idee nella stessa festa?",
+        "a": "Certo, ma meglio poche e chiare: una sfida alla volta, annunciata nel momento giusto, funziona meglio di una lista lunga."
+      },
+      "q5": {
+        "q": "Le idee valgono anche per compleanni, battesimi e altre feste?",
+        "a": "Sì. Ogni idea indica a quali occasioni è adatta, e in questa guida trovi consigli specifici per matrimonio, compleanno, battesimo e altri eventi."
+      },
+      "q6": {
+        "q": "Posso provare prima di pagare?",
+        "a": "Sì: puoi creare un album di prova gratuito e vedere come funziona con i tuoi invitati prima di attivare l'album completo."
+      }
+    },
+    "cta": {
+      "title": "Pronto a far giocare i tuoi invitati?",
+      "text": "Crea l'album, stampa il QR e scegli la tua sfida. Bastano pochi minuti.",
+      "button": "Crea il tuo album gratis",
+      "home": "Scopri come funziona MIOLOVE"
+    },
+    "teaser": {
+      "eyebrow": "Idee per usare MIOLOVE",
+      "title": "Il QR diventa un gioco",
+      "text": "Caccia ai momenti, tavolo contro tavolo, un colore una foto: scopri 10 idee semplici per far scattare più foto ai tuoi invitati.",
+      "button": "Scopri le idee",
+      "moreAria": "Vai alla pagina con tutte le idee"
+    },
+    "bridge": {
+      "seeHome": "Torna alla home",
+      "createAlbum": "Crea il tuo album"
+    }
   }
 }
