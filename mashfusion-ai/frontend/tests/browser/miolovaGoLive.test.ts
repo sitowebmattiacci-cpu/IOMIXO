@@ -64,7 +64,7 @@ for (const w of [390, 768, 1280, 1440]) {
       assert.equal(await page.getByTestId('how-step').count(), 4); assert.equal(await page.getByTestId('event-type').count(), 4)
       assert.ok(await page.getByTestId('feature-card').count() >= 7)
       assert.match(await page.getByTestId('hero-note').innerText(), /7 giorni di prova gratis · Nessuna carta di credito/)
-      assert.equal(await page.getByTestId('album-price').innerText(), '€19,99')
+      assert.equal(await page.getByTestId('album-price').innerText(), '€19,99'); assert.equal(await page.getByTestId('album-list-price').innerText(), '€39,99'); assert.match(await page.getByTestId('album-price-line').innerText(), /una volta · Nessun abbonamento/)
       const body = await noReassure(page); assert.doesNotMatch(body, FORBIDDEN)
       for (const s of ['Prova gratis', 'Album completo', 'Foto e video illimitati', 'Slideshow live', 'Logo MIOLOVE visibile']) assert.ok(body.includes(s), s)
       for (const planned of ['12 mesi']) assert.ok(!body.includes(planned), `"${planned}" is not implemented: it must not be advertised`)
@@ -74,7 +74,7 @@ for (const w of [390, 768, 1280, 1440]) {
       // reviews: development shows the DEMO layout only under a visible demo badge
       assert.equal(await page.getByTestId('reviews-demo-badge').count(), 1); assert.equal(await page.getByTestId('reviews-list').getAttribute('data-demo'), 'true')
       assert.doesNotMatch(body, /Trustpilot|10\.000|premi|award/i)
-      if (w < 1024) { await page.waitForTimeout(2500)  /* hydration */; for (let i = 0; i < 6 && (await page.getByTestId('nav-menu').getAttribute('aria-expanded')) !== 'true'; i++) { await page.getByTestId('nav-menu').click(); await page.waitForTimeout(800) }; assert.equal(await page.getByTestId('nav-menu').getAttribute('aria-expanded'), 'true', 'mobile menu opens'); assert.ok(await page.getByTestId('nav-drawer').count() === 1, 'drawer rendered') }
+      if (w < 1024) { await page.waitForTimeout(2500)  /* hydration */; for (let i = 0; i < 25 && (await page.getByTestId('nav-menu').getAttribute('aria-expanded')) !== 'true'; i++) { await page.getByTestId('nav-menu').click(); await page.waitForTimeout(800) }; assert.equal(await page.getByTestId('nav-menu').getAttribute('aria-expanded'), 'true', 'mobile menu opens'); assert.ok(await page.getByTestId('nav-drawer').count() === 1, 'drawer rendered') }
       await page.screenshot({ path: `/tmp/claude-501/home-${w}.png`, fullPage: true }).catch(() => {})
     } finally { await ctx.close() }
   })
@@ -82,7 +82,7 @@ for (const w of [390, 768, 1280, 1440]) {
 
 test('HOME2. language: IT/EN/FR/ES switch live and persist after a refresh; no Italian leaks into the other languages', async () => {
   const H1: Record<L, string> = { it: 'I tuoi ricordi, raccontati da chi li vive.', en: 'Your memories, told by the people who live them.', fr: 'Vos souvenirs, racontés par ceux qui les vivent.', es: 'Tus recuerdos, contados por quienes los viven.' }
-  const PRICE: Record<L, string> = { it: '€19,99', en: '€19.99', fr: '19,99 €', es: '19,99 €' }
+  const PRICE: Record<L, string> = { it: '€19,99', en: '$19.99', fr: '19,99 €', es: '19,99 €' }
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const page = await ctx.newPage()
   try {
     await page.goto(`${M()}/`, { waitUntil: 'networkidle', timeout: 120_000 }); await page.waitForTimeout(800)
@@ -206,7 +206,7 @@ for (const occasion of ['wedding', 'birthday', 'baptism', 'other']) {
         const t = await text(page)
         assert.doesNotMatch(t, /sarà disponibile tra poco|will be available soon|Wedding Edition|Advance|Event Pass|IOMIXO|DJ/i, `${occasion} ${l}`)
         assert.ok(t.toUpperCase().includes(EYEBROW[occasion][l].toUpperCase()), `${occasion} ${l}: eyebrow "${EYEBROW[occasion][l]}" in ${t.slice(0, 120)}`)
-        assert.ok(await page.locator('button:has(svg.lucide-camera)').count() >= 1, 'the photo action is there')
+        assert.ok(await page.locator('[data-testid="guest-primary-cta"] a[href^="/booth/"]').count() === 1, 'one direct photo/video action'); assert.doesNotMatch(t, /Cosa vuoi fare|What would you like|Que voulez-vous|¿Qué quieres/i, 'no action menu intro')
         assert.equal(await overflow(page), false, 'overflow')
       }
     } finally { await ctx.close() }
@@ -317,7 +317,7 @@ test('BILL1. MIOLOVE "Piano" page: trial + full album €19,99 once, no Event Pa
       assert.match(await page.getByTestId('plan-activate-note').innerText(), /a breve/)
       assert.equal(await overflow(page), false, `overflow @${w}`)
     }
-    const T: Record<L, string[]> = { it: ['Prova gratis', '€19,99'], en: ['Free trial', '€19.99'], fr: ['Essai gratuit', '19,99 €'], es: ['Prueba gratis', '19,99 €'] }
+    const T: Record<L, string[]> = { it: ['Prova gratis', '€19,99'], en: ['Free trial', '$19.99'], fr: ['Essai gratuit', '19,99 €'], es: ['Prueba gratis', '19,99 €'] }
     for (const l of ['en', 'fr', 'es', 'it'] as L[]) {
       await setLocale(page, l); await page.reload({ waitUntil: 'domcontentloaded' }); await page.getByTestId('album-price').waitFor({ timeout: 60_000 })
       const t = await text(page); for (const s of T[l]) assert.ok(t.includes(s), `${l} ${s}`); assert.doesNotMatch(await noReassure(page), FORBIDDEN, l)

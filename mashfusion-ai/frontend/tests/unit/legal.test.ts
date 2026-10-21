@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { PRIVACY } from '../../lib/legal/privacy'
 import { TERMS } from '../../lib/legal/terms'
-import { LEGAL_DATE, PRIVACY_EMAIL, TERMS_EMAIL, type LegalDoc, type LegalVars } from '../../lib/legal/types'
+import { LEGAL_DATE, PRIVACY_EMAIL, TERMS_EMAIL, legalEmail, type LegalDoc, type LegalVars } from '../../lib/legal/types'
 
 const LOCALES = ['it', 'en', 'es', 'fr'] as const
 const vars = (miolove: boolean): LegalVars => ({ miolove, brand: miolove ? 'MIOLOVE ALBUM' : 'IOMIXO Live Hub', name: miolove ? 'MIOLOVE ALBUM' : 'IOMIXO', short: miolove ? 'MIOLOVE' : 'IOMIXO' })
@@ -41,6 +41,7 @@ for (const [kind, builders, sections] of [['privacy', PRIVACY, 10], ['terms', TE
 
 test('LG3. shared legal addresses and per-language dates', () => {
   assert.equal(PRIVACY_EMAIL, 'privacy@iomixo.com'); assert.equal(TERMS_EMAIL, 'legal@iomixo.com')
+  assert.equal(legalEmail('privacy', true), 'info@miolovealbum.com'); assert.equal(legalEmail('terms', true), 'info@miolovealbum.com'); assert.equal(legalEmail('terms', false), 'legal@iomixo.com')
   assert.deepEqual(Object.keys(LEGAL_DATE).sort(), ['en', 'es', 'fr', 'it']); assert.equal(LEGAL_DATE.en, 'October 16, 2026')
 })
 

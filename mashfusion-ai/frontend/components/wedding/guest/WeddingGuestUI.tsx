@@ -92,6 +92,21 @@ export function WeddingGuestHero({ names, date, venue, eyebrow = 'Wedding Editio
   )
 }
 
+/** MIOLOVE album guest page: one clear action under the event title (no menu, no "what do you want to do?"). */
+export interface WeddingGuestPrimaryAction { label: string; hint?: string; href: string; icon: ReactNode }
+
+export function WeddingGuestPrimaryCta({ action }: { action: WeddingGuestPrimaryAction }) {
+  return (
+    <div className="text-center" data-testid="guest-primary-cta">
+      <a href={action.href}
+        className="inline-flex min-h-[64px] w-full items-center justify-center gap-3 rounded-[22px] bg-wd-pink px-6 text-[19px] font-semibold text-white shadow-[0_14px_34px_rgba(240,106,155,0.38)] transition hover:bg-wd-pink-hover active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/50">
+        {action.icon}{action.label}
+      </a>
+      {action.hint && <p className="mx-auto mt-3 max-w-[300px] text-[14px] leading-snug text-wd-muted">{action.hint}</p>}
+    </div>
+  )
+}
+
 export function WeddingGuestActionsIntro() {
   const { t } = useI18n()
   return (
@@ -132,7 +147,7 @@ export function WeddingGuestActionList({ items, onSelect }: { items: WeddingGues
 
 /** Full guest home: top bar, hero, notices, actions. Rendered as-is inside the dashboard phone preview. */
 export function WeddingGuestHome({
-  names, date, venue, items, onSelect, languageSlot, notice, footer, eyebrow, emptyText,
+  names, date, venue, items, onSelect, languageSlot, notice, footer, eyebrow, emptyText, primary,
 }: {
   names: string
   date?: string | null
@@ -145,6 +160,8 @@ export function WeddingGuestHome({
   eyebrow?: string
   /** Shown when the owner turned every guest function off (default: the generic "available soon" text of the DJ product). */
   emptyText?: string
+  /** MIOLOVE album: replaces the action menu with a single call to action (`null` = closed, e.g. trial over: only the notice shows). */
+  primary?: WeddingGuestPrimaryAction | null
 }) {
   const { t } = useI18n()
   return (
@@ -152,7 +169,11 @@ export function WeddingGuestHome({
       <WeddingGuestTopBar languageSlot={languageSlot} />
       <WeddingGuestHero names={names} date={date} venue={venue} eyebrow={eyebrow} />
       {notice}
-      {items.length === 0 ? (
+      {primary !== undefined ? (
+        primary ? <WeddingGuestPrimaryCta action={primary} /> : items.length === 0 && emptyText ? (
+          <div className="rounded-[20px] border border-wd-border bg-white p-5 text-center text-[15px] text-wd-muted">{emptyText}</div>
+        ) : null
+      ) : items.length === 0 ? (
         <div className="rounded-[20px] border border-wd-border bg-white p-5 text-center text-[15px] text-wd-muted">
           {emptyText ?? t('guestVisibility.emptyState')}
         </div>

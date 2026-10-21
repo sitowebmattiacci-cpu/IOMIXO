@@ -54,7 +54,7 @@ export function MonitorPreview({ slug, live }: { slug: string; live: boolean }) 
     <div className="min-w-0" data-testid="wd-screen-preview">
       <h2 className="text-base font-bold text-wd-ink">{t('wdAdmin.home.screenPreview')}</h2>
       <p className="mb-3 mt-1 text-[13px] text-wd-muted">{t('wdAdmin.home.screenPreviewDesc')}</p>
-      <div className="relative overflow-hidden rounded-2xl border-[5px] border-wd-ink bg-black">
+      <div className="relative overflow-hidden rounded-2xl bg-black shadow-[0_18px_40px_rgba(31,32,40,0.28)] ring-1 ring-black/10">
         <ScaledFrame src={`/screen/${slug}`} title={t('wdAdmin.home.screenPreview')} width={1280} height={720} testId="preview-monitor-frame" />
         {live && (
           <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-bold text-white">

@@ -1,21 +1,17 @@
 'use client'
 import type { ReactNode } from 'react'
-import { Camera, Heart } from 'lucide-react'
+import Image from 'next/image'
+import { Camera } from 'lucide-react'
+import { useI18n } from '@/lib/i18n'
+import { DEMO_EVENT, type DemoPhoto } from '@/lib/miolove/demoMedia'
 import { cn } from '@/lib/utils'
 
-/** Soft "photo" tiles used by the illustrations (the home never shows fake guest photos or fake people). */
-export const TILE_GRADIENTS = [
-  'from-[#FFD6E4] to-[#F9A8C5]', 'from-[#FFE7D1] to-[#F7B98F]', 'from-[#E4EFE0] to-[#B6D2AE]',
-  'from-[#EADFF7] to-[#C5AEE6]', 'from-[#FBEFD5] to-[#EBCB8B]', 'from-[#FFE0E0] to-[#F1A1A1]',
-] as const
-
-export function Tile({ i, className, icon = false }: { i: number; className?: string; icon?: boolean }) {
+/** A demo photograph (see lib/miolove/demoMedia.ts), optimised by next/image. `sizes` tells the browser how wide it is drawn, so it never downloads more than needed. */
+export function DemoPhotoImg({ photo, className, sizes, priority = false }: { photo: DemoPhoto; className?: string; sizes: string; priority?: boolean }) {
+  const { t } = useI18n()
   return (
-    <div className={cn('relative overflow-hidden rounded-xl bg-gradient-to-br', TILE_GRADIENTS[i % TILE_GRADIENTS.length], className)} aria-hidden>
-      <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-white/30" />
-      <div className="absolute -bottom-4 left-2 h-12 w-12 rounded-full bg-white/20" />
-      {icon && <Heart className="absolute bottom-1.5 right-1.5 h-3.5 w-3.5 text-white/80" fill="currentColor" />}
-    </div>
+    <Image src={photo.src} width={photo.width} height={photo.height} alt={t(photo.altKey)} sizes={sizes} priority={priority} draggable={false} quality={80}
+      style={{ objectPosition: photo.focus }} className={cn('select-none object-cover', className)} />
   )
 }
 
@@ -37,17 +33,38 @@ export function Section({ id, children, tone = 'plain', className }: { id?: stri
   )
 }
 
-/** Illustrated phone showing an album grid + the camera button. Decorative: aria-hidden. */
-export function PhoneMock({ title, className }: { title: string; className?: string }) {
+/**
+ * The guest's phone for the sample event: cover photo, event title + date, the upload button and a strip of the gallery. Same structure as the real
+ * guest page (title, date, one clear action), built from the demo photos.
+ */
+export function PhoneMock({ title, date, cta, className, photos = DEMO_EVENT.photos }: { title: string; date: string; cta: string; className?: string; photos?: readonly DemoPhoto[] }) {
   return (
-    <div className={cn('relative aspect-[9/18.5] w-full rounded-[34px] border-[6px] border-wd-ink bg-white p-3 shadow-[0_30px_60px_rgba(240,106,155,0.28)]', className)} aria-hidden>
-      <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-wd-ink/15" />
-      <p className="mb-2 text-center font-album text-[15px] font-semibold text-wd-ink">{title}</p>
-      <div className="grid grid-cols-2 gap-2">
-        {[0, 1, 2, 3, 4, 5].map((i) => <Tile key={i} i={i} className={i % 3 === 0 ? 'aspect-[4/5]' : 'aspect-square'} icon={i === 1} />)}
+    <div className={cn('relative aspect-[9/18.5] w-full overflow-hidden rounded-[34px] border-[6px] border-wd-ink bg-wd-bg shadow-[0_30px_60px_rgba(240,106,155,0.28)]', className)}>
+      <div className="relative h-[56%] w-full">
+        <DemoPhotoImg photo={photos[0]} className="h-full w-full" sizes="250px" priority />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
+        <div className="absolute left-1/2 top-2 h-1.5 w-12 -translate-x-1/2 rounded-full bg-white/60" />
       </div>
-      <div className="absolute inset-x-0 bottom-4 flex justify-center">
-        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-wd-pink text-white shadow-lg"><Camera className="h-5 w-5" /></span>
+      <div className="-mt-6 relative rounded-t-[26px] bg-wd-bg px-3 pt-4">
+        <p className="text-center font-album text-[17px] font-semibold leading-tight text-wd-ink">{title}</p>
+        <p className="mt-0.5 text-center text-[11px] font-medium text-wd-muted">{date}</p>
+        <span className="mt-3 flex h-10 items-center justify-center gap-1.5 rounded-xl bg-wd-pink text-[12px] font-semibold text-white shadow-[0_8px_18px_rgba(240,106,155,0.35)]"><Camera className="h-4 w-4" />{cta}</span>
+        <div className="mt-3 grid grid-cols-3 gap-1.5">
+          {photos.slice(1, 4).map((p, i) => <DemoPhotoImg key={i} photo={p} className="aspect-[3/4] w-full rounded-lg" sizes="80px" />)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** The big screen of the sample event: one photo full-bleed, event title small in the corner (same layout as the real /screen of an album). */
+export function ScreenMock({ photo, title, date, className }: { photo: DemoPhoto; title: string; date?: string; className?: string }) {
+  return (
+    <div className={cn('relative aspect-video overflow-hidden rounded-xl border-[6px] border-wd-ink bg-black shadow-[0_24px_50px_rgba(31,32,40,0.25)]', className)}>
+      <DemoPhotoImg photo={photo} className="absolute inset-0 h-full w-full" sizes="(min-width:1024px) 400px, 90vw" />
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent px-4 pb-3 pt-10 sm:px-6 sm:pb-4">
+        <p className="font-album text-[15px] font-semibold leading-none text-white sm:text-[22px]">{title}</p>
+        {date && <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.18em] text-white/75 sm:text-[12px]">{date}</p>}
       </div>
     </div>
   )

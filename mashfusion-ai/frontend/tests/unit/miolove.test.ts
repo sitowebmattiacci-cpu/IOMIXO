@@ -5,7 +5,7 @@ import en from '../../locales/miolove/en.json'
 import fr from '../../locales/miolove/fr.json'
 import es from '../../locales/miolove/es.json'
 import {
-  ALBUM_INCLUDED, ALBUM_PRICE_EUR, FEATURE_STATUS, TRIAL_EXCLUDED, TRIAL_INCLUDED, albumPlanState, formatAlbumPrice, visibleItems, MIOLOVE_FORBIDDEN_COPY,
+  ALBUM_INCLUDED, ALBUM_PRICE_EUR, ALBUM_PRICING, formatAlbumListPrice, FEATURE_STATUS, TRIAL_EXCLUDED, TRIAL_INCLUDED, albumPlanState, formatAlbumPrice, visibleItems, MIOLOVE_FORBIDDEN_COPY,
   type FeatureId,
 } from '../../lib/miolove/plans'
 import { DEMO_REVIEWS, reviewsToShow } from '../../lib/miolove/reviews'
@@ -19,7 +19,10 @@ const get = (o: any, path: string) => path.split('.').reduce((a, k) => a?.[k], o
 
 test('PRICING. one price: €19.99 once; formats per language; never monthly', () => {
   assert.equal(ALBUM_PRICE_EUR, 19.99)
-  assert.deepEqual(['it', 'en', 'fr', 'es'].map((l) => formatAlbumPrice(l)), ['€19,99', '€19.99', '19,99 €', '19,99 €'])
+  assert.deepEqual(['it', 'en', 'fr', 'es'].map((l) => formatAlbumPrice(l)), ['€19,99', '$19.99', '19,99 €', '19,99 €'])
+  assert.deepEqual(['it', 'en', 'fr', 'es'].map((l) => formatAlbumListPrice(l)), ['€39,99', '$39.99', '39,99 €', '39,99 €'])
+  assert.ok(ALBUM_PRICING.list.eur > ALBUM_PRICING.current.eur && ALBUM_PRICING.list.usd > ALBUM_PRICING.current.usd, 'the struck-through price is the higher one')
+  assert.equal(formatAlbumPrice('en-GB'), '$19.99', 'any English locale string → dollars')
 })
 
 test('PRICING. only features that really exist are shown (planned ones are skipped), nothing references a missing feature', () => {
@@ -111,4 +114,17 @@ test('SCREEN. a MIOLOVE album plays its photos by default; an explicit "off" is 
   const ev: any = { ...album, title: 'T', djName: null, coupleNames: null, weddingDate: null, venueName: null, status: 'live' }
   const p = composeScreenPayload(ev, {}, null, undefined, null, { photos: [{ id: 'a' } as any] })
   assert.equal(p.photos.length, 1)
+})
+
+test('DEMO. every demo picture of the home exists on disk and the sample event has the same photos everywhere', async () => {
+  const { existsSync } = await import('node:fs'), { join } = await import('node:path')
+  const { DEMO_EVENT, OCCASION_COVERS } = await import('../../lib/miolove/demoMedia')
+  assert.equal(DEMO_EVENT.photos.length, 4)
+  const alts = (l: string) => Object.keys(get(D[l], 'home.demoAlt')); for (const l of Object.keys(D)) for (const p of [...DEMO_EVENT.photos, ...Object.values(OCCASION_COVERS)]) assert.ok(get(D[l], p.altKey), `${l} alt ${p.altKey}`); void alts
+  for (const p of [...DEMO_EVENT.photos, ...Object.values(OCCASION_COVERS)]) assert.ok(existsSync(join(__dirname, '../../public', p.src)), p.src)
+  assert.deepEqual(Object.keys(OCCASION_COVERS).sort(), ['baptism', 'birthday', 'other', 'wedding'])
+})
+
+test('CONTACT. the public MIOLOVE address is info@miolovealbum.com; no iomixo address in the MIOLOVE texts', () => {
+  for (const l of Object.keys(D)) for (const path of leaves(D[l])) assert.doesNotMatch(String(get(D[l], path) ?? ''), /@iomixo\.(com|ai)/i, `${l} ${path}`)
 })

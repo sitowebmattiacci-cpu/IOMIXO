@@ -1,11 +1,24 @@
 // MIOLOVE ALBUM commercial offer. Pure module (no React): shared by the public home, the billing page and the unit tests.
 //
-// Two offers only: the 7-day free trial and the FULL ALBUM, a single payment of €19.99. No subscription, no monthly plan, no Event Pass,
+// Two offers only: the 7-day free trial and the FULL ALBUM, a single payment of €19.99 (list price €39.99, shown struck through). No subscription, no monthly plan, no Event Pass,
 // no IOMIXO plan. A feature is shown to people ONLY if it really exists: every item below points at a `FeatureId`, and the lists skip the ones
 // whose status is still 'planned' (audit 2026-10-19, see MIOLOVE_GO_LIVE.md). Flip a status the day the feature ships and the pages follow.
 // Media engine shipped: video, original quality and download-everything are 'available'; only the 12-month retention is still planned.
 
+import { currencyForLocale, type Currency } from '../pricing'
+
 export const ALBUM_PRICE_EUR = 19.99
+/** Crossed-out list price shown next to the current one. */
+export const ALBUM_LIST_PRICE_EUR = 39.99
+/**
+ * Album price per currency, the single source for every page. EN visitors see dollars (lib/pricing.ts: English → USD, it/fr/es → EUR).
+ * DECISION PENDING (owner): the USD figures mirror the euro ones (same convention as the IOMIXO plans in lib/pricing.ts), no FX conversion is
+ * computed. Change `usd` here, and the Stripe USD price, if a different dollar amount is wanted.
+ */
+export const ALBUM_PRICING: Record<'current' | 'list', Record<Currency, number>> = {
+  current: { eur: ALBUM_PRICE_EUR, usd: 19.99 },
+  list:    { eur: ALBUM_LIST_PRICE_EUR, usd: 39.99 },
+}
 export const TRIAL_DAYS = 7
 export const TRIAL_MEDIA_LIMIT = 50
 
@@ -79,12 +92,23 @@ export function visibleItems(list: PlanItem[], status: Record<FeatureId, Feature
   return list.filter((i) => isFeatureAvailable(i.feature, status) && !(i.unless && status[i.unless] === 'available'))
 }
 
-/** €19,99 / €19.99 / 19,99 € — the amount in the visitor's language. */
-export function formatAlbumPrice(locale: string, amount: number = ALBUM_PRICE_EUR): string {
+/** €19,99 · $19.99 · 19,99 € — an amount in the visitor's currency and number style (it: €19,99 · en: $19.99 · fr / es: 19,99 €). */
+export function formatAlbumAmount(locale: string, amount: number, currency: Currency = currencyForLocale(locale)): string {
   const n = amount.toFixed(2)
-  if (locale === 'en') return `€${n}`
-  if (locale === 'it') return `€${n.replace('.', ',')}`
-  return `${n.replace('.', ',')} €`
+  if (currency === 'usd') return `$${n}`
+  return locale === 'it' ? `€${n.replace('.', ',')}` : `${n.replace('.', ',')} €`
+}
+
+/** The album's current price for this language (EN → dollars, the others → euro). */
+export function formatAlbumPrice(locale: string): string {
+  const c = currencyForLocale(locale)
+  return formatAlbumAmount(locale, ALBUM_PRICING.current[c], c)
+}
+
+/** The crossed-out list price (€39,99 / $39.99 / 39,99 €). */
+export function formatAlbumListPrice(locale: string): string {
+  const c = currencyForLocale(locale)
+  return formatAlbumAmount(locale, ALBUM_PRICING.list[c], c)
 }
 
 /** Words that must never appear in any MIOLOVE surface (they belong to the IOMIXO product). Used by the tests. */

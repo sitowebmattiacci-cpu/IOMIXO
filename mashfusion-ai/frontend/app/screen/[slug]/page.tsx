@@ -18,6 +18,7 @@ import { FrameTitleProvider } from '@/components/brand/eventBrandContext'
 import { occasionText } from '@/lib/occasion'
 import { Logo } from '@/components/Logo'
 import { WeddingPhotoDisplay } from '@/components/wedding/WeddingPhotoGridWall'
+import { AlbumScreenStage } from '@/components/miolove/AlbumScreenStage'
 import { RouletteWheel } from '@/components/wedding/RouletteWheel'
 import { WinnerAnnouncementStage } from '@/components/wedding/WinnerAnnouncementStage'
 import { PartyShell, PartyDivider, PARTY } from '@/components/party/PartyUI'
@@ -253,6 +254,8 @@ export default function ScreenModePage() {
 
   const hasContent = activeSections.length > 0
   const singleSection = activeSections.length === 1
+  // MIOLOVE album showing only its guests' photos with the default (single) layout: an immersive full-screen slideshow instead of the framed card.
+  const immersivePhotos = brand === 'miolove' && singleSection && activeSections[0] === 'photos' && liveBoothLayout === 'single' && (photos as any[]).length > 0
 
   // Solo giochi attivi (no foto/dediche/sondaggi)
   const onlyGames = hasContent &&
@@ -320,6 +323,11 @@ export default function ScreenModePage() {
         <div className="absolute top-0 left-1/4 h-[500px] w-[500px] rounded-full bg-wedding-gold/10 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full bg-wedding-blush/10 blur-3xl pointer-events-none" />
 
+        {immersivePhotos && (
+          <AlbumScreenStage photos={photos as any} title={session.couple_names ?? session.event_name}
+            date={session.wedding_date ? new Date(session.wedding_date).toLocaleDateString(dateLoc, { dateStyle: 'long' }) : null} mark={brandName || undefined} />
+        )}
+
         {/* Empty state - show only couple names centered */}
         {!hasContent && (
           <div className="w-full flex flex-col items-center justify-center p-12 relative z-10">
@@ -345,7 +353,7 @@ export default function ScreenModePage() {
         )}
 
         {/* Single section - show centered */}
-        {hasContent && singleSection && (
+        {hasContent && singleSection && !immersivePhotos && (
           <div className="w-full flex flex-col items-center justify-center p-12 relative z-10 min-h-screen">
             <div className="text-center mb-12">
               <h1 className={`${mediumFontSize} text-wedding-ivory tracking-tight leading-tight mb-4`} style={{ fontFamily: coupleFontFamily }}>

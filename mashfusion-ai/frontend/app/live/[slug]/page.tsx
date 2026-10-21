@@ -204,6 +204,7 @@ export default function PublicLivePage() {
               items={weddingItems}
               eyebrow={isAlbum ? occasionEyebrow(t, session.occasion_type) : undefined}
               emptyText={isAlbum ? t('guestAlbum.photosOff') : undefined}
+              primary={isAlbum ? (weddingKeys.includes('photos') && !closed && !trialExpired ? { label: t('guestMenu.photos'), hint: t('guestMenu.photosDesc'), href: `/booth/${slug}`, icon: <Camera className="h-6 w-6" /> } : null) : undefined}
               onSelect={setActiveGuestSection}
               languageSlot={languageSlot}
               notice={notice}

@@ -3,21 +3,22 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { QRCodeSVG } from 'qrcode.react'
 import {
-  ArrowRight, Camera, Check, ChevronDown, Globe2, Languages, Menu, MonitorPlay, Printer, QrCode, Quote, ShieldCheck,
-  Smartphone, Sparkles, UserCheck, Users, X, Heart, PartyPopper, Baby, CalendarHeart, SlidersHorizontal,
+  ArrowRight, Camera, Check, ChevronDown, Languages, Menu, MonitorPlay, Printer, QrCode, Quote, ShieldCheck,
+  Smartphone, Sparkles, UserCheck, Users, X, Heart, CalendarHeart, SlidersHorizontal,
 } from 'lucide-react'
 import { MioloveLogo } from '@/components/brand/MioloveLogo'
 import { MioloveLanguageSwitcher } from '@/components/wedding/MioloveLanguageSwitcher'
-import { WeddingGuestHome, buildWeddingGuestActions } from '@/components/wedding/guest/WeddingGuestUI'
+import { formatWeddingGuestDate } from '@/components/wedding/guest/WeddingGuestUI'
 import { PublicPlanCards } from '@/components/miolove/PlanCards'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { useI18n, type Locale } from '@/lib/i18n'
-import { isFeatureAvailable, type FeatureId } from '@/lib/miolove/plans'
+import { formatAlbumListPrice, formatAlbumPrice, isFeatureAvailable, type FeatureId } from '@/lib/miolove/plans'
 import { reviewsEnv, reviewsToShow } from '@/lib/miolove/reviews'
-import { occasionEyebrow } from '@/lib/occasion'
+import { DEMO_EVENT, DEMO_PHOTOS, HERO_EXTRAS, OCCASION_COVERS } from '@/lib/miolove/demoMedia'
+import { MIOLOVE_EMAIL } from '@/lib/legal/types'
 import { PORTAL_CONFIG } from '@/lib/portal'
 import { cn } from '@/lib/utils'
-import { PhoneMock, Section, SectionHead, Tile } from './parts'
+import { DemoPhotoImg, PhoneMock, ScreenMock, Section, SectionHead } from './parts'
 
 const btnPrimary = 'inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-wd-pink px-7 text-[16px] font-semibold text-white shadow-[0_10px_30px_rgba(240,106,155,0.35)] transition hover:bg-wd-pink-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/50'
 const btnSecondary = 'inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl border border-wd-border bg-white px-7 text-[16px] font-semibold text-wd-ink transition hover:bg-wd-active focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/40'
@@ -71,7 +72,7 @@ function Header({ showReviews }: { showReviews: boolean }) {
 
 // ── Hero ─────────────────────────────────────────────────────────────────────
 function Hero() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#FFF3F8] via-[#FFF9FB] to-white">
       <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-wd-pink/15 blur-3xl" aria-hidden />
@@ -93,8 +94,8 @@ function Hero() {
         </div>
 
         {/* photo / phone / QR composition */}
-        <div className="relative mx-auto h-[420px] w-full max-w-[420px] sm:h-[500px]" aria-hidden data-testid="hero-visual">
-          <div className="absolute left-1/2 top-0 w-[210px] -translate-x-1/2 sm:w-[250px]"><PhoneMock title={t('home.hero.album')} /></div>
+        <div className="relative mx-auto h-[420px] w-full max-w-[420px] sm:h-[500px]" data-testid="hero-visual">
+          <div className="absolute left-1/2 top-0 w-[210px] -translate-x-1/2 sm:w-[250px]"><PhoneMock title={t(DEMO_EVENT.titleKey)} date={formatWeddingGuestDate(DEMO_EVENT.date, locale) ?? ''} cta={t('home.preview.cta')} /></div>
           <div className="absolute bottom-6 left-0 w-[132px] -rotate-6 rounded-3xl border border-wd-border bg-white p-3 shadow-[0_18px_40px_rgba(31,32,40,0.14)] sm:bottom-10 sm:w-[156px]">
             <QRCodeSVG value={PORTAL_CONFIG.miolove.baseUrl} size={120} level="M" className="h-auto w-full" />
             <p className="mt-2 text-center text-[11px] font-semibold text-wd-ink">{t('home.hero.qrLabel')}</p>
@@ -103,8 +104,8 @@ function Hero() {
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-wd-active text-wd-pink"><Camera className="h-4 w-4" /></span>
             <span className="text-[12px] font-semibold text-wd-ink">{t('home.hero.newPhoto')}</span>
           </div>
-          <Tile i={2} className="absolute -left-1 top-24 h-20 w-16 -rotate-12 shadow-lg sm:h-24 sm:w-20" icon />
-          <Tile i={4} className="absolute bottom-24 right-0 h-20 w-20 rotate-6 shadow-lg sm:bottom-28 sm:h-24 sm:w-24" icon />
+          <div className="absolute -left-1 top-24 w-[68px] -rotate-12 rounded-lg bg-white p-1 pb-3 shadow-lg sm:w-[84px]"><DemoPhotoImg photo={HERO_EXTRAS[0]} className="aspect-[4/5] w-full rounded" sizes="90px" /></div>
+          <div className="absolute bottom-24 right-0 w-[84px] rotate-6 rounded-lg bg-white p-1 pb-3 shadow-lg sm:bottom-28 sm:w-[100px]"><DemoPhotoImg photo={HERO_EXTRAS[1]} className="aspect-square w-full rounded" sizes="100px" /></div>
         </div>
       </div>
     </section>
@@ -131,6 +132,10 @@ function How() {
           )
         })}
       </ol>
+      <figure className="mx-auto mt-12 max-w-4xl overflow-hidden rounded-[28px] border border-wd-border bg-wd-bg" data-testid="how-qr-photo">
+        <DemoPhotoImg photo={DEMO_PHOTOS.martinaQrTable} className="h-[320px] w-full sm:h-[420px]" sizes="(min-width:1024px) 896px, 100vw" />
+        <figcaption className="px-5 py-4 text-center text-[15px] font-medium text-wd-ink">{t('home.how.qrPhotoCaption')}</figcaption>
+      </figure>
     </Section>
   )
 }
@@ -212,17 +217,14 @@ function WhyNotWhatsapp() {
 // ── Event types ──────────────────────────────────────────────────────────────
 function EventTypes() {
   const { t } = useI18n()
-  const items = [
-    { k: 'wedding', icon: Heart, tone: 'from-[#FFD6E4] to-[#F9A8C5]' }, { k: 'birthday', icon: PartyPopper, tone: 'from-[#FFE7D1] to-[#F7B98F]' },
-    { k: 'baptism', icon: Baby, tone: 'from-[#EADFF7] to-[#C5AEE6]' }, { k: 'other', icon: Sparkles, tone: 'from-[#E4EFE0] to-[#B6D2AE]' },
-  ] as const
+  const items = ['wedding', 'birthday', 'baptism', 'other'] as const
   return (
     <Section id="events">
       <SectionHead eyebrow={t('home.events.eyebrow')} title={t('home.events.title')} sub={t('home.events.sub')} />
       <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {items.map(({ k, icon: Icon, tone }) => (
+        {items.map((k) => (
           <li key={k} className="overflow-hidden rounded-3xl border border-wd-border bg-white" data-testid="event-type">
-            <div className={cn('flex h-32 items-center justify-center bg-gradient-to-br', tone)}><Icon className="h-10 w-10 text-white drop-shadow" /></div>
+            <DemoPhotoImg photo={OCCASION_COVERS[k]} className="h-52 w-full" sizes="(min-width:1024px) 280px, (min-width:640px) 45vw, 90vw" />
             <div className="p-5">
               <h3 className="text-[18px] font-bold text-wd-ink">{t(`home.events.${k}.title`)}</h3>
               <p className="mt-1.5 text-[15px] leading-relaxed text-wd-muted">{t(`home.events.${k}.text`)}</p>
@@ -236,42 +238,36 @@ function EventTypes() {
 
 // ── Product preview ──────────────────────────────────────────────────────────
 function Preview() {
-  const { t } = useI18n()
-  // The REAL guest-page components (not a screenshot): same visuals as /live/[slug], rendered at 390px and scaled down. Illustrative sample data only.
-  const items = buildWeddingGuestActions(['photos'], t)
+  const { t, locale } = useI18n()
+  // One sample event ("Compleanno di Martina"): the phone of a guest, the big screen and the owner's album show the SAME photos.
+  const title = t(DEMO_EVENT.titleKey)
+  const date = formatWeddingGuestDate(DEMO_EVENT.date, locale) ?? ''
+  const photos = DEMO_EVENT.photos
   return (
     <Section id="preview" tone="blush">
       <SectionHead eyebrow={t('home.preview.eyebrow')} title={t('home.preview.title')} sub={t('home.preview.sub')} />
-      <div className="mt-12 grid items-start gap-10 lg:grid-cols-[250px_1fr_1fr]" data-testid="home-preview">
+      <div className="mt-12 grid items-start gap-10 lg:grid-cols-[250px_1fr_1fr] lg:items-center" data-testid="home-preview">
         <figure className="mx-auto w-[250px]">
-          <div className="relative h-[520px] overflow-hidden rounded-[34px] border-[6px] border-wd-ink bg-wd-bg shadow-[0_24px_50px_rgba(240,106,155,0.22)]" aria-hidden>
-            <div className="pointer-events-none absolute left-0 top-0 w-[390px] origin-top-left select-none px-5 pb-8 pt-5" style={{ transform: `scale(${238 / 390})` }}>
-              <WeddingGuestHome names={t('home.preview.sampleName')} date={null} items={items} eyebrow={occasionEyebrow(t, 'birthday')} />
-            </div>
-          </div>
+          <PhoneMock title={title} date={date} cta={t('home.preview.cta')} className="!aspect-auto h-[500px]" />
           <figcaption className="mt-4 text-center text-sm font-semibold text-wd-ink">{t('home.preview.guest')}</figcaption>
         </figure>
 
         <figure className="min-w-0">
-          <div className="relative aspect-video overflow-hidden rounded-2xl border-[6px] border-wd-ink bg-gradient-to-br from-[#3A2630] to-[#6B3A4F] shadow-[0_24px_50px_rgba(31,32,40,0.25)]" aria-hidden>
-            <div className="absolute inset-0 grid grid-cols-4 gap-2 p-3 opacity-90 sm:gap-3 sm:p-5">
-              {[0, 1, 2, 3, 4, 5, 3, 1].map((i, n) => <Tile key={n} i={i} className="h-full w-full" />)}
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center bg-black/35">
-              <p className="px-4 text-center font-album text-[22px] font-semibold text-white sm:text-[34px]">{t('home.preview.sampleName')}</p>
-            </div>
-          </div>
+          <ScreenMock photo={photos[1]} title={title} date={date} />
           <figcaption className="mt-4 text-center text-sm font-semibold text-wd-ink">{t('home.preview.screen')}</figcaption>
         </figure>
 
         <figure className="min-w-0">
-          <div className="rounded-2xl border border-wd-border bg-white p-4 shadow-[0_24px_50px_rgba(240,106,155,0.14)] sm:p-5" aria-hidden>
-            <div className="mb-3 flex items-center justify-between">
-              <p className="font-album text-[17px] font-semibold text-wd-ink">{t('home.preview.sampleName')}</p>
-              <Globe2 className="h-4 w-4 text-wd-pink" />
+          <div className="rounded-2xl border border-wd-border bg-white p-4 shadow-[0_24px_50px_rgba(240,106,155,0.14)] sm:p-5">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate font-album text-[17px] font-semibold text-wd-ink">{title}</p>
+                <p className="text-[11px] font-medium text-wd-muted">{t('home.preview.albumCount').replace('{n}', String(photos.length))}</p>
+              </div>
+              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-wd-active px-2.5 py-1 text-[11px] font-bold text-wd-pink-hover"><span className="h-1.5 w-1.5 rounded-full bg-wd-pink" />{t('home.preview.albumLive')}</span>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              {[0, 1, 2, 3, 4, 5].map((i) => <Tile key={i} i={i} className="aspect-square" />)}
+            <div className="grid grid-cols-4 gap-2">
+              {photos.map((p, i) => <DemoPhotoImg key={i} photo={p} className="aspect-[3/4] w-full rounded-xl" sizes="(min-width:1024px) 90px, 20vw" />)}
             </div>
             <div className="mt-3 flex items-center gap-3 rounded-xl bg-wd-bg p-3">
               <QRCodeSVG value={PORTAL_CONFIG.miolove.baseUrl} size={64} level="M" />
@@ -327,7 +323,8 @@ function Pricing() {
 
 // ── FAQ ──────────────────────────────────────────────────────────────────────
 function Faq() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const answer = (k: string) => t(`home.faq.${k}.a`).replace('{price}', formatAlbumPrice(locale)).replace('{list}', formatAlbumListPrice(locale))
   return (
     <Section id="faq">
       <SectionHead eyebrow={t('home.faq.eyebrow')} title={t('home.faq.title')} />
@@ -338,7 +335,7 @@ function Faq() {
               {t(`home.faq.${k}.q`)}
               <ChevronDown className="h-5 w-5 shrink-0 text-wd-pink transition group-open:rotate-180" />
             </summary>
-            <p className="pb-4 pr-8 text-[15px] leading-relaxed text-wd-muted">{t(`home.faq.${k}.a`)}</p>
+            <p className="pb-4 pr-8 text-[15px] leading-relaxed text-wd-muted">{answer(k)}</p>
           </details>
         ))}
       </div>
@@ -391,6 +388,7 @@ function Footer() {
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-wd-ink">{t('home.footer.legal')}</p>
           <Link className={cn(link, 'block')} href="/privacy">{t('home.footer.privacy')}</Link>
           <Link className={cn(link, 'block')} href="/terms">{t('home.footer.terms')}</Link>
+          <a className={cn(link, 'block')} href={`mailto:${MIOLOVE_EMAIL}`} data-testid="footer-contact">{MIOLOVE_EMAIL}</a>
           <div className="pt-2"><p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-wd-ink">{t('home.footer.language')}</p><MioloveLanguageSwitcher /></div>
         </nav>
       </div>

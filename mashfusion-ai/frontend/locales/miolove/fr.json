@@ -124,7 +124,8 @@
       "noBrand": "Aucune marque MIOLOVE",
       "poster": "Cartes et affiches QR à imprimer",
       "allIncluded": "Toutes les fonctionnalités MIOLOVE incluses"
-    }
+    },
+    "listPrice": "Prix catalogue"
   },
   "albumPrivacy": {
     "guestUpload": "Envoi de photos par les invités",
@@ -207,7 +208,8 @@
       "s4": {
         "title": "Revivez les souvenirs",
         "text": "Les photos arrivent dans l'album et défilent en direct sur grand écran grâce au diaporama."
-      }
+      },
+      "qrPhotoCaption": "Une carte sur la table : les invités scannent le QR code et partagent leurs photos dans l'album."
     },
     "features": {
       "eyebrow": "Ce qui est inclus",
@@ -230,12 +232,12 @@
         "text": "Les photos arrivent sur grand écran au moment où elles sont prises."
       },
       "booth": {
-        "title": "Live Booth",
-        "text": "Les invités prennent une photo avec compte à rebours depuis la page de l’événement."
+        "title": "Photos et vidéos des invités",
+        "text": "Ils prennent ou choisissent photos et vidéos sur leur téléphone : elles arrivent dans votre album, en qualité originale."
       },
       "privacy": {
-        "title": "Confidentialité maîtrisée",
-        "text": "Vous décidez si les invités peuvent envoyer des photos et si elles s'affichent à l'écran."
+        "title": "Vous décidez de ce qui s'affiche",
+        "text": "Deux interrupteurs suspendent l'envoi des invités et choisissent si les photos passent sur le grand écran. Seuls ceux qui ont le QR code ou le lien entrent."
       },
       "custom": {
         "title": "Personnalisation",
@@ -321,12 +323,15 @@
     "preview": {
       "eyebrow": "Aperçu du produit",
       "title": "Téléphone, album et grand écran, toujours synchronisés",
-      "sub": "Ce que vous voyez dans le panneau est ce que voient les invités et ce qui s’affiche à l’écran.",
+      "sub": "La même fête, trois écrans : ce qu'un invité envoie est dans l'album et sur le grand écran.",
       "guest": "Page des invités",
       "screen": "Grand écran",
       "album": "Votre album",
       "sample": "Aperçu illustratif",
-      "sampleName": "Anniversaire de Martina"
+      "sampleName": "Anniversaire de Martina",
+      "cta": "Envoyer photos et vidéos",
+      "albumCount": "{n} photos et vidéos",
+      "albumLive": "En direct"
     },
     "reviews": {
       "eyebrow": "Avis",
@@ -357,7 +362,7 @@
       },
       "q4": {
         "q": "Combien ça coûte ?",
-        "a": "L'essai est gratuit. L'Album complet coûte 19,99 € une seule fois : ce n'est pas un abonnement, ce n'est pas mensuel et ce n'est pas par invité."
+        "a": "L'essai est gratuit. L'Album complet coûte {price} (au lieu de {list}) une seule fois : ce n'est pas un abonnement, ce n'est pas mensuel et ce n'est pas par invité."
       },
       "q5": {
         "q": "Faut-il une carte bancaire pour essayer ?",
@@ -390,6 +395,16 @@
       "terms": "Conditions d’utilisation",
       "rights": "Tous droits réservés.",
       "language": "Langue"
+    },
+    "demoAlt": {
+      "martinaCandles": "Martina souffle les bougies de son gâteau d'anniversaire entourée de ses amies",
+      "martinaSelfie": "Selfie de groupe de Martina et de ses amies à la fête d'anniversaire",
+      "martinaGarden": "Une petite fille rit devant le gâteau aux bougies à la fête dans le jardin",
+      "martinaQrTable": "Table dressée avec la carte MIOLOVE « Compleanno di Martina » et le QR code à scanner",
+      "weddingCeremony": "Les mariés s'enlacent pendant la cérémonie au coucher du soleil sous les applaudissements des invités",
+      "weddingParty": "Les mariés dansent avec leurs invités pendant la soirée",
+      "weddingGuestsPhones": "Des invités souriants photographient les mariés avec leur téléphone",
+      "baptism": "Une famille admire le bébé en robe blanche près des fonts baptismaux"
     }
   },
   "media": {

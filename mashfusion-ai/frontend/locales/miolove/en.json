@@ -124,7 +124,8 @@
       "noBrand": "No MIOLOVE mark",
       "poster": "Printable QR cards and posters",
       "allIncluded": "All MIOLOVE features included"
-    }
+    },
+    "listPrice": "List price"
   },
   "albumPrivacy": {
     "guestUpload": "Guest photo uploads",
@@ -207,7 +208,8 @@
       "s4": {
         "title": "Relive the memories",
         "text": "Photos land in the album and play live on the big screen as a slideshow."
-      }
+      },
+      "qrPhotoCaption": "A card on the table: guests scan the QR code and share their photos in the album."
     },
     "features": {
       "eyebrow": "What’s included",
@@ -230,12 +232,12 @@
         "text": "Photos reach the big screen as they are taken."
       },
       "booth": {
-        "title": "Live Booth",
-        "text": "Guests snap a photo with a countdown right from the event page."
+        "title": "Guest photos and videos",
+        "text": "Guests take or pick photos and videos on their phone: they land in your album, in original quality."
       },
       "privacy": {
-        "title": "Privacy under control",
-        "text": "Decide whether guests can send photos and whether to show them on the screen."
+        "title": "You decide what shows",
+        "text": "Two switches pause guest uploads and choose whether photos go on the big screen. Only people with the QR code or link get in."
       },
       "custom": {
         "title": "Personalization",
@@ -321,12 +323,15 @@
     "preview": {
       "eyebrow": "Product preview",
       "title": "Phone, album and big screen, always in sync",
-      "sub": "What you see in the panel is what guests see and what shows up on the screen.",
+      "sub": "Same party, three screens: what a guest sends is in the album and on the big screen.",
       "guest": "Guest page",
       "screen": "Big screen",
       "album": "Your album",
       "sample": "Illustrative preview",
-      "sampleName": "Martina’s birthday"
+      "sampleName": "Martina’s birthday",
+      "cta": "Send photos and videos",
+      "albumCount": "{n} photos and videos",
+      "albumLive": "Live"
     },
     "reviews": {
       "eyebrow": "Reviews",
@@ -357,7 +362,7 @@
       },
       "q4": {
         "q": "How much does it cost?",
-        "a": "The trial is free. The Full album costs €19.99 once: it is not a subscription, it is not monthly and it is not per guest."
+        "a": "The trial is free. The Full album costs {price} (instead of {list}) once: it is not a subscription, it is not monthly and it is not per guest."
       },
       "q5": {
         "q": "Do I need a credit card to try it?",
@@ -390,6 +395,16 @@
       "terms": "Terms of service",
       "rights": "All rights reserved.",
       "language": "Language"
+    },
+    "demoAlt": {
+      "martinaCandles": "Martina blows out the candles on her birthday cake surrounded by friends",
+      "martinaSelfie": "Group selfie of Martina and her friends at the birthday party",
+      "martinaGarden": "A little girl laughs in front of the candle-lit cake at the garden party",
+      "martinaQrTable": "Set table with the MIOLOVE card “Compleanno di Martina” and the QR code to scan",
+      "weddingCeremony": "The newlyweds embrace during the sunset ceremony while guests applaud",
+      "weddingParty": "The newlyweds dance with their guests at the evening party",
+      "weddingGuestsPhones": "Smiling guests photograph the newlyweds with their phones",
+      "baptism": "A family admires the baby in a white gown next to the baptismal font"
     }
   },
   "media": {

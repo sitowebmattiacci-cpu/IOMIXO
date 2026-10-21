@@ -25,7 +25,8 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
   const sessionId: string = session.id
   const slug: string = session.public_slug
   const downloadAllLocked = couple && session.access_mode !== 'activated'
-  const [source, setSource] = useState<'album' | 'booth'>(initialSource)
+  // A MIOLOVE album has ONE guest photo/video collection (the guest page → /booth/[slug] upload feeds it): no separate "Live Booth" view.
+  const [source, setSource] = useState<'album' | 'booth'>(couple ? 'album' : initialSource)
   const [filter, setFilter] = useState<MediaFilter>('all')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [uploading, setUploading] = useState(false)
@@ -107,14 +108,14 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
               {selectedItems.length ? `${t('wdAdmin.photos.download')} (${selectedItems.length})` : t('wdAdmin.photos.downloadAll')}
             </WdButton>
           )}
-          <div className="inline-flex rounded-2xl border border-wd-border bg-white p-1">
+          {!couple && <div className="inline-flex rounded-2xl border border-wd-border bg-white p-1">
             {([['album', t('weddingPanels.guestAlbum')], ['booth', t('weddingPanels.liveBooth')]] as const).map(([v, l]) => (
               <button key={v} onClick={() => { setSource(v); setSelected(new Set()) }}
                 className={cn('inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors', source === v ? 'bg-wd-active text-wd-pink' : 'text-wd-muted hover:text-wd-ink')}>
                 {v === 'booth' && <Camera className="h-3.5 w-3.5" />}{l}
               </button>
             ))}
-          </div>
+          </div>}
         </div>
       </div>
 

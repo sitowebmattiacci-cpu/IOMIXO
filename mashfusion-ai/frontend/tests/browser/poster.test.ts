@@ -242,7 +242,7 @@ for (const [portal, vp] of [['miolove', 1280], ['miolove', 390], ['iomixo', 1280
           const text = await page.evaluate(() => document.body.innerText)
           assert.match(text, LEGAL[code].updated); assert.match(text, LEGAL[code][kind === 'privacy' ? 'privacyBody' : 'termsBody'])
           assert.match(text, new RegExp(brand)); assert.doesNotMatch(text, portal === 'miolove' ? /IOMIXO/ : /MIOLOVE/, 'no foreign brand')
-          assert.ok(await page.locator(`a[href="mailto:${kind === 'privacy' ? 'privacy' : 'legal'}@iomixo.com"]`).count() >= 1, 'shared legal address kept')
+          assert.ok(await page.locator(`a[href="mailto:${portal === 'miolove' ? 'info@miolovealbum.com' : kind === 'privacy' ? 'privacy@iomixo.com' : 'legal@iomixo.com'}"]`).count() >= 1, 'portal contact address kept')
           assert.equal(await page.locator('a[href="/' + (kind === 'privacy' ? 'terms' : 'privacy') + '"]').first().innerText(), LEGAL[code][kind === 'privacy' ? 'terms' : 'privacy'])
           assert.equal(await overflow(page), false, `${kind} ${code} overflow`)
         }

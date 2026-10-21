@@ -323,10 +323,7 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
       await card.getByRole('button', { name: /Copia link/ }).click(); assert.equal(await page.evaluate(() => navigator.clipboard.readText()), guestUrl)
       assert.equal(await card.locator('a').first().getAttribute('href'), guestUrl)
       assert.doesNotMatch(await page.evaluate(() => document.body.innerText), NO_DJ, 'Photos: no DJ / Party copy'); assert.equal(await overflow(page), false, 'photos overflow')
-      await page.getByRole('button', { name: /^Live Booth/ }).first().click(); await page.waitForTimeout(800)
-      assert.deepEqual(await qrValues(page), [boothUrl], 'Booth QR')
-      await page.getByRole('button', { name: /Copia link/ }).first().click(); assert.equal(await page.evaluate(() => navigator.clipboard.readText()), boothUrl)
-      assert.ok(await page.locator(`a[href="${boothUrl}"]`).count() > 0, 'Open booth'); assert.equal(await overflow(page), false, 'booth overflow')
+      assert.equal(await page.getByRole('button', { name: /^Live Booth/ }).count(), 0, 'one guest collection: no separate Live Booth view in a MIOLOVE album')
 
       // Poster
       await openTab('Poster')

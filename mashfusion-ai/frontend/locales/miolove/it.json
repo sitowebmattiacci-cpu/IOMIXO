@@ -124,7 +124,8 @@
       "noBrand": "Nessun marchio MIOLOVE",
       "poster": "Card e poster QR da stampare",
       "allIncluded": "Tutte le funzionalità MIOLOVE incluse"
-    }
+    },
+    "listPrice": "Prezzo di listino"
   },
   "albumPrivacy": {
     "guestUpload": "Invio foto degli ospiti",
@@ -207,7 +208,8 @@
       "s4": {
         "title": "Rivivi i ricordi",
         "text": "Le foto compaiono nell'album e scorrono in diretta sul maxischermo con lo slideshow."
-      }
+      },
+      "qrPhotoCaption": "Un cartoncino sul tavolo: gli invitati inquadrano il QR code e condividono le loro foto nell'album."
     },
     "features": {
       "eyebrow": "Cosa include",
@@ -230,12 +232,12 @@
         "text": "Le foto arrivano sul maxischermo mentre vengono scattate."
       },
       "booth": {
-        "title": "Live Booth",
-        "text": "Gli invitati scattano una foto con il countdown direttamente dalla pagina dell’evento."
+        "title": "Foto e video degli ospiti",
+        "text": "Scattano o scelgono foto e video dal telefono: arrivano nel tuo album, in qualità originale."
       },
       "privacy": {
-        "title": "Privacy sotto controllo",
-        "text": "Decidi se gli invitati possono inviare foto e se mostrarle sullo schermo."
+        "title": "Tu decidi cosa si vede",
+        "text": "Con due interruttori sospendi l'invio degli ospiti e scegli se le foto vanno sul maxischermo. Entra solo chi ha il QR code o il link."
       },
       "custom": {
         "title": "Personalizzazione",
@@ -321,12 +323,15 @@
     "preview": {
       "eyebrow": "Anteprima del prodotto",
       "title": "Telefono, album e maxischermo, sempre allineati",
-      "sub": "Quello che vedi nel pannello è ciò che vedono gli invitati e ciò che appare sullo schermo.",
+      "sub": "Stessa festa, tre schermate: quello che invia l'ospite è nell'album e sul maxischermo.",
       "guest": "Pagina degli ospiti",
       "screen": "Maxischermo",
       "album": "Il tuo album",
       "sample": "Anteprima illustrativa",
-      "sampleName": "Compleanno di Martina"
+      "sampleName": "Compleanno di Martina",
+      "cta": "Invia foto e video",
+      "albumCount": "{n} foto e video",
+      "albumLive": "In diretta"
     },
     "reviews": {
       "eyebrow": "Recensioni",
@@ -357,7 +362,7 @@
       },
       "q4": {
         "q": "Quanto costa?",
-        "a": "La prova è gratis. L'Album completo costa €19,99 una volta sola: non è un abbonamento, non si paga al mese e non si paga per invitato."
+        "a": "La prova è gratis. L'Album completo costa {price} (invece di {list}) una volta sola: non è un abbonamento, non si paga al mese e non si paga per invitato."
       },
       "q5": {
         "q": "Serve la carta di credito per provare?",
@@ -390,6 +395,16 @@
       "terms": "Termini di servizio",
       "rights": "Tutti i diritti riservati.",
       "language": "Lingua"
+    },
+    "demoAlt": {
+      "martinaCandles": "Martina soffia le candeline della sua torta di compleanno circondata dalle amiche",
+      "martinaSelfie": "Selfie di gruppo di Martina e delle amiche alla festa di compleanno",
+      "martinaGarden": "Una bambina ride davanti alla torta con le candeline durante la festa in giardino",
+      "martinaQrTable": "Tavolo apparecchiato con il cartoncino MIOLOVE «Compleanno di Martina» e il QR code da inquadrare",
+      "weddingCeremony": "Gli sposi si abbracciano durante la cerimonia al tramonto, con gli invitati che applaudono",
+      "weddingParty": "Gli sposi ballano con gli invitati durante la festa serale",
+      "weddingGuestsPhones": "Invitati sorridenti fotografano gli sposi con il telefono",
+      "baptism": "Una famiglia ammira il neonato in abito bianco accanto al fonte battesimale"
     }
   },
   "media": {

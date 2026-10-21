@@ -26,3 +26,6 @@ export const pick = (v: LegalVars, pair: readonly [string, string]) => (v.miolov
 export const LEGAL_DATE: Record<Locale, string> = { en: 'October 16, 2026', it: '16 ottobre 2026', es: '16 de octubre de 2026', fr: '16 octobre 2026' }
 export const PRIVACY_EMAIL = 'privacy@iomixo.com'
 export const TERMS_EMAIL = 'legal@iomixo.com'
+/** The only public contact of MIOLOVE ALBUM (Privacy, Terms, content reports, support): MIOLOVE pages never show an iomixo.com address. */
+export const MIOLOVE_EMAIL = 'info@miolovealbum.com'
+export const legalEmail = (kind: 'privacy' | 'terms', miolove: boolean): string => (miolove ? MIOLOVE_EMAIL : kind === 'privacy' ? PRIVACY_EMAIL : TERMS_EMAIL)

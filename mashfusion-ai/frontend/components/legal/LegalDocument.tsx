@@ -5,7 +5,7 @@ import { useI18n } from '@/lib/i18n'
 import type { PortalConfig } from '@/lib/portal'
 import { PRIVACY } from '@/lib/legal/privacy'
 import { TERMS } from '@/lib/legal/terms'
-import { LEGAL_DATE, PRIVACY_EMAIL, TERMS_EMAIL, type LegalVars } from '@/lib/legal/types'
+import { LEGAL_DATE, legalEmail, type LegalVars } from '@/lib/legal/types'
 import { LegalMail, LegalPage, LegalSection } from './LegalPage'
 
 /** **bold**, {{mail}}, {{privacy:link text}} → React nodes. */
@@ -24,7 +24,7 @@ export function LegalDocument({ kind, config }: { kind: 'privacy' | 'terms'; con
   const miolove = config.id === 'miolove'
   const vars: LegalVars = { miolove, brand: config.brand, name: miolove ? config.brand : 'IOMIXO', short: miolove ? 'MIOLOVE' : 'IOMIXO' }
   const doc = (kind === 'privacy' ? PRIVACY : TERMS)[locale](vars)
-  const email = kind === 'privacy' ? PRIVACY_EMAIL : TERMS_EMAIL
+  const email = legalEmail(kind, miolove)
   const other = kind === 'privacy' ? { href: '/terms', label: t('legal.termsTitle') } : { href: '/privacy', label: t('legal.privacyTitle') }
   return (
     <LegalPage config={config} title={t(kind === 'privacy' ? 'legal.privacyTitle' : 'legal.termsTitle')} updated={LEGAL_DATE[locale]} otherLink={other}>

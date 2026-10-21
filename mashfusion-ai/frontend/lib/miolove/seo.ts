@@ -5,7 +5,8 @@ import en from '@/locales/miolove/en.json'
 import fr from '@/locales/miolove/fr.json'
 import es from '@/locales/miolove/es.json'
 import { PORTAL_CONFIG } from '@/lib/portal'
-import { ALBUM_PRICE_EUR } from './plans'
+import { currencyForLocale } from '../pricing'
+import { ALBUM_PRICING } from './plans'
 
 type L = 'it' | 'en' | 'fr' | 'es'
 const DICT: Record<L, any> = { it, en, fr, es }
@@ -48,7 +49,7 @@ export function mioloveStructuredData(lang: L = 'it') {
         operatingSystem: 'Web', inLanguage: SEO_LANGUAGES, publisher: { '@id': orgId },
         offers: [
           { '@type': 'Offer', name: DICT[lang].albumPlan.trialName, price: '0', priceCurrency: 'EUR', url: `${base()}/register` },
-          { '@type': 'Offer', name: DICT[lang].albumPlan.albumName, price: ALBUM_PRICE_EUR.toFixed(2), priceCurrency: 'EUR', url: `${base()}/register` },
+          { '@type': 'Offer', name: DICT[lang].albumPlan.albumName, price: ALBUM_PRICING.current[currencyForLocale(lang)].toFixed(2), priceCurrency: currencyForLocale(lang).toUpperCase(), url: `${base()}/register` },
         ],
       },
     ],

@@ -78,14 +78,12 @@ for (const vp of vps) {
       assert.equal((await quota(page).innerText()).replace(/\s+/g, ' '), `0 / ${LIMIT} contenuti`)
       assert.equal(await overflow(page), false, 'photos overflow')
 
-      // Live Booth: not paywalled, link + QR + copy + open
-      await page.getByRole('button', { name: /Live Booth/ }).first().click({ timeout: 30_000 })   // the Photos page segment (couples have no separate Booth tab)
-      await page.getByText(/Live Booth attivo/).first().waitFor({ timeout: 30_000 })
-      const booth = await page.evaluate(() => document.body.innerText)
-      assert.doesNotMatch(booth, /bloccat|Advance|Event Pass/i); assert.equal(await overflow(page), false, 'booth overflow')
-      assert.ok(await page.locator('svg[width="88"]').first().isVisible(), 'booth QR')
-      assert.ok(await page.getByRole('button', { name: /Copia link/ }).first().isVisible() && await page.getByRole('link', { name: /^Apri/ }).first().isVisible(), 'copy + open')
-      await page.screenshot({ path: `/tmp/trial-booth-${vp.width}.png` }).catch(() => {})
+      // One guest collection: no separate Live Booth view; the guest link + QR + copy + open are not paywalled
+      assert.equal(await page.getByRole('button', { name: /Live Booth/ }).count(), 0, 'no Live Booth segment in a MIOLOVE album')
+      const link = page.getByTestId('wd-photos-guest-link'); await link.waitFor({ timeout: 30_000 })
+      assert.doesNotMatch(await page.evaluate(() => document.body.innerText), /bloccat|Advance|Event Pass/i)
+      assert.ok(await page.locator('svg[width="104"]').first().isVisible(), 'guest QR')
+      assert.ok(await link.getByRole('button', { name: /Copia link/ }).isVisible() && await link.getByRole('link', { name: /^Apri/ }).isVisible(), 'copy + open')
 
       // guest uploads -> counter 1, shown in the owner's page
       const g1 = await guestUpload(guestCtx, a.slug)

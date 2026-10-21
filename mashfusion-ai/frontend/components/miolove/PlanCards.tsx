@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { Check, Minus } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
-import { ALBUM_INCLUDED, TRIAL_EXCLUDED, TRIAL_INCLUDED, formatAlbumPrice, visibleItems, type AlbumPlanKind } from '@/lib/miolove/plans'
+import { ALBUM_INCLUDED, TRIAL_EXCLUDED, TRIAL_INCLUDED, formatAlbumListPrice, formatAlbumPrice, visibleItems, type AlbumPlanKind } from '@/lib/miolove/plans'
 
 /** The two MIOLOVE offers, side by side: free trial and full album (single payment). Used by the public home and by the billing page. */
 export function PlanCards({ current, trialCta, albumCta, className }: {
@@ -53,13 +53,14 @@ export function PlanCards({ current, trialCta, albumCta, className }: {
             <h3 className="text-xl font-bold text-wd-ink">{t('albumPlan.albumName')}</h3>
             {current === 'active' && <span className="rounded-full bg-wd-active px-3 py-1 text-xs font-bold text-wd-pink">{t('albumPlan.current')}</span>}
           </div>
-          <p className="mt-4 flex items-baseline gap-2">
-            <span className="text-4xl font-bold tracking-tight text-wd-ink" data-testid="album-price">{formatAlbumPrice(locale)}</span>
-            <span className="text-base font-medium text-wd-muted">{t('albumPlan.albumOnce')}</span>
+          <p className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <s className="text-2xl font-semibold text-wd-muted/80 decoration-wd-pink/70 decoration-2" data-testid="album-list-price" aria-label={t('albumPlan.listPrice')}>{formatAlbumListPrice(locale)}</s>
+            <span className="text-5xl font-bold tracking-tight text-wd-ink" data-testid="album-price">{formatAlbumPrice(locale)}</span>
           </p>
+          <p className="mt-1.5 text-[15px] font-semibold text-wd-pink-hover" data-testid="album-price-line">{t('albumPlan.albumOnce')} · {t('albumPlan.noSubscription')}</p>
           {/* The five reassurances: they deny a subscription on purpose (tests ignore this block when they look for subscription wording). */}
           <ul className="mt-3 flex flex-wrap gap-2" data-reassure="true">
-            {['oneTime', 'notMonthly', 'notPerGuest', 'noSubscription', 'noUpgrade'].map((k) => (
+            {['oneTime', 'notMonthly', 'notPerGuest', 'noUpgrade'].map((k) => (
               <li key={k} className="rounded-full bg-wd-active px-3 py-1 text-xs font-semibold text-wd-pink-hover">{t(`albumPlan.${k}`)}</li>
             ))}
           </ul>
