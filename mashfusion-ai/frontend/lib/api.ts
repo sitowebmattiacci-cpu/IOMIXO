@@ -61,6 +61,11 @@ export const billing = {
     return this.getEventPasses()
   },
 
+  /** MIOLOVE: opens Stripe Checkout for the one-time activation of the given album (a Firebase event id). Activation itself happens on the server, from Stripe's verified webhook. */
+  async createAlbumCheckout(eventId: string, locale: string): Promise<{ url: string }> {
+    return need(await (await billingFs()).albumCheckout(eventId, locale))
+  },
+
   async createPortalSession(portal?: 'iomixo' | 'miolove'): Promise<{ url: string }> {
     return need(await (await billingFs()).portal(portal))
   },

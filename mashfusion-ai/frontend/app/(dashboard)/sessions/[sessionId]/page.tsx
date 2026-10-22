@@ -36,6 +36,7 @@ import { WeddingAdminShell, type WeddingNavKey } from '@/components/wedding/admi
 import { WeddingHomePage } from '@/components/wedding/admin/WeddingHomePage'
 import { publicOriginFor, djToolsOrigin } from '@/lib/portalLinks'
 import { WeddingPhotosPage } from '@/components/wedding/admin/WeddingPhotosPage'
+import { PaymentReturn } from '@/components/miolove/PaymentReturn'
 import { WeddingPosterPage } from '@/components/wedding/admin/WeddingPosterPage'
 import { MiolovePosterEditor } from '@/components/wedding/admin/MiolovePosterEditor'
 import {
@@ -459,6 +460,7 @@ export default function SessionDetailPage() {
   const tab = isCouple ? (isCoupleWeddingTab(rawTab) ? rawTab : 'home') : (isMioloveOnlyTab(rawTab) ? 'home' : rawTab)
   const dashSection = (
     <>
+      {isCouple && <PaymentReturn session={session} />}
       {tab === 'home' && (
         <WeddingHomePage session={session} pendingRequests={pending.length} togglingActive={togglingActive} onToggleActive={toggleActive} couple={isCouple} />
       )}

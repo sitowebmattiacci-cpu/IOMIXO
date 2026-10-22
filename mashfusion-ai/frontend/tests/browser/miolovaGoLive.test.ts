@@ -302,7 +302,7 @@ test('OWN3. poster / QR card: LOCKED on a trial album (Album completo CTA), open
 })
 
 // ── 5. Plan / billing ──────────────────────────────────────────────────────────────────────────────────
-test('BILL1. MIOLOVE "Piano" page: trial + full album €19,99 once, no Event Pass / Advance / monthly / IOMIXO, no fake pay button; 4 languages; 390 / 768 / 1280 / 1440', async () => {
+test('BILL1. MIOLOVE "Piano" page: trial + full album €19,99 once, no Event Pass / Advance / monthly / IOMIXO, a live (enabled) activation button; 4 languages; 390 / 768 / 1280 / 1440', async () => {
   const a = await album('birthday')
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const page = await ctx.newPage()
   try {
@@ -313,8 +313,8 @@ test('BILL1. MIOLOVE "Piano" page: trial + full album €19,99 once, no Event Pa
       await page.getByTestId('billing-status').filter({ hasText: 'Prova gratis in corso' }).waitFor({ timeout: 60_000 })
       const t = await noReassure(page); assert.doesNotMatch(t, FORBIDDEN, `@${w}`); assert.doesNotMatch(t, /Abbonamento/)
       for (const s of ['Prova gratis', 'Album completo', '€19,99', 'una volta']) assert.ok((await text(page)).includes(s), s)
-      assert.equal(await page.getByTestId('plan-activate').isDisabled(), true, 'the activation button is not wired (no Stripe product yet) and says so')
-      assert.match(await page.getByTestId('plan-activate-note').innerText(), /a breve/)
+      await page.getByTestId('plan-activate').waitFor({ timeout: 60_000 }); await until(async () => !(await page.getByTestId('plan-activate').isDisabled()), 30_000, 'the activation button is live')
+      assert.match(await page.getByTestId('plan-activate-note').innerText(), /Pagamento unico.*Nessun abbonamento/)
       assert.equal(await overflow(page), false, `overflow @${w}`)
     }
     const T: Record<L, string[]> = { it: ['Prova gratis', '€19,99'], en: ['Free trial', '$19.99'], fr: ['Essai gratuit', '19,99 €'], es: ['Prueba gratis', '19,99 €'] }

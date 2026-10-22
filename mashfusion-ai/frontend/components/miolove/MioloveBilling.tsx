@@ -1,6 +1,8 @@
 'use client'
 import useSWR from 'swr'
 import { format } from 'date-fns'
+import { useState } from 'react'
+import toast from 'react-hot-toast'
 import { billing } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { useAlbumPlan } from '@/lib/miolove/useAlbumPlan'
@@ -10,12 +12,13 @@ import { PlanCards, planBtnSecondary } from './PlanCards'
 /**
  * MIOLOVE "Piano": where the album stands (free trial / full album) and the two offers. Nothing about subscriptions, Event Pass or IOMIXO plans.
  *
- * The "Attiva album" button is deliberately NOT wired: the one-time Stripe product for the full album does not exist yet (see MIOLOVE_GO_LIVE.md,
- * blocker B1). A button that opens nothing would be a fake, so until the checkout exists the card says so plainly.
+ * "Attiva album" opens the one-time Stripe Checkout of the album to activate (server-side price, €19.99 / $19.99). It never activates anything itself.
  */
 export function MioloveBilling() {
   const { t, locale } = useI18n()
-  const { state, loading } = useAlbumPlan()
+  const { state, loading, activatable } = useAlbumPlan()
+  const [paying, setPaying] = useState(false)
+  const [cancelled] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('payment') === 'cancelled')
   const { data: payments } = useSWR(['payments', 'miolove'], () => billing.getPaymentHistory(10, 'miolove'), { onError: () => {} })
 
   const statusKey = { none: 'albumPlan.statusNone', trial: 'albumPlan.statusTrial', trialEnded: 'albumPlan.statusTrialEnded', active: 'albumPlan.statusActive' }[state.kind]
@@ -27,9 +30,20 @@ export function MioloveBilling() {
     ? t('albumPlan.mediaUsed').replace('{n}', String(Math.min(state.used, state.limit))).replace('{max}', String(state.limit))
     : null
 
+  // Opens Stripe Checkout for the album to activate. Nothing is activated here: only the verified webhook does that (the page just follows the album afterwards).
+  const activate = async () => {
+    if (!activatable?.id || paying) return
+    setPaying(true)
+    try { window.location.assign((await billing.createAlbumCheckout(activatable.id, locale)).url) }
+    catch (e: any) { setPaying(false); toast.error(e?.message ?? t('common.errorGeneric')) }
+  }
+
   return (
     <div className="flex-1 overflow-y-auto" data-testid="miolove-billing" data-plan={state.kind}>
       <WdPage width="wide" title={t('albumPlan.title')} subtitle={t('albumPlan.subtitle')}>
+        {cancelled && state.kind !== 'active' && (
+          <p className="rounded-2xl border border-wd-border bg-white px-4 py-3 text-sm font-medium text-wd-ink" role="status" data-testid="payment-cancelled">{t('albumPlan.paymentCancelled')}</p>
+        )}
         <WdCard>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-wd-muted">{t('albumPlan.yourPlan')}</p>
           <p className="mt-2 text-2xl font-bold text-wd-ink" data-testid="billing-status">{loading ? '…' : t(statusKey)}</p>
@@ -43,10 +57,11 @@ export function MioloveBilling() {
             : <a href="/sessions" className={planBtnSecondary}>{t('roles.myAlbums')}</a>}
           albumCta={state.kind === 'active' ? null : (
             <div>
-              <button type="button" disabled data-testid="plan-activate" className="inline-flex min-h-[48px] w-full cursor-not-allowed items-center justify-center rounded-2xl bg-wd-pink px-5 text-[15px] font-semibold text-white opacity-50">
-                {t('albumPlan.activate')}
+              <button type="button" onClick={activate} disabled={paying || loading || !activatable} data-testid="plan-activate"
+                className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-wd-pink px-5 text-[15px] font-semibold text-white transition hover:bg-wd-pink-hover disabled:cursor-not-allowed disabled:opacity-60">
+                {paying ? t('albumPlan.activating') : t('albumPlan.activate')}
               </button>
-              <p className="mt-3 text-center text-[13px] text-wd-muted" data-testid="plan-activate-note">{t('albumPlan.activateSoon')}</p>
+              <p className="mt-3 text-center text-[13px] text-wd-muted" data-reassure data-testid="plan-activate-note">{t('albumPlan.oneTime')} · {t('albumPlan.noSubscription')}</p>
             </div>
           )}
         />

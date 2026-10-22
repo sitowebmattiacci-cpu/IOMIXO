@@ -126,7 +126,12 @@
       "allIncluded": "All MIOLOVE features included"
     },
     "listPrice": "List price",
-    "downloadManyLocked": "Activate the album to download several items together"
+    "downloadManyLocked": "Activate the album to download several items together",
+    "paymentCancelled": "Payment cancelled: your album is untouched and you can activate it whenever you like.",
+    "activating": "Opening the payment…",
+    "paymentReceived": "Payment received. We are activating your album…",
+    "albumActivated": "Album activated! You can now use every feature of the full album.",
+    "paymentSlow": "The payment is being processed: the album will activate shortly. You can refresh the page in a few minutes."
   },
   "albumPrivacy": {
     "guestUpload": "Guest photo uploads",

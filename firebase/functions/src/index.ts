@@ -23,6 +23,7 @@ import { parseRequestExportInput, parseExportRefInput, requestAlbumExport as req
 import { parseCommitAvatarInput, parseRemoveAvatarInput, commitAvatar as commitAvatarImpl, removeAvatar as removeAvatarImpl } from './profile/avatar'
 import { buildPriceTable } from './billing/prices'
 import { makeStripe } from './billing/stripeApi'
+import { parseAlbumCheckoutInput, createAlbumCheckoutSession as createAlbumCheckoutSessionImpl } from './billing/albumCheckout'
 import { parseCheckoutInput, portalOf, createCheckoutSession as createCheckoutSessionImpl, createPortalSession as createPortalSessionImpl } from './billing/checkout'
 import { handleStripeWebhook } from './billing/webhook'
 import { parseSlug, getPublicEvent as getPublicEventImpl } from './owner/publicEvent'
@@ -179,6 +180,12 @@ const billingConfig = () => ({ baseUrl: process.env.APP_BASE_URL || 'https://www
 export const createCheckoutSession = onCall(billingCallOptions, async (request) => {
   observeAppCheck('createCheckoutSession', ENFORCE_BILLING, request)
   return createCheckoutSessionImpl(getFirestore(), makeStripe(STRIPE_SECRET_KEY.value()), buildPriceTable(), billingConfig(), request.auth as any, parseCheckoutInput(request.data))
+})
+
+/** Callable: starts the one-time Stripe Checkout that activates ONE MIOLOVE album (price / currency / URLs decided here). Activation itself is the webhook's job. */
+export const createAlbumCheckoutSession = onCall(billingCallOptions, async (request) => {
+  observeAppCheck('createAlbumCheckoutSession', ENFORCE_BILLING, request)
+  return createAlbumCheckoutSessionImpl(getFirestore(), makeStripe(STRIPE_SECRET_KEY.value()), buildPriceTable(), billingConfig(), request.auth as any, parseAlbumCheckoutInput(request.data))
 })
 
 /** Callable: Stripe Billing Portal for the signed-in account's customer. */

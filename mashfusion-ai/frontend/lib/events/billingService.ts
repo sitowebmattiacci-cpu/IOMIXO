@@ -27,6 +27,10 @@ const MESSAGES: Record<string, string> = {
   checkout_failed: 'Impossibile avviare il pagamento, riprova',
   no_billing_account: 'Nessun account di fatturazione trovato',
   portal_failed: 'Impossibile aprire il portale di fatturazione, riprova',
+  already_activated: 'Questo album è già attivo',
+  album_not_eligible: 'Questo album non può essere attivato',
+  not_miolove_album: 'Questo album non può essere attivato',
+  checkout_unavailable: 'Il pagamento online non è ancora disponibile, riprova più tardi',
 }
 async function call<Out>(name: string, payload: object): Promise<Out> {
   try { return (await httpsCallable<object, Out>(getFirebaseFunctions(), name)(payload)).data }
@@ -47,6 +51,11 @@ export const billingOps = {
   async checkout(priceId: string, opts: { trial?: boolean; eventId?: string; portal?: 'iomixo' | 'miolove' } = {}): Promise<{ url: string } | null> {
     if (!(await account())) return null
     return call<{ url: string }>('createCheckoutSession', { priceId, ...(opts.trial ? { trial: true } : {}), ...(opts.eventId ? { eventId: opts.eventId } : {}), ...(opts.portal ? { portal: opts.portal } : {}) })
+  },
+  /** MIOLOVE: one-time payment that activates ONE album. The server decides price, currency and return URLs; the page only says which album and in which language. */
+  async albumCheckout(eventId: string, locale: string): Promise<{ url: string } | null> {
+    if (!(await account())) return null
+    return call<{ url: string }>('createAlbumCheckoutSession', { eventId, locale })
   },
   async portal(portal?: 'iomixo' | 'miolove'): Promise<{ url: string } | null> {
     if (!(await account())) return null
