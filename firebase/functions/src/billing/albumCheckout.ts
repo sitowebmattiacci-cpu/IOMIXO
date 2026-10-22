@@ -2,7 +2,7 @@ import { HttpsError, type FunctionsErrorCode } from 'firebase-functions/v2/https
 import type { Firestore } from 'firebase-admin/firestore'
 import { isStripeError, type StripeApi } from './stripeApi'
 import { albumActivationPrice, type PriceTable } from './prices'
-import { ensureCustomer, type AuthLike, type BillingConfig } from './checkout'
+import type { AuthLike, BillingConfig } from './checkout'
 import { eventBrandOf } from '../owner/brand'
 
 /**
@@ -11,6 +11,8 @@ import { eventBrandOf } from '../owner/brand'
  *
  * The client sends an event id and its language (a fixed enum) and nothing else: price, currency, mode, customer, URLs and metadata are decided here.
  * Currency follows the language exactly like the prices the page shows (English → USD, Italian / French / Spanish → EUR).
+ * Runs ONLY on the MIOLOVE Stripe account (its own client + its own price table): no Stripe customer is created or stored (the buyer's e-mail is passed to Checkout), so nothing
+ * of the IOMIXO billing identity (users.stripeCustomerId, stripeCustomers/*) is ever read or overwritten.
  * It refuses: an anonymous caller, an event that is not the caller's own, an IOMIXO event, an album that is not a free trial (already activated or not eligible).
  */
 const fail = (code: FunctionsErrorCode, reason: string): never => { throw new HttpsError(code, reason, { reason }) }
@@ -45,14 +47,13 @@ export async function createAlbumCheckoutSession(
   const price = albumActivationPrice(prices, albumCurrencyFor(input.locale))
   if (!price) return fail('failed-precondition', 'checkout_unavailable')
 
-  const customer = await ensureCustomer(db, stripe, auth.uid, auth.token.email ?? '')
   const metadata: Record<string, string> = {
     firebaseUid: auth.uid, ownerUid: auth.uid, portal: 'miolove', product: 'album_activation', productScope: 'miolove', checkoutType: 'album_activation', eventId: input.eventId,
   }
   const base = cfg.coupleBaseUrl.replace(/\/+$/, '')
   try {
     const session = await stripe.checkout.sessions.create({
-      customer, mode: 'payment', line_items: [{ price: price.id, quantity: 1 }], payment_method_types: ['card', 'paypal'], allow_promotion_codes: true,
+      ...(auth.token.email ? { customer_email: auth.token.email } : {}), mode: 'payment', line_items: [{ price: price.id, quantity: 1 }], payment_method_types: ['card', 'paypal'], allow_promotion_codes: true,
       client_reference_id: input.eventId, locale: input.locale, metadata, payment_intent_data: { metadata },
       success_url: `${base}/sessions/${input.eventId}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base}/billing?payment=cancelled&album=${input.eventId}`,

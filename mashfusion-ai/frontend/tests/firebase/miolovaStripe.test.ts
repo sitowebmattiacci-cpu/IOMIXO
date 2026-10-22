@@ -3,22 +3,26 @@ import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 import { seedSet } from './seed'
 import { eventFields } from './seed'
-import { buildPriceTable, checkoutPrice, albumActivationPrice } from '../../../../firebase/functions/src/billing/prices'
+import { buildPriceTable, buildMiolovePriceTable, checkoutPrice, albumActivationPrice } from '../../../../firebase/functions/src/billing/prices'
 import { createCheckoutSession, type AuthLike } from '../../../../firebase/functions/src/billing/checkout'
 import { createAlbumCheckoutSession, parseAlbumCheckoutInput, albumCurrencyFor } from '../../../../firebase/functions/src/billing/albumCheckout'
 import { handleStripeWebhook } from '../../../../firebase/functions/src/billing/webhook'
+import { handleMioloveWebhook } from '../../../../firebase/functions/src/billing/mioloveWebhook'
 import { loadEntitlements } from '../../../../firebase/functions/src/entitlements/load'
 
-// MIOLOVE one-time album purchase (€19.99 / $19.99): checkout rules + the verified webhook that activates ONE album. FAKE Stripe client (no network), REAL signatures.
+// MIOLOVE one-time album purchase (€19.99 / $19.99) on its OWN Stripe account: checkout rules + the separate, verified webhook that activates ONE album, and its isolation from IOMIXO's
+// Stripe (own client, own price table, own webhook secret). FAKE Stripe clients (no network), REAL signatures.
 const fnReq = createRequire(__dirname + '/../../../../firebase/functions/package.json')
 const { initializeApp, getApps } = fnReq('firebase-admin/app')
 const { getFirestore } = fnReq('firebase-admin/firestore')
 const Stripe = fnReq('stripe')
 if (!getApps().length) initializeApp({ projectId: 'demo-iomixo' })
 const db = getFirestore()
-const SECRET = 'whsec_test_secret'
+const IO_SECRET = 'whsec_iomixo_secret', MIO_SECRET = 'whsec_miolove_secret'
 const P = { PRO: 'price_PROEUR000001', ADV: 'price_ADVEUR000001', PASS: 'price_PASSEUR00001', ALB_EUR: 'price_ALBEUR000001', ALB_USD: 'price_ALBUSD000001', ROGUE: 'price_ROGUE0000001' }
-const PRICES = buildPriceTable({ STRIPE_PRICE_PRO_EUR: P.PRO, STRIPE_PRICE_ADVANCE_EUR: P.ADV, STRIPE_PRICE_EVENT_PASS_EUR: P.PASS, STRIPE_PRICE_MIOLOVE_ALBUM_EUR: P.ALB_EUR, STRIPE_PRICE_MIOLOVE_ALBUM_USD: P.ALB_USD })
+// Both price ids sit in the deploy env, but each account only ever sees ITS OWN table.
+const ENV = { STRIPE_PRICE_PRO_EUR: P.PRO, STRIPE_PRICE_ADVANCE_EUR: P.ADV, STRIPE_PRICE_EVENT_PASS_EUR: P.PASS, STRIPE_PRICE_MIOLOVE_ALBUM_EUR: P.ALB_EUR, STRIPE_PRICE_MIOLOVE_ALBUM_USD: P.ALB_USD }
+const PRICES = buildPriceTable(ENV), MPRICES = buildMiolovePriceTable(ENV)
 const CFG = { baseUrl: 'https://www.iomixo.com', coupleBaseUrl: 'https://miolovealbum.com' }
 const NOW = new Date('2026-10-22T12:00:00Z')
 const sec = (d: Date) => Math.floor(d.getTime() / 1000)
@@ -52,12 +56,19 @@ async function mkAlbum(ownerUid: string, over: Record<string, unknown> = {}) {
 }
 const get = async (path: string) => (await db.doc(path).get()).data()
 const reason = async (p: Promise<unknown>) => { try { await p; return 'ok' } catch (e: any) { return `${e.code}:${e.details?.reason ?? ''}` } }
+async function seedUpdateUser(uid: string, data: Record<string, unknown>) { await db.doc(`users/${uid}`).set(data, { merge: true }) }
 let evNo = 0
 const evt = (type: string, object: any, over: Record<string, unknown> = {}) => ({ id: `evt_${Date.now().toString(36)}${evNo++}`, object: 'event', type, created: sec(NOW), livemode: false, data: { object }, ...over })
-const deliver = (fs: ReturnType<typeof fakeStripe>, e: any, o: { badSig?: boolean; prices?: any } = {}) => {
-  const payload = JSON.stringify(e)
-  const signature = o.badSig ? 't=1,v1=deadbeef' : Stripe.webhooks.generateTestHeaderString({ payload, secret: SECRET })
-  return handleStripeWebhook({ db, stripe: fs.api, prices: o.prices ?? PRICES, now: () => NOW }, { rawBody: Buffer.from(payload), signature, secret: SECRET })
+const sign = (e: any, secret: string, bad = false) => { const payload = JSON.stringify(e); return { payload, signature: bad ? 't=1,v1=deadbeef' : Stripe.webhooks.generateTestHeaderString({ payload, secret }) } }
+/** Delivers to the MIOLOVE endpoint (signed with the MIOLOVE secret unless told otherwise). */
+const deliver = (fs: ReturnType<typeof fakeStripe>, e: any, o: { badSig?: boolean; secret?: string } = {}) => {
+  const { payload, signature } = sign(e, o.secret ?? MIO_SECRET, o.badSig)
+  return handleMioloveWebhook({ db, stripe: fs.api, prices: MPRICES, now: () => NOW }, { rawBody: Buffer.from(payload), signature, secret: MIO_SECRET })
+}
+/** Delivers to the IOMIXO endpoint (its own secret / table). */
+const deliverIomixo = (fs: ReturnType<typeof fakeStripe>, e: any, o: { secret?: string } = {}) => {
+  const { payload, signature } = sign(e, o.secret ?? IO_SECRET)
+  return handleStripeWebhook({ db, stripe: fs.api, prices: PRICES, now: () => NOW }, { rawBody: Buffer.from(payload), signature, secret: IO_SECRET })
 }
 const paidSession = (fs: ReturnType<typeof fakeStripe>, uid: string, eventId: string | null, over: Record<string, unknown> = {}, price = P.ALB_EUR) => {
   const cust = id('cus_'); const s = { id: id('cs_'), object: 'checkout.session', mode: 'payment', status: 'complete', payment_status: 'paid', customer: cust, subscription: null, payment_intent: id('pi_'), amount_total: 1999, currency: 'eur',
@@ -66,9 +77,10 @@ const paidSession = (fs: ReturnType<typeof fakeStripe>, uid: string, eventId: st
 }
 
 test('S-price. the album price: server table only; one price per currency; 19.99 is Stripe\'s; the generic checkout refuses it; language → currency', () => {
-  assert.equal(albumActivationPrice(PRICES, 'eur')!.id, P.ALB_EUR); assert.equal(albumActivationPrice(PRICES, 'usd')!.id, P.ALB_USD); assert.equal(albumActivationPrice(buildPriceTable({}), 'eur'), null)
-  assert.equal(PRICES.get(P.ALB_EUR)!.scope, 'miolove'); assert.equal(PRICES.get(P.ALB_EUR)!.mode, 'payment'); assert.equal(PRICES.get(P.PRO)!.scope, 'iomixo')
-  assert.equal(checkoutPrice(PRICES, P.ALB_EUR), null, 'not offered by the generic checkout')
+  assert.equal(albumActivationPrice(MPRICES, 'eur')!.id, P.ALB_EUR); assert.equal(albumActivationPrice(MPRICES, 'usd')!.id, P.ALB_USD); assert.equal(albumActivationPrice(buildMiolovePriceTable({}), 'eur'), null)
+  assert.equal(MPRICES.get(P.ALB_EUR)!.scope, 'miolove'); assert.equal(MPRICES.get(P.ALB_EUR)!.mode, 'payment'); assert.equal(PRICES.get(P.PRO)!.scope, 'iomixo')
+  assert.equal(PRICES.has(P.ALB_EUR) || PRICES.has(P.ALB_USD), false, 'the IOMIXO table does not know the album prices'); assert.equal(MPRICES.has(P.PRO) || MPRICES.has(P.PASS), false, 'the MIOLOVE table does not know IOMIXO prices')
+  assert.equal(checkoutPrice(PRICES, P.ALB_EUR), null, 'not offered by the IOMIXO checkout')
   assert.deepEqual((['it', 'fr', 'es', 'en'] as const).map(albumCurrencyFor), ['eur', 'eur', 'eur', 'usd'])
   assert.deepEqual(parseAlbumCheckoutInput({ eventId: 'ev_1', locale: 'zz', priceId: P.ROGUE, amount: 1, currency: 'jpy' }), { eventId: 'ev_1', locale: 'it' })
   assert.throws(() => parseAlbumCheckoutInput({ eventId: '../x' })); assert.throws(() => parseAlbumCheckoutInput({}))
@@ -78,11 +90,12 @@ test('S-checkout-1. the owner of a trial album gets ONE-TIME Checkout: server pr
   const fs = fakeStripe(); const uid = await mkUser(); const eid = await mkAlbum(uid)
   for (const [locale, price, cur] of [['it', P.ALB_EUR, 'eur'], ['fr', P.ALB_EUR, 'eur'], ['es', P.ALB_EUR, 'eur'], ['en', P.ALB_USD, 'usd']] as const) {
     fs.st.created.length = 0
-    const r = await createAlbumCheckoutSession(db, fs.api, PRICES, CFG, auth(uid), { ...parseAlbumCheckoutInput({ eventId: eid, locale, priceId: P.ROGUE, amount: 5, currency: 'jpy' }) })
+    const r = await createAlbumCheckoutSession(db, fs.api, MPRICES, CFG, auth(uid), { ...parseAlbumCheckoutInput({ eventId: eid, locale, priceId: P.ROGUE, amount: 5, currency: 'jpy' }) })
     assert.equal(r.url, 'https://checkout.stripe.test/c/pay')
     const p = fs.st.created[0]
     assert.equal(p.mode, 'payment'); assert.deepEqual(p.line_items, [{ price, quantity: 1 }], `${locale} → ${cur}`); assert.equal(p.locale, locale)
     assert.equal(p.subscription_data, undefined); assert.equal(p.client_reference_id, eid)
+    assert.equal(p.customer, undefined, 'no Stripe customer is attached / created'); assert.equal(p.customer_email, `${uid}@example.com`)
     assert.deepEqual(p.metadata, { firebaseUid: uid, ownerUid: uid, portal: 'miolove', product: 'album_activation', productScope: 'miolove', checkoutType: 'album_activation', eventId: eid })
     assert.deepEqual(p.payment_intent_data.metadata, p.metadata)
     assert.equal(p.success_url, `https://miolovealbum.com/sessions/${eid}?payment=success&session_id={CHECKOUT_SESSION_ID}`)
@@ -93,7 +106,7 @@ test('S-checkout-1. the owner of a trial album gets ONE-TIME Checkout: server pr
 
 test('S-checkout-2. refusals: anonymous, another owner, missing / deleted event, IOMIXO event, already activated, ineligible; nothing reaches Stripe', async () => {
   const fs = fakeStripe(); const uid = await mkUser(), other = await mkUser(); const eid = await mkAlbum(uid)
-  const call = (a: AuthLike | undefined, eventId: string, cfg: any = CFG, prices = PRICES) => reason(createAlbumCheckoutSession(db, fs.api, prices, cfg, a, parseAlbumCheckoutInput({ eventId, locale: 'it' })))
+  const call = (a: AuthLike | undefined, eventId: string, cfg: any = CFG, prices = MPRICES) => reason(createAlbumCheckoutSession(db, fs.api, prices, cfg, a, parseAlbumCheckoutInput({ eventId, locale: 'it' })))
   assert.equal(await call(undefined, eid), 'unauthenticated:account_required'); assert.equal(await call(auth(uid, 'anonymous'), eid), 'unauthenticated:account_required')
   assert.equal(await call(auth(other), eid), 'not-found:event_not_found'); assert.equal(await call(auth(uid), 'doesnotexist'), 'not-found:event_not_found')
   assert.equal(await call(auth(uid), await mkAlbum(uid, { deletedAt: new Date() })), 'not-found:event_not_found')
@@ -101,7 +114,7 @@ test('S-checkout-2. refusals: anonymous, another owner, missing / deleted event,
   assert.equal(await call(auth(uid), await mkAlbum(uid, { accessMode: 'activated' })), 'failed-precondition:already_activated')
   assert.equal(await call(auth(uid), await mkAlbum(uid, { accessMode: undefined })), 'failed-precondition:album_not_eligible')
   assert.equal(await call(auth(uid), eid, { baseUrl: 'https://www.iomixo.com' }), 'failed-precondition:checkout_unavailable', 'no MIOLOVE origin → no checkout (never an iomixo.com return)')
-  assert.equal(await call(auth(uid), eid, CFG, buildPriceTable({})), 'failed-precondition:checkout_unavailable', 'price not configured')
+  assert.equal(await call(auth(uid), eid, CFG, buildMiolovePriceTable({})), 'failed-precondition:checkout_unavailable', 'price not configured')
   assert.equal(fs.st.calls.length, 0, 'Stripe was never called')
   // the generic (IOMIXO) checkout cannot be used to buy the album price either
   assert.equal(await reason(createCheckoutSession(db, fs.api, PRICES, CFG, auth(uid), { priceId: P.ALB_EUR, trial: false, eventId: eid })), 'invalid-argument:invalid_price')
@@ -109,9 +122,9 @@ test('S-checkout-2. refusals: anonymous, another owner, missing / deleted event,
 
 test('S-webhook-1. verified paid session activates EXACTLY that album (accessMode, activatedAt, audit ids); the redirect / checkout creation never does; payment ledger in MIOLOVE scope', async () => {
   const fs = fakeStripe(); const uid = await mkUser(); const eid = await mkAlbum(uid), eid2 = await mkAlbum(uid)
-  await createAlbumCheckoutSession(db, fs.api, PRICES, CFG, auth(uid), { eventId: eid, locale: 'it' })
+  await createAlbumCheckoutSession(db, fs.api, MPRICES, CFG, auth(uid), { eventId: eid, locale: 'it' })
   assert.equal((await get(`events/${eid}`))!.accessMode, 'trial', 'creating a checkout activates nothing')
-  const { s, cust } = paidSession(fs, uid, eid); await seedSet(`stripeCustomers/${cust}`, { uid })
+  const { s, cust } = paidSession(fs, uid, eid);
   const r = await deliver(fs, evt('checkout.session.completed', s)); assert.equal(r.status, 200)
   const e = (await get(`events/${eid}`))!
   assert.equal(e.accessMode, 'activated'); assert.ok(e.activatedAt); assert.deepEqual([e.activation.source, e.activation.checkoutSessionId, e.activation.paymentIntentId, e.activation.amountCents, e.activation.currency], ['stripe', s.id, s.payment_intent, 1999, 'eur'])
@@ -124,13 +137,13 @@ test('S-webhook-1. verified paid session activates EXACTLY that album (accessMod
 
 test('S-webhook-2. idempotent: same event twice, a second event for the same payment, a second payment for an already activated album → one activation, one ledger entry, activatedAt never rewritten', async () => {
   const fs = fakeStripe(); const uid = await mkUser(); const eid = await mkAlbum(uid)
-  const { s, cust } = paidSession(fs, uid, eid); await seedSet(`stripeCustomers/${cust}`, { uid })
+  const { s, cust } = paidSession(fs, uid, eid);
   const e1 = evt('checkout.session.completed', s)
   assert.equal((await deliver(fs, e1)).status, 200); const first = (await get(`events/${eid}`))!
   assert.deepEqual((await deliver(fs, e1)).body, { received: true, duplicate: true })
   assert.equal((await deliver(fs, evt('checkout.session.async_payment_succeeded', s))).status, 200)
   const again = (await get(`events/${eid}`))!; assert.equal(again.activatedAt.toMillis(), first.activatedAt.toMillis()); assert.equal(again.activation.stripeEventId, first.activation.stripeEventId)
-  const dup = paidSession(fs, uid, eid); await seedSet(`stripeCustomers/${dup.cust}`, { uid })
+  const dup = paidSession(fs, uid, eid);
   assert.equal((await deliver(fs, evt('checkout.session.completed', dup.s))).status, 200)
   assert.equal((await get(`events/${eid}`))!.activation.checkoutSessionId, s.id, 'the first payment stays the activation record')
   assert.equal((await get(`users/${uid}/payments/${dup.s.payment_intent}`))!.activation, 'already_activated', 'the extra payment is recorded for a human, nothing else changes')
@@ -139,7 +152,7 @@ test('S-webhook-2. idempotent: same event twice, a second event for the same pay
 
 test('S-webhook-3. invalid signature / unpaid / not complete → nothing changes; metadata that disagrees with Firestore activates nothing', async () => {
   const fs = fakeStripe(); const uid = await mkUser(), victim = await mkUser(); const eid = await mkAlbum(uid), vid = await mkAlbum(victim), iomixoEv = await mkAlbum(uid, { type: 'party', brand: 'iomixo', accessMode: undefined })
-  const ok = paidSession(fs, uid, eid); await seedSet(`stripeCustomers/${ok.cust}`, { uid })
+  const ok = paidSession(fs, uid, eid);
   assert.equal((await deliver(fs, evt('checkout.session.completed', ok.s), { badSig: true })).status, 400); assert.equal((await get(`events/${eid}`))!.accessMode, 'trial')
   for (const over of [{ payment_status: 'unpaid' }, { status: 'open' }]) {
     const x = paidSession(fs, uid, eid, over); assert.equal((await deliver(fs, evt('checkout.session.completed', x.s))).status, 200); assert.equal((await get(`events/${eid}`))!.accessMode, 'trial', JSON.stringify(over))
@@ -152,21 +165,63 @@ test('S-webhook-3. invalid signature / unpaid / not complete → nothing changes
   assert.equal((await get(`events/${iomixoEv}`))!.accessMode ?? null, null)
 })
 
-test('S-webhook-4. ISOLATION: an IOMIXO price (Event Pass) never activates a MIOLOVE album, an album payment never creates an IOMIXO pass; unknown price is an explicit failure', async () => {
-  const fs = fakeStripe(); const uid = await mkUser(); const eid = await mkAlbum(uid); const cust = id('cus_'); await seedSet(`stripeCustomers/${cust}`, { uid })
-  // an Event Pass bought for this very user, carrying MIOLOVE-looking metadata: it is an Event Pass (price decides), the album stays a trial
-  const pass = { id: id('cs_'), object: 'checkout.session', mode: 'payment', status: 'complete', payment_status: 'paid', customer: cust, payment_intent: id('pi_'), amount_total: 799, currency: 'eur',
-    metadata: { firebaseUid: uid, portal: 'miolove', product: 'album_activation', eventId: eid } }
-  fs.st.lineItems.set(pass.id, [P.PASS]); assert.equal((await deliver(fs, evt('checkout.session.completed', pass))).status, 200)
-  assert.equal((await get(`events/${eid}`))!.accessMode, 'trial'); assert.equal((await get(`users/${uid}/eventPasses/${pass.payment_intent}`))!.productScope, 'iomixo')
-  const alb = paidSession(fs, uid, eid); await seedSet(`stripeCustomers/${alb.cust}`, { uid }); await deliver(fs, evt('checkout.session.completed', alb.s))
-  assert.equal((await db.doc(`users/${uid}/eventPasses/${alb.s.payment_intent}`).get()).exists, false, 'no pass from an album payment'); assert.equal((await get(`events/${eid}`))!.accessMode, 'activated')
+test('S-webhook-4. an unknown / foreign price is an explicit failure on the MIOLOVE endpoint (never a guess); nothing is activated', async () => {
+  const fs = fakeStripe(); const uid = await mkUser(); const eid = await mkAlbum(uid)
   const rogue = paidSession(fs, uid, eid, {}, P.ROGUE); assert.equal((await deliver(fs, evt('checkout.session.completed', rogue.s))).status, 500)
+  const pass = paidSession(fs, uid, eid, {}, P.PASS); assert.equal((await deliver(fs, evt('checkout.session.completed', pass.s))).status, 500, 'an IOMIXO Event Pass price is unknown to MIOLOVE')
+  assert.equal((await get(`events/${eid}`))!.accessMode, 'trial'); assert.equal((await db.collection(`users/${uid}/eventPasses`).get()).size, 0)
 })
 
 test('S-webhook-5. after activation the MIOLOVE server rules see an ACTIVATED album (unlimited media, archives) and an IOMIXO event of the same account is not touched', async () => {
   const fs = fakeStripe(); const uid = await mkUser(); const eid = await mkAlbum(uid); const dj = await mkAlbum(uid, { type: 'party', brand: 'iomixo', accessMode: undefined, title: 'DJ night' })
-  const { s, cust } = paidSession(fs, uid, eid); await seedSet(`stripeCustomers/${cust}`, { uid }); await deliver(fs, evt('checkout.session.completed', s))
+  const { s, cust } = paidSession(fs, uid, eid);; await deliver(fs, evt('checkout.session.completed', s))
   const { isTrialAlbum } = await import('../../../../firebase/functions/src/photos/trialQuota')
   assert.equal(isTrialAlbum((await get(`events/${eid}`))!), false); assert.equal((await get(`events/${dj}`))!.title, 'DJ night'); assert.equal((await get(`events/${dj}`))!.accessMode, undefined)
+})
+
+// ═══════════════ two Stripe accounts: isolation ═══════════════
+test('S-iso-1. CHECKOUT: the album checkout uses the MIOLOVE Stripe client only, the IOMIXO checkout the IOMIXO one only; the IOMIXO customer record is never touched', async () => {
+  const io = fakeStripe(), mio = fakeStripe(); const uid = await mkUser(); const eid = await mkAlbum(uid)
+  await seedUpdateUser(uid, { stripeCustomerId: 'cus_IOMIXO_existing' }); await seedSet(`stripeCustomers/cus_IOMIXO_existing`, { uid })
+  const before = JSON.stringify((await get(`users/${uid}`))!.stripeCustomerId)
+  await createAlbumCheckoutSession(db, mio.api, MPRICES, CFG, auth(uid), { eventId: eid, locale: 'it' })
+  assert.deepEqual([mio.st.calls.includes('sessions.create'), io.st.calls.length], [true, 0], 'MIOLOVE call went to the MIOLOVE client only')
+  assert.equal(mio.st.created[0].line_items[0].price, P.ALB_EUR); assert.ok(!mio.st.created.some((c: any) => c.kind === 'customer'), 'no customer created on the MIOLOVE account')
+  assert.equal(JSON.stringify((await get(`users/${uid}`))!.stripeCustomerId), before, 'users.stripeCustomerId (IOMIXO) untouched'); assert.equal((await get(`stripeCustomers/cus_IOMIXO_existing`))!.uid, uid)
+  await createCheckoutSession(db, io.api, PRICES, CFG, auth(uid), { priceId: P.PASS, trial: false, eventId: null })
+  assert.ok(io.st.calls.includes('sessions.create')); assert.equal(mio.st.calls.filter((c: string) => c === 'sessions.create').length, 1, 'the IOMIXO checkout never reached the MIOLOVE client')
+  assert.equal(await reason(createCheckoutSession(db, io.api, PRICES, CFG, auth(uid), { priceId: P.ALB_EUR, trial: false, eventId: null })), 'invalid-argument:invalid_price', 'the IOMIXO checkout does not know the album price')
+})
+
+test('S-iso-2. WEBHOOK SIGNATURES: a MIOLOVE-signed event is accepted by the MIOLOVE endpoint and refused by the IOMIXO one; an IOMIXO-signed event is refused by the MIOLOVE one', async () => {
+  const fs = fakeStripe(); const uid = await mkUser(); const eid = await mkAlbum(uid)
+  const { s } = paidSession(fs, uid, eid); const e = evt('checkout.session.completed', s)
+  assert.equal((await deliverIomixo(fs, e, { secret: MIO_SECRET })).status, 400, 'MIOLOVE-signed → IOMIXO endpoint refuses')
+  assert.equal((await db.doc(`stripeEvents/${e.id}`).get()).exists, false, 'the IOMIXO endpoint recorded nothing')
+  assert.equal((await deliver(fs, e, { secret: IO_SECRET })).status, 400, 'IOMIXO-signed → MIOLOVE endpoint refuses'); assert.equal((await get(`events/${eid}`))!.accessMode, 'trial')
+  assert.equal((await deliver(fs, e)).status, 200, 'MIOLOVE-signed → MIOLOVE endpoint accepts'); assert.equal((await get(`events/${eid}`))!.accessMode, 'activated')
+})
+
+test('S-iso-3. PAYMENT SCOPE: an album payment sent to the IOMIXO endpoint is an unknown price (nothing activated); the MIOLOVE endpoint ignores everything but the album payment and creates no Event Pass / subscription / plan', async () => {
+  const fs = fakeStripe(); const uid = await mkUser(); const eid = await mkAlbum(uid)
+  const album = paidSession(fs, uid, eid)
+  assert.equal((await deliverIomixo(fs, evt('checkout.session.completed', album.s))).status, 500, 'IOMIXO endpoint: the album price is unknown to it'); assert.equal((await get(`events/${eid}`))!.accessMode, 'trial')
+  // other event types: acknowledged, ignored, no side effect
+  for (const type of ['invoice.paid', 'customer.subscription.updated', 'charge.refunded', 'payment_intent.payment_failed']) assert.deepEqual((await deliver(fs, evt(type, { id: 'x', customer: 'cus_x', metadata: { firebaseUid: uid } }))).body, { received: true, ignored: true }, type)
+  // a subscription checkout / an Event Pass checkout on the MIOLOVE endpoint grant nothing
+  const sub = paidSession(fs, uid, eid, { mode: 'subscription', subscription: 'sub_x', payment_intent: null }, P.PRO); assert.equal((await deliver(fs, evt('checkout.session.completed', sub.s))).status, 200)
+  const pass = paidSession(fs, uid, eid, {}, P.PASS); assert.equal((await deliver(fs, evt('checkout.session.completed', pass.s))).status, 500)
+  for (const col of ['eventPasses', 'subscriptions', 'payments']) assert.equal((await db.collection(`users/${uid}/${col}`).get()).size, 0, col)
+  assert.equal((await get(`users/${uid}`))!.plan.tier, 'free'); assert.equal((await get(`events/${eid}`))!.accessMode, 'trial')
+  // the real album payment, then a replay: one activation
+  const e = evt('checkout.session.completed', album.s); assert.equal((await deliver(fs, e)).status, 200); const first = (await get(`events/${eid}`))!.activatedAt.toMillis()
+  assert.deepEqual((await deliver(fs, e)).body, { received: true, duplicate: true }); assert.equal((await get(`events/${eid}`))!.activatedAt.toMillis(), first)
+  assert.equal((await db.collection(`users/${uid}/eventPasses`).get()).size, 0); assert.equal((await db.collection(`users/${uid}/subscriptions`).get()).size, 0); assert.equal((await get(`users/${uid}`))!.miolovePlan, undefined)
+})
+
+test('S-iso-4. an IOMIXO Event Pass paid on the IOMIXO endpoint still works exactly as before and never touches a MIOLOVE album of the same account', async () => {
+  const fs = fakeStripe(); const uid = await mkUser(); const eid = await mkAlbum(uid); const cust = id('cus_'); await seedSet(`stripeCustomers/${cust}`, { uid })
+  const s = { id: id('cs_'), object: 'checkout.session', mode: 'payment', status: 'complete', payment_status: 'paid', customer: cust, payment_intent: id('pi_'), amount_total: 799, currency: 'eur', metadata: { firebaseUid: uid, portal: 'iomixo', eventId: eid } }
+  fs.st.lineItems.set(s.id, [P.PASS]); assert.equal((await deliverIomixo(fs, evt('checkout.session.completed', s))).status, 200)
+  assert.equal((await get(`users/${uid}/eventPasses/${s.payment_intent}`))!.productScope, 'iomixo'); assert.equal((await get(`events/${eid}`))!.accessMode, 'trial', 'the MIOLOVE album is not activated by an IOMIXO pass')
 })

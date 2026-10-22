@@ -6,7 +6,6 @@ import { priceInfo, UnknownPriceError, type PriceTable } from './prices'
 import { resolveUid, UnresolvedAccountError } from './accounts'
 import type { PlanTier } from '../entitlements/plans'
 import { scopeOf, type ProductScope } from '../entitlements/scope'
-import { eventBrandOf } from '../owner/brand'
 
 /**
  * Stripe webhook → Firestore. Source of truth for plans/passes from now on (plan.source = 'stripe').
@@ -79,7 +78,7 @@ async function dispatch(deps: WebhookDeps, event: Stripe.Event, now: Date): Prom
     case 'checkout.session.async_payment_succeeded': {
       const s = event.data.object as Stripe.Checkout.Session
       if (s.mode === 'subscription') { if (event.type === 'checkout.session.completed') await onSubscriptionCheckout(deps, event, s, now) }
-      else if (s.mode === 'payment') await onPaymentCheckout(deps, event, s, now)
+      else if (s.mode === 'payment') await onEventPassCheckout(deps, event, s, now)
       return
     }
     case 'checkout.session.async_payment_failed':
@@ -221,57 +220,11 @@ async function onInvoice(deps: WebhookDeps, event: Stripe.Event, inv: Stripe.Inv
 }
 
 // ── Event Pass ───────────────────────────────────────────────────────────────────────────────────
-/** One-time checkouts: the PRICE bought (server table) decides what it is — a MIOLOVE album activation or an Event Pass. */
-async function onPaymentCheckout(deps: WebhookDeps, event: Stripe.Event, s: Stripe.Checkout.Session, now: Date) {
+async function onEventPassCheckout(deps: WebhookDeps, event: Stripe.Event, s: Stripe.Checkout.Session, now: Date) {
   if (s.status !== 'complete' || (s.payment_status !== 'paid' && s.payment_status !== 'no_payment_required')) return        // declined / async-pending: no access
+  // The purchased price must be a known Event Pass price (explicit error otherwise).
   const items = await deps.stripe.checkout.sessions.listLineItems(s.id, { limit: 10 })
   const infos = items.data.map((i) => priceInfo(deps.prices, i.price?.id))
-  if (infos.some((i) => i.product === 'album_activation')) return onAlbumActivation(deps, event, s, now, infos)
-  return onEventPassCheckout(deps, event, s, now, items, infos)
-}
-
-// ── MIOLOVE album activation ─────────────────────────────────────────────────────────────────────
-/**
- * The ONLY place an album becomes 'activated'. Authority = this verified, paid Checkout Session; the metadata is only a pointer that must agree with Firestore:
- * the buyer must be the album's owner, the album a MIOLOVE one. Anything that disagrees activates NOTHING (recorded and logged for a human, acknowledged so Stripe stops retrying).
- * Idempotent: the payment ledger entry is create-once (payment intent / session id) and an already activated album is left exactly as it is. IOMIXO data is never read or written.
- */
-async function onAlbumActivation(deps: WebhookDeps, event: Stripe.Event, s: Stripe.Checkout.Session, now: Date, infos: ReturnType<typeof priceInfo>[]) {
-  const info = infos.find((i) => i.product === 'album_activation')!
-  const m = s.metadata ?? {}
-  const customerId = str(s.customer)
-  const uid = await resolveUid(deps.db, { firebaseUid: m.firebaseUid, customerId })
-  const key = safeId(str(s.payment_intent) ?? s.id)
-  const eventId = typeof m.eventId === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(m.eventId) ? m.eventId : null
-  const consistent = info.scope === 'miolove' && m.portal === 'miolove' && m.product === 'album_activation' && !!eventId && (m.ownerUid ?? uid) === uid
-
-  const evRef = eventId ? deps.db.doc(`events/${eventId}`) : null
-  let outcome: 'activated' | 'already_activated' | 'blocked' = 'blocked', reason: string | null = consistent ? null : 'metadata_mismatch'
-  if (consistent && evRef) {
-    await deps.db.runTransaction(async (tx) => {
-      const snap = await tx.get(evRef), e = snap.data()
-      if (!snap.exists || e!.ownerUid !== uid || e!.deletedAt) { reason = 'event_not_owned'; return }
-      if (e!.accessMode === 'activated') { outcome = 'already_activated'; return }
-      if (e!.accessMode !== 'trial' || (await eventBrandOf(deps.db, e!)) !== 'miolove') { reason = 'album_not_eligible'; return }
-      tx.update(evRef, {
-        accessMode: 'activated', activatedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
-        activation: { source: 'stripe', checkoutSessionId: s.id, paymentIntentId: str(s.payment_intent), stripeEventId: event.id, amountCents: s.amount_total ?? 0, currency: s.currency ?? null },
-      })
-      outcome = 'activated'
-    })
-  }
-  if (outcome === 'blocked') logger.error('album_activation_blocked', { reason, eventId, sessionId: s.id })
-  await createOnce(deps.db.doc(`users/${uid}/payments/${key}`), {
-    stripePaymentIntentId: str(s.payment_intent), stripeCheckoutSessionId: s.id, stripeInvoiceId: null, amountCents: s.amount_total ?? 0, currency: s.currency ?? 'eur',
-    status: 'succeeded', description: 'MIOLOVE Album — attivazione', kind: 'album_activation', historical: false, source: 'stripe', uid, productScope: 'miolove',
-    eventId: consistent ? eventId : null, activation: outcome === 'blocked' ? `blocked:${reason}` : outcome,
-    createdAt: ts(event.created), updatedAt: ts(event.created),
-  })
-}
-
-// ── Event Pass ───────────────────────────────────────────────────────────────────────────────────
-async function onEventPassCheckout(deps: WebhookDeps, event: Stripe.Event, s: Stripe.Checkout.Session, now: Date, items: { data: Array<{ price?: { id: string } | null }> }, infos: ReturnType<typeof priceInfo>[]) {
-  // The purchased price must be a known Event Pass price (explicit error otherwise).
   if (!infos.some((i) => i.product === 'event_pass')) throw new UnknownPriceError(items.data[0]?.price?.id)
   const scope = infos.find((i) => i.product === 'event_pass')!.scope
   const customerId = str(s.customer)

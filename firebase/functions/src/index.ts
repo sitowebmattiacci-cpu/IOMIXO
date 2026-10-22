@@ -21,7 +21,8 @@ import { parseGameActionInput, parseGameConfigInput, gameAction as gameActionImp
 import { parseCreatePhotoUploadInput, parsePhotoRefInput, parseModeratePhotoInput, createPhotoUpload as createPhotoUploadImpl, finalizePhoto as finalizePhotoImpl, moderatePhoto as moderatePhotoImpl } from './photos/photos'
 import { parseRequestExportInput, parseExportRefInput, requestAlbumExport as requestAlbumExportImpl, getAlbumExportUrl as getAlbumExportUrlImpl, runAlbumExport, purgeExpiredExports } from './photos/exports'
 import { parseCommitAvatarInput, parseRemoveAvatarInput, commitAvatar as commitAvatarImpl, removeAvatar as removeAvatarImpl } from './profile/avatar'
-import { buildPriceTable } from './billing/prices'
+import { buildPriceTable, buildMiolovePriceTable } from './billing/prices'
+import { handleMioloveWebhook } from './billing/mioloveWebhook'
 import { makeStripe } from './billing/stripeApi'
 import { parseAlbumCheckoutInput, createAlbumCheckoutSession as createAlbumCheckoutSessionImpl } from './billing/albumCheckout'
 import { parseCheckoutInput, portalOf, createCheckoutSession as createCheckoutSessionImpl, createPortalSession as createPortalSessionImpl } from './billing/checkout'
@@ -61,6 +62,9 @@ const ENFORCE_BILLING      = defineBoolean('APPCHECK_ENFORCE_BILLING',      { de
 // Stripe secrets live ONLY in Secret Manager (`firebase functions:secrets:set STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET`); the webhook secret belongs to THIS endpoint.
 const STRIPE_SECRET_KEY    = defineSecret('STRIPE_SECRET_KEY')
 const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET')
+// MIOLOVE has its OWN Stripe account: its own secret key and its own webhook secret (the IOMIXO ones above are never used for MIOLOVE, nor these for IOMIXO).
+const STRIPE_MIOLOVE_SECRET_KEY     = defineSecret('STRIPE_MIOLOVE_SECRET_KEY')
+const STRIPE_MIOLOVE_WEBHOOK_SECRET = defineSecret('STRIPE_MIOLOVE_WEBHOOK_SECRET')
 const observeAppCheck = (
   fn: string, enforced: { value(): boolean },
   request: { app?: unknown; auth?: { token?: { firebase?: { sign_in_provider?: string } } } },
@@ -183,10 +187,23 @@ export const createCheckoutSession = onCall(billingCallOptions, async (request) 
 })
 
 /** Callable: starts the one-time Stripe Checkout that activates ONE MIOLOVE album (price / currency / URLs decided here). Activation itself is the webhook's job. */
-export const createAlbumCheckoutSession = onCall(billingCallOptions, async (request) => {
+export const createAlbumCheckoutSession = onCall({ ...guestCallOptions(ENFORCE_BILLING), secrets: [STRIPE_MIOLOVE_SECRET_KEY] }, async (request) => {
   observeAppCheck('createAlbumCheckoutSession', ENFORCE_BILLING, request)
-  return createAlbumCheckoutSessionImpl(getFirestore(), makeStripe(STRIPE_SECRET_KEY.value()), buildPriceTable(), billingConfig(), request.auth as any, parseAlbumCheckoutInput(request.data))
+  return createAlbumCheckoutSessionImpl(getFirestore(), makeStripe(STRIPE_MIOLOVE_SECRET_KEY.value()), buildMiolovePriceTable(), billingConfig(), request.auth as any, parseAlbumCheckoutInput(request.data))
 })
+
+/** HTTPS: MIOLOVE Stripe webhook (the MIOLOVE Stripe account only). Separate endpoint + secret from `stripeWebhook`: it activates album purchases and does nothing else. */
+export const mioloveStripeWebhook = onRequest(
+  { cors: false, secrets: [STRIPE_MIOLOVE_SECRET_KEY, STRIPE_MIOLOVE_WEBHOOK_SECRET], serviceAccount: SERVICE_ACCOUNT },
+  async (req, res) => {
+    if (req.method !== 'POST') { res.status(405).json({ error: 'method_not_allowed' }); return }
+    const r = await handleMioloveWebhook(
+      { db: getFirestore(), stripe: makeStripe(STRIPE_MIOLOVE_SECRET_KEY.value()), prices: buildMiolovePriceTable() },
+      { rawBody: req.rawBody, signature: req.header('stripe-signature'), secret: STRIPE_MIOLOVE_WEBHOOK_SECRET.value() },
+    )
+    res.status(r.status).json(r.body)
+  },
+)
 
 /** Callable: Stripe Billing Portal for the signed-in account's customer. */
 export const createPortalSession = onCall(billingCallOptions, async (request) => {

@@ -25,16 +25,13 @@ export class UnknownPriceError extends Error {
   constructor(public priceId: string | null | undefined) { super('unknown_price') }
 }
 
-const CURRENT: Array<[string, Omit<PriceInfo, 'checkout' | 'scope'> & { scope?: ProductScope }]> = [
+const CURRENT: Array<[string, Omit<PriceInfo, 'checkout' | 'scope'>]> = [
   ['STRIPE_PRICE_PRO_EUR',        { product: 'pro',        tier: 'pro',     mode: 'subscription' }],
   ['STRIPE_PRICE_PRO_USD',        { product: 'pro',        tier: 'pro',     mode: 'subscription' }],
   ['STRIPE_PRICE_ADVANCE_EUR',    { product: 'advance',    tier: 'wedding', mode: 'subscription' }],
   ['STRIPE_PRICE_ADVANCE_USD',    { product: 'advance',    tier: 'wedding', mode: 'subscription' }],
   ['STRIPE_PRICE_EVENT_PASS_EUR', { product: 'event_pass', tier: null,      mode: 'payment' }],
   ['STRIPE_PRICE_EVENT_PASS_USD', { product: 'event_pass', tier: null,      mode: 'payment' }],
-  // MIOLOVE: ONE one-time price per currency (19.99 each), activating ONE album. Scope 'miolove': it never touches an IOMIXO plan.
-  ['STRIPE_PRICE_MIOLOVE_ALBUM_EUR', { product: 'album_activation', tier: null, mode: 'payment', scope: 'miolove', currency: 'eur' }],
-  ['STRIPE_PRICE_MIOLOVE_ALBUM_USD', { product: 'album_activation', tier: null, mode: 'payment', scope: 'miolove', currency: 'usd' }],
 ]
 /** Older prices still attached to existing subscriptions (comma-separated lists). Recognised by the webhook only. */
 const LEGACY: Array<[string, Omit<PriceInfo, 'checkout' | 'scope'>]> = [
@@ -46,7 +43,7 @@ export type PriceTable = ReadonlyMap<string, PriceInfo>
 
 export function buildPriceTable(env: Record<string, string | undefined> = process.env): PriceTable {
   const t = new Map<string, PriceInfo>()
-  for (const [key, info] of CURRENT) { const id = env[key]?.trim(); if (id) t.set(id, { ...info, checkout: true, scope: info.scope ?? 'iomixo' }) }
+  for (const [key, info] of CURRENT) { const id = env[key]?.trim(); if (id) t.set(id, { ...info, checkout: true, scope: 'iomixo' }) }
   for (const [key, info] of LEGACY) for (const id of (env[key] ?? '').split(',').map((s) => s.trim()).filter(Boolean)) if (!t.has(id)) t.set(id, { ...info, checkout: false, scope: 'iomixo' })
   return t
 }
@@ -59,9 +56,20 @@ export function priceInfo(table: PriceTable, priceId: string | null | undefined)
 }
 export const checkoutPrice = (table: PriceTable, priceId: unknown): PriceInfo | null => {
   const info = typeof priceId === 'string' ? table.get(priceId) : undefined
-  return info?.checkout && info.product !== 'album_activation' ? info : null       // the album price has its own callable (it needs an album); never through the generic checkout
+  return info?.checkout ? info : null
 }
-/** The MIOLOVE album price of a currency, from the server table only (null = not configured). */
+/**
+ * MIOLOVE has its OWN Stripe account (own secret key, own webhook). Its prices live in their OWN table, never mixed into the IOMIXO one: the IOMIXO webhook /
+ * checkout can never see, accept or map an album price, and the MIOLOVE endpoints can never map an IOMIXO plan. One one-time price per currency (19.99 each),
+ * each activating ONE album. Price ids are public identifiers (non-secret deploy env).
+ */
+const MIOLOVE_ALBUM: Array<[string, 'eur' | 'usd']> = [['STRIPE_PRICE_MIOLOVE_ALBUM_EUR', 'eur'], ['STRIPE_PRICE_MIOLOVE_ALBUM_USD', 'usd']]
+export function buildMiolovePriceTable(env: Record<string, string | undefined> = process.env): PriceTable {
+  const t = new Map<string, PriceInfo>()
+  for (const [key, currency] of MIOLOVE_ALBUM) { const id = env[key]?.trim(); if (id) t.set(id, { product: 'album_activation', tier: null, mode: 'payment', checkout: true, scope: 'miolove', currency }) }
+  return t
+}
+/** The MIOLOVE album price of a currency, from the MIOLOVE table only (null = not configured). */
 export const albumActivationPrice = (table: PriceTable, currency: 'eur' | 'usd'): { id: string; info: PriceInfo } | null => {
   for (const [id, info] of Array.from(table.entries())) if (info.product === 'album_activation' && info.checkout && info.currency === currency) return { id, info }
   return null
