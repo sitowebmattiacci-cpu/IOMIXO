@@ -266,6 +266,33 @@ for (const occasion of ['wedding', 'birthday', 'baptism', 'other']) {
   })
 }
 
+test('OWN1b. privacy toggles on an ACTIVATED album: "Foto sullo schermo" and "Invio foto degli ospiti" save with no "DJ account required", persist across reload, and the guest/screen pages follow', async () => {
+  const a = await album('wedding', { accessMode: 'activated', trialPhotoLimit: undefined, trialExpiresAt: undefined })
+  const fsEv = async () => (await (await fetch(`http://127.0.0.1:8080/v1/projects/demo-iomixo/databases/(default)/documents/events/${a.id}`, { headers: { authorization: 'Bearer owner' } })).json()) as any
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const page = await ctx.newPage()
+  try {
+    await open(page, a)
+    await goTab(page, /Privacy/); await page.getByText('Foto sullo schermo').first().waitFor({ timeout: 60_000 })
+    const sw = () => page.locator('[role="switch"], input[type="checkbox"]')
+    const idle = () => until(async () => (await sw().nth(0).isEnabled()) && (await sw().nth(1).isEnabled()), 30_000, 'toggles idle')
+    const on = async (i: number) => (await sw().nth(i).getAttribute('aria-checked')) === 'true' || (await sw().nth(i).isChecked().catch(() => false))
+    assert.equal(await on(0), true, 'guest uploads: default ON for an album with no stored config')
+    assert.equal(await on(1), true, 'photos on the screen: default ON for an album')
+    await sw().nth(1).click({ force: true })                                                 // screen photos OFF
+    await until(async () => (await fsEv()).fields?.screenConfig?.mapValue?.fields?.show_photos?.booleanValue === false, 30_000, 'show_photos=false saved')
+    assert.doesNotMatch(await text(page), /DJ account required|403/)
+    await idle(); await sw().nth(0).click({ force: true })                                   // guest uploads OFF
+    await until(async () => (await fsEv()).fields?.guestConfig?.mapValue?.fields?.live_booth?.booleanValue === false, 30_000, 'live_booth=false saved')
+    assert.doesNotMatch(await text(page), /DJ account required|403/)
+    // reload: both values are kept
+    await page.reload({ waitUntil: 'domcontentloaded' }); await goTab(page, /Privacy/); await page.getByText('Foto sullo schermo').first().waitFor({ timeout: 60_000 })
+    await until(async () => (await on(0)) === false && (await on(1)) === false, 30_000, 'both OFF after reload')
+    // back ON
+    await idle(); await sw().nth(1).click({ force: true }); await until(async () => (await fsEv()).fields.screenConfig.mapValue.fields.show_photos.booleanValue === true, 30_000, 'screen ON'); await idle(); await sw().nth(0).click({ force: true })
+    await until(async () => { const f = (await fsEv()).fields; return f.screenConfig.mapValue.fields.show_photos.booleanValue === true && f.guestConfig.mapValue.fields.live_booth.booleanValue === true }, 30_000, 'both ON saved')
+  } finally { await ctx.close() }
+})
+
 test('OWN2. home of the album: QR + phone preview + monitor preview are the REAL /live and /screen pages (iframes) for each occasion; trial banner with days left', async () => {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const page = await ctx.newPage()
   try {

@@ -580,6 +580,17 @@ export default function LiveBoothPage() {
     )
   }
 
+  // The owner switched "guest photo upload" off (the QR points here, so this page must honour it too; the server refuses the upload as well).
+  if (isAlbum && (session.guest_config as Record<string, unknown> | null | undefined)?.live_booth === false) {
+    return (
+      <WeddingGuestShell whiteLabel={whiteLabel} languageSlot={languageSlot}>
+        <WeddingGuestPageTitle eyebrow="Live Booth" title={names} />
+        <div data-testid="booth-uploads-off"><WeddingGuestNotice tone="info">{t('guestAlbum.photosOff')}</WeddingGuestNotice></div>
+        <div className="flex justify-center"><WeddingGuestBackLink href={`/live/${slug}`} label={t('booth.backToMain')} /></div>
+      </WeddingGuestShell>
+    )
+  }
+
   if (photo) {
     return (
       <WeddingGuestShell whiteLabel={whiteLabel} languageSlot={languageSlot}>

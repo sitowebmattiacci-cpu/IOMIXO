@@ -1,4 +1,5 @@
 'use client'
+import { COUPLE_DEFAULT_GUEST_CONFIG } from '@/lib/coupleAlbum'
 import { useParams, useRouter } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
 import { useEffect, useRef, useState } from 'react'
@@ -1031,7 +1032,8 @@ function GuestVisibilityPanel({
 }: { sessionId: string; session: any; sessionType: 'wedding' | 'party'; hasAccess: boolean; couple?: boolean }) {
   const { t } = useI18n()
   const [saving, setSaving] = useState(false)
-  const cfg: Record<string, boolean | undefined> = session?.guest_config ?? {}
+  // A MIOLOVE album with no stored guest_config yet is open to guest photos (same defaults the guest page applies), so the switch shows and flips from ON.
+  const cfg: Record<string, boolean | undefined> = couple ? { ...COUPLE_DEFAULT_GUEST_CONFIG, ...(session?.guest_config ?? {}) } : session?.guest_config ?? {}
 
   // Song requests are visible by default; every other function is hidden until enabled.
   const isOn = (key: string) => (key === 'requests' ? cfg.requests !== false : cfg[key] === true)

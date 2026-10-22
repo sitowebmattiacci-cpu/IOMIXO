@@ -54,7 +54,8 @@ for (const type of TYPES) {
     const deny = 'permission-denied:dj_account_required'
     assert.equal(await fails(callAs(u, 'createPoll', { eventId: album.eventId, question: 'Q?', options: ['A', 'B'] })), deny)
     assert.equal(await fails(callAs(u, 'ownerGameAction', { eventId: album.eventId, game: 'roulette', action: 'start' })), deny)
-    assert.equal(await fails(callAs(u, 'updateEventConfig', { eventId: album.eventId, screenConfig: { show_photos: true } })), deny)
+    assert.equal(await fails(callAs(u, 'updateEventConfig', { eventId: album.eventId, screenConfig: { show_polls: true } })), deny)
+    assert.equal(await fails(callAs(u, 'updateEventConfig', { eventId: album.eventId, screenConfig: { show_photos: true }, screenModeEnabled: true })), deny)
     // the album owner still manages the album itself
     await callAs(u, 'updateEventConfig', { eventId: album.eventId, eventFields: { title: 'Il nostro album' } })
   })

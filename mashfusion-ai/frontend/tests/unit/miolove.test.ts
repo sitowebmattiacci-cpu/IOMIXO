@@ -110,6 +110,7 @@ test('SEO. title, description, canonical, hreflang for IT/EN/FR/ES, OpenGraph, T
 test('SCREEN. a MIOLOVE album plays its photos by default; an explicit "off" is final; other events keep opt-in', () => {
   const album = { type: 'wedding' as const, accessMode: 'trial' as const }
   assert.equal(screenShowsPhotos(album, {}), true); assert.equal(screenShowsPhotos(album, { show_photos: false }), false)
+  assert.equal(screenShowsPhotos(album, { show_photos: true }), true, 'switched back ON')
   assert.equal(screenShowsPhotos({ type: 'wedding', accessMode: null }, {}), false); assert.equal(screenShowsPhotos({ type: 'party', accessMode: null }, { show_photos: true }), true)
   const ev: any = { ...album, title: 'T', djName: null, coupleNames: null, weddingDate: null, venueName: null, status: 'live' }
   const p = composeScreenPayload(ev, {}, null, undefined, null, { photos: [{ id: 'a' } as any] })

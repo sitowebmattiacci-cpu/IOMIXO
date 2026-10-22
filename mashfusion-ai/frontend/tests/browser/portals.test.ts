@@ -268,7 +268,19 @@ test('PT9. every Function shares one CORS allow-list with both IOMIXO and both M
   const src = (await import('node:fs')).readFileSync(new URL('../../../../firebase/functions/src/index.ts', import.meta.url), 'utf8')
   const list = /cors:\s*\[([^\]]+)\]/.exec(src)?.[1] ?? ''
   for (const origin of ['https://iomixo.com', 'https://www.iomixo.com', 'https://miolovealbum.com', 'https://www.miolovealbum.com']) assert.ok(list.includes(`'${origin}'`), origin)
-  assert.equal((src.match(/cors:/g) ?? []).length, 2, 'one allow-list (guestCallOptions) + the webhook cors:false; callables must all derive from guestCallOptions')
+  // Structure instead of a count: the allow-list is declared ONCE (guestCallOptions); every other `cors:` is a webhook (onRequest) with cors:false;
+  // and every callable (onCall) takes its options from guestCallOptions or from a constant built on it.
+  const arrays = src.match(/cors:\s*\[/g) ?? []
+  assert.equal(arrays.length, 1, 'exactly one CORS allow-list')
+  const others = Array.from(src.matchAll(/cors:\s*(?!\[)([^,\s}]+)/g)).map((m) => m[1])
+  assert.ok(others.every((v) => v === 'false'), `every other cors: is false (webhooks), got ${others.join(',')}`)
+  assert.equal((src.match(/onRequest\(\s*\{\s*cors:\s*false/g) ?? []).length, others.length, 'each cors:false belongs to an onRequest webhook')
+  const derived = new Set(['guestCallOptions'])
+  for (const m of src.matchAll(/const\s+(\w+)\s*=\s*\{\s*\.\.\.(\w+)\(/g)) if (derived.has(m[2])) derived.add(m[1])
+  for (const m of src.matchAll(/const\s+(\w+)\s*=\s*\{\s*\.\.\.(\w+)\s*,/g)) if (derived.has(m[2])) derived.add(m[1])
+  const calls = Array.from(src.matchAll(/(?:export const (\w+)\s*=\s*)?onCall\(\s*(\{\s*\.\.\.)?(\w+)/g)).filter((m) => m[3] !== 'async')
+  assert.ok(calls.length >= 8, `found the callables (${calls.length})`)
+  for (const m of calls) assert.ok(derived.has(m[3]), `callable ${m[1] ?? '(inner)'} takes its options from the shared allow-list (found "${m[3]}")`)
   const emu = await fetch('http://127.0.0.1:5001/demo-iomixo/europe-west1/getPublicEvent', { method: 'OPTIONS', headers: { origin: 'https://www.miolovealbum.com', 'access-control-request-method': 'POST' } })
   assert.equal(emu.headers.get('access-control-allow-origin'), 'https://www.miolovealbum.com')
 })

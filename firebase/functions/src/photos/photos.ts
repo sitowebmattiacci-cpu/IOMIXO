@@ -116,6 +116,8 @@ export async function createPhotoUpload(db: Firestore, uid: string, input: Creat
   const allowed = (decision.ent ? decision.ent.gates.photos : ev.dedicationsEnabled === true) || miolove
   logEntitlementDecision('createPhotoUpload', decision, allowed ? 'allow' : 'deny', 'photos')
   if (!allowed) throw fail('permission-denied', 'Photos require the Advance plan or an Event Pass', 'photos_unavailable')
+  // The album owner's privacy switch "guest photo upload" (guestConfig.live_booth): only an explicit OFF closes it (a new album has no value yet = open).
+  if (miolove && (ev.guestConfig as Record<string, unknown> | null | undefined)?.live_booth === false) throw fail('permission-denied', 'Guest uploads are turned off for this album', 'guest_uploads_disabled')
   // The 7-day trial ran out (server clock): reading stays open, new uploads do not.
   if (isTrialExpired(ev, new Date(now()))) throw fail('failed-precondition', 'The free trial has ended', TRIAL_EXPIRED_REASON)
   // UX only: finalizePhoto is the authoritative quota check. The quota counts CONTENTS (photos + videos together).

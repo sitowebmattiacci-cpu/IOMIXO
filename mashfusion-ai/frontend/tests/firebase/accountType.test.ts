@@ -93,16 +93,16 @@ test('R5. couple is refused by every DJ live-control callable; the DJ owner pass
   await callAs(legacy, 'createPoll', { eventId: l.eventId, question: 'Q?', options: ['A', 'B'] })
 })
 
-test('R6. couple cannot write Screen Mode / winner config, but can edit its event details, guest visibility and lifecycle', async () => {
+test('R6. couple cannot write Screen Mode / winner config (except the album\'s own "photos on the screen" switch), but can edit its event details, guest visibility and lifecycle', async () => {
   const couple = await account('couple'); const w = await create(couple); const E = w.eventId
   const deny = 'permission-denied:dj_account_required'
-  assert.equal(await fails(callAs(couple, 'updateEventConfig', { eventId: E, screenConfig: { show_photos: true } })), deny)
+  assert.equal(await fails(callAs(couple, 'updateEventConfig', { eventId: E, screenConfig: { show_polls: true } })), deny)
   assert.equal(await fails(callAs(couple, 'updateEventConfig', { eventId: E, screenModeEnabled: true })), deny)
   assert.equal(await fails(callAs(couple, 'updateEventConfig', { eventId: E, winnerAnnouncement: null })), deny)
   await callAs(couple, 'updateEventConfig', { eventId: E, eventFields: { title: 'Nostro matrimonio', coupleNames: 'A & B' } })
   await callAs(couple, 'updateEventConfig', { eventId: E, guestConfig: { live_booth: true } })
   const e = (await getDoc(doc(couple.db, 'events', E))).data()!
-  assert.deepEqual([e.title, e.coupleNames, e.guestConfig, e.screenConfig], ['Nostro matrimonio', 'A & B', { live_booth: true }, null])
+  assert.deepEqual([e.title, e.coupleNames, e.guestConfig, e.screenConfig], ['Nostro matrimonio', 'A & B', { live_booth: true }, null], 'the refused writes stored nothing')
   assert.deepEqual(await callAs(couple, 'deleteEvent', { eventId: E }), { deleted: true })
 
   const dj = await account('dj'); const d = await create(dj)

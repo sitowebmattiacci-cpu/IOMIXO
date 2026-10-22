@@ -1,6 +1,7 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore'
 import { HttpsError } from 'firebase-functions/v2/https'
 import { idField, requireEventOwner, requireIomixoEvent, type CallerAuth } from './guard'
+import { eventBrandOf } from './brand'
 import { deleteObjects } from '../photos/storage'
 
 export const CONFIG_MAX_BYTES = 16_000
@@ -122,9 +123,16 @@ function checkWinnerPaths(eventId: string, legacyId: string | null, next: Record
 
 export async function updateEventConfig(db: Firestore, request: CallerAuth, input: UpdateEventConfigInput): Promise<{ updated: string[] }> {
   const { ref, data: ownedEvent } = await requireEventOwner(db, request, input.eventId)
-  // Screen Mode / winner announcement are live-control settings: not for a MIOLOVE album.
+  // Screen Mode / winner announcement are live-control settings: not for a MIOLOVE album. The ONE exception is the album's own privacy switch
+  // "photos on the screen" (screenConfig.show_photos): a MIOLOVE owner may set that boolean and nothing else of the screen config.
+  let albumShowPhotos: boolean | null = null
   if (input.screenConfig !== undefined || input.winnerAnnouncement !== undefined || input.screenModeEnabled !== undefined) {
-    await requireIomixoEvent(db, ownedEvent)
+    if ((await eventBrandOf(db, ownedEvent)) === 'miolove') {
+      const sc = input.screenConfig
+      if (input.winnerAnnouncement !== undefined || input.screenModeEnabled !== undefined || !sc || !('show_photos' in sc)) await requireIomixoEvent(db, ownedEvent)   // same refusal as before
+      if (typeof sc!.show_photos !== 'boolean') throw new HttpsError('invalid-argument', 'show_photos must be a boolean', { reason: 'invalid_payload', field: 'show_photos' })
+      albumShowPhotos = sc!.show_photos
+    }
   }
   const stale: string[] = []
   const result = await db.runTransaction(async (tx) => {
@@ -141,7 +149,9 @@ export async function updateEventConfig(db: Firestore, request: CallerAuth, inpu
         if (typeof old === 'string' && old.startsWith(winnerPrefix(input.eventId)) && old !== input.winnerAnnouncement?.[k]) stale.push(old)
       }
     }
-    if (input.screenConfig !== undefined || input.winnerAnnouncement !== undefined) {
+    if (albumShowPhotos !== null) {
+      patch.screenConfig = { ...(curCfg ?? {}), show_photos: albumShowPhotos }          // merge only this key: the client's other keys are never stored for an album
+    } else if (input.screenConfig !== undefined || input.winnerAnnouncement !== undefined) {
       const { winner_announcement: _ignored, ...restCur } = curCfg ?? {}
       void _ignored
       const base = input.screenConfig === undefined ? restCur : input.screenConfig === null ? {} : (({ winner_announcement: _w, ...r }) => (void _w, r))(input.screenConfig)
