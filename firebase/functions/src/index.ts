@@ -31,6 +31,7 @@ import { parseCheckoutInput, portalOf, createCheckoutSession as createCheckoutSe
 import { handleStripeWebhook } from './billing/webhook'
 import { OUTBOX, drainOutbox, processOutboxItem, scanMailTriggers } from './mail/miolove/outbox'
 import { parseSetMailLocaleInput, setMailLocale as setMailLocaleImpl } from './mail/miolove/locale'
+import { recipientResolver } from './mail/miolove/recipient'
 import { dryRunTransport, mailModeOf, resendTransport, type MailTransport } from './mail/transport'
 import { parseSlug, getPublicEvent as getPublicEventImpl } from './owner/publicEvent'
 
@@ -178,7 +179,7 @@ const mioloveMailDeps = (): { deps: Parameters<typeof processOutboxItem>[0] | nu
   return {
     deps: {
       db: getFirestore(), transport, baseUrl: process.env.MIOLOVE_BASE_URL || undefined,
-      resolveRecipient: async (uid) => (await getAuth().getUser(uid).catch(() => null))?.email?.toLowerCase() ?? null,
+      resolveRecipient: recipientResolver((uid) => getAuth().getUser(uid)),       // only "user not found" = no address; any other error is retried by the outbox
       ...(allow.length ? { allowRecipient: (email: string) => allow.includes(email.toLowerCase()) } : {}),
     },
   }

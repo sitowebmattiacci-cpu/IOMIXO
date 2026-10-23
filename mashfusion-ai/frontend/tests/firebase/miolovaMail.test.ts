@@ -8,6 +8,7 @@ import { createEvent, parseCreateEventInput } from '../../../../firebase/functio
 import { purgeAlbum } from '../../../../firebase/functions/src/albums/purge'
 import { OUTBOX, BACKOFF_MS, LEASE_MS, MAX_ATTEMPTS, drainOutbox, enqueueMioloveMail, enqueueMioloveMailSafe, processOutboxItem, scanMailTriggers, type OutboxDeps } from '../../../../firebase/functions/src/mail/miolove/outbox'
 import { setMailLocale, parseSetMailLocaleInput } from '../../../../firebase/functions/src/mail/miolove/locale'
+import { recipientResolver } from '../../../../firebase/functions/src/mail/miolove/recipient'
 import { MailError, dryRunTransport, resendTransport, type MailMessage, type MailTransport } from '../../../../firebase/functions/src/mail/transport'
 import { newClient, closeClient, denied } from './helpers'
 import { collection, doc, getDoc, getDocs, updateDoc } from 'firebase/firestore'
@@ -43,7 +44,7 @@ async function plant(ownerUid: string, over: Record<string, unknown>) {
   const eid = id('pl'); await seedSet(`events/${eid}`, eventFields(ownerUid, `slug${eid}`, { type: 'wedding', brand: 'miolove', title: `Album ${eid}`, ...over })); await seedSet(`eventSlugs/slug${eid}`, { eventId: eid })
   return eid
 }
-const resolveRecipient = async (uid: string) => (await adminAuth.getUser(uid).catch(() => null))?.email ?? null
+const resolveRecipient = recipientResolver((uid) => adminAuth.getUser(uid))                                     // the PRODUCTION resolver (only auth/user-not-found = no address)
 const deps = (transport: MailTransport, now: Date = new Date()): OutboxDeps => ({ db, transport, resolveRecipient, baseUrl: 'https://miolovealbum.com', now: () => now })
 const box = async (key: string) => get(`${OUTBOX}/${key}`)
 const boxOf = async (eventId: string) => (await db.collection(OUTBOX).where('eventId', '==', eventId).get()).docs.map((d) => ({ id: d.id, ...d.data() })) as any[]
@@ -189,6 +190,34 @@ test('MF-7. nothing to send to / nothing left to say: no e-mail address, trial p
   const del = await plant(uid, { accessMode: 'activated', activatedAt: now, expiresAt: new Date(now.getTime() + 5 * DAY), purgeAfter: new Date(now.getTime() + 5 * DAY) }); await enqueueMioloveMailSafe(db, 'album_expiry_7', del)
   await db.doc(`events/${del}`).update({ deletedAt: new Date() })
   assert.equal(await processOutboxItem(deps(t), `album_expiry_7_${del}`), 'skipped'); assert.equal((await box(`album_expiry_7_${del}`))!.skipReason, 'album_gone'); assert.equal(t.sent.length, 0)
+})
+
+test('MF-14. the recipient lookup: an account that does not exist is skipped for good (no_email); authorization denied and temporary Auth errors are RETRIED with back-off (never skipped, never sent), then sent once the error is gone', async () => {
+  const uid = await mkUser(), now = new Date(Date.now() + 5000)                                                    // a moment after the e-mails are queued (they are due from their creation time)
+  const mk = async (owner: string) => { const a = await plant(owner, { accessMode: 'activated', activatedAt: now, expiresAt: new Date(now.getTime() + 365 * DAY), purgeAfter: new Date(now.getTime() + 365 * DAY) }); await enqueueMioloveMailSafe(db, 'album_activated', a); return `album_activated_${a}` }
+  const authErr = (code: string) => Object.assign(new Error(code), { code })
+  const t = dryRunTransport()
+  // the real Auth emulator: an unknown uid raises auth/user-not-found → nothing to send to
+  const ghost = id('ghost'); await seedSet(`users/${ghost}`, { uid: ghost, accountType: 'couple', plan: { tier: 'free', source: 'default' }, createdAt: new Date(), updatedAt: new Date() })
+  const kg = await mk(ghost); assert.equal(await processOutboxItem(deps(t, now), kg), 'skipped'); assert.deepEqual([(await box(kg))!.status, (await box(kg))!.skipReason], ['skipped', 'no_email'])
+  // authorization denied (service account without firebaseauth.users.get) and a temporary error: retried, the e-mail stays alive
+  let failWith: Error | null = authErr('auth/insufficient-permission')
+  const flaky: OutboxDeps = { ...deps(t, now), resolveRecipient: recipientResolver(async (u) => { if (failWith) throw failWith; return adminAuth.getUser(u) }) }
+  const k = await mk(uid)
+  assert.equal(await processOutboxItem(flaky, k), 'retry'); let q = (await box(k))!
+  assert.deepEqual([q.status, q.attempts, q.lastError, q.skipReason, q.nextAttemptAt.toMillis() - now.getTime()], ['pending', 1, 'auth/insufficient-permission', undefined, BACKOFF_MS[0]])
+  failWith = authErr('auth/internal-error'); let later = new Date(now.getTime() + BACKOFF_MS[0] + 1)
+  assert.equal(await processOutboxItem({ ...flaky, now: () => later }, k), 'retry'); q = (await box(k))!; assert.deepEqual([q.status, q.attempts, q.lastError], ['pending', 2, 'auth/internal-error'])
+  assert.equal(t.sent.length, 0, 'nothing is sent while the lookup fails')
+  // the problem is fixed (permission granted): the SAME e-mail goes out, once
+  failWith = null; later = new Date(later.getTime() + BACKOFF_MS[1] + 1)
+  assert.equal(await processOutboxItem({ ...flaky, now: () => later }, k), 'sent'); q = (await box(k))!; assert.deepEqual([q.status, q.attempts, q.lastError], ['sent', 3, undefined]); assert.equal(t.sent.length, 1)
+  assert.equal(t.sent[0].to, `${uid}@example.com`)
+  // a lookup that never recovers does not vanish silently: after MAX_ATTEMPTS it is `failed` (visible, logged), not `skipped`
+  const kf = await mk(uid), dead: OutboxDeps = { ...deps(t, now), resolveRecipient: recipientResolver(async () => { throw authErr('auth/insufficient-permission') }) }
+  let at = new Date(now); let last = ''
+  for (let i = 0; i < MAX_ATTEMPTS + 2; i++) { last = await processOutboxItem({ ...dead, now: () => at }, kf); at = new Date(at.getTime() + 25 * 3_600_000) }
+  q = (await box(kf))!; assert.deepEqual([q.status, q.attempts, q.lastError, q.skipReason, last], ['failed', MAX_ATTEMPTS, 'auth/insufficient-permission', undefined, 'noop'])
 })
 
 test('MF-8. drain: a pass over the queue sends what is due (including retries and expired leases) and leaves what is not', async () => {
