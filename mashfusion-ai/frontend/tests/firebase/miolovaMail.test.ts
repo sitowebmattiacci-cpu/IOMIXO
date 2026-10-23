@@ -101,6 +101,20 @@ test('MF-2. a paid activation queues "album activated" for THAT album only; a re
   assert.equal(await enqueueMioloveMail(db, { kind: 'album_activated', eventId: a, ownerUid: uid, vars: { title: 'x' } }), 'exists')
 })
 
+test('MF-2b. the activation e-mail carries what the VERIFIED Stripe session says was paid (EUR and USD); an unreliable amount leaves the figure out; nothing changes in the payment logic', async () => {
+  const fs = fakeStripe(), now = new Date(), uid = await mkUser('en')
+  const run = async (over: Record<string, unknown>) => { const a = await plant(uid, { accessMode: 'pending' }); assert.equal((await deliver(fs, evt('checkout.session.completed', paid(fs, uid, a, over), now), now)).status, 200); return a }
+  const usd = await run({ amount_total: 1999, currency: 'usd' }), eur = await run({ amount_total: 1999, currency: 'eur' }), none = await run({ amount_total: null }), free = await run({ amount_total: 0, currency: 'eur', payment_status: 'no_payment_required' }), odd = await run({ amount_total: 19.99, currency: 'eur' })
+  assert.deepEqual([(await box(`album_activated_${usd}`))!.vars.amountCents, (await box(`album_activated_${usd}`))!.vars.currency], [1999, 'usd'])
+  assert.deepEqual([(await box(`album_activated_${eur}`))!.vars.amountCents, (await box(`album_activated_${eur}`))!.vars.currency], [1999, 'eur'])
+  for (const a of [none, free, odd]) { const v = (await box(`album_activated_${a}`))!.vars; assert.equal(v.amountCents, undefined, 'no reliable amount'); assert.equal(v.currency, undefined) }
+  for (const a of [usd, eur, none]) assert.equal((await get(`events/${a}`))!.accessMode, 'activated', 'activation itself is untouched')
+  const t = dryRunTransport(), d = deps(t, now)
+  for (const a of [usd, eur, none]) assert.equal(await processOutboxItem(d, `album_activated_${a}`), 'sent')
+  const [mUsd, mEur, mNone] = t.sent.map((m) => (m.text + m.html).replace(/[\u00a0\u202f]/g, ' '))
+  assert.match(mUsd, /Amount paid: \$19\.99\./); assert.match(mEur, /Amount paid: €19\.99\./); assert.doesNotMatch(mNone, /Amount paid/)
+})
+
 test('MF-3. the purge queues "album deleted" / "trial deleted" with the album\'s own title (the tombstone keeps none); an album the owner had already deleted gets no e-mail', async () => {
   const uid = await mkUser('es'), now = new Date()
   const paidOld = await plant(uid, { title: 'Boda de Ana', accessMode: 'activated', activatedAt: new Date(now.getTime() - 400 * DAY), expiresAt: new Date(now.getTime() - DAY), purgeAfter: new Date(now.getTime() - DAY) })

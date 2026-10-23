@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { MAIL_KINDS, MAIL_LOCALES, renderMiolovaMail, parseMailLocale, MIOLOVE_SENDER, type MailKind, type MailLocale } from '../../../../firebase/functions/src/mail/miolove/templates'
+import { MAIL_KINDS, MAIL_LOCALES, formatMailAmount, renderMiolovaMail, parseMailLocale, MIOLOVE_SENDER, type MailKind, type MailLocale } from '../../../../firebase/functions/src/mail/miolove/templates'
 import { dueMailKind, skipReason, varsOfAlbum } from '../../../../firebase/functions/src/mail/miolove/outbox'
 import { mailModeOf } from '../../../../firebase/functions/src/mail/transport'
 import { createRequire } from 'node:module'
@@ -66,4 +66,44 @@ test('MAIL-T5. an e-mail that no longer applies is dropped at send time (paid me
   assert.equal(skipReason('trial_ended', act, NOW), 'state_changed'); assert.equal(skipReason('album_activated', tr, NOW), 'state_changed')
   assert.equal(skipReason('album_deleted', undefined, NOW), null); assert.equal(skipReason('trial_deleted', { accessMode: 'purged', deletedAt: ts(1) }, NOW), null)
   assert.equal(skipReason('trial_started', undefined, NOW), 'album_gone')
+})
+
+const flat = (x: string) => x.replace(/[\u00a0\u202f]/g, ' ')
+
+test('MAIL-T6. trial_started states the trial length (7 days) and its cap (50 photos/videos in total) in every language, from the real limits', () => {
+  for (const locale of MAIL_LOCALES) {
+    const m = renderMiolovaMail({ kind: 'trial_started', locale, vars: VARS, eventId: 'e' })
+    assert.match(m.text, /\b7\b/, locale); assert.match(m.text, /\b50\b/, locale); assert.doesNotMatch(m.text, /\{days\}|\{limit\}/)
+  }
+  assert.match(renderMiolovaMail({ kind: 'trial_started', locale: 'it', vars: VARS, eventId: 'e' }).text, /dura 7 giorni e comprende al massimo 50 tra foto e video in totale/)
+  assert.match(renderMiolovaMail({ kind: 'trial_started', locale: 'en', vars: VARS, eventId: 'e' }).text, /lasts 7 days and includes a maximum of 50 photos and videos in total/)
+  assert.match(renderMiolovaMail({ kind: 'trial_started', locale: 'fr', vars: VARS, eventId: 'e' }).text, /dure 7 jours et comprend au maximum 50 photos et vidéos au total/)
+  assert.match(renderMiolovaMail({ kind: 'trial_started', locale: 'es', vars: VARS, eventId: 'e' }).text, /dura 7 días y incluye un máximo de 50 entre fotos y vídeos en total/)
+})
+
+test('MAIL-T7. album_activated shows the amount REALLY paid in the e-mail\'s own format: EUR and USD, all four languages; no figure at all when it is not reliable', () => {
+  const at = (locale: any, cents: any, currency: any) => renderMiolovaMail({ kind: 'album_activated', locale, vars: { title: 'A', expiresAtMs: NOW.getTime(), amountCents: cents, currency }, eventId: 'e' })
+  assert.match(flat(at('it', 1999, 'eur').text), /Importo pagato: 19,99 €\./); assert.match(flat(at('fr', 1999, 'eur').text), /Montant payé : 19,99 €\./)
+  assert.match(flat(at('es', 1999, 'eur').text), /Importe pagado: 19,99 €\./); assert.match(flat(at('en', 1999, 'usd').text), /Amount paid: \$19\.99\./)
+  // the currency is the one PAID, never inferred from the language
+  assert.match(flat(at('en', 1999, 'eur').text), /Amount paid: €19\.99\./); assert.match(flat(at('it', 1999, 'usd').text), /Importo pagato: 19,99 USD\./); assert.match(flat(at('fr', 1999, 'USD').text), /19,99 \$US/)
+  assert.match(flat(at('it', 1500, 'eur').text), /15,00 €/, 'a discounted payment shows what was paid'); assert.match(at('it', 1999, 'eur').html, /Importo pagato/)
+  for (const locale of MAIL_LOCALES) for (const [c, cur] of [[undefined, undefined], [undefined, 'eur'], [1999, undefined], [0, 'eur'], [-5, 'eur'], [19.99, 'eur'], [1999, 'euro'], [1999, 'e1r'], [NaN, 'eur'], ['1999', 'eur']] as const) {
+    const m = at(locale, c, cur); assert.doesNotMatch(m.text + m.html, /Importo pagato|Amount paid|Montant payé|Importe pagado|undefined|NaN|\{amount\}/, `${locale} ${c} ${cur}`)
+  }
+  assert.equal(formatMailAmount(1999, 'zzz9', 'it'), null); assert.match(flat(formatMailAmount(1999, 'eur', 'it')!), /^19,99 €$/); assert.equal(flat(formatMailAmount(1999, 'usd', 'en')!), '$19.99')
+  // the other nine e-mails never show an amount even if one is stored
+  for (const kind of MAIL_KINDS.filter((k) => k !== 'album_activated')) assert.doesNotMatch(renderMiolovaMail({ kind, locale: 'it', vars: { ...VARS, amountCents: 1999, currency: 'eur' }, eventId: 'e' }).text, /19,99|Importo/)
+})
+
+test('MAIL-T8. paid-album expiry e-mails: CTA "go to the album and download everything" (4 languages), still the Photos-tab link, no promise of an automatic download; trial e-mails keep theirs', () => {
+  const want = { it: 'Vai all’album e scarica tutto', en: 'Go to the album and download everything', fr: 'Accéder à l’album et tout télécharger', es: 'Ir al álbum y descargarlo todo' } as Record<MailLocale, string>
+  for (const locale of MAIL_LOCALES) {
+    for (const kind of ['album_expiry_30', 'album_expiry_7', 'album_expiry_1'] as MailKind[]) {
+      const m = renderMiolovaMail({ kind, locale, vars: VARS, eventId: 'e1' })
+      assert.match(m.text, new RegExp(`${want[locale]}: https://miolovealbum.com/sessions/e1\\?tab=photos&lang=${locale}`), `${locale}/${kind}`); assert.ok(m.html.includes(`>${want[locale]}</a>`))
+    }
+    assert.doesNotMatch(renderMiolovaMail({ kind: 'trial_purge_soon', locale, vars: VARS, eventId: 'e1' }).text, new RegExp(want[locale]), 'trial e-mails are unchanged')
+  }
+  assert.match(renderMiolovaMail({ kind: 'trial_purge_soon', locale: 'it', vars: VARS, eventId: 'e1' }).text, /Scarica i tuoi contenuti: /)
 })

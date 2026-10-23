@@ -59,11 +59,11 @@ export async function enqueueMioloveMail(db: Firestore, i: EnqueueInput): Promis
 }
 
 /** Queue an e-mail about an album read from Firestore (MIOLOVE albums only). Used by the webhook / createEvent; `ev` may be passed when the doc is already known. */
-export async function enqueueMioloveMailSafe(db: Firestore, kind: MailKind, eventId: string, opts: { ev?: DocumentData; now?: Date } = {}): Promise<'queued' | 'exists' | 'ignored' | 'error'> {
+export async function enqueueMioloveMailSafe(db: Firestore, kind: MailKind, eventId: string, opts: { ev?: DocumentData; now?: Date; extraVars?: Partial<MailVars> } = {}): Promise<'queued' | 'exists' | 'ignored' | 'error'> {
   try {
     const ev = opts.ev ?? (await db.doc(`events/${eventId}`).get()).data()
     if (!ev || typeof ev.ownerUid !== 'string' || (await eventBrandOf(db, ev)) !== 'miolove') return 'ignored'      // an IOMIXO event never gets a MIOLOVE e-mail
-    return await enqueueMioloveMail(db, { kind, eventId, ownerUid: ev.ownerUid, vars: varsOfAlbum(ev), now: opts.now })
+    return await enqueueMioloveMail(db, { kind, eventId, ownerUid: ev.ownerUid, vars: { ...varsOfAlbum(ev), ...opts.extraVars }, now: opts.now })
   } catch (e) {
     logger.error('miolove_mail_enqueue_failed', { kind, eventId, code: String((e as { code?: unknown })?.code ?? (e as Error)?.message ?? 'error').slice(0, 80) })
     return 'error'

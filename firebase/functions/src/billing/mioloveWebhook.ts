@@ -69,6 +69,12 @@ async function createOnce(ref: FirebaseFirestore.DocumentReference, data: Record
   try { await ref.create(data); return true } catch (e) { if ((e as { code?: number }).code === 6) return false; throw e }       // 6 = ALREADY_EXISTS
 }
 
+/** What was REALLY paid, from the signature-verified Checkout Session (never from the language or a price table). Anything not a positive amount in a 3-letter currency is left out: the e-mail then shows no figure. */
+export function paidAmountOf(s: Stripe.Checkout.Session): { amountCents?: number; currency?: string } {
+  const cents = s.amount_total, cur = s.currency
+  return typeof cents === 'number' && Number.isInteger(cents) && cents > 0 && typeof cur === 'string' && /^[a-z]{3}$/i.test(cur) ? { amountCents: cents, currency: cur.toLowerCase() } : {}
+}
+
 async function onCheckout(deps: MioloveWebhookDeps, event: Stripe.Event, s: Stripe.Checkout.Session) {
   const now = (deps.now ?? (() => new Date()))()
   if (s.mode !== 'payment') return                                                                                // this endpoint sells one thing: a one-time payment
@@ -103,7 +109,7 @@ async function onCheckout(deps: MioloveWebhookDeps, event: Stripe.Event, s: Stri
       outcome = { v: 'activated', reason: null }
     })
   }
-  if (outcome.v === 'activated' && eventId) await enqueueMioloveMailSafe(deps.db, 'album_activated', eventId, { now })     // queued once per album (same payment replayed = same document); never fails the webhook
+  if (outcome.v === 'activated' && eventId) await enqueueMioloveMailSafe(deps.db, 'album_activated', eventId, { now, extraVars: paidAmountOf(s) })     // queued once per album (same payment replayed = same document); never fails the webhook
   if (outcome.v === 'blocked') logger.error('album_activation_blocked', { reason: outcome.reason, eventId, sessionId: s.id })
   if (!uid || !userOk) return                                                                                      // no known account to record the payment on: logged above, a human reconciles from Stripe
   await createOnce(deps.db.doc(`users/${uid}/payments/${key}`), {
