@@ -18,7 +18,7 @@ test('MAIL-T1. all 10 e-mails × 4 languages render: subject, responsive HTML, t
     const m = renderMiolovaMail({ kind, locale, vars: VARS, eventId: 'evt123' })
     for (const part of [m.subject, m.html, m.text]) assert.doesNotMatch(part, /\{title\}|\{date\}|undefined|NaN/, `${locale}/${kind}`)
     assert.match(m.subject, /Anna & Marco/); assert.match(m.html, /Anna &amp; Marco/); assert.match(m.text, /Anna & Marco/)
-    assert.match(m.html, /<html lang="/); assert.match(m.html, /name="viewport"/); assert.match(m.html, /@media only screen/); assert.match(m.html, /miolove-album-logo-on-light\.png/); assert.match(m.html, /info@miolovealbum\.com/)
+    assert.match(m.html, /<html lang="/); assert.match(m.html, /name="viewport"/); assert.match(m.html, /@media only screen/); assert.match(m.html, /\/brand\/miolove\/email\/miolove-email-logo\.png/); assert.match(m.html, /alt="MIOLOVE Album"/); assert.match(m.html, /info@miolovealbum\.com/)
     assert.ok(m.links.primary.startsWith('https://miolovealbum.com/')); assert.ok(m.html.includes(m.links.primary.replace(/&/g, '&amp;'))); assert.match(m.links.primary, new RegExp(`lang=${locale}`))
     if (kind !== 'trial_deleted' && kind !== 'album_deleted') assert.match(m.links.primary, /\/sessions\/evt123\?/, 'opens THAT album')
     seen.add(`${locale}|${m.subject}`)

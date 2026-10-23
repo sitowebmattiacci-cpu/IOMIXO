@@ -174,7 +174,7 @@ export function renderMiolovaMail(i: RenderInput): RenderedMail {
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#FFF5F9;">${esc(pre)}</div>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#FFF5F9;"><tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" class="wrap" width="600" cellspacing="0" cellpadding="0" style="width:600px;max-width:600px;">
-<tr><td align="center" style="padding:8px 0 20px;"><a href="${esc(base)}" style="text-decoration:none;"><img src="${esc(base.replace(/\/+$/, ''))}/brand/miolove/miolove-album-logo-on-light.png" width="150" alt="MIOLOVE Album" style="display:block;border:0;height:auto;font:700 20px Arial,sans-serif;color:#F06A9B;"></a></td></tr>
+<tr><td align="center" style="padding:8px 0 20px;"><a href="${esc(base)}" style="text-decoration:none;"><img src="${esc(base.replace(/\/+$/, ''))}/brand/miolove/email/miolove-email-logo.png" width="190" alt="MIOLOVE Album" style="display:block;border:0;width:190px;max-width:70%;height:auto;font:700 20px Arial,sans-serif;color:#F06A9B;"></a></td></tr>
 <tr><td class="card" style="background:#FFFFFF;border:1px solid #F3D3E0;border-radius:20px;padding:36px 36px 32px;font-family:Arial,Helvetica,sans-serif;color:#2B2424;">
 <h1 style="margin:0 0 16px;font-size:28px;line-height:1.2;color:#2B2424;">${esc(heading)}</h1>
 ${paras.map((p) => `<p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#2B2424;">${p}</p>`).join('\n')}
