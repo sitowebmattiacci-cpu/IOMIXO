@@ -129,13 +129,13 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
         ))}
       </div>}
 
-      <div className="flex flex-wrap items-stretch gap-3">
+      {!couple && <div className="flex flex-wrap items-stretch gap-3">
         <div className="min-w-0 flex-1 basis-[260px] truncate rounded-xl border border-wd-border bg-white px-4 py-3 font-mono text-[13px] text-wd-ink" title={url}>{url}</div>
         <WdButton variant="secondary" onClick={copy} icon={copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}>
           {copied ? t('weddingPanels.copied') : t('wdAdmin.home.copy')}
         </WdButton>
         <WdLinkButton href={url} variant="primary" icon={<ExternalLink className="h-4 w-4" />}>{t('wdAdmin.home.openShort')}</WdLinkButton>
-      </div>
+      </div>}
 
       <div className="grid gap-8 pt-3 md:grid-cols-[210px_240px] lg:grid-cols-[210px_240px_minmax(0,1fr)]">
         <div>

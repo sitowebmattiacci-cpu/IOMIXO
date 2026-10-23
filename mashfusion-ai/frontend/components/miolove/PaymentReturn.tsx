@@ -23,7 +23,7 @@ export function PaymentReturn({ session }: { session: { id: string; access_mode?
   }, [returned, activated, session.id])
   if (!returned) return null
   if (activated) return (
-    <p className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800" role="status" data-testid="payment-activated"><CheckCircle2 className="h-4 w-4 shrink-0" />{t('albumPlan.albumActivated')}</p>
+    <p className="mt-4 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800" role="status" data-testid="payment-activated"><CheckCircle2 className="h-4 w-4 shrink-0" />{t('albumPlan.albumActivated')}</p>
   )
   return (
     <p className="flex items-center gap-2 rounded-2xl border border-wd-border bg-white px-4 py-3 text-sm font-medium text-wd-ink" role="status" data-testid="payment-pending">

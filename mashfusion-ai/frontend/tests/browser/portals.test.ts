@@ -188,7 +188,10 @@ test('PT5. public links: Sposi album → miolovealbum.com, Wedding DJ and Party 
   try {
     await signIn(page, M(), couple.email); await page.waitForURL(/\/sessions/, { timeout: 60_000 })
     await page.goto(`${M()}/sessions/lcid${stamp}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
-    await page.getByText(`https://miolovealbum.com/live/${coupleSlug}`, { exact: true }).waitFor({ timeout: 60_000 })
+    // The Sposi Home no longer prints the guest URL (no URL / Copia / Apri bar): the QR still carries the miolovealbum.com link.
+    await page.locator('#wd-qrcode-svg').waitFor({ timeout: 60_000 })
+    assert.equal(await page.getByText(`https://miolovealbum.com/live/${coupleSlug}`, { exact: true }).count(), 0, 'no URL bar on the Sposi Home')
+    assert.ok((await qrValues(page)).includes(`https://miolovealbum.com/live/${coupleSlug}`), 'Sposi Home QR = miolovealbum.com guest link')
     assert.equal(await page.locator('a[href*="/remote/"]').count(), 0, 'no Remote DJ for Sposi')
     assert.doesNotMatch(await page.evaluate(() => document.body.innerText), /iomixo/i, 'no IOMIXO text in the Sposi album Home')
   } finally { await ctx.close() }
@@ -328,12 +331,11 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
       assert.doesNotMatch(home, NO_DJ, 'Home: no DJ / Party copy'); assert.doesNotMatch(await page.getByTestId('wd-guest-preview').innerText(), /DJ|canzone/i)
       assert.ok((await qrValues(page)).includes(guestUrl), 'Home QR'); assert.equal(await overflow(page), false, 'home overflow')
 
-      // Photos: guest link + QR + copy + open, then the Live Booth
+      // Photos: no guest-link card (no URL / QR / copy / open in this section), then the Live Booth
       await openTab('Foto')
-      const card = page.getByTestId('wd-photos-guest-link'); await card.waitFor({ timeout: 30_000 })
-      assert.deepEqual(await qrValues(page), [guestUrl], 'Photos QR = guest link'); assert.equal(await card.getByText(guestUrl).count(), 1)
-      await card.getByRole('button', { name: /Copia link/ }).click(); assert.equal(await page.evaluate(() => navigator.clipboard.readText()), guestUrl)
-      assert.equal(await card.locator('a').first().getAttribute('href'), guestUrl)
+      await page.getByRole('button', { name: /^Foto/ }).first().waitFor({ timeout: 30_000 })
+      assert.equal(await page.getByTestId('wd-photos-guest-link').count(), 0, 'Photos: no guest-link card')
+      assert.deepEqual(await qrValues(page), [], 'Photos: no QR'); assert.equal(await page.getByText(guestUrl).count(), 0, 'Photos: no guest URL')
       assert.doesNotMatch(await page.evaluate(() => document.body.innerText), NO_DJ, 'Photos: no DJ / Party copy'); assert.equal(await overflow(page), false, 'photos overflow')
       assert.equal(await page.getByRole('button', { name: /^Live Booth/ }).count(), 0, 'one guest collection: no separate Live Booth view in a MIOLOVE album')
 

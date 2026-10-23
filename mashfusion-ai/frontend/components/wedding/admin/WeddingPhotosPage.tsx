@@ -33,7 +33,6 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [uploading, setUploading] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [copiedGuest, setCopiedGuest] = useState(false)
   const [viewer, setViewer] = useState<number | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -47,7 +46,6 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
   const videoCount = all.filter((p) => isVideoMedia(p)).length
 
   const boothUrl = `${publicOrigin()}/booth/${slug ?? sessionId}`
-  const guestUrl = `${publicOrigin()}/live/${slug ?? sessionId}`
   const err = (e: any) => toast.error(UPLOAD_ERROR_KEYS[e?.reason] ? t(UPLOAD_ERROR_KEYS[e.reason]) : (e?.message ?? t('common.errorGeneric')))
 
   const toggleSel = (id: string) => setSelected((prev) => {
@@ -153,24 +151,6 @@ export function WeddingPhotosPage({ session, initialSource = 'album', couple = f
           <WdButton size="sm" variant="danger" icon={<Trash2 className="h-3.5 w-3.5" />}
             onClick={() => { if (confirm(t('wdAdmin.photos.confirmDelete'))) bulk((p) => livePhotos.remove(p.id)) }}>{t('common.delete')}</WdButton>
         </div>
-      )}
-
-      {couple && source === 'album' && (
-        <WdCard className="flex items-center gap-5">
-          <div className="min-w-0 flex-1" data-testid="wd-photos-guest-link">
-            <p className="text-sm font-bold text-wd-ink">{t('wdAdmin.photos.guestLinkTitle')}</p>
-            <p className="mt-1 text-[13px] text-wd-muted">{t('wdAdmin.photos.guestLinkDesc')}</p>
-            <p className="mt-2 truncate font-mono text-[12px] text-wd-ink" title={guestUrl}>{guestUrl}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <WdButton variant="secondary" size="sm" icon={copiedGuest ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                onClick={async () => { try { await navigator.clipboard.writeText(guestUrl); setCopiedGuest(true); setTimeout(() => setCopiedGuest(false), 1500) } catch {} }}>
-                {copiedGuest ? t('weddingPanels.linkCopied') : t('weddingPanels.copyLink')}
-              </WdButton>
-              <WdLinkButton href={guestUrl} size="sm">{t('weddingPanels.open')}</WdLinkButton>
-            </div>
-          </div>
-          <div className="shrink-0 rounded-xl border border-wd-border bg-white p-2"><QRCodeSVG value={guestUrl} size={104} level="M" /></div>
-        </WdCard>
       )}
 
       {source === 'booth' && (
