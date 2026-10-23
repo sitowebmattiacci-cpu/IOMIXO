@@ -1,4 +1,5 @@
 'use client'
+import { albumStatus } from '@/lib/miolove/albumStatus'
 import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import { QRCodeSVG } from 'qrcode.react'
@@ -89,6 +90,9 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
   const guestItems = buildWeddingGuestActions(getWeddingGuestActionKeys(session.guest_config).filter((k) => (couple ? k !== 'requests' : k !== 'photos')), t)
   const filePrefix = couple ? WEDDING_BRAND_FILE_PREFIX : 'iomixo'
 
+  const lifecycle = couple ? albumStatus(session) : null
+  const albumNotActive = lifecycle && ['pending', 'trialEnded', 'expired'].includes(lifecycle.kind) ? lifecycle.kind : null
+
   return (
     <WdPage
       width="wide"
@@ -103,7 +107,9 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
       <div className="-mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-wd-muted">
         {dateLabel && <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />{dateLabel}</span>}
         {session.venue_name && <span>{session.venue_name}</span>}
-        <span className={session.is_active ? 'font-semibold text-emerald-600' : 'font-semibold'}>{session.is_active ? t('sessions.active') : t('sessions.closed')}</span>
+        {albumNotActive
+          ? <span className="font-semibold text-amber-700" data-testid="album-meta-status">{t(`albumPlan.status${albumNotActive === 'pending' ? 'Pending' : albumNotActive === 'trialEnded' ? 'TrialEnded' : 'Expired'}`)}</span>
+          : <span className={session.is_active ? 'font-semibold text-emerald-600' : 'font-semibold'}>{session.is_active ? t('sessions.active') : t('sessions.closed')}</span>}
       </div>
 
       <TrialQuota session={session} />
