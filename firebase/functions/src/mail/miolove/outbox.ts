@@ -19,6 +19,8 @@ import { DEFAULT_MAIL_LOCALE, DEFAULT_MIOLOVE_BASE_URL, MAIL_KINDS, MIOLOVE_REPL
 export const OUTBOX = 'mioloveMailOutbox'
 export const LEASE_MS = 5 * 60_000
 export const MAX_ATTEMPTS = 6
+/** An e-mail whose recipient is not (yet) allowed to receive mail is left untouched and looked at again after this long. */
+export const HOLD_MS = 60 * 60_000
 export const BACKOFF_MS = [5 * 60_000, 15 * 60_000, 60 * 60_000, 6 * 3_600_000, 24 * 3_600_000]
 const DAY = 86_400_000
 const SAFE_ID = /^[A-Za-z0-9_-]{1,128}$/
@@ -87,10 +89,12 @@ export interface OutboxDeps {
   transport: MailTransport
   /** The account's e-mail address (Firebase Auth), or null. */
   resolveRecipient: (uid: string) => Promise<string | null>
+  /** Staging filter (MIOLOVE_MAIL_ALLOWLIST). A recipient it refuses is HELD: the e-mail stays queued exactly as it was (not sent, not skipped, no attempt used) until the filter lets it through. */
+  allowRecipient?: (email: string) => boolean
   baseUrl?: string
   now?: () => Date
 }
-export type ItemResult = 'sent' | 'skipped' | 'retry' | 'failed' | 'busy' | 'noop'
+export type ItemResult = 'sent' | 'skipped' | 'retry' | 'failed' | 'busy' | 'held' | 'noop'
 
 /** Sends ONE queued e-mail. Safe to call concurrently / repeatedly for the same key: only one caller wins the claim, a finished e-mail is a no-op. */
 export async function processOutboxItem(deps: OutboxDeps, key: string): Promise<ItemResult> {
@@ -106,13 +110,17 @@ export async function processOutboxItem(deps: OutboxDeps, key: string): Promise<
   if (typeof claimed === 'string') return claimed
   const item = claimed as DocumentData, kind = item.kind as MailKind
   const done = (status: 'sent' | 'skipped' | 'failed', extra: Record<string, unknown> = {}) =>
-    ref.update({ status, nextAttemptAt: FieldValue.delete(), finishedAt: Timestamp.fromDate(now), lastError: FieldValue.delete(), ...extra })
+    ref.update({ status, nextAttemptAt: FieldValue.delete(), finishedAt: Timestamp.fromDate(now), lastError: FieldValue.delete(), heldReason: FieldValue.delete(), ...extra })
 
   try {
     const ev = (await deps.db.doc(`events/${item.eventId}`).get()).data()
+    const to = await deps.resolveRecipient(item.ownerUid)
+    if (to && deps.allowRecipient && !deps.allowRecipient(to)) {                          // checked FIRST: a held e-mail must not be dropped / consumed while the filter is on
+      await ref.update({ status: 'pending', attempts: item.attempts - 1, nextAttemptAt: Timestamp.fromMillis(now.getTime() + HOLD_MS), heldReason: 'recipient_not_allowed' })
+      return 'held'
+    }
     const why = skipReason(kind, ev, now)
     if (why) { await done('skipped', { skipReason: why }); return 'skipped' }
-    const to = await deps.resolveRecipient(item.ownerUid)
     if (!to) { await done('skipped', { skipReason: 'no_email' }); return 'skipped' }
     const userSnap = await deps.db.doc(`users/${item.ownerUid}`).get()
     const locale = parseMailLocale(userSnap.data()?.locale) ?? DEFAULT_MAIL_LOCALE
@@ -138,16 +146,16 @@ export async function processOutboxItem(deps: OutboxDeps, key: string): Promise<
   }
 }
 
-export interface DrainSummary { scanned: number; sent: number; skipped: number; retry: number; failed: number; busy: number }
+export interface DrainSummary { scanned: number; sent: number; skipped: number; retry: number; failed: number; busy: number; held: number }
 /** One pass over everything due (new e-mails, retries, expired leases). Called by the scheduler; the Firestore trigger sends a new one at once. */
 export async function drainOutbox(deps: OutboxDeps, limit = 100): Promise<DrainSummary> {
   const now = (deps.now ?? (() => new Date()))()
-  const sum: DrainSummary = { scanned: 0, sent: 0, skipped: 0, retry: 0, failed: 0, busy: 0 }
+  const sum: DrainSummary = { scanned: 0, sent: 0, skipped: 0, retry: 0, failed: 0, busy: 0, held: 0 }
   const due = await deps.db.collection(OUTBOX).where('nextAttemptAt', '<=', Timestamp.fromDate(now)).orderBy('nextAttemptAt').limit(limit).get()
   for (const d of due.docs) {
     sum.scanned++
     const r = await processOutboxItem(deps, d.id)
-    if (r === 'sent' || r === 'skipped' || r === 'retry' || r === 'failed' || r === 'busy') sum[r]++
+    if (r === 'sent' || r === 'skipped' || r === 'retry' || r === 'failed' || r === 'busy' || r === 'held') sum[r]++
   }
   return sum
 }

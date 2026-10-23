@@ -250,6 +250,25 @@ test('MF-11. Resend transport: REST call with bearer key + idempotency key + MIO
   await assert.rejects(resendTransport('k', (async () => { throw new Error('ECONNRESET') }) as any).send(msg), (e: any) => e instanceof MailError && e.retryable && e.code === 'network')
 })
 
+test('MF-13. allowlist (staging): only the allowed address is mailed; every other e-mail is HELD untouched (still pending, no attempt used, never skipped / sent) and goes out once the filter is lifted — even stale ones are not dropped meanwhile', async () => {
+  const mine = await mkUser('it'), real = await mkUser('fr'), now = new Date()
+  const act = { accessMode: 'activated', activatedAt: now, expiresAt: new Date(now.getTime() + 365 * DAY), purgeAfter: new Date(now.getTime() + 365 * DAY) }
+  const a = await plant(mine, act), b = await plant(real, act), stale = await plant(real, { accessMode: 'trial', trialStartsAt: now, trialExpiresAt: new Date(now.getTime() + DAY), purgeAfter: new Date(now.getTime() + 31 * DAY) })
+  for (const e of [a, b]) await enqueueMioloveMailSafe(db, 'album_activated', e, { now }); await enqueueMioloveMailSafe(db, 'trial_ending', stale, { now })
+  await db.doc(`events/${stale}`).update({ accessMode: 'activated' })                                          // would be "skipped: state_changed" if it were looked at
+  const t = dryRunTransport(), filtered: OutboxDeps = { ...deps(t, now), allowRecipient: (e) => e === `${mine}@example.com` }
+  assert.equal(await processOutboxItem(filtered, `album_activated_${a}`), 'sent')
+  assert.equal(await processOutboxItem(filtered, `album_activated_${b}`), 'held'); assert.equal(await processOutboxItem(filtered, `trial_ending_${stale}`), 'held')
+  assert.deepEqual(t.sent.map((m) => m.to), [`${mine}@example.com`])
+  for (const k of [`album_activated_${b}`, `trial_ending_${stale}`]) { const q = (await box(k))!; assert.deepEqual([q.status, q.attempts, q.skipReason, q.heldReason, q.nextAttemptAt.toMillis() - now.getTime()], ['pending', 0, undefined, 'recipient_not_allowed', 3_600_000], k) }
+  assert.equal(await processOutboxItem(filtered, `album_activated_${b}`), 'noop', 'held: not looked at again before the hold is over')
+  const sum = await drainOutbox(filtered, 5000); assert.equal(sum.sent, 0, 'a drain with the filter on sends nothing to anyone else'); assert.equal(t.sent.length, 1)
+  // filter lifted (later): the held e-mails are processed normally — the real one is sent, the stale one is now correctly skipped
+  const later = new Date(now.getTime() + 2 * 3_600_000), open = deps(t, later)
+  assert.equal(await processOutboxItem(open, `album_activated_${b}`), 'sent'); assert.equal(t.sent[1].to, `${real}@example.com`)
+  assert.equal(await processOutboxItem(open, `trial_ending_${stale}`), 'skipped'); assert.equal((await box(`trial_ending_${stale}`))!.skipReason, 'state_changed')
+})
+
 // ═══════════════════════════ the deployed trigger (functions emulator, MIOLOVE_MAIL_MODE=dry) ═══════════════════════════
 
 test('MF-12. the Firestore trigger sends a freshly queued e-mail by itself (dry mode: nothing leaves); runs only when the emulator was started with MIOLOVE_MAIL_MODE=dry', { skip: process.env.MIOLOVE_MAIL_MODE !== 'dry' }, async () => {

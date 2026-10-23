@@ -174,11 +174,12 @@ const mioloveMailDeps = (): { deps: Parameters<typeof processOutboxItem>[0] | nu
   const mode = mailModeOf(process.env.MIOLOVE_MAIL_MODE)
   if (mode === 'off') return { deps: null }
   const transport: MailTransport = mode === 'live' ? resendTransport(RESEND_MIOLOVE_API_KEY.value()) : dryRunTransport()
-  const allow = (process.env.MIOLOVE_MAIL_ALLOWLIST ?? '').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean)       // optional staging filter: only these recipients
+  const allow = (process.env.MIOLOVE_MAIL_ALLOWLIST ?? '').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean)       // optional staging filter: only these recipients get mail, every other e-mail is HELD in the queue (never sent / skipped)
   return {
     deps: {
       db: getFirestore(), transport, baseUrl: process.env.MIOLOVE_BASE_URL || undefined,
-      resolveRecipient: async (uid) => { const e = (await getAuth().getUser(uid).catch(() => null))?.email?.toLowerCase() ?? null; return e && (!allow.length || allow.includes(e)) ? e : null },
+      resolveRecipient: async (uid) => (await getAuth().getUser(uid).catch(() => null))?.email?.toLowerCase() ?? null,
+      ...(allow.length ? { allowRecipient: (email: string) => allow.includes(email.toLowerCase()) } : {}),
     },
   }
 }
