@@ -18,6 +18,8 @@ import { FrameTitleProvider } from '@/components/brand/eventBrandContext'
 import { occasionText } from '@/lib/occasion'
 import { Logo } from '@/components/Logo'
 import { WeddingPhotoDisplay } from '@/components/wedding/WeddingPhotoGridWall'
+import { ScreenBackdrop } from '@/components/miolove/ScreenBackdrop'
+import { resolveScreenBackground } from '@/lib/miolove/screenBackgrounds'
 import { AlbumScreenStage } from '@/components/miolove/AlbumScreenStage'
 import { RouletteWheel } from '@/components/wedding/RouletteWheel'
 import { WinnerAnnouncementStage } from '@/components/wedding/WinnerAnnouncementStage'
@@ -209,6 +211,7 @@ export default function ScreenModePage() {
   // esplicitamente (show_* === true). Senza configurazione salvata lo schermo
   // parte pulito mostrando solo nomi sposi / data / titolo evento.
   const cfg = session.screen_config ?? {}
+  const bgTheme = brand === 'miolove' ? resolveScreenBackground(cfg) : null     // owner-chosen background: also tunes the date / location colours
   const enabledRoulette   = cfg.show_roulette   === true
   const enabledShoeGame   = cfg.show_shoe_game  === true
   const enabledPolls      = cfg.show_polls      === true
@@ -319,6 +322,8 @@ export default function ScreenModePage() {
         fontFamily={coupleFontFamily}
       />
       <div className="min-h-screen w-screen overflow-hidden flex items-stretch relative">
+        {/* MIOLOVE album background chosen by the owner (default theme renders nothing: the stage looks as before). */}
+        {brand === 'miolove' && <ScreenBackdrop screenConfig={cfg} />}
         {/* Decorative gold orbs */}
         <div className="absolute top-0 left-1/4 h-[500px] w-[500px] rounded-full bg-wedding-gold/10 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full bg-wedding-blush/10 blur-3xl pointer-events-none" />
@@ -336,12 +341,12 @@ export default function ScreenModePage() {
                 {session.couple_names ?? session.event_name}
               </h1>
               {session.wedding_date && (
-                <p className="font-wedding text-5xl italic text-wedding-champagne/90 mt-8">
+                <p className="font-wedding text-5xl italic text-wedding-champagne/90 mt-8" style={bgTheme?.date ?? undefined}>
                   {new Date(session.wedding_date).toLocaleDateString(dateLoc, { dateStyle: 'long' })}
                 </p>
               )}
               {session.venue_name && (
-                <p className="text-xl uppercase tracking-[0.5em] text-wedding-taupe mt-6">
+                <p className="text-xl uppercase tracking-[0.5em] text-wedding-taupe mt-6" style={bgTheme?.location ?? undefined}>
                   {session.venue_name}
                 </p>
               )}
@@ -360,7 +365,7 @@ export default function ScreenModePage() {
                 {session.couple_names ?? session.event_name}
               </h1>
               {session.wedding_date && (
-                <p className="font-wedding text-2xl italic text-wedding-champagne/80">
+                <p className="font-wedding text-2xl italic text-wedding-champagne/80" style={bgTheme?.date ?? undefined}>
                   {new Date(session.wedding_date).toLocaleDateString(dateLoc, { dateStyle: 'long' })}
                 </p>
               )}
@@ -487,7 +492,7 @@ export default function ScreenModePage() {
                 {session.couple_names ?? session.event_name}
               </h1>
               {session.wedding_date && (
-                <p className="font-wedding text-2xl italic text-wedding-champagne/80">
+                <p className="font-wedding text-2xl italic text-wedding-champagne/80" style={bgTheme?.date ?? undefined}>
                   {new Date(session.wedding_date).toLocaleDateString(dateLoc, { dateStyle: 'long' })}
                 </p>
               )}
@@ -545,12 +550,12 @@ export default function ScreenModePage() {
               {session.couple_names ?? session.event_name}
             </h1>
             {session.wedding_date && (
-              <p className="font-wedding text-3xl italic text-wedding-champagne/80 mt-4">
+              <p className="font-wedding text-3xl italic text-wedding-champagne/80 mt-4" style={bgTheme?.date ?? undefined}>
                 {new Date(session.wedding_date).toLocaleDateString(dateLoc, { dateStyle: 'long' })}
               </p>
             )}
             {session.venue_name && (
-              <p className="text-base uppercase tracking-[0.35em] text-wedding-taupe mt-3">
+              <p className="text-base uppercase tracking-[0.35em] text-wedding-taupe mt-3" style={bgTheme?.location ?? undefined}>
                 {session.venue_name}
               </p>
             )}

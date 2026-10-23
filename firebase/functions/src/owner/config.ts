@@ -5,6 +5,8 @@ import { eventBrandOf } from './brand'
 import { deleteObjects } from '../photos/storage'
 
 export const CONFIG_MAX_BYTES = 16_000
+/** Stable IDs of the MIOLOVE screen backgrounds (never paths). MUST match SCREEN_BACKGROUND_IDS in the frontend (lib/miolove/screenBackgrounds.ts; a unit test compares them). */
+export const SCREEN_BACKGROUND_THEMES = ['default', 'romantic_pink_bokeh', 'ethereal_pastel_light', 'botanical_green_mist', 'violet_light_ribbons', 'dreamy_champagne_glow'] as const
 /** Event fields that are still AUTHORITATIVE in Supabase: the owner's client mirrors them here right after the legacy write. */
 export interface MirroredEventFields { title?: string; djName?: string | null; description?: string | null; coupleNames?: string | null; weddingDate?: string | null; venueName?: string | null; status?: 'live' | 'ended' }
 export interface UpdateEventConfigInput {
@@ -124,14 +126,22 @@ function checkWinnerPaths(eventId: string, legacyId: string | null, next: Record
 export async function updateEventConfig(db: Firestore, request: CallerAuth, input: UpdateEventConfigInput): Promise<{ updated: string[] }> {
   const { ref, data: ownedEvent } = await requireEventOwner(db, request, input.eventId)
   // Screen Mode / winner announcement are live-control settings: not for a MIOLOVE album. The ONE exception is the album's own privacy switch
-  // "photos on the screen" (screenConfig.show_photos): a MIOLOVE owner may set that boolean and nothing else of the screen config.
-  let albumShowPhotos: boolean | null = null
+  // "photos on the screen" (screenConfig.show_photos) and the screen background (screenConfig.backgroundTheme, whitelisted id): a MIOLOVE owner may set
+  // those two keys and nothing else of the screen config.
+  let albumScreenPatch: { show_photos?: boolean; backgroundTheme?: string } | null = null
   if (input.screenConfig !== undefined || input.winnerAnnouncement !== undefined || input.screenModeEnabled !== undefined) {
     if ((await eventBrandOf(db, ownedEvent)) === 'miolove') {
       const sc = input.screenConfig
-      if (input.winnerAnnouncement !== undefined || input.screenModeEnabled !== undefined || !sc || !('show_photos' in sc)) await requireIomixoEvent(db, ownedEvent)   // same refusal as before
-      if (typeof sc!.show_photos !== 'boolean') throw new HttpsError('invalid-argument', 'show_photos must be a boolean', { reason: 'invalid_payload', field: 'show_photos' })
-      albumShowPhotos = sc!.show_photos
+      if (input.winnerAnnouncement !== undefined || input.screenModeEnabled !== undefined || !sc || !('show_photos' in sc || 'backgroundTheme' in sc)) await requireIomixoEvent(db, ownedEvent)   // same refusal as before
+      albumScreenPatch = {}
+      if ('show_photos' in sc!) {
+        if (typeof sc!.show_photos !== 'boolean') throw new HttpsError('invalid-argument', 'show_photos must be a boolean', { reason: 'invalid_payload', field: 'show_photos' })
+        albumScreenPatch.show_photos = sc!.show_photos
+      }
+      if ('backgroundTheme' in sc!) {
+        if (typeof sc!.backgroundTheme !== 'string' || !(SCREEN_BACKGROUND_THEMES as readonly string[]).includes(sc!.backgroundTheme)) throw new HttpsError('invalid-argument', 'backgroundTheme invalid', { reason: 'invalid_payload', field: 'backgroundTheme' })
+        albumScreenPatch.backgroundTheme = sc!.backgroundTheme
+      }
     }
   }
   const stale: string[] = []
@@ -149,8 +159,8 @@ export async function updateEventConfig(db: Firestore, request: CallerAuth, inpu
         if (typeof old === 'string' && old.startsWith(winnerPrefix(input.eventId)) && old !== input.winnerAnnouncement?.[k]) stale.push(old)
       }
     }
-    if (albumShowPhotos !== null) {
-      patch.screenConfig = { ...(curCfg ?? {}), show_photos: albumShowPhotos }          // merge only this key: the client's other keys are never stored for an album
+    if (albumScreenPatch !== null) {
+      patch.screenConfig = { ...(curCfg ?? {}), ...albumScreenPatch }          // merge only these keys: the client's other keys are never stored for an album
     } else if (input.screenConfig !== undefined || input.winnerAnnouncement !== undefined) {
       const { winner_announcement: _ignored, ...restCur } = curCfg ?? {}
       void _ignored

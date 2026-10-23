@@ -981,6 +981,22 @@
     "trialAlbumExists": "Vous avez déjà créé votre album gratuit. Vous pouvez continuer à l'utiliser depuis votre espace albums."
   },
   "wdAdmin": {
+    "screenBg": {
+      "button": "Fonds",
+      "title": "Fonds de l'écran",
+      "desc": "Choisissez le fond de l'écran live de l'album.",
+      "close": "Fermer",
+      "current": "actuel",
+      "apply": "Appliquer",
+      "reset": "Rétablir par défaut",
+      "error": "Impossible d'enregistrer le fond. Réessayez.",
+      "default": "Par défaut",
+      "romantic_pink_bokeh": "Rose romantique",
+      "ethereal_pastel_light": "Bleu éthéré",
+      "botanical_green_mist": "Vert botanique",
+      "violet_light_ribbons": "Violet lumineux",
+      "dreamy_champagne_glow": "Champagne"
+    },
     "allEvents": "Tous les événements",
     "currentEvent": "Événement actuel",
     "nav": {

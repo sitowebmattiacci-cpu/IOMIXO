@@ -915,6 +915,22 @@
     }
   },
   "wdAdmin": {
+    "screenBg": {
+      "button": "Sfondi",
+      "title": "Sfondi dello schermo",
+      "desc": "Scegli lo sfondo della schermata live dell'album.",
+      "close": "Chiudi",
+      "current": "attuale",
+      "apply": "Applica",
+      "reset": "Ripristina Default",
+      "error": "Non è stato possibile salvare lo sfondo. Riprova.",
+      "default": "Default",
+      "romantic_pink_bokeh": "Rosa romantico",
+      "ethereal_pastel_light": "Azzurro etereo",
+      "botanical_green_mist": "Verde botanico",
+      "violet_light_ribbons": "Viola luminoso",
+      "dreamy_champagne_glow": "Champagne"
+    },
     "posterEditor": {"title": "Cartello QR da tavolo", "subtitle": "Personalizza il cartello da stampare e mettere sui tavoli. Il QR porta sempre alla pagina foto del tuo album.", "format": "Formato", "texts": "Testi", "titleSize": "Dimensione titolo", "size_s": "Piccola", "size_m": "Media", "size_l": "Grande", "title1": "Titolo 1", "title2": "Titolo 2", "title3": "Titolo 3", "instruction1": "Riga istruzione 1", "instruction2": "Riga istruzione 2", "displayName": "Nome mostrato sul cartello", "displayDate": "Data mostrata", "colors": "Colori", "presets": "Stili pronti", "preset_rose": "Rosa e avorio", "preset_sage": "Salvia e crema", "preset_terracotta": "Terracotta e avorio", "preset_dustyblue": "Blu polvere e bianco", "primaryColor": "Colore principale", "backgroundColor": "Sfondo", "fonts": "Caratteri", "titleFont": "Font del titolo principale", "scriptFont": "Font dei titoli corsivi", "bodyFont": "Font del testo", "qrNote": "Il QR code è generato automaticamente, nero su bianco per essere sempre leggibile, e non può essere modificato.", "save": "Salva modifiche", "saving": "Salvataggio…", "saved": "Poster salvato", "saveError": "Salvataggio non riuscito, riprova.", "unsaved": "Modifiche non salvate", "reset": "Ripristina stile predefinito", "resetConfirm": "Perdere le personalizzazioni e tornare allo stile predefinito?", "download": "Scarica PDF", "pdfBusy": "Preparo il PDF…", "pdfError": "Impossibile creare il PDF, riprova.", "preview": "Anteprima"},
     "trial": {"badge": "Prova gratuita", "unit": "foto", "hint": "Puoi raccogliere fino a {max} foto gratuitamente.", "limitTitle": "Limite della prova gratuita raggiunto", "activate": "Attiva il mio album"},
     "allEvents": "Tutti gli eventi",

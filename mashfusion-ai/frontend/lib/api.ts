@@ -213,6 +213,8 @@ export interface LiveSession {
   shoe_game_questions?: string[] | null
   screen_config?: {
     show_photos?: boolean
+    /** MIOLOVE album screen background: a stable preset id (lib/miolove/screenBackgrounds.ts). */
+    backgroundTheme?: string
     show_dedications?: boolean
     show_roulette?: boolean
     show_shoe_game?: boolean

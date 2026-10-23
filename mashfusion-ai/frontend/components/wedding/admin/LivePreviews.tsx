@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Maximize2 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+import { ScreenBackgroundButton } from './ScreenBackgroundPicker'
 
 /**
  * Faithful previews of a MIOLOVE album: they load the REAL public pages (/live/[slug] for the guest phone, /screen/[slug] for the monitor) inside a
@@ -48,7 +49,7 @@ export function PhonePreview({ slug }: { slug: string }) {
 }
 
 /** The big screen: the real /screen/[slug] at 1280×720. */
-export function MonitorPreview({ slug, live }: { slug: string; live: boolean }) {
+export function MonitorPreview({ slug, live, sessionId, screenConfig }: { slug: string; live: boolean; sessionId?: string; screenConfig?: unknown }) {
   const { t } = useI18n()
   return (
     <div className="min-w-0" data-testid="wd-screen-preview">
@@ -66,6 +67,7 @@ export function MonitorPreview({ slug, live }: { slug: string; live: boolean }) 
         className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-wd-border bg-white px-3 py-1.5 text-xs font-semibold text-wd-ink hover:bg-wd-active">
         <Maximize2 className="h-3 w-3" /> {t('wdAdmin.home.fullscreen')}
       </a>
+      {sessionId && <ScreenBackgroundButton sessionId={sessionId} screenConfig={screenConfig} />}
     </div>
   )
 }

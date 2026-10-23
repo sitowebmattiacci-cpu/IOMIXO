@@ -170,7 +170,7 @@ export function WeddingHomePage({ session, pendingRequests, togglingActive, onTo
         </div>
         )}
 
-        {couple && <div className="min-w-0 md:col-span-2 lg:col-span-1"><MonitorPreview slug={slug} live={session.is_active} /></div>}
+        {couple && <div className="min-w-0 md:col-span-2 lg:col-span-1"><MonitorPreview slug={slug} live={session.is_active} sessionId={sessionId} screenConfig={session.screen_config} /></div>}
         {!couple && <div className="min-w-0 md:col-span-2 lg:col-span-1">
           <h2 className="text-base font-bold text-wd-ink">{t('wdAdmin.home.screenPreview')}</h2>
           <p className="mt-1 mb-3 text-[13px] text-wd-muted">{t('wdAdmin.home.screenPreviewDesc')}</p>
