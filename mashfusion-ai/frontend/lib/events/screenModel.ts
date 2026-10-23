@@ -22,7 +22,7 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
  * Photos on the TV. A MIOLOVE album (trial or activated) shows its guests' photos by default (the slideshow is the album's monitor); the owner can
  * switch it off (show_photos === false). Any other event shows photos only when the DJ explicitly enabled them. A `show_photos: false` is final.
  */
-export const isMioloveAlbumDoc = (event: Pick<EventDoc, 'type' | 'accessMode'>): boolean => event.type === 'wedding' && (event.accessMode === 'trial' || event.accessMode === 'activated')
+export const isMioloveAlbumDoc = (event: Pick<EventDoc, 'type' | 'accessMode'>): boolean => event.type === 'wedding' && (event.accessMode === 'trial' || event.accessMode === 'pending' || event.accessMode === 'activated')
 export const screenShowsPhotos = (event: Pick<EventDoc, 'type' | 'accessMode'>, cfg: Record<string, unknown>): boolean =>
   cfg.show_photos === true || (cfg.show_photos === undefined && isMioloveAlbumDoc(event))
 

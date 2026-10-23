@@ -25,7 +25,7 @@ const label = (t: Type) => t ?? 'missing'
 
 const account = async (type: Type, tier: 'free' | 'wedding' = 'wedding') => {
   const c = await mk()
-  // a paid account here holds BOTH products' entitlements (IOMIXO Advance + MIOLOVE plan); the scoping itself is tested in entitlementScope.test.ts
+  // a paid account here holds BOTH products' IOMIXO entitlements (Advance + a stray MIOLOVE plan record); neither makes a MIOLOVE album paid (each album is paid on its own); the scoping itself is tested in entitlementScope.test.ts
   await seedSet(`users/${c.uid}`, { uid: c.uid, email: c.email, ...(type ? { accountType: type } : {}), plan: { tier, source: tier === 'free' ? 'default' : 'legacy' }, ...(tier === 'wedding' ? { miolovePlan: { tier, source: 'stripe' } } : {}) })
   return c
 }
@@ -42,7 +42,7 @@ for (const type of TYPES) {
     const [p, w, a] = await Promise.all([eventOf(u, party.eventId), eventOf(u, djWedding.eventId), eventOf(u, album.eventId)])
     assert.deepEqual([p.brand, w.brand, a.brand], ['iomixo', 'iomixo', 'miolove'])
     assert.deepEqual([p.ownerUid, w.ownerUid, a.ownerUid], [u.uid, u.uid, u.uid], 'one identity owns all three')
-    assert.deepEqual([p.accessMode, w.accessMode, a.accessMode], [undefined, undefined, 'activated'], 'MIOLOVE access is a property of the album, never of the IOMIXO events')
+    assert.deepEqual([p.accessMode, w.accessMode, a.accessMode], [undefined, undefined, 'trial'], 'MIOLOVE access is a property of the album (here its first album = the free trial), never of the IOMIXO events')
   })
 
   test(`DP2 [accountType ${label(type)}]. DJ live control works on the IOMIXO event and is refused on the MIOLOVE album of the SAME uid`, async () => {
@@ -74,13 +74,14 @@ for (const type of TYPES) {
   })
 }
 
-test('DP4. commercial rules stay per product: the free MIOLOVE trial is one per uid and IOMIXO events never consume it (nor the reverse)', async () => {
+test('DP4. commercial rules stay per product: the free MIOLOVE trial is one per account (later albums are pending) and IOMIXO events never consume it (nor the reverse)', async () => {
   const u = await account('dj', 'free')
   const standard = await create(u, { type: 'standard', brand: 'iomixo' })
   const trial = await create(u, { type: 'wedding', brand: 'miolove' })
   assert.deepEqual([(await eventOf(u, standard.eventId)).accessMode, (await eventOf(u, trial.eventId)).accessMode], [undefined, 'trial'])
   assert.deepEqual([(await eventOf(u, trial.eventId)).trialPhotoLimit], [50])
-  assert.equal(await fails(create(u, { type: 'wedding', brand: 'miolove' })), 'already-exists:miolove_trial_album_exists', 'second free album refused')
+  const second = await create(u, { type: 'wedding', brand: 'miolove' })
+  assert.equal((await eventOf(u, second.eventId)).accessMode, 'pending', 'second album: created, but no second free trial')
   // a MIOLOVE trial grants nothing on IOMIXO: Party / Wedding DJ still need Advance or an Event Pass, and the IOMIXO free slot is its own
   assert.equal(await fails(create(u, { type: 'party', brand: 'iomixo' })), 'permission-denied:event_access_required')
   assert.equal(await fails(create(u, { type: 'wedding', brand: 'iomixo' })), 'permission-denied:event_access_required')
@@ -141,7 +142,7 @@ test('DP9. the public payload exposes the explicit brand (null for historic even
   const album = await create(u, { type: 'wedding', brand: 'miolove' }), dj = await create(u, { type: 'wedding', brand: 'iomixo' })
   const pub = async (slug: string) => (await callAs(guest, 'getPublicEvent', { slug })).session
   const a = await pub(album.slug), d = await pub(dj.slug)
-  assert.deepEqual([a.event_brand, a.access_mode, a.owner_account_type], ['miolove', 'activated', 'dj'])
+  assert.deepEqual([a.event_brand, a.access_mode, a.owner_account_type], ['miolove', 'trial', 'dj'])
   assert.deepEqual([d.event_brand, d.access_mode], ['iomixo', null])
   const id = rid(); await seedSet(`events/${id}`, eventFields(u.uid, `s${id}`, { type: 'wedding' })); await seedSet(`eventSlugs/s${id}`, { eventId: id })
   assert.equal((await pub(`s${id}`)).event_brand, null)

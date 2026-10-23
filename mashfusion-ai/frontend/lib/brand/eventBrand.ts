@@ -12,7 +12,7 @@ export interface EventBrandInput {
   type?: string | null
   /** Owner account type, when known (getPublicEvent `owner_account_type`, or the signed-in owner in the dashboard). */
   ownerAccountType?: AccountType | string | null
-  /** events.accessMode: only couple albums ever carry 'trial' / 'activated'. */
+  /** events.accessMode: only couple albums ever carry 'trial' / 'pending' / 'activated'. */
   accessMode?: string | null
   /** events.brand: the product the event was created in (explicit, wins over everything else). */
   brand?: string | null

@@ -89,7 +89,7 @@ export type EventType   = 'standard' | 'party' | 'wedding'
 /** What an album is for (MIOLOVE onboarding). Independent of `type`, which stays 'wedding' for every MIOLOVE album. */
 export type OccasionType = 'wedding' | 'birthday' | 'baptism' | 'other'
 /** MIOLOVE access of an album, written by createEvent for couple accounts only. A missing value is NOT a trial (DJ, Party, legacy events). */
-export type AccessMode = 'trial' | 'activated'
+export type AccessMode = 'trial' | 'pending' | 'activated'
 export type EventStatus = 'live' | 'ended'
 
 /**
@@ -118,6 +118,9 @@ export interface EventDoc {
   /** Trial albums only (server-written, 7 days from creation). Absent on trial albums created before the field: those never expire. */
   trialStartsAt?:    Date | null
   trialExpiresAt?:   Date | null
+  /** Activated albums (server-written by the verified webhook): activation moment and end of the 365 days. Absent on albums activated before the field existed. */
+  activatedAt?:      Date | null
+  expiresAt?:        Date | null
   /** MIOLOVE table sign: the owner's overrides of the poster defaults. */
   posterConfig?:     Record<string, unknown> | null
   status:            EventStatus

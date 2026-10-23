@@ -7,7 +7,7 @@ import { seedSet, eventFields } from './seed'
 import { fromEventDoc } from '../../lib/firebase/repositories/eventRepository'
 
 /**
- * MIOLOVE free trial: a couple account (accountType 'couple') with no paid access gets exactly ONE album, marked accessMode 'trial'.
+ * MIOLOVE free trial: a couple account (accountType 'couple') gets exactly ONE free trial (its first album, accessMode 'trial'); every later album is 'pending' until paid.
  * Everything else (DJ Free, Party, legacy accounts, paid accounts, events without the field) behaves exactly as before.
  */
 const clients: TestClient[] = []
@@ -48,24 +48,31 @@ test('A. couple + Free + no album: the first Wedding album is created and marked
   assert.deepEqual([replay.eventId, replay.created], [r.eventId, false]); assert.equal((await ownerEvents(c.uid)).length, 1)
 })
 
-test('B. couple + Free + a trial album: a second album is refused server-side with miolove_trial_album_exists; deleting the trial does not hand out another', async () => {
+test('B. a second album is CREATED (no more "one album" limit) but is pending: no second trial, no trial fields; deleting the trial album does not hand out another trial', async () => {
   const c = await account('couple'); const first = await create(c)
-  assert.equal(await fails(create(c)), 'already-exists:miolove_trial_album_exists')
-  assert.equal((await ownerEvents(c.uid)).length, 1)
+  const second = await create(c)
+  assert.notEqual(second.eventId, first.eventId); assert.equal(second.created, true)
+  const e2 = await eventOf(c, second.eventId)
+  assert.deepEqual([e2.accessMode, e2.type, e2.brand], ['pending', 'wedding', 'miolove'])
+  for (const f of ['trialExpiresAt', 'trialStartsAt', 'trialPhotoCount', 'trialPhotoLimit', 'purgeAfter', 'activatedAt', 'expiresAt']) assert.equal((e2 as any)[f], undefined, `a pending album has no ${f}`)
+  assert.equal((await reservation(c.uid)).eventId.stringValue, first.eventId, 'the reservation still points at the ONE trial album')
+  assert.equal((await ownerEvents(c.uid)).length, 2)
   await callAs(c, 'deleteEvent', { eventId: first.eventId })
-  assert.equal(await fails(create(c)), 'already-exists:miolove_trial_album_exists', 'the trial is one per account, not one per live album')
-  assert.equal((await ownerEvents(c.uid)).length, 1, 'still one document (soft-deleted, restorable)')
+  const third = await create(c)
+  assert.equal((await eventOf(c, third.eventId)).accessMode, 'pending', 'the trial is one per account, not one per live album')
+  assert.equal((await ownerEvents(c.uid)).length, 3, 'soft-deleted ones are still documents (restorable)')
   assert.equal((await callAs(c, 'restoreEvent', { eventId: first.eventId })).restored, true)
+  assert.equal((await eventOf(c, first.eventId)).accessMode, 'trial', 'restoring gives back the trial album itself, not a new one')
 })
 
-test('C. race: concurrent createEvent calls of the same Free couple create at most ONE trial album', async () => {
+test('C. race: concurrent createEvent calls of the same Free couple create ALL their albums but exactly ONE trial (the others are pending)', async () => {
   const c = await account('couple')
   const results = await Promise.allSettled(Array.from({ length: 6 }, () => create(c)))
-  const ok = results.filter((r) => r.status === 'fulfilled'), bad = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-  assert.equal(ok.length, 1, `exactly one album (got ${ok.length})`)
-  for (const b of bad) assert.equal(`${String(b.reason.code).replace('functions/', '')}:${b.reason.details?.reason ?? ''}`, 'already-exists:miolove_trial_album_exists')
+  assert.equal(results.filter((r) => r.status === 'fulfilled').length, 6, 'every album is created')
   const evs = await ownerEvents(c.uid)
-  assert.equal(evs.length, 1, 'one document in Firestore'); assert.equal(evs[0].fields.accessMode.stringValue, 'trial')
+  assert.equal(evs.length, 6, 'six documents in Firestore')
+  const modes = evs.map((e) => e.fields.accessMode.stringValue).sort()
+  assert.deepEqual(modes, ['pending', 'pending', 'pending', 'pending', 'pending', 'trial'], 'exactly one trial')
 })
 
 test('D. DJ + Free: Wedding and Party stay refused (event_access_required), no trial state, no reservation', async () => {
@@ -86,19 +93,17 @@ test('F. DJ + Free + Event Pass: unchanged (Wedding created, NO accessMode)', as
   const r = await create(dj); assert.equal((await eventOf(dj, r.eventId)).accessMode, undefined); assert.equal((await reservation(dj.uid)), undefined)
 })
 
-test('G. couple with paid MIOLOVE access is NOT a trial: MIOLOVE plan or MIOLOVE Event Pass → accessMode activated, no reservation, more albums allowed', async () => {
+test('G. there is no account-level premium: a MIOLOVE plan / MIOLOVE Event Pass on the account does not activate any album at creation (first = trial, later = pending)', async () => {
   const adv = await account('couple', 'wedding')
   await seedSet(`users/${adv.uid}`, { uid: adv.uid, email: adv.email, accountType: 'couple', plan: { tier: 'free', source: 'default' }, miolovePlan: { tier: 'wedding', source: 'stripe' } })
   const a1 = await create(adv), a2 = await create(adv)
-  for (const r of [a1, a2]) assert.equal((await eventOf(adv, r.eventId)).accessMode, 'activated')
-  assert.equal((await reservation(adv.uid)), undefined)
+  assert.deepEqual([(await eventOf(adv, a1.eventId)).accessMode, (await eventOf(adv, a2.eventId)).accessMode], ['trial', 'pending'])
   const pass = await account('couple'); await giveEventPass(pass.uid, 'miolove')
-  const p = await create(pass); assert.equal((await eventOf(pass, p.eventId)).accessMode, 'activated'); assert.equal((await reservation(pass.uid)), undefined)
-  // a trial couple that later pays: the trial album stays trial, the next album is a normal paid one
-  const later = await account('couple'); const t1 = await create(later)
-  await seedSet(`users/${later.uid}`, { uid: later.uid, email: later.email, accountType: 'couple', plan: { tier: 'free', source: 'default' }, miolovePlan: { tier: 'wedding', source: 'stripe' } })
-  const t2 = await create(later)
-  assert.deepEqual([(await eventOf(later, t1.eventId)).accessMode, (await eventOf(later, t2.eventId)).accessMode], ['trial', 'activated'])
+  const p = await create(pass); assert.equal((await eventOf(pass, p.eventId)).accessMode, 'trial')
+  // an IOMIXO plan / pass is not a MIOLOVE one either
+  const io = await account('couple', 'wedding'); await giveEventPass(io.uid, 'iomixo')
+  const i1 = await create(io), i2 = await create(io)
+  assert.deepEqual([(await eventOf(io, i1.eventId)).accessMode, (await eventOf(io, i2.eventId)).accessMode], ['trial', 'pending'])
 })
 
 test('H. legacy accounts (no accountType, or no users document at all) keep the DJ behaviour: Free Wedding is refused', async () => {
@@ -114,15 +119,18 @@ test('I. Party is unchanged: a couple still cannot create it (wedding_only), a F
   assert.equal((await create(c)).created, true, 'the trial is still available afterwards')
 })
 
-test('J. backward compatible: an event without accessMode is NOT a trial; an account that already owns an album cannot start a trial; invalid input reserves nothing', async () => {
+test('J. backward compatible: an event without accessMode is NOT a trial; an account that already owns an album gets no trial for the next one; invalid input reserves nothing', async () => {
   // reading: absent field → null (never "trial")
   assert.equal(fromEventDoc('x', { type: 'wedding', ownerUid: 'u', slug: 's', title: 't' }).accessMode, null)
   assert.equal(fromEventDoc('x', { type: 'wedding', accessMode: 'trial', ownerUid: 'u', slug: 's', title: 't' }).accessMode, 'trial')
+  assert.equal(fromEventDoc('x', { type: 'wedding', accessMode: 'pending', ownerUid: 'u', slug: 's', title: 't' }).accessMode, 'pending')
   assert.equal(fromEventDoc('x', { type: 'wedding', accessMode: 'free', ownerUid: 'u', slug: 's', title: 't' }).accessMode, null, 'unknown values are not trial either')
   // a couple that already has an album (created before the field existed, now on the Free plan): this is not its first album
   const c = await account('couple'); const slug = `old${Date.now()}`
   await seedSet(`events/${slug}`, eventFields(c.uid, slug, { type: 'wedding', legacySupabaseId: undefined })); await seedSet(`eventSlugs/${slug}`, { eventId: slug })
-  assert.equal(await fails(create(c)), 'already-exists:miolove_trial_album_exists')
+  const next = await create(c)
+  assert.equal((await eventOf(c, next.eventId)).accessMode, 'pending', 'it already has an album: no trial for the new one')
+  assert.equal((await reservation(c.uid)), undefined, 'and no reservation was consumed')
   const fresh = await account('couple')
   assert.equal(await fails(create(fresh, { occasionType: 'funeral' })), 'invalid-argument:invalid_payload')
   assert.equal((await reservation(fresh.uid)), undefined)

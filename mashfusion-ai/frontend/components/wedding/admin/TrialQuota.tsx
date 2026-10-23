@@ -1,8 +1,8 @@
 'use client'
-import Link from 'next/link'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { WdCard } from './WeddingAdminUI'
+import { ActivateAlbumButton } from '@/components/miolove/AlbumStatus'
 
 const DAY = 86_400_000
 
@@ -41,7 +41,7 @@ export function TrialQuota({ session, className }: { session: any; className?: s
         {blocked ? (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm font-semibold text-wd-ink">{expired ? t('wdAdmin.trial.expiredTitle') : t('wdAdmin.trial.limitTitle')}</p>
-            <Link href="/billing" className="inline-flex items-center rounded-xl bg-wd-pink px-4 py-2 text-sm font-semibold text-white">{t('wdAdmin.trial.activate')}</Link>
+            <ActivateAlbumButton albumId={session.id} compact />
           </div>
         ) : (
           <p className="mt-3 text-[13px] text-wd-muted">{t('wdAdmin.trial.hint').replace('{max}', String(max))}</p>

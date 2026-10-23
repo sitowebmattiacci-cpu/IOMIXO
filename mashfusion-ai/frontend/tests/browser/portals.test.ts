@@ -4,7 +4,7 @@ import http from 'node:http'
 import type { Browser, Page } from 'playwright-core'
 import { startFakeRender, startNext, launchPortals, portalUrl, type FakeRender, type App } from './harness'
 import { newClient } from '../firebase/helpers'
-import { seedSet, eventFields } from '../firebase/seed'
+import { seedSet, seedUpdate, eventFields } from '../firebase/seed'
 
 /**
  * Two portals, one Firebase project: the real hostnames (iomixo.com / miolovealbum.com) are mapped to the local dev server by Chrome, so detection,
@@ -316,6 +316,8 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
       const eventId = page.url().split('/sessions/')[1]
       const ev = (await until(async () => (await fsGet(`events/${eventId}`)).fields, 20_000, 'album created'))
       const slug = ev.slug.stringValue
+      assert.equal(ev.accessMode.stringValue, 'trial', 'the first album is the free trial; payment is per album')
+      await seedUpdate(`events/${eventId}`, { accessMode: 'activated', activatedAt: new Date(), expiresAt: new Date(Date.now() + 365 * 86_400_000) })      // what the verified webhook writes: the poster belongs to the paid album
       assert.equal(ev.guestConfig?.mapValue?.fields?.requests?.booleanValue, false, 'a Sposi album starts with song requests off')
       assert.equal(ev.guestConfig?.mapValue?.fields?.live_booth?.booleanValue, true, 'and the photo entry point on')
       const guestUrl = `https://miolovealbum.com/live/${slug}`, boothUrl = `https://miolovealbum.com/booth/${slug}`

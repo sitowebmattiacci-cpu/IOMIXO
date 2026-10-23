@@ -12,7 +12,6 @@ import { Badge } from '@/components/ui/Badge'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useI18n } from '@/lib/i18n'
 import { useAccountRole } from '@/lib/roles'
-import { useAlbumPlan } from '@/lib/miolove/useAlbumPlan'
 import toast from 'react-hot-toast'
 import type { User as UserType } from '@/types'
 import Image from 'next/image'
@@ -29,11 +28,8 @@ export default function SettingsPage() {
   const { t, locale } = useI18n()
   const { data: me, isLoading } = useSWR<UserType>('me', () => auth.me())
   const { portal } = useAccountRole()
-  // MIOLOVE shows the album's plan (free trial / full album), never an IOMIXO plan name.
-  const { state: albumState } = useAlbumPlan()
-  const shownPlan = portal === 'miolove'
-    ? t({ none: 'albumPlan.statusNone', trial: 'albumPlan.trialName', trialEnded: 'albumPlan.statusTrialEnded', active: 'albumPlan.albumName' }[albumState.kind])
-    : me?.plan
+  // MIOLOVE has no account plan: every album has its own status (shown in "I miei album"), so the plan row is IOMIXO's only.
+  const shownPlan = me?.plan
 
   // ── Profile form state ────────────────────────────────────────
   const [fullName,    setFullName]    = useState('')
@@ -262,13 +258,15 @@ export default function SettingsPage() {
                   {me?.created_at ? new Date(me.created_at).toLocaleDateString(({ it: 'it-IT', en: 'en-US', fr: 'fr-FR', es: 'es-ES' } as Record<string, string>)[locale] ?? 'en-US', { month: 'long', year: 'numeric' }) : '—'}
                 </span>
               </div>
+              {portal !== 'miolove' && (<>
               <span className="text-white/10">·</span>
               <div className="flex items-center gap-2">
                 <span className="text-white/50">{t('settings.plan')}</span>
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${portal === 'miolove' ? 'bg-white/5 text-white/70' : `capitalize ${PLAN_COLORS[shownPlan ?? 'free']}`}`} data-testid="settings-plan">
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${PLAN_COLORS[shownPlan ?? 'free']}`} data-testid="settings-plan">
                   {shownPlan ?? 'free'}
                 </span>
               </div>
+              </>)}
             </div>
 
             {/* Cambio password via forgot-password flow */}

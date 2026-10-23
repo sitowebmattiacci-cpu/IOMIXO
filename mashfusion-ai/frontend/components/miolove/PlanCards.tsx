@@ -4,12 +4,10 @@ import type { ReactNode } from 'react'
 import { Check, Minus } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
-import { ALBUM_INCLUDED, TRIAL_EXCLUDED, TRIAL_INCLUDED, formatAlbumListPrice, formatAlbumPrice, visibleItems, type AlbumPlanKind } from '@/lib/miolove/plans'
+import { ALBUM_INCLUDED, TRIAL_EXCLUDED, TRIAL_INCLUDED, formatAlbumListPrice, formatAlbumPrice, visibleItems } from '@/lib/miolove/plans'
 
-/** The two MIOLOVE offers, side by side: free trial and full album (single payment). Used by the public home and by the billing page. */
-export function PlanCards({ current, trialCta, albumCta, className }: {
-  /** Billing page: the plan the owner is on (gets a "current plan" badge instead of a button). */
-  current?: AlbumPlanKind
+/** The two MIOLOVE offers, side by side: the free trial (one per account) and the full album (one payment PER album, 365 days). Used by the public home. */
+export function PlanCards({ trialCta, albumCta, className }: {
   trialCta: ReactNode
   albumCta: ReactNode
   className?: string
@@ -23,7 +21,6 @@ export function PlanCards({ current, trialCta, albumCta, className }: {
       <span>{t(`albumPlan.f.${key}`)}</span>
     </li>
   )
-  const trialCurrent = current === 'trial' || current === 'trialEnded'
   return (
     <div className={cn('grid gap-5 md:grid-cols-2', className)} data-testid="plan-cards">
       {/* Free trial */}
@@ -31,7 +28,6 @@ export function PlanCards({ current, trialCta, albumCta, className }: {
         <header>
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-xl font-bold text-wd-ink">{t('albumPlan.trialName')}</h3>
-            {trialCurrent && <span className="rounded-full bg-wd-active px-3 py-1 text-xs font-bold text-wd-pink">{t('albumPlan.current')}</span>}
           </div>
           <p className="mt-4 text-4xl font-bold tracking-tight text-wd-ink">{t('albumPlan.trialPrice')}</p>
           <p className="mt-1 text-sm text-wd-muted">{t('albumPlan.trialSub')}</p>
@@ -51,7 +47,6 @@ export function PlanCards({ current, trialCta, albumCta, className }: {
         <header>
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-xl font-bold text-wd-ink">{t('albumPlan.albumName')}</h3>
-            {current === 'active' && <span className="rounded-full bg-wd-active px-3 py-1 text-xs font-bold text-wd-pink">{t('albumPlan.current')}</span>}
           </div>
           <p className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <s className="text-2xl font-semibold text-wd-muted/80 decoration-wd-pink/70 decoration-2" data-testid="album-list-price" aria-label={t('albumPlan.listPrice')}>{formatAlbumListPrice(locale)}</s>

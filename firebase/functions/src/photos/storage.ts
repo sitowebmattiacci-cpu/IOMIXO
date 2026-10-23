@@ -56,3 +56,19 @@ export async function issueDownloadUrl(path: string): Promise<string> {
   const base = emulator ? (/^https?:\/\//.test(emulator) ? emulator : `http://${emulator}`) : 'https://firebasestorage.googleapis.com'
   return `${base}/v0/b/${bucketName()}/o/${encodeURIComponent(path)}?alt=media&token=${token}`
 }
+
+/**
+ * Deletes EVERY object under a prefix (an album's whole folder: originals, optimized copies, thumbnails, export archives, winner photos, temp files) and
+ * returns how many were removed. Unlike deleteObjects it THROWS on a failure: the purge job must not mark an album as purged while files are left.
+ */
+export async function deletePrefix(prefix: string): Promise<number> {
+  const [files] = await bucket().getFiles({ prefix })
+  for (const f of files) await f.delete({ ignoreNotFound: true })
+  return files.length
+}
+
+/** How many objects remain under a prefix (used by the purge to verify its own work). */
+export async function countPrefix(prefix: string): Promise<number> {
+  const [files] = await bucket().getFiles({ prefix, maxResults: 1 })
+  return files.length
+}

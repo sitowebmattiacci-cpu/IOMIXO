@@ -55,7 +55,7 @@ test('G3. IOMIXO is unchanged: a DJ Free wedding event keeps the plan-based feat
   assert.deepEqual([p.features.guestPhotoAlbum, p.features.screenMode], [false, false])
 })
 
-test('T7. createEvent stamps trialStartsAt / trialExpiresAt = +7 days (server clock); activated albums get none', async () => {
+test('T7. createEvent stamps trialStartsAt / trialExpiresAt = +7 days (server clock) on the TRIAL album only; a later (pending) album gets none', async () => {
   const c = await mk(); await seedSet(`users/${c.uid}`, { uid: c.uid, email: c.email, accountType: 'couple', plan: { tier: 'free', source: 'default' } })
   const before = Date.now()
   const r = await callAs<{ eventId: string }>(c, 'createEvent', { requestId: `t7${Date.now()}`, title: 'Album', type: 'wedding', occasionType: 'baptism', weddingDate: future() })
@@ -64,10 +64,9 @@ test('T7. createEvent stamps trialStartsAt / trialExpiresAt = +7 days (server cl
   assert.ok(start >= before - 2000 && start <= Date.now() + 2000)
   assert.equal(Math.round((end - start) / 86_400_000), 7)
   assert.equal(f.screenModeEnabled.booleanValue, true)
-  const paid = await mk(); await seedSet(`users/${paid.uid}`, { uid: paid.uid, email: paid.email, accountType: 'couple', plan: { tier: 'free', source: 'default' }, miolovePlan: { tier: 'wedding', source: 'stripe' } })
-  const p = await callAs<{ eventId: string }>(paid, 'createEvent', { requestId: `t7p${Date.now()}`, title: 'Album', type: 'wedding' })
+  const p = await callAs<{ eventId: string }>(c, 'createEvent', { requestId: `t7p${Date.now()}`, title: 'Album 2', type: 'wedding' })
   const pf = (await fsGet(`events/${p.eventId}`)).fields
-  assert.deepEqual([pf.trialStartsAt, pf.trialExpiresAt], [undefined, undefined])
+  assert.deepEqual([pf.accessMode.stringValue, pf.trialStartsAt, pf.trialExpiresAt], ['pending', undefined, undefined])
 })
 
 test('T8. expired trial: reading works, the public payload says expired, new uploads are refused with miolove_trial_expired; nothing is deleted', async () => {

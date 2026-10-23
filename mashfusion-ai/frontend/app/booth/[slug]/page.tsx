@@ -20,6 +20,7 @@ import {
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useI18n } from '@/lib/i18n'
 import { occasionText } from '@/lib/occasion'
+import { guestAlbumClosure } from '@/lib/miolove/guestClosure'
 import toast from 'react-hot-toast'
 
 /** Server reasons of the photo callables → translated guest message (the server texts are not localized). */
@@ -124,7 +125,8 @@ export default function LiveBoothPage() {
   // MIOLOVE album: occasion-aware copy, no MIOLOVE mark once activated (paid), uploads closed once the 7-day trial is over (server flag or end instant).
   const isAlbum = brand === 'miolove'
   const whiteLabel = isAlbum && session.access_mode === 'activated'
-  const trialExpired = isAlbum && session.access_mode === 'trial' && (session.trial_expired === true || (!!session.trial_expires_at && Date.now() >= Date.parse(session.trial_expires_at)))
+  const closure = guestAlbumClosure(session, isAlbum)
+  const trialExpired = closure.closed
 
   if (brand === undefined) {
     return <PartyShell><div className="min-h-screen" /></PartyShell>
@@ -574,7 +576,7 @@ export default function LiveBoothPage() {
     return (
       <WeddingGuestShell whiteLabel={whiteLabel} languageSlot={languageSlot}>
         <WeddingGuestPageTitle eyebrow="Live Booth" title={names} />
-        <div data-testid="booth-trial-ended"><WeddingGuestNotice tone="info">{t('guestAlbum.trialEnded')}</WeddingGuestNotice></div>
+        <div data-testid="booth-trial-ended"><WeddingGuestNotice tone="info">{t(closure.key ?? 'guestAlbum.trialEnded')}</WeddingGuestNotice></div>
         <div className="flex justify-center"><WeddingGuestBackLink href={`/live/${slug}`} label={t('booth.backToMain')} /></div>
       </WeddingGuestShell>
     )

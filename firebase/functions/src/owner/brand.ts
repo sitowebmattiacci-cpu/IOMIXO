@@ -3,7 +3,7 @@ import type { DocumentData, Firestore } from 'firebase-admin/firestore'
 /**
  * Which product an event belongs to. One Firebase identity may own events of BOTH products, so the owner's account type can no longer say it:
  * the event carries its own `brand`, written by createEvent. Events created before the field keep their old classification:
- * only Wedding events can be MIOLOVE albums, and those are recognised by accessMode ('trial' / 'activated', server-written) or, last, by
+ * only Wedding events can be MIOLOVE albums, and those are recognised by accessMode ('trial' / 'pending' / 'activated' / 'purged', server-written) or, last, by
  * a couple-typed owner. Everything else is IOMIXO.
  */
 export type EventBrand = 'iomixo' | 'miolove'
@@ -15,7 +15,7 @@ export function brandFromEvent(ev: DocumentData): EventBrand | 'owner' {
   const explicit = parseBrand(ev.brand)
   if (explicit) return explicit
   if (ev.type !== 'wedding') return 'iomixo'
-  if (ev.accessMode === 'trial' || ev.accessMode === 'activated') return 'miolove'
+  if (ev.accessMode === 'trial' || ev.accessMode === 'pending' || ev.accessMode === 'activated' || ev.accessMode === 'purged') return 'miolove'
   return 'owner'
 }
 

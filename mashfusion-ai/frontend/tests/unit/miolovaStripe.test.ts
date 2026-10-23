@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs'
 import { buildPriceTable, buildMiolovePriceTable, checkoutPrice, albumActivationPrice, priceInfo } from '../../../../firebase/functions/src/billing/prices'
 import { parseAlbumCheckoutInput, albumCurrencyFor } from '../../../../firebase/functions/src/billing/albumCheckout'
 import { currencyForLocale } from '../../lib/pricing'
-import { ALBUM_PRICING, albumPlanState } from '../../lib/miolove/plans'
+import { ALBUM_PRICING } from '../../lib/miolove/plans'
+import { albumStatus } from '../../lib/miolove/albumStatus'
 
 const ENV = { STRIPE_PRICE_PRO_EUR: 'price_PROEUR000001', STRIPE_PRICE_EVENT_PASS_EUR: 'price_PASSEUR00001', STRIPE_PRICE_MIOLOVE_ALBUM_EUR: 'price_ALBEUR000001', STRIPE_PRICE_MIOLOVE_ALBUM_USD: 'price_ALBUSD000001' }
 
@@ -28,7 +29,7 @@ test('STRIPE-U3. client input: only eventId + a language enum are read; price / 
   for (const bad of [{}, { eventId: '' }, { eventId: 'a/b' }, { eventId: 7 }, null]) assert.throws(() => parseAlbumCheckoutInput(bad))
 })
 test('STRIPE-U4. an activated album shows no pay state', () => {
-  const state = albumPlanState({ access_mode: 'activated' } as any); assert.equal(state.kind, 'active')
+  const state = albumStatus({ access_mode: 'activated' } as any)!; assert.equal(state.kind, 'active'); assert.equal(state.canActivate, false)
 })
 
 test('STRIPE-U5. wiring (functions/src/index.ts): IOMIXO callables / webhook keep the IOMIXO secrets; the album checkout and its webhook use ONLY the MIOLOVE ones', () => {

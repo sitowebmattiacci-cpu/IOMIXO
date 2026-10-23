@@ -4,16 +4,19 @@ import { isStripeError, type StripeApi } from './stripeApi'
 import { albumActivationPrice, type PriceTable } from './prices'
 import type { AuthLike, BillingConfig } from './checkout'
 import { eventBrandOf } from '../owner/brand'
+import { activationBlockReason } from '../photos/albumLifecycle'
 
 /**
- * createAlbumCheckoutSession (owner callable): the ONE commercial purchase of MIOLOVE — a one-time payment that activates ONE album (events/{eventId}.accessMode → 'activated',
- * written only by the verified webhook, never by this call nor by the return URL).
+ * createAlbumCheckoutSession (owner callable): the ONE commercial purchase of MIOLOVE — a one-time payment (€19.99 / $19.99) that activates ONE album for 365 days
+ * (events/{eventId}.accessMode → 'activated' + activatedAt / expiresAt, written only by the verified webhook, never by this call nor by the return URL).
+ * Every album is bought on its own: the Checkout Session names its eventId and nothing else is ever activated by it (no account-level state exists).
  *
  * The client sends an event id and its language (a fixed enum) and nothing else: price, currency, mode, customer, URLs and metadata are decided here.
  * Currency follows the language exactly like the prices the page shows (English → USD, Italian / French / Spanish → EUR).
  * Runs ONLY on the MIOLOVE Stripe account (its own client + its own price table): no Stripe customer is created or stored (the buyer's e-mail is passed to Checkout), so nothing
  * of the IOMIXO billing identity (users.stripeCustomerId, stripeCustomers/*) is ever read or overwritten.
- * It refuses: an anonymous caller, an event that is not the caller's own, an IOMIXO event, an album that is not a free trial (already activated or not eligible).
+ * It refuses: an anonymous caller, an event that is not the caller's own, an IOMIXO event, an album that cannot be activated (see photos/albumLifecycle.activationBlockReason:
+ * already activated, past its 30-day recovery window, being / already purged).
  */
 const fail = (code: FunctionsErrorCode, reason: string): never => { throw new HttpsError(code, reason, { reason }) }
 
@@ -30,7 +33,7 @@ export function parseAlbumCheckoutInput(d: unknown): AlbumCheckoutInput {
 }
 
 export async function createAlbumCheckoutSession(
-  db: Firestore, stripe: StripeApi, prices: PriceTable, cfg: BillingConfig, authIn: AuthLike | undefined, input: AlbumCheckoutInput,
+  db: Firestore, stripe: StripeApi, prices: PriceTable, cfg: BillingConfig, authIn: AuthLike | undefined, input: AlbumCheckoutInput, now: () => Date = () => new Date(),
 ): Promise<{ url: string }> {
   if (!authIn?.uid || authIn.token.firebase?.sign_in_provider === 'anonymous') return fail('unauthenticated', 'account_required')
   const auth = authIn
@@ -39,8 +42,9 @@ export async function createAlbumCheckoutSession(
   if (!snap.exists || snap.data()!.ownerUid !== auth.uid || snap.data()!.deletedAt) return fail('not-found', 'event_not_found')
   const ev = snap.data()!
   if ((await eventBrandOf(db, ev)) !== 'miolove') return fail('permission-denied', 'not_miolove_album')
-  if (ev.accessMode === 'activated') return fail('failed-precondition', 'already_activated')
-  if (ev.accessMode !== 'trial') return fail('failed-precondition', 'album_not_eligible')
+  const blocked = activationBlockReason(ev, now())
+  if (blocked === 'album_gone') return fail('not-found', 'event_not_found')
+  if (blocked) return fail('failed-precondition', blocked)
 
   // Never fall back to the IOMIXO origin: without a MIOLOVE origin or a configured price there is simply no checkout yet.
   if (!cfg.coupleBaseUrl) return fail('failed-precondition', 'checkout_unavailable')

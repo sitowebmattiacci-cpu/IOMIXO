@@ -84,16 +84,16 @@ test('ES-C. legacy entitlements WITHOUT a scope are IOMIXO: valid on IOMIXO, nev
   assert.ok((await djEvent(onlyPass)).eventId)
 })
 
-test('ES-D. scope=miolove (plan or Event Pass) → the MIOLOVE album is ACTIVATED, and it does NOT unlock IOMIXO', async () => {
+test('ES-D. scope=miolove (plan or Event Pass) is isolated from IOMIXO, and creates no "premium account": the album is still the trial (each album is paid for on its own)', async () => {
   const byPlan = await mkUid({ miolovePlan: plan('wedding') })
   assert.equal(await mioAccess(byPlan), true); assert.equal(await ioAccess(byPlan), false)
-  assert.equal(await mode((await album(byPlan)).eventId), 'activated')
+  assert.equal(await mode((await album(byPlan)).eventId), 'trial', 'no account-level activation any more')
   assert.equal(await fails(djEvent(byPlan)), 'permission-denied:event_access_required', 'IOMIXO Party still needs an IOMIXO entitlement')
   assert.equal(await fails(djEvent(byPlan, 'wedding')), 'permission-denied:event_access_required')
 
   const byPass = await mkUid(); await pass(byPass, 'miolove')
   assert.equal(await mioAccess(byPass), true); assert.equal(await ioAccess(byPass), false)
-  assert.equal(await mode((await album(byPass)).eventId), 'activated')
+  assert.equal(await mode((await album(byPass)).eventId), 'trial')
   assert.equal(await fails(djEvent(byPass)), 'permission-denied:event_access_required')
 })
 
@@ -103,10 +103,10 @@ test('ES-E. scope=iomixo → IOMIXO unlocked, MIOLOVE not', async () => {
   assert.equal(await mode((await album(uid)).eventId), 'trial'); assert.ok((await djEvent(uid)).eventId)
 })
 
-test('ES-F. the trial rule is per product: an IOMIXO entitlement does not skip it, a second free album is still refused, an expired MIOLOVE plan counts as none', async () => {
+test('ES-F. the trial is one per ACCOUNT: an IOMIXO entitlement does not skip it, a second album is created but pending (no second trial), an expired MIOLOVE plan counts as none', async () => {
   const uid = await mkUid({ plan: plan('wedding') })
   assert.equal(await mode((await album(uid)).eventId), 'trial')
-  assert.equal(await fails(album(uid)), 'already-exists:miolove_trial_album_exists')
+  assert.equal(await mode((await album(uid)).eventId), 'pending', 'second album: allowed, but no second trial')
   const expired = await mkUid({ miolovePlan: { tier: 'wedding', source: 'stripe', validUntil: new Date(NOW.getTime() - 3600_000) } })
   assert.equal(await mioAccess(expired), false)
   assert.equal(await mode((await album(expired)).eventId), 'trial')
@@ -122,6 +122,7 @@ test('ES-G. an event is judged by ITS product: IOMIXO Advance gives a MIOLOVE tr
   assert.equal((await loadEventEntitlements(db, dj.eventId, NOW)).eventAccess, true)
 
   const paid = await mkUid({ miolovePlan: plan('wedding') }), act = await album(paid)
+  await db.doc(`events/${act.eventId}`).update({ accessMode: 'activated' })                              // what the verified MIOLOVE webhook writes
   assert.equal((await loadEventEntitlements(db, act.eventId, NOW)).eventAccess, true)
   // an album already marked activated keeps its feature set even after its MIOLOVE plan lapses
   await db.doc(`users/${paid}`).update({ miolovePlan: { tier: 'free', source: 'stripe' } })
@@ -194,7 +195,7 @@ test('ES-W2. webhook: an Event Pass is stored with the scope of its price (MIOLO
   const scopes = async (uid: string) => (await db.collection(`users/${uid}/eventPasses`).get()).docs.map((d: any) => d.data().productScope)
   assert.deepEqual(await scopes(a), ['miolove']); assert.deepEqual(await scopes(b), ['iomixo'])
   assert.deepEqual([await mioAccess(a), await ioAccess(a)], [true, false]); assert.deepEqual([await mioAccess(b), await ioAccess(b)], [false, true])
-  assert.equal(await mode((await album(a)).eventId), 'activated'); assert.equal(await mode((await album(b)).eventId), 'trial')
+  assert.equal(await mode((await album(a)).eventId), 'trial', 'a MIOLOVE-scope pass is an entitlement record, not an album activation'); assert.equal(await mode((await album(b)).eventId), 'trial')
 })
 
 test('ES-W3. webhook stays strict: bad signature → 400 and nothing written; an unknown price is still an explicit failure (no scope fallback)', async () => {

@@ -87,7 +87,8 @@ export type SessionType = 'standard' | 'party' | 'wedding'
 /** What a MIOLOVE album is for; the album's `session_type` stays 'wedding' whatever the occasion. */
 export type OccasionType = 'wedding' | 'birthday' | 'baptism' | 'other'
 /** MIOLOVE access of an album ('trial' = the free first album); absent for every event created outside the couple flow. */
-export type AccessMode = 'trial' | 'activated'
+/** 'pending' = created, waiting for its own €19.99 payment (every album after the account's one free trial). */
+export type AccessMode = 'trial' | 'pending' | 'activated'
 export type PlanTier = 'free' | 'pro' | 'wedding'
 
 /**
@@ -200,6 +201,9 @@ export interface LiveSession {
   /** Trial albums: server-written start / end of the 7 free days (ISO). Absent on trial albums created before the field. */
   trial_starts_at?: string
   trial_expires_at?: string
+  /** Paid albums (server-written by the verified webhook): activation moment and end of the 365 days (ISO). Absent on albums activated before the field existed. */
+  activated_at?: string
+  expires_at?: string
   poster_config?: Record<string, unknown> | null
   couple_names?: string | null
   wedding_date?: string | null
@@ -282,8 +286,8 @@ export interface PublicLivePayload {
     guest_config: GuestConfig | null
     /** Event owner's account type (brand / portal of the guest pages). null = the server could not read it; absent on an older server. */
     owner_account_type?: 'dj' | 'couple' | null
-    /** Couple albums only: 'trial' | 'activated'. */
-    access_mode?: 'trial' | 'activated' | null
+    /** Couple albums only: 'trial' | 'pending' | 'activated'. */
+    access_mode?: 'trial' | 'pending' | 'activated' | null
     /** Product the event was created in (explicit); null/absent on events created before the field. */
     event_brand?: 'iomixo' | 'miolove' | null
     /** MIOLOVE albums: what the album is for. */
@@ -291,6 +295,10 @@ export interface PublicLivePayload {
     /** Trial albums: end of the 7 free days (ISO) and whether the SERVER clock says it has passed (new uploads are refused then). */
     trial_expires_at?: string | null
     trial_expired?: boolean
+    /** MIOLOVE albums, SERVER clock: where the album stands, end of its 365 days, and whether new uploads are closed (pending / paused trial / expired). */
+    album_phase?: 'trial' | 'trial_ended' | 'trial_lapsed' | 'pending' | 'active' | 'expired' | 'purged' | null
+    expires_at?: string | null
+    uploads_closed?: boolean
   }
   profile: Omit<DjProfile, 'public_slug' | 'id' | 'user_id'> | null
   events: Array<Omit<DjEvent, 'is_public'>>

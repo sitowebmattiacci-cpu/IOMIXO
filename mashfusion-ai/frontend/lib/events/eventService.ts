@@ -39,5 +39,6 @@ export function eventToPublicSession(e: EventDoc) {
     guest_config:        e.guestConfig as any,
     occasion_type:       e.occasionType ?? null,
     ...(e.accessMode === 'trial' && e.trialExpiresAt ? { trial_expires_at: e.trialExpiresAt.toISOString() } : {}),
+    ...(e.accessMode === 'activated' && e.expiresAt ? { expires_at: e.expiresAt.toISOString() } : {}),
   }
 }

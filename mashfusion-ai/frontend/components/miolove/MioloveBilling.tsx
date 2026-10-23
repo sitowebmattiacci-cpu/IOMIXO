@@ -1,70 +1,59 @@
 'use client'
 import useSWR from 'swr'
 import { format } from 'date-fns'
+import Link from 'next/link'
 import { useState } from 'react'
-import toast from 'react-hot-toast'
 import { billing } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
-import { useAlbumPlan } from '@/lib/miolove/useAlbumPlan'
+import { useOwnedAlbums } from '@/lib/miolove/useAlbumPlan'
+import { formatAlbumPrice } from '@/lib/miolove/plans'
 import { WdPage, WdCard } from '@/components/wedding/admin/WeddingAdminUI'
-import { PlanCards, planBtnSecondary } from './PlanCards'
+import { ActivateAlbumButton, AlbumStatusPill, albumStatusLine } from './AlbumStatus'
 
 /**
- * MIOLOVE "Piano": where the album stands (free trial / full album) and the two offers. Nothing about subscriptions, Event Pass or IOMIXO plans.
- *
- * "Attiva album" opens the one-time Stripe Checkout of the album to activate (server-side price, €19.99 / $19.99). It never activates anything itself.
+ * MIOLOVE "Pagamenti": there is NO account plan. Every album is bought on its own (€19.99 / $19.99, one payment, 365 days from ITS activation), so this page lists the albums
+ * with their own status and the activation button of each one, then the payments made. "Attiva album" opens the one-time Stripe Checkout of THAT album; it never activates anything itself.
  */
 export function MioloveBilling() {
   const { t, locale } = useI18n()
-  const { state, loading, activatable } = useAlbumPlan()
-  const [paying, setPaying] = useState(false)
+  const { albums, loading } = useOwnedAlbums()
   const [cancelled] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('payment') === 'cancelled')
   const { data: payments } = useSWR(['payments', 'miolove'], () => billing.getPaymentHistory(10, 'miolove'), { onError: () => {} })
-
-  const statusKey = { none: 'albumPlan.statusNone', trial: 'albumPlan.statusTrial', trialEnded: 'albumPlan.statusTrialEnded', active: 'albumPlan.statusActive' }[state.kind]
-  const days = state.daysLeft
-  const detail = state.kind === 'trial' && days !== null
-    ? t(days === 1 ? 'albumPlan.trialLeftOne' : 'albumPlan.trialLeft').replace('{n}', String(days))
-    : null
-  const media = state.kind !== 'active' && state.used !== null && state.limit !== null
-    ? t('albumPlan.mediaUsed').replace('{n}', String(Math.min(state.used, state.limit))).replace('{max}', String(state.limit))
-    : null
-
-  // Opens Stripe Checkout for the album to activate. Nothing is activated here: only the verified webhook does that (the page just follows the album afterwards).
-  const activate = async () => {
-    if (!activatable?.id || paying) return
-    setPaying(true)
-    try { window.location.assign((await billing.createAlbumCheckout(activatable.id, locale)).url) }
-    catch (e: any) { setPaying(false); toast.error(e?.message ?? t('common.errorGeneric')) }
-  }
+  const toPay = albums.filter((a) => a.status?.canActivate).length
 
   return (
-    <div className="flex-1 overflow-y-auto" data-testid="miolove-billing" data-plan={state.kind}>
-      <WdPage width="wide" title={t('albumPlan.title')} subtitle={t('albumPlan.subtitle')}>
-        {cancelled && state.kind !== 'active' && (
+    <div className="flex-1 overflow-y-auto" data-testid="miolove-billing" data-albums={albums.length} data-to-activate={toPay}>
+      <WdPage width="wide" title={t('albumPlan.title')} subtitle={t('albumPlan.subtitle').replace('{price}', formatAlbumPrice(locale))}>
+        {cancelled && (
           <p className="rounded-2xl border border-wd-border bg-white px-4 py-3 text-sm font-medium text-wd-ink" role="status" data-testid="payment-cancelled">{t('albumPlan.paymentCancelled')}</p>
         )}
-        <WdCard>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-wd-muted">{t('albumPlan.yourPlan')}</p>
-          <p className="mt-2 text-2xl font-bold text-wd-ink" data-testid="billing-status">{loading ? '…' : t(statusKey)}</p>
-          {(detail || media) && <p className="mt-1 text-sm text-wd-muted">{[detail, media].filter(Boolean).join(' · ')}</p>}
+
+        <WdCard title={t('albumPlan.yourAlbums')}>
+          {loading ? <p className="text-sm text-wd-muted">…</p> : albums.length === 0 ? (
+            <p className="text-sm text-wd-muted" data-testid="billing-no-albums">{t('albumPlan.statusNone')}</p>
+          ) : (
+            <ul className="divide-y divide-wd-border" data-testid="billing-albums">
+              {albums.map(({ album, status }) => (
+                <li key={album.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between" data-testid="billing-album" data-album-id={album.id} data-status={status?.kind}>
+                  <div className="min-w-0">
+                    <Link href={`/sessions/${album.id}`} className="block truncate text-[15px] font-bold text-wd-ink hover:underline">{album.event_name}</Link>
+                    {status && <p className="mt-0.5 text-[13px] text-wd-muted">{albumStatusLine(status, t, locale)}</p>}
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-3 sm:shrink-0 sm:justify-end">
+                    {status && <AlbumStatusPill kind={status.kind} />}
+                    {status?.canActivate && <ActivateAlbumButton albumId={album.id} compact />}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </WdCard>
 
-        <PlanCards
-          current={state.kind}
-          trialCta={state.kind === 'none' || state.kind === 'trial' || state.kind === 'trialEnded'
-            ? null
-            : <a href="/sessions" className={planBtnSecondary}>{t('roles.myAlbums')}</a>}
-          albumCta={state.kind === 'active' ? null : (
-            <div>
-              <button type="button" onClick={activate} disabled={paying || loading || !activatable} data-testid="plan-activate"
-                className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-wd-pink px-5 text-[15px] font-semibold text-white transition hover:bg-wd-pink-hover disabled:cursor-not-allowed disabled:opacity-60">
-                {paying ? t('albumPlan.activating') : t('albumPlan.activate')}
-              </button>
-              <p className="mt-3 text-center text-[13px] text-wd-muted" data-reassure data-testid="plan-activate-note">{t('albumPlan.oneTime')} · {t('albumPlan.noSubscription')}</p>
-            </div>
-          )}
-        />
+        <WdCard title={t('albumPlan.howTitle')}>
+          <ul className="space-y-2 text-[14px] text-wd-ink" data-testid="billing-how" data-reassure>
+            {['how1', 'how2', 'how3', 'how4'].map((k) => <li key={k}>• {t(`albumPlan.${k}`).replace('{price}', formatAlbumPrice(locale))}</li>)}
+          </ul>
+        </WdCard>
 
         {payments && payments.length > 0 && (
           <WdCard title={t('albumPlan.history')}>

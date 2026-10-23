@@ -67,7 +67,7 @@ for (const vp of vps) {
       assert.equal((await quota(page).innerText()).replace(/\s+/g, ' '), `0 / ${LIMIT} contenuti`)
       const home = await page.evaluate(() => document.body.innerText)
       assert.match(home, /Prova gratuita/); assert.match(home, new RegExp(`Puoi raccogliere fino a ${LIMIT} contenuti \\(foto o video, insieme\\) gratuitamente\\.`))
-      assert.doesNotMatch(home, FORBIDDEN); assert.equal(await page.getByText('Attiva il mio album').count(), 0)
+      assert.doesNotMatch(home, FORBIDDEN); assert.equal(await page.getByTestId('album-activate').count(), 0)
       assert.equal(await page.getByRole('progressbar').first().getAttribute('aria-valuenow'), '0')
       assert.equal(await overflow(page), false, 'home overflow')
       await page.screenshot({ path: `/tmp/trial-quota-home-${vp.width}.png` }).catch(() => {})
@@ -99,7 +99,7 @@ for (const vp of vps) {
       await quota(page).waitFor({ timeout: 90_000 })
       assert.equal((await quota(page).innerText()).replace(/\s+/g, ' '), `${LIMIT} / ${LIMIT} contenuti`)
       await page.getByText('Limite della prova gratuita raggiunto').waitFor({ timeout: 30_000 })
-      const cta = page.getByRole('link', { name: 'Attiva il mio album' }); assert.match((await cta.getAttribute('href')) ?? '', /\/billing$/)
+      const cta = page.getByTestId('album-activate'); assert.equal(await cta.getAttribute('data-album-id'), a.id, 'the CTA pays THIS album'); assert.match((await cta.innerText()).replace(/\s+/g, ' '), /Attiva album — €19,99/)
       assert.equal(await overflow(page), false, 'full overflow')
       await page.screenshot({ path: `/tmp/trial-quota-full-${vp.width}.png` }).catch(() => {})
 

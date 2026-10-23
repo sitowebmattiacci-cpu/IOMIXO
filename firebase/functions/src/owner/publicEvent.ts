@@ -6,7 +6,8 @@ import { loadEventEntitlements } from '../entitlements/load'
 import { PLAN_LIMITS } from '../entitlements/plans'
 import type { AccountType } from './guard'
 import { parseBrand } from './brand'
-import { hasMiolovePhotoAccess, isTrialExpired, trialExpiresAt } from '../photos/trialQuota'
+import { hasMiolovePhotoAccess, trialExpiresAt } from '../photos/trialQuota'
+import { albumExpiresAt, albumPhase, uploadBlockReason } from '../photos/albumLifecycle'
 
 /**
  * Owner account type for the PUBLIC payload (brand of the guest pages: a couple's album is MIOLOVE, everything a DJ runs is IOMIXO).
@@ -73,6 +74,8 @@ export async function getPublicEvent(db: Firestore, slug: string, now: Date = ne
       guestPhotoAlbum: limits.guestPhotoAlbum, screenMode: limits.screenMode,
     }
   const trialEnd = e.accessMode === 'trial' ? trialExpiresAt(e) : null
+  const phase = miolove ? albumPhase(e, now) : null
+  const paidEnd = e.accessMode === 'activated' ? albumExpiresAt(e) : null
   return {
     eventId,
     session: {
@@ -81,11 +84,15 @@ export async function getPublicEvent(db: Firestore, slug: string, now: Date = ne
       screen_mode_enabled: e.screenModeEnabled === true, guest_config: e.guestConfig ?? null,
       owner_account_type: ownerAccountType,
       event_brand: parseBrand(e.brand),
-      access_mode: e.accessMode === 'trial' || e.accessMode === 'activated' ? e.accessMode : null,
+      access_mode: e.accessMode === 'trial' || e.accessMode === 'pending' || e.accessMode === 'activated' ? e.accessMode : null,
       ...(miolove ? {
         occasion_type: ['wedding', 'birthday', 'baptism', 'other'].includes(e.occasionType) ? e.occasionType : null,
         trial_expires_at: trialEnd ? trialEnd.toISOString() : null,
-        trial_expired: isTrialExpired(e, now),
+        trial_expired: phase === 'trial_ended' || phase === 'trial_lapsed',
+        // Server clock: where the album stands, and whether guests may still send. A pending / expired / paused album shows a closed notice, never an upload form.
+        album_phase: phase,
+        expires_at: paidEnd ? paidEnd.toISOString() : null,
+        uploads_closed: uploadBlockReason(e, now) !== null,
       } : {}),
     },
     profile: p ? {

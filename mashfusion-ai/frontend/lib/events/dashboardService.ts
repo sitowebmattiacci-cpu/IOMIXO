@@ -61,8 +61,8 @@ export const dashboardOps = {
   async getSession(id: string): Promise<{ session: LiveSession } | null> {
     if (!dashboardEnabled()) return null
     let ev = await resolveOwnerEvent(id); if (!ev) return null
-    // The resolved event is memoized per page: a trial album re-reads itself so its photo counter stays live.
-    if (ev.accessMode === 'trial') ev = (await getEventById(getFirebaseDb(), ev.id).catch(() => null)) ?? ev
+    // The resolved event is memoized per page: a trial / pending album re-reads itself so its photo counter and its activation (webhook) show up live.
+    if (ev.accessMode === 'trial' || ev.accessMode === 'pending') ev = (await getEventById(getFirebaseDb(), ev.id).catch(() => null)) ?? ev
     const cfg = await getGameConfig(getFirebaseDb(), ev.id)
     return {
       session: { ...eventToSession(ev), roulette_penitenze: cfg?.roulettePenitenze ?? null, shoe_game_questions: cfg?.shoeGameQuestions ?? null },

@@ -15,7 +15,7 @@ A = exists and works · B = partial · C = does not exist.
 | Original quality | **C** | The browser resizes to 1920 px / JPEG 82 % before upload (`compressImage`), hard cap 8 MB (functions + `storage.rules`). |
 | Trial quota 50 | A | `trialPhotoCount/Limit`, transactional in `finalizePhoto`. Counts photos only. |
 | **Trial 7 days** | **A** (new, server-side) | `createEvent` writes `trialStartsAt` / `trialExpiresAt` (server clock, +7 d). After the end: new uploads refused (`miolove_trial_expired`) in `createPhotoUpload` and `finalizePhoto`; nothing is deleted; the owner reads the album and sees *Attiva album*; guests keep seeing the page with a notice. **Albums created before this change carry no end date and never expire** (no retroactive lock-out). |
-| **Retention 12 months** | **C** | No `activatedAt` / `expiresAt` / retention job. Proposal below. |
+| **Retention 365 days** | **A** | Implemented per album (§7): `activatedAt` / `expiresAt`, daily purge. |
 | **Download all in one click** | **C** (B for the old button) | The existing "Scarica tutto" fires one browser download per file (≤ 250 ms apart); no ZIP, no server export. Now locked on trial. A client-side ZIP needs CORS on the Storage bucket (unverifiable here). Proper fix: server-side export (Function → ZIP in Storage → signed URL). |
 | **White label** | **A** (new, dormant) | An `activated` album shows no MIOLOVE mark on the guest page, Live Booth and TV screen (and tab title). Trial keeps it. Dormant until paid activation exists. |
 | Poster / QR card gating | **A** (new) | Editor only when `access_mode === 'activated'`; trial sees a locked card. **Client-side gate only**: the poster is rendered in the browser, there is no server asset to protect. |
@@ -55,7 +55,7 @@ Source: `firebase/functions/.env.iomixo-494817`, `functions/src/billing/prices.t
 
 1. **B1 – Stripe product + checkout + webhook for the €19.99 album** (§2). Without it nobody can activate: the public price is shown but cannot be bought.
 2. Google provider + authorized domains in the Firebase console (manual).
-3. 12-month retention: hidden from all MIOLOVE copy until implemented (single switch: `lib/miolove/plans.ts → FEATURE_STATUS`). Video, original quality and download-all are implemented, see §6.
+3. Retention: implemented, see §7. Video, original quality and download-all are implemented, see §6.
 4. Real reviews: the home hides the section in production (`lib/miolove/reviews.ts`); demo layout shows only in development / `NEXT_PUBLIC_MIOLOVE_SHOW_DEMO_REVIEWS=true`.
 5. Trial-expired media policy (§3).
 6. `www`/apex DNS + `NEXT_PUBLIC_MIOLOVE_LIVE=true` when miolovealbum.com answers.
@@ -89,3 +89,22 @@ tokenised URL → one download (`album.zip`). Archives expire after 24 h; `purge
 - Failed uploads leave an `uploading` doc + partial files (never counted, never shown); there is no sweeper for them yet.
 - Deploy prerequisites to verify BEFORE going live: the Functions service account needs Storage object read/write/delete (it already deletes objects); Cloud Scheduler enabled for `purgeAlbumExports`;
   the Firestore trigger region must match the Firestore database location; the `archiver` dependency is new in `firebase/functions`.
+
+## 7. Multi-album lifecycle, €19.99 per album, 365 days, automatic deletion
+
+**Model.** There is no account plan. One account owns any number of albums; each album is independent and carries its own state on `events/{eventId}`:
+
+| `accessMode` | meaning | written by |
+|---|---|---|
+| `trial` | the account's ONE free trial (7 days, 50 contents). `trialAlbums/{uid}` is the one-time reservation (never deleted). | `createEvent` (first album only) |
+| `pending` | "Da attivare": created, unpaid. No trial, no uploads, no archive, no poster. | `createEvent` (every later album) |
+| `activated` | paid: `activatedAt` = payment instant, `expiresAt` = `activatedAt` + 365 days (server clock), `activation{…}`, `retention{days, reminders{}}` | `mioloveStripeWebhook` ONLY |
+| `purged` | content deleted for good; the doc is a hidden administrative tombstone (`purgedAt`, `deletedAt`) | the purge job |
+
+`purgeAfter` (Timestamp) is the single field the scheduler queries: trial → `trialExpiresAt` + 30 d, activated → `expiresAt`. Pure rules: `firebase/functions/src/photos/albumLifecycle.ts`.
+
+**Trial end.** After 7 days the album is paused (no new uploads, media kept). It can still be activated for 30 days; paying inside the window keeps every media and starts the 365 days at payment time. After 30 days without payment the content is deleted. A stale Checkout Session paid after that cannot revive the album (recorded as `blocked:album_not_eligible`, a human refunds from Stripe).
+
+**Purge** (`purgeExpiredMioloveAlbums`, daily 03:30 Europe/Rome, `functions/src/albums/purge.ts`): claim (lease) → delete everything under `events/{id}/` in Storage → recursively delete every subcollection → remove `eventSlugs/{slug}` → replace the doc with the tombstone. Kept: `users/{uid}/payments`, `mioloveStripeEvents`, `trialAlbums/{uid}`, activation proof. Idempotent and resumable (failed step → `purge.state='failed'`, the next run retries). IOMIXO events are never selected (brand re-checked on the doc).
+
+**Before deploy.** (1) Run the one-shot backfill `firebase/functions/scripts/backfill-album-expiry.ts` (dry run by default) so already-activated albums get `expiresAt = activatedAt + 365 d` and existing trial albums get `purgeAfter`; albums without these fields are NEVER purged. (2) The functions service account needs Storage object delete/list on the bucket (it already writes/deletes export archives). (3) Cloud Scheduler must be enabled (same as `purgeAlbumExports`). (4) Email reminders (30 / 7 / 1 days before `expiresAt`) are not built; `retention.reminders` is ready to stamp them.

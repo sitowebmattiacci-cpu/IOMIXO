@@ -19,6 +19,7 @@ import { parseConfigInput, updateEventConfig as updateEventConfigImpl } from './
 import { parseCreateEventInput, parseEventRefInput, createEvent as createEventImpl, deleteEvent as deleteEventImpl, restoreEvent as restoreEventImpl } from './owner/sessions'
 import { parseGameActionInput, parseGameConfigInput, gameAction as gameActionImpl, setGameConfig as setGameConfigImpl } from './owner/games'
 import { parseCreatePhotoUploadInput, parsePhotoRefInput, parseModeratePhotoInput, createPhotoUpload as createPhotoUploadImpl, finalizePhoto as finalizePhotoImpl, moderatePhoto as moderatePhotoImpl } from './photos/photos'
+import { purgeExpiredAlbums } from './albums/purge'
 import { parseRequestExportInput, parseExportRefInput, requestAlbumExport as requestAlbumExportImpl, getAlbumExportUrl as getAlbumExportUrlImpl, runAlbumExport, purgeExpiredExports } from './photos/exports'
 import { parseCommitAvatarInput, parseRemoveAvatarInput, commitAvatar as commitAvatarImpl, removeAvatar as removeAvatarImpl } from './profile/avatar'
 import { buildPriceTable, buildMiolovePriceTable } from './billing/prices'
@@ -153,6 +154,13 @@ export const onAlbumExportCreated = onDocumentCreated(
 export const purgeAlbumExports = onSchedule(
   { schedule: 'every 60 minutes', timeZone: 'Europe/Rome', memory: '256MiB', timeoutSeconds: 300, maxInstances: 1, serviceAccount: SERVICE_ACCOUNT },
   async () => { const r = await purgeExpiredExports(getFirestore()); logger.info('purgeAlbumExports', r) },
+)
+
+// Retention: a paid album lives 365 days from its activation, an unpaid trial 7 days + a 30-day recovery window; then ALL its content is deleted for real (Storage + Firestore),
+// keeping only payments / audit records (albums/purge.ts). Idempotent and resumable: a failed album is retried by the next run. Never touches IOMIXO events. Needs Cloud Scheduler at deploy time.
+export const purgeExpiredMioloveAlbums = onSchedule(
+  { schedule: 'every day 03:30', timeZone: 'Europe/Rome', memory: '512MiB', timeoutSeconds: 540, maxInstances: 1, serviceAccount: SERVICE_ACCOUNT },
+  async () => { const r = await purgeExpiredAlbums(getFirestore()); logger.info('purgeExpiredMioloveAlbums', r) },
 )
 
 // Guest photo callables: identity = verified token (anonymous allowed). Bytes never pass through them (the client writes to Storage under storage.rules).

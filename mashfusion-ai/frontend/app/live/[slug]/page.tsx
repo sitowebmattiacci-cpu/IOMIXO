@@ -27,6 +27,7 @@ import { useEventBrand } from '@/lib/events/useEventBrand'
 import { EventBrandProvider, WhiteLabelProvider } from '@/components/brand/EventBrand'
 import { COUPLE_DEFAULT_GUEST_CONFIG } from '@/lib/coupleAlbum'
 import { occasionEyebrow, occasionText } from '@/lib/occasion'
+import { guestAlbumClosure } from '@/lib/miolove/guestClosure'
 
 const STATUS_STYLE: Record<LiveRequestStatus, string> = {
   pending:  'bg-amber-500/15 text-amber-300 border-amber-500/30',
@@ -127,7 +128,8 @@ export default function PublicLivePage() {
       .filter((k) => photosAllowed || k !== 'photos')
       .filter((k) => !isAlbum || k === 'photos')
     // Trial over (server flag, or the end instant passed while the page was open): the album stays readable, new uploads are closed.
-    const trialExpired = isAlbum && session.access_mode === 'trial' && (session.trial_expired === true || (!!session.trial_expires_at && Date.now() >= Date.parse(session.trial_expires_at)))
+    const closure = guestAlbumClosure(session, isAlbum)
+    const trialExpired = closure.closed
     const whiteLabel = isAlbum && session.access_mode === 'activated'
     const weddingItems = buildWeddingGuestActions(weddingKeys, t)
     const weddingNodes: Record<WeddingGuestActionKey, React.ReactNode> = {
@@ -166,7 +168,7 @@ export default function PublicLivePage() {
             </form>
           </WeddingGuestPanel>
       ),
-      photos: <LiveBoothCard slug={slug!} session={session} album={isAlbum} expired={trialExpired} />,
+      photos: <LiveBoothCard slug={slug!} session={session} album={isAlbum} expired={trialExpired} closedKey={closure.key} />,
       dedications: <DedicationsPublic slug={slug!} eventId={liveEvent?.id} />,
       games: <ShoeGamePublic slug={slug!} eventId={liveEvent?.id} />,
       polls: <PollPublic slug={slug!} eventId={liveEvent?.id} />,
@@ -177,7 +179,7 @@ export default function PublicLivePage() {
     const notice = (closed || (limitReached && !isAlbum) || trialExpired) ? (
       <div className="mb-5 flex items-center gap-3 rounded-[18px] border border-wd-border bg-wd-active px-4 py-3.5 text-[15px] text-wd-ink" data-testid="guest-notice">
         {closed || trialExpired ? <Lock className="h-5 w-5 shrink-0 text-wd-pink" /> : <AlertTriangle className="h-5 w-5 shrink-0 text-wd-pink" />}
-        <span>{closed ? t('live.endedSession') : trialExpired ? t('guestAlbum.trialEnded') : t('live.limitReached')}</span>
+        <span>{closed ? t('live.endedSession') : trialExpired ? t(closure.key ?? 'guestAlbum.trialEnded') : t('live.limitReached')}</span>
       </div>
     ) : undefined
     const languageSlot = <LanguageSwitcher variant="wedding" />
@@ -853,7 +855,7 @@ function DedicationsPublic({ slug: _slug, eventId }: { slug: string; eventId?: s
   )
 }
 
-function LiveBoothCard({ slug, session, album = false, expired = false }: { slug: string; session: any; album?: boolean; expired?: boolean }) {
+function LiveBoothCard({ slug, session, album = false, expired = false, closedKey = null }: { slug: string; session: any; album?: boolean; expired?: boolean; closedKey?: string | null }) {
   const { t } = useI18n()
   const boothUrl = `/booth/${slug}`
   return (
@@ -873,7 +875,7 @@ function LiveBoothCard({ slug, session, album = false, expired = false }: { slug
             {t('live.booth.withFrame')}
           </p>}
           {expired ? (
-            <p className="text-[14px] font-semibold text-wd-muted" data-testid="guest-trial-ended">{t('guestAlbum.trialEnded')}</p>
+            <p className="text-[14px] font-semibold text-wd-muted" data-testid="guest-trial-ended">{t(closedKey ?? 'guestAlbum.trialEnded')}</p>
           ) : (
             <a href={boothUrl} className="block">
               <WeddingGuestButton icon={<Camera className="h-5 w-5" />}>

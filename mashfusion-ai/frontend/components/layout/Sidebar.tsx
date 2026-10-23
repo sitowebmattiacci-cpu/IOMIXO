@@ -18,7 +18,6 @@ import toast from 'react-hot-toast'
 import { Logo } from '@/components/Logo'
 import { MioloveLogo } from '@/components/brand/MioloveLogo'
 import { useAccountRole } from '@/lib/roles'
-import { useAlbumPlan } from '@/lib/miolove/useAlbumPlan'
 
 const NAV_ITEMS = [
   { href: '/dashboard', key: 'dashboard',     icon: LayoutDashboard, proOnly: false },
@@ -56,10 +55,8 @@ export function Sidebar() {
   }, [])
 
   const { user, effectiveLabel: ownLabel, isFree: ownIsFree, hasActiveEventPass: ownPass, activePass } = useEffectiveAccess()
-  // MIOLOVE: the plan is the album's (free trial / full album), never an IOMIXO plan or Event Pass.
-  const { state: albumState } = useAlbumPlan()
-  const planKey = { none: 'albumPlan.statusNone', trial: 'albumPlan.trialName', trialEnded: 'albumPlan.statusTrialEnded', active: 'albumPlan.albumName' }[albumState.kind]
-  const effectiveLabel = isCouple ? t(planKey) : ownLabel
+  // MIOLOVE has no account plan (each album has its own status and dates): the account line only names the product, never an IOMIXO plan or Event Pass.
+  const effectiveLabel = isCouple ? t('roles.brand') : ownLabel
   const isFree = isCouple ? false : ownIsFree
   const hasActiveEventPass = isCouple ? false : ownPass
 
@@ -253,8 +250,8 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Plan badge */}
-      {user && !collapsed && (
+      {/* Plan badge: IOMIXO only. A MIOLOVE account has no plan: every album carries its own status. */}
+      {user && !collapsed && !isCouple && (
         <div className={cn(
           'mx-3 mb-3 rounded-xl p-3',
           wedding ? 'bg-white border border-[#E8B7C8]' : 'glass',

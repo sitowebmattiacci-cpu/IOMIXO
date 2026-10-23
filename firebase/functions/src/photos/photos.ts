@@ -6,7 +6,8 @@ import { selectEventEntitlements, logEntitlementDecision } from '../entitlements
 import { idField, requireEventOwner, requireOwnerEventAccess, type CallerAuth } from '../owner/guard'
 import { deleteObjects, objectInfo, rotateDownloadToken } from './storage'
 import { MIME_BY_EXT, MEDIA_LIMITS, kindOfExt, mediaPaths, ownedPaths, type MediaKind } from './media'
-import { MIOLOVE_TRIAL_PHOTO_LIMIT, TRIAL_PHOTO_LIMIT_REASON, TRIAL_EXPIRED_REASON, isTrialAlbum, isTrialExpired, hasMiolovePhotoAccess, trialPhotoCount } from './trialQuota'
+import { MIOLOVE_TRIAL_PHOTO_LIMIT, TRIAL_PHOTO_LIMIT_REASON, isTrialAlbum, hasMiolovePhotoAccess, trialPhotoCount } from './trialQuota'
+import { uploadBlockReason } from './albumLifecycle'
 
 /**
  * Event photos (guest album + Live Booth) on Firestore + Storage, replacing routes/livePhotos.ts.
@@ -118,8 +119,9 @@ export async function createPhotoUpload(db: Firestore, uid: string, input: Creat
   if (!allowed) throw fail('permission-denied', 'Photos require the Advance plan or an Event Pass', 'photos_unavailable')
   // The album owner's privacy switch "guest photo upload" (guestConfig.live_booth): only an explicit OFF closes it (a new album has no value yet = open).
   if (miolove && (ev.guestConfig as Record<string, unknown> | null | undefined)?.live_booth === false) throw fail('permission-denied', 'Guest uploads are turned off for this album', 'guest_uploads_disabled')
-  // The 7-day trial ran out (server clock): reading stays open, new uploads do not.
-  if (isTrialExpired(ev, new Date(now()))) throw fail('failed-precondition', 'The free trial has ended', TRIAL_EXPIRED_REASON)
+  // Not yet activated (pending), trial over, or the 365 days over (server clock): reading stays open until the purge, new uploads do not.
+  const blocked = uploadBlockReason(ev, new Date(now()))
+  if (blocked) throw fail('failed-precondition', 'This album does not take new uploads', blocked)
   // UX only: finalizePhoto is the authoritative quota check. The quota counts CONTENTS (photos + videos together).
   if (isTrialAlbum(ev) && (trialPhotoCount(ev) ?? 0) >= MIOLOVE_TRIAL_PHOTO_LIMIT) throw fail('resource-exhausted', 'The free trial limit was reached', TRIAL_PHOTO_LIMIT_REASON)
 
@@ -180,10 +182,11 @@ export async function finalizePhoto(db: Firestore, uid: string, input: PhotoRefI
   }
   const extra = { size: info.size, ...(thumbPath === null ? { thumbPath: null } : {}) }
 
-  if (isTrialExpired(ev, new Date())) {
-    // Started before the end, finished after it: the file is not kept (it never held a slot) and the trial stays closed.
+  const blocked = uploadBlockReason(ev, new Date())
+  if (blocked) {
+    // Started before the end, finished after it: the file is not kept (it never held a slot) and the album stays closed.
     await discard()
-    throw fail('failed-precondition', 'The free trial has ended', TRIAL_EXPIRED_REASON)
+    throw fail('failed-precondition', 'This album does not take new uploads', blocked)
   }
   const status = finalStatus(ev.type)
   if (!isTrialAlbum(ev)) {

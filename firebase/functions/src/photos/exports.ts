@@ -81,7 +81,7 @@ export async function requestAlbumExport(db: Firestore, request: CallerAuth, inp
   const selection = input.mediaIds
   // Archives (the whole album OR a selection of 2+) belong to the paid album: a free trial downloads ONE media at a time (a client never asks an archive for it).
   // A selection must not become a way around "download all" (select the 50 trial media → same result), so the same gate applies to both.
-  if (isTrialAlbum(owner.data)) throw fail('permission-denied', 'Download all is part of the full album', 'export_requires_album')
+  if (isTrialAlbum(owner.data) || owner.data.accessMode === 'pending') throw fail('permission-denied', 'Download all is part of the full album', 'export_requires_album')
   const t = now()
   await purgeExports(owner.ref, input.eventId, t)
 

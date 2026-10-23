@@ -4,12 +4,14 @@ import { logger } from 'firebase-functions/logger'
 import type { StripeApi } from './stripeApi'
 import { priceInfo, UnknownPriceError, type PriceInfo, type PriceTable } from './prices'
 import { eventBrandOf } from '../owner/brand'
+import { activationBlockReason, activationDates } from '../photos/albumLifecycle'
 
 /**
  * MIOLOVE Stripe webhook → Firestore. A SEPARATE endpoint, secret and Stripe account from IOMIXO's `stripeWebhook` (billing/webhook.ts, untouched):
  *
  *  - It is signed with the MIOLOVE webhook secret only. An IOMIXO-signed event fails verification here, and a MIOLOVE-signed one fails on the IOMIXO endpoint.
- *  - It handles ONE thing: a paid Checkout Session of the MIOLOVE album price activates ONE album (events/{eventId}.accessMode → 'activated'). Every other event type is
+ *  - It handles ONE thing: a paid Checkout Session of the MIOLOVE album price activates ONE album (events/{eventId}.accessMode → 'activated', activatedAt = now, expiresAt =
+ *    activatedAt + 365 days, both from the SERVER clock). Albums are independent: no other album and no account-level state is touched. Every other event type is
  *    acknowledged and ignored. It contains no path that can create an Event Pass, a subscription or an IOMIXO plan.
  *  - Authority = this verified, paid session. The metadata is only a pointer that must agree with Firestore: the buyer (metadata.firebaseUid) must be the album's owner and the
  *    album a MIOLOVE one; anything that disagrees activates NOTHING (recorded + logged for a human, acknowledged so Stripe stops retrying).
@@ -67,6 +69,7 @@ async function createOnce(ref: FirebaseFirestore.DocumentReference, data: Record
 }
 
 async function onCheckout(deps: MioloveWebhookDeps, event: Stripe.Event, s: Stripe.Checkout.Session) {
+  const now = (deps.now ?? (() => new Date()))()
   if (s.mode !== 'payment') return                                                                                // this endpoint sells one thing: a one-time payment
   if (s.status !== 'complete' || (s.payment_status !== 'paid' && s.payment_status !== 'no_payment_required')) return        // declined / async-pending: no access
   const items = await deps.stripe.checkout.sessions.listLineItems(s.id, { limit: 10 })
@@ -81,16 +84,19 @@ async function onCheckout(deps: MioloveWebhookDeps, event: Stripe.Event, s: Stri
   const eventId = typeof m.eventId === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(m.eventId) ? m.eventId : null
   const consistent = userOk && m.portal === 'miolove' && m.product === 'album_activation' && !!eventId && (m.ownerUid ?? uid) === uid
 
-  let outcome: { v: 'activated' | 'already_activated' | 'blocked'; reason: string | null } = { v: 'blocked', reason: consistent ? null : 'metadata_mismatch' }
+  let outcome: { v: 'activated' | 'already_activated' | 'blocked'; reason: string | null; samePayment?: boolean } = { v: 'blocked', reason: consistent ? null : 'metadata_mismatch' }
   if (consistent && eventId) {
     const evRef = deps.db.doc(`events/${eventId}`)
     await deps.db.runTransaction(async (tx) => {
       const snap = await tx.get(evRef), e = snap.data()
       if (!snap.exists || e!.ownerUid !== uid || e!.deletedAt) { outcome = { v: 'blocked', reason: 'event_not_owned' }; return }
-      if (e!.accessMode === 'activated') { outcome = { v: 'already_activated', reason: null }; return }
-      if (e!.accessMode !== 'trial' || (await eventBrandOf(deps.db, e!)) !== 'miolove') { outcome = { v: 'blocked', reason: 'album_not_eligible' }; return }
+      const why = activationBlockReason(e!, now)
+      if (why === 'already_activated') { outcome = { v: 'already_activated', reason: null, samePayment: e!.activation?.checkoutSessionId === s.id || (!!str(s.payment_intent) && e!.activation?.paymentIntentId === str(s.payment_intent)) }; return }
+      if (why || (await eventBrandOf(deps.db, e!)) !== 'miolove') { outcome = { v: 'blocked', reason: 'album_not_eligible' }; return }   // lapsed / being purged: an old Checkout Session cannot revive it
       tx.update(evRef, {
-        accessMode: 'activated', activatedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
+        accessMode: 'activated', ...activationDates(now), updatedAt: FieldValue.serverTimestamp(),
+        // Data model for the reminder e-mails (30 / 7 / 1 days before expiresAt): the sender stamps each one here, once.
+        retention: { days: 365, reminders: {} },
         activation: { source: 'stripe', checkoutSessionId: s.id, paymentIntentId: str(s.payment_intent), stripeEventId: event.id, amountCents: s.amount_total ?? 0, currency: s.currency ?? null },
       })
       outcome = { v: 'activated', reason: null }
@@ -104,4 +110,18 @@ async function onCheckout(deps: MioloveWebhookDeps, event: Stripe.Event, s: Stri
     eventId: consistent ? eventId : null, activation: outcome.v === 'blocked' ? `blocked:${outcome.reason}` : outcome.v,
     createdAt: ts(event.created), updatedAt: ts(event.created),
   })
+  // A payment that can activate NOTHING (the album is past its recovery window / purged / not the buyer's, or it is a second payment for an album already paid) is refunded in full,
+  // once: the Stripe idempotency key is derived from the payment intent, so a retried webhook or a replay can never refund twice. A refund failure answers 500 (Stripe retries; the key keeps it safe).
+  // Never refunded automatically: unknown buyer / metadata that disagrees (a human reconciles) and the payment that DID activate an album.
+  const intent = str(s.payment_intent)
+  const refundable = outcome.v === 'blocked' ? outcome.reason === 'album_not_eligible' || outcome.reason === 'event_not_owned' : outcome.v === 'already_activated' && !outcome.samePayment
+  if (!refundable || !intent || !(s.amount_total && s.amount_total > 0)) return
+  const ledger = deps.db.doc(`users/${uid}/payments/${key}`)
+  try {
+    const r = await deps.stripe.refunds.create({ payment_intent: intent, reason: outcome.v === 'already_activated' ? 'duplicate' : 'requested_by_customer', metadata: { portal: 'miolove', eventId: eventId ?? '', cause: outcome.v === 'blocked' ? String(outcome.reason) : 'duplicate_payment' } }, { idempotencyKey: `miolove-refund-${intent}` })
+    await ledger.update({ status: 'refunded', refund: { id: r.id, status: r.status, at: Timestamp.fromDate(now) }, updatedAt: Timestamp.fromDate(now) })
+  } catch (e) {
+    await ledger.update({ refund: { status: 'failed', error: String((e as { code?: unknown }).code ?? 'refund_error').slice(0, 80), at: Timestamp.fromDate(now) } }).catch(() => {})
+    throw e
+  }
 }

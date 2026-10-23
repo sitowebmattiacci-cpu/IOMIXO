@@ -14,7 +14,7 @@ export interface EventPortalFacts {
   type?: string | null
   /** getPublicEvent `owner_account_type`: 'dj' | 'couple', or null when the server could not read it. */
   ownerAccountType?: string | null
-  /** getPublicEvent `access_mode` / events.accessMode: only couple albums carry 'trial' / 'activated'. */
+  /** getPublicEvent `access_mode` / events.accessMode: only couple albums carry 'trial' / 'pending' / 'activated'. */
   accessMode?: string | null
   /** getPublicEvent `event_brand` / events.brand: the product the event was created in. Written by createEvent; absent on older events. */
   brand?: string | null
@@ -25,7 +25,7 @@ export function certainEventPortal(f: EventPortalFacts): PortalId | null {
   if (f.brand === 'miolove' || f.brand === 'iomixo') return f.brand                // explicit: one uid may own events of both products
   if (!f.type) return null
   if (f.type !== 'wedding') return 'iomixo'                                         // only couples own albums, and couples can only create Weddings
-  if (f.accessMode === 'trial' || f.accessMode === 'activated') return 'miolove'    // written by the server only for couple albums
+  if (f.accessMode === 'trial' || f.accessMode === 'pending' || f.accessMode === 'activated') return 'miolove'    // written by the server only for couple albums
   if (f.ownerAccountType === 'couple') return 'miolove'
   if (f.ownerAccountType === 'dj') return 'iomixo'
   return null

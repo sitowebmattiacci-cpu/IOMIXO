@@ -121,7 +121,7 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) fo
       const f = (await until(async () => (await fsGet(`events/${eventId}`)).fields, 20_000, 'album'))
       assert.equal(f.type.stringValue, 'wedding', 'the engine type is untouched'); assert.equal(f.occasionType.stringValue, m.occasion)
       assert.equal(f.title.stringValue, m.title); assert.equal(f.ownerUid.stringValue, c.uid)
-      assert.equal(f.accessMode.stringValue, 'activated', 'a couple with paid access is never trial')
+      assert.equal(f.accessMode.stringValue, 'trial', 'the first album of the account is its one free trial (no account-level premium exists)')
       if (m.date) assert.equal(f.weddingDate.stringValue, m.date); else assert.ok('nullValue' in f.weddingDate, 'no date = null')
       assert.equal(f.guestConfig.mapValue.fields.requests.booleanValue, false); assert.equal(f.guestConfig.mapValue.fields.live_booth.booleanValue, true)
       // the Home of the new album
@@ -164,7 +164,7 @@ test('O5. leaving the onboarding creates nothing', async () => {
 })
 
 for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
-  test(`O7. Free couple @${vp.width}: the first album is created as TRIAL (no Advance paywall); a second one is refused with the MIOLOVE message`, async () => {
+  test(`O7. Free couple @${vp.width}: the first album is created as TRIAL (no Advance paywall); a second one is created too, as "da attivare" (no second trial)`, async () => {
     const c = await couple('free'); const ctx = await browser.newContext({ viewport: vp }); const page = await ctx.newPage()
     try {
       await openOnboarding(page, c.email)
@@ -181,13 +181,18 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
       const home = await page.evaluate(() => document.body.innerText)
       assert.doesNotMatch(home, /Advance|Event Pass|IOMIXO|\bDJ\b|\bParty\b/i); assert.equal(await overflow(page), false, 'home overflow')
       await page.screenshot({ path: `/tmp/trial-home-${vp.width}.png` }).catch(() => {})
-      // the onboarding is closed for good, and a second album from /sessions is refused with a MIOLOVE message (not an Advance paywall)
+      // the onboarding is closed for good, and a second album from /sessions is created pending (no second trial, no Advance paywall)
       await page.goto(`${M()}/onboarding`, { waitUntil: 'domcontentloaded', timeout: 120_000 }); await page.waitForURL(/\/sessions$/, { timeout: 60_000 })
       await page.getByTestId('new-session').click(); await page.locator('form input').first().fill('Secondo album')
       await page.locator('form button[type="submit"]').click()
-      await page.getByText(/Hai già creato il tuo album gratuito/).first().waitFor({ timeout: 60_000 })
-      assert.doesNotMatch(await page.evaluate(() => document.body.innerText), /Advance|Event Pass|IOMIXO|Bloccata/i, 'the trial album is listed unlocked')
-      assert.equal((await ownerEvents(c.uid)).length, 1, 'still exactly one album')
+      await page.waitForURL(/\/sessions\/[^/]+$/, { timeout: 90_000 })
+      const second = page.url().split('/sessions/')[1]; assert.notEqual(second, eventId)
+      const f2 = await until(async () => (await fsGet(`events/${second}`)).fields, 20_000, 'second album')
+      assert.equal(f2.accessMode.stringValue, 'pending', 'no second trial'); assert.equal(f2.trialExpiresAt, undefined)
+      await page.getByTestId('album-lifecycle').waitFor({ timeout: 60_000 }); assert.equal(await page.getByTestId('album-lifecycle').getAttribute('data-status'), 'pending')
+      assert.doesNotMatch(await page.evaluate(() => document.body.innerText), /Advance|Event Pass|IOMIXO|Bloccata|Hai già creato/i, 'the albums are listed unlocked')
+      assert.equal((await ownerEvents(c.uid)).length, 2, 'two albums now')
+      assert.equal((await fsGet(`trialAlbums/${c.uid}`)).fields.eventId.stringValue, eventId, 'the single trial reservation is still the first album')
     } finally { await ctx.close() }
   })
 }

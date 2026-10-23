@@ -38,6 +38,7 @@ import { WeddingHomePage } from '@/components/wedding/admin/WeddingHomePage'
 import { publicOriginFor, djToolsOrigin } from '@/lib/portalLinks'
 import { WeddingPhotosPage } from '@/components/wedding/admin/WeddingPhotosPage'
 import { PaymentReturn } from '@/components/miolove/PaymentReturn'
+import { AlbumLifecycleBanner } from '@/components/miolove/AlbumLifecycleBanner'
 import { WeddingPosterPage } from '@/components/wedding/admin/WeddingPosterPage'
 import { MiolovePosterEditor } from '@/components/wedding/admin/MiolovePosterEditor'
 import {
@@ -333,9 +334,8 @@ export default function SessionDetailPage() {
   // Sessione premium (Party/Wedding) senza accesso valido → schermata di blocco.
   // La sessione resta salvata e visibile in lista, ma non apre la regia interna
   // finché l'Event Pass 24H non viene riattivato o si passa ad Advance.
-  // MIOLOVE: the couple's free trial album (accessMode 'trial', written only by the server) always opens; a missing value never means trial.
   // MIOLOVE: an album the server marked 'trial' or 'activated' always opens (that mark is its MIOLOVE access; IOMIXO plans never grant it, and a missing value is neither).
-  const isTrialAlbum = isCouple && (session.access_mode === 'trial' || session.access_mode === 'activated')
+  const isTrialAlbum = isCouple && (session.access_mode === 'trial' || session.access_mode === 'pending' || session.access_mode === 'activated')
   const advanceAccess = hasAdvanceAccess || (isCouple && session.access_mode === 'activated')
   if (isPremiumSession(session) && !hasAdvanceAccess && !isTrialAlbum) {
     return <SessionLockScreen sessionType={session.session_type} eventName={session.event_name} />
@@ -462,6 +462,7 @@ export default function SessionDetailPage() {
   const dashSection = (
     <>
       {isCouple && <PaymentReturn session={session} />}
+      {isCouple && <AlbumLifecycleBanner session={session} />}
       {tab === 'home' && (
         <WeddingHomePage session={session} pendingRequests={pending.length} togglingActive={togglingActive} onToggleActive={toggleActive} couple={isCouple} />
       )}

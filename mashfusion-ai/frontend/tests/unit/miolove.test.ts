@@ -5,9 +5,10 @@ import en from '../../locales/miolove/en.json'
 import fr from '../../locales/miolove/fr.json'
 import es from '../../locales/miolove/es.json'
 import {
-  ALBUM_INCLUDED, ALBUM_PRICE_EUR, ALBUM_PRICING, formatAlbumListPrice, FEATURE_STATUS, TRIAL_EXCLUDED, TRIAL_INCLUDED, albumPlanState, formatAlbumPrice, visibleItems, MIOLOVE_FORBIDDEN_COPY,
+  ALBUM_INCLUDED, ALBUM_PRICE_EUR, ALBUM_PRICING, formatAlbumListPrice, FEATURE_STATUS, TRIAL_EXCLUDED, TRIAL_INCLUDED, formatAlbumPrice, visibleItems, MIOLOVE_FORBIDDEN_COPY,
   type FeatureId,
 } from '../../lib/miolove/plans'
+import { albumStatus } from '../../lib/miolove/albumStatus'
 import { DEMO_REVIEWS, reviewsToShow } from '../../lib/miolove/reviews'
 import { asOccasionType, occasionText } from '../../lib/occasion'
 import { mioloveHomeMetadata, mioloveStructuredData, MIOLOVE_DISALLOW, miolovePublicUrls } from '../../lib/miolove/seo'
@@ -29,10 +30,9 @@ test('PRICING. only features that really exist are shown (planned ones are skipp
   const shown = [...visibleItems(TRIAL_INCLUDED), ...visibleItems(TRIAL_EXCLUDED), ...visibleItems(ALBUM_INCLUDED)]
   for (const i of shown) if (i.feature) assert.equal(FEATURE_STATUS[i.feature], 'available', i.key)
   const keys = shown.map((i) => i.key)
-  // The media engine shipped (video, original quality, download-everything); the 12-month retention has not: it must stay hidden.
-  for (const planned of ['months12Upload', 'months12Storage']) assert.ok(!keys.includes(planned), `${planned} must stay hidden until implemented`)
-  assert.equal(FEATURE_STATUS.months12, 'planned')
-  for (const f of ['video', 'originalQuality', 'downloadAll'] as const) assert.equal(FEATURE_STATUS[f], 'available', f)
+  // The media engine and the per-album retention (365 days, daily purge) have shipped: their lines are shown.
+  for (const shippedKey of ['months12Upload', 'months12Storage']) assert.ok(keys.includes(shippedKey), `${shippedKey} is implemented`)
+  for (const f of ['video', 'originalQuality', 'downloadAll', 'months12'] as const) assert.equal(FEATURE_STATUS[f], 'available', f)
   assert.ok(keys.includes('trialQuotaMedia') && keys.includes('albumMedia') && keys.includes('originalQuality') && keys.includes('downloadAll') && keys.includes('noDownloadAll'))
   assert.ok(!keys.includes('trialQuotaPhotos') && !keys.includes('albumMediaPhotos'), 'the "photos only" wording is replaced once video exists')
   assert.ok(keys.includes('poster') && keys.includes('noBrand'))
@@ -84,14 +84,21 @@ test('OCCASION. every occasion has its own labels in all languages; "Nomi degli 
   for (const l of Object.keys(D)) assert.ok(get(D[l], 'onboarding.eyebrow.wedding'), `${l} wedding eyebrow`)
 })
 
-test('TRIAL. plan state comes from the server marks: open / ended / active / none', () => {
+test('TRIAL. an album\'s state comes from ITS OWN server marks: trial / trial paused / pending / active / expired / none', () => {
   const now = Date.parse('2026-10-19T12:00:00Z')
-  assert.equal(albumPlanState(null, now).kind, 'none')
-  assert.equal(albumPlanState({ access_mode: 'activated' }, now).kind, 'active')
-  assert.deepEqual(albumPlanState({ access_mode: 'trial', trial_expires_at: '2026-10-22T12:00:00Z', trial_photo_count: 4, trial_photo_limit: 50 }, now), { kind: 'trial', daysLeft: 3, used: 4, limit: 50 })
-  assert.equal(albumPlanState({ access_mode: 'trial', trial_expires_at: '2026-10-19T11:00:00Z' }, now).kind, 'trialEnded')
-  assert.equal(albumPlanState({ access_mode: 'trial' }, now).kind, 'trial', 'an older trial without an end date is open')
-  assert.equal(albumPlanState({}, now).kind, 'none', 'an unknown mode is never active')
+  assert.equal(albumStatus(null, now), null)
+  assert.deepEqual(albumStatus({ access_mode: 'trial', trial_expires_at: '2026-10-22T12:00:00Z', trial_photo_count: 4, trial_photo_limit: 50 }, now),
+    { kind: 'trial', daysLeft: 3, until: '2026-10-22T12:00:00Z', used: 4, limit: 50, canActivate: true })
+  const ended = albumStatus({ access_mode: 'trial', trial_expires_at: '2026-10-19T11:00:00Z' }, now)!
+  assert.deepEqual([ended.kind, ended.canActivate, ended.daysLeft], ['trialEnded', true, 30], 'paused, 30 days left to recover it')
+  assert.equal(albumStatus({ access_mode: 'trial', trial_expires_at: '2026-09-01T00:00:00Z' }, now)!.canActivate, false, 'recovery window over: no longer purchasable')
+  assert.equal(albumStatus({ access_mode: 'trial' }, now)!.kind, 'trial', 'an older trial without an end date is open')
+  assert.deepEqual([albumStatus({ access_mode: 'pending' }, now)!.kind, albumStatus({ access_mode: 'pending' }, now)!.canActivate], ['pending', true])
+  const active = albumStatus({ access_mode: 'activated', expires_at: '2027-10-19T12:00:00Z' }, now)!
+  assert.deepEqual([active.kind, active.daysLeft, active.canActivate], ['active', 365, false])
+  assert.equal(albumStatus({ access_mode: 'activated', expires_at: '2026-10-19T12:00:00Z' }, now)!.kind, 'expired')
+  assert.equal(albumStatus({ access_mode: 'activated' }, now)!.kind, 'active', 'paid before the expiry field existed: stays active')
+  assert.equal(albumStatus({}, now), null, 'an unknown mode is never active')
 })
 
 test('SEO. title, description, canonical, hreflang for IT/EN/FR/ES, OpenGraph, Twitter, structured data (no reviews), robots', () => {

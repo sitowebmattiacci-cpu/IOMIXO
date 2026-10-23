@@ -54,7 +54,9 @@
       "format": "Unsupported format. Use JPG, PNG or WebP photos, or MP4, MOV or WebM videos.",
       "retry": "Upload failed, please try again.",
       "videoTooLarge": "The video exceeds the maximum of 150 MB."
-    }
+    },
+    "notActivated": "This album is not active yet: photos and videos cannot be uploaded for now.",
+    "albumExpired": "This album has expired: photos and videos can no longer be added."
   },
   "wdAdmin": {
     "trial": {
@@ -67,23 +69,18 @@
     }
   },
   "albumPlan": {
-    "navLabel": "Plan",
-    "title": "Plan",
-    "subtitle": "Choose how to live your album.",
-    "yourPlan": "Your plan",
-    "statusTrial": "Free trial in progress",
-    "statusTrialEnded": "Free trial ended",
-    "statusActive": "Full album active",
+    "navLabel": "Payments",
+    "title": "Album activation",
+    "subtitle": "Each album is activated with a one-time payment of {price} and stays yours for 365 days.",
+    "statusTrial": "Free trial",
+    "statusTrialEnded": "Trial ended",
     "statusNone": "No album yet",
-    "trialLeft": "{n} days left",
-    "trialLeftOne": "1 day left",
-    "mediaUsed": "{n} / {max} items",
     "trialName": "Free trial",
     "trialPrice": "Free",
-    "trialSub": "7 days · No credit card",
+    "trialSub": "7 days · One per account · No credit card",
     "albumName": "Full album",
-    "albumOnce": "one time",
-    "albumSub": "One-time payment",
+    "albumOnce": "per album",
+    "albumSub": "One-time payment per album",
     "oneTime": "One-time payment",
     "notMonthly": "Not monthly",
     "notPerGuest": "Not per guest",
@@ -91,7 +88,6 @@
     "noUpgrade": "No upgrade",
     "included": "Included",
     "notIncluded": "Not included",
-    "current": "Current plan",
     "popular": "Recommended",
     "activate": "Activate album",
     "tryFree": "Try for free",
@@ -117,8 +113,8 @@
       "noWhiteLabel": "MIOLOVE mark removal",
       "albumMediaPhotos": "Unlimited photos",
       "albumMedia": "Unlimited photos and videos",
-      "months12Upload": "12 months to upload and download",
-      "months12Storage": "12 months of storage",
+      "months12Upload": "365 days to upload and download",
+      "months12Storage": "365 days of storage",
       "originalQuality": "Original quality",
       "downloadAll": "Download everything in one click",
       "noBrand": "No MIOLOVE mark",
@@ -131,7 +127,27 @@
     "activating": "Opening the payment…",
     "paymentReceived": "Payment received. We are activating your album…",
     "albumActivated": "Album activated! You can now use every feature of the full album.",
-    "paymentSlow": "The payment is being processed: the album will activate shortly. You can refresh the page in a few minutes."
+    "paymentSlow": "The payment is being processed: the album will activate shortly. You can refresh the page in a few minutes.",
+    "yourAlbums": "Your albums",
+    "statusPending": "To activate",
+    "statusActive": "Active",
+    "statusExpired": "Expired",
+    "dayRemaining": "1 day remaining",
+    "daysRemaining": "{n} days remaining",
+    "availableUntil": "Available until {date}",
+    "trialUntil": "Free trial until {date}",
+    "activateBefore": "Activate it by {date} to keep your photos and videos",
+    "pendingHint": "Album not active yet: activate it to collect photos and videos for 365 days.",
+    "expiredHint": "The 365 days are over: this album's content is being deleted.",
+    "activateAlbum": "Activate album — {price}",
+    "howTitle": "How it works",
+    "how1": "One free trial per account: 7 days, up to 50 photos and videos.",
+    "how2": "Every other album is activated with a one-time payment of {price}.",
+    "how3": "Each album lasts 365 days from its own activation, independent of the others.",
+    "how4": "When it ends, the album's content is permanently deleted: download everything first.",
+    "newAlbumNote": "This album does not include another free trial: you can activate it for {price} whenever you like.",
+    "pendingBanner": "Album to activate",
+    "openAlbum": "Open album"
   },
   "albumPrivacy": {
     "guestUpload": "Guest photo uploads",
@@ -349,7 +365,7 @@
     "pricing": {
       "eyebrow": "Pricing",
       "title": "Simple. One payment.",
-      "sub": "Start with a 7-day free trial, no card. If you love the album, activate it once and that’s it."
+      "sub": "Start with 7 free days, no card (one trial per account). Every album you want to keep is activated with a single payment and lasts 365 days."
     },
     "faq": {
       "eyebrow": "FAQ",
@@ -364,11 +380,11 @@
       },
       "q3": {
         "q": "What happens after the 7-day trial?",
-        "a": "You can still view the album and your photos are kept. New uploads stop until you activate the Full album."
+        "a": "You can still view the album and your content is kept for another 30 days. New uploads stop: activate the Full album within 30 days so you don't lose it."
       },
       "q4": {
         "q": "How much does it cost?",
-        "a": "The trial is free. The Full album costs {price} (instead of {list}) once: it is not a subscription, it is not monthly and it is not per guest."
+        "a": "The trial is free (one per account). The Full album costs {price} (instead of {list}) for each album, in a single payment: it lasts 365 days from activation. It is not a subscription, it is not billed monthly and it is not charged per guest."
       },
       "q5": {
         "q": "Do I need a credit card to try it?",

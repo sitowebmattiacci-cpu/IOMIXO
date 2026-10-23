@@ -11,8 +11,8 @@ export const TRIAL_PHOTO_LIMIT_REASON = 'miolove_trial_photo_limit_reached'
 /** Wedding album created by a couple on the free trial (events without `accessMode` are never trial). */
 export const isTrialAlbum = (ev: DocumentData): boolean => ev.type === 'wedding' && ev.accessMode === 'trial'
 
-/** MIOLOVE albums (trial or activated) use the photo flow without the professional entitlement. */
-export const hasMiolovePhotoAccess = (ev: DocumentData): boolean => ev.type === 'wedding' && (ev.accessMode === 'trial' || ev.accessMode === 'activated')
+/** MIOLOVE albums (trial, pending or activated) use the photo flow without the professional entitlement. Whether they may take NEW uploads is albumLifecycle.uploadBlockReason. */
+export const hasMiolovePhotoAccess = (ev: DocumentData): boolean => ev.type === 'wedding' && (ev.accessMode === 'trial' || ev.accessMode === 'pending' || ev.accessMode === 'activated')
 
 export const trialPhotoCount = (ev: DocumentData): number | null =>
   typeof ev.trialPhotoCount === 'number' && ev.trialPhotoCount >= 0 ? ev.trialPhotoCount : null
@@ -21,7 +21,8 @@ export const trialPhotoCount = (ev: DocumentData): number | null =>
 export const MIOLOVE_TRIAL_DAYS = 7
 export const TRIAL_EXPIRED_REASON = 'miolove_trial_expired'
 
-/** End of the trial of a NEW trial album. Albums created before the field existed carry none: they never expire (no retroactive lock-out). */
+/** End of the trial of a NEW trial album. Albums created before the field existed carry none: they never expire (no retroactive lock-out).
+ *  After it the album is paused for TRIAL_GRACE_DAYS (albumLifecycle.ts), then purged unless it was activated. */
 export const trialExpiryFrom = (start: Date): Date => new Date(start.getTime() + MIOLOVE_TRIAL_DAYS * 86_400_000)
 export const trialExpiresAt = (ev: DocumentData): Date | null => (ev.trialExpiresAt instanceof Timestamp ? ev.trialExpiresAt.toDate() : null)
 

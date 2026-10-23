@@ -30,8 +30,9 @@ let n = 0
 const id = (p: string) => `${p}${Date.now().toString(36)}${n++}`
 
 function fakeStripe() {
-  const st = { customers: new Map<string, boolean>(), lineItems: new Map<string, string[]>(), created: [] as any[], calls: [] as string[] }
+  const st = { customers: new Map<string, boolean>(), lineItems: new Map<string, string[]>(), created: [] as any[], calls: [] as string[], refunds: new Map<string, any>() }
   const api = {
+    refunds: { create: async (p: any, o: any) => { const k = o?.idempotencyKey as string; if (!st.refunds.has(k)) st.refunds.set(k, { id: `re_${st.refunds.size + 1}`, status: 'succeeded', params: p }); return st.refunds.get(k) } },
     customers: {
       retrieve: async (cid: string) => { if (!st.customers.has(cid)) throw Object.assign(new Error('No such customer'), { type: 'StripeInvalidRequestError', code: 'resource_missing' }); return { id: cid } },
       create: async () => { const cid = id('cus_'); st.customers.set(cid, true); return { id: cid } },
@@ -148,6 +149,7 @@ test('S-webhook-2. idempotent: same event twice, a second event for the same pay
   assert.equal((await get(`events/${eid}`))!.activation.checkoutSessionId, s.id, 'the first payment stays the activation record')
   assert.equal((await get(`users/${uid}/payments/${dup.s.payment_intent}`))!.activation, 'already_activated', 'the extra payment is recorded for a human, nothing else changes')
   assert.equal((await db.collection(`users/${uid}/payments`).get()).size, 2)
+  assert.deepEqual([...fs.st.refunds.keys()], [`miolove-refund-${dup.s.payment_intent}`], 'the double payment is refunded, the first one is not')
 })
 
 test('S-webhook-3. invalid signature / unpaid / not complete → nothing changes; metadata that disagrees with Firestore activates nothing', async () => {

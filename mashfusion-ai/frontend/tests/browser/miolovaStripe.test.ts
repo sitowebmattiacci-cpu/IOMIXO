@@ -49,13 +49,13 @@ test('STRIPE-B1. trial: "Attiva album" is live and sends ONLY the album id + lan
   page.on('request', (r) => { if (/createAlbumCheckoutSession/.test(r.url()) && r.method() === 'POST') sent.push(r.postData() ?? '') })
   try {
     await login(page, a.owner.email); await page.goto(`${M()}/billing`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
-    const btn = page.getByTestId('plan-activate'); await btn.waitFor({ timeout: 90_000 }); await until(async () => !(await btn.isDisabled()), 30_000, 'button live')
-    assert.equal(await btn.innerText(), 'Attiva album'); assert.match(await page.getByTestId('plan-activate-note').innerText(), /Pagamento unico.*Nessun abbonamento/)
+    const btn = page.getByTestId('album-activate').first(); await btn.waitFor({ timeout: 90_000 }); await until(async () => !(await btn.isDisabled()), 30_000, 'button live')
+    assert.equal((await btn.innerText()).replace(/\s+/g, ' '), 'Attiva album — €19,99'); assert.match(await page.getByTestId('billing-how').innerText(), /pagamento unico/i)
     await btn.click()
     await until(async () => sent.length === 1, 30_000, 'checkout requested'); const body = JSON.parse(sent[0]).data
     assert.deepEqual(Object.keys(body).sort(), ['eventId', 'locale']); assert.equal(body.eventId, a.id); assert.equal(body.locale, 'it')
     await page.getByText(/non è ancora disponibile|Impossibile avviare il pagamento/).first().waitFor({ timeout: 30_000 })      // dev emulator: no Stripe price / dummy key
-    assert.equal(await page.getByTestId('plan-activate').isDisabled(), false, 'the button is usable again')
+    assert.equal(await page.getByTestId('album-activate').first().isDisabled(), false, 'the button is usable again')
     assert.equal((await (await fetch(`http://127.0.0.1:8080/v1/projects/demo-iomixo/databases/(default)/documents/events/${a.id}`, { headers: { authorization: 'Bearer owner' } })).json() as any).fields.accessMode.stringValue, 'trial', 'asking for a checkout activates nothing')
   } finally { await ctx.close() }
 })
@@ -65,11 +65,11 @@ test('STRIPE-B2. checkout opens (URL from the server), cancel returns to MIOLOVE
   try {
     await fakeCheckout(page, `${M()}/billing?payment=cancelled&album=${a.id}`, seen)
     await login(page, a.owner.email); await page.goto(`${M()}/billing`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
-    const btn = page.getByTestId('plan-activate'); await btn.waitFor({ timeout: 90_000 }); await until(async () => !(await btn.isDisabled()), 30_000, 'button live')
-    assert.ok((await page.locator('body').innerText()).includes('$19.99'), 'EN shows $19.99')
+    const btn = page.getByTestId('album-activate').first(); await btn.waitFor({ timeout: 90_000 }); await until(async () => !(await btn.isDisabled()), 30_000, 'button live')
+    assert.equal((await btn.innerText()).replace(/\s+/g, ' '), 'Activate album — $19.99', 'EN shows $19.99')
     await btn.click(); await page.waitForURL(/payment=cancelled/, { timeout: 30_000 }); assert.equal(seen[0].data.locale, 'en'); assert.equal(new URL(page.url()).origin, M())
     await page.getByTestId('payment-cancelled').waitFor({ timeout: 60_000 }); assert.match(await page.getByTestId('payment-cancelled').innerText(), /Payment cancelled/)
-    await page.getByTestId('plan-activate').waitFor(); assert.equal(await overflow(page), false)
+    await page.getByTestId('album-activate').first().waitFor(); assert.equal(await overflow(page), false)
   } finally { await ctx.close() }
 })
 
@@ -81,8 +81,8 @@ test('STRIPE-B3. success return: the redirect alone does NOT activate ("payment 
     await page.waitForTimeout(6000); assert.equal(await page.getByTestId('payment-activated').count(), 0, 'success URL alone never activates')
     await seedUpdate(`events/${a.id}`, { accessMode: 'activated', activatedAt: new Date() })            // what the verified webhook does
     await page.getByTestId('payment-activated').waitFor({ timeout: 60_000 }); assert.match(await page.getByTestId('payment-activated').innerText(), /Album attivato/)
-    await page.goto(`${M()}/billing`, { waitUntil: 'domcontentloaded' }); await page.getByTestId('billing-status').filter({ hasText: 'Album completo attivo' }).waitFor({ timeout: 60_000 })
-    assert.equal(await page.getByTestId('plan-activate').count(), 0, 'an activated album has no pay button')
+    await page.goto(`${M()}/billing`, { waitUntil: 'domcontentloaded' }); await page.getByTestId('billing-album').filter({ hasText: 'Attivo' }).waitFor({ timeout: 60_000 })
+    assert.equal(await page.getByTestId('album-activate').count(), 0, 'an activated album has no pay button')
   } finally { await ctx.close() }
 })
 
@@ -92,27 +92,29 @@ test('STRIPE-B4. an already activated album: no activation CTA anywhere; pricing
     const ctx = await newCtx({ width: vp, height: 900 }, lang); const page = await ctx.newPage()
     try {
       await login(page, t.owner.email); await page.goto(`${M()}/billing`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
-      await page.getByTestId('plan-activate').waitFor({ timeout: 90_000 }); assert.ok((await page.locator('body').innerText()).includes(price), `${lang} ${price}`)
+      await page.getByTestId('album-activate').first().waitFor({ timeout: 90_000 }); assert.ok((await page.locator('body').innerText()).includes(price), `${lang} ${price}`)
       assert.ok(!/abbonamento mensile|per month|\/\s*mese/i.test(await page.locator('body').innerText())); assert.equal(await overflow(page), false, `overflow @${vp}`)
     } finally { await ctx.close() }
   }
   const ctx = await newCtx(); const page = await ctx.newPage()
-  try { await login(page, a.owner.email); await page.goto(`${M()}/billing`, { waitUntil: 'domcontentloaded', timeout: 120_000 }); await page.getByTestId('billing-status').filter({ hasText: 'Album completo attivo' }).waitFor({ timeout: 60_000 }); assert.equal(await page.getByTestId('plan-activate').count(), 0) } finally { await ctx.close() }
+  try { await login(page, a.owner.email); await page.goto(`${M()}/billing`, { waitUntil: 'domcontentloaded', timeout: 120_000 }); await page.getByTestId('billing-album').filter({ hasText: 'Attivo' }).waitFor({ timeout: 60_000 }); assert.equal(await page.getByTestId('album-activate').count(), 0) } finally { await ctx.close() }
 })
 
-test('STRIPE-B5. one owner, album A activated + album B trial, in BOTH list orders: the plan page is about B ("Attiva album" stays), the checkout is requested for B (never A), and A alone has no pay CTA', async () => {
+test('STRIPE-B5. one owner, album A activated + album B to activate, in BOTH list orders: ONLY B has "Attiva album", the checkout is requested for B (never A)', async () => {
   for (const order of ['activated-first', 'trial-first'] as const) {
     const owner = await newClient('account'); const stamp = Date.now()
     await seedSet(`users/${owner.uid}`, { uid: owner.uid, email: owner.email, displayName: 'Enrico', accountType: 'couple', plan: { tier: 'free', source: 'default' }, createdAt: new Date(), updatedAt: new Date() })
-    const mk = async (id: string, mode: string, at: number) => { await seedSet(`events/${id}`, eventFields(owner.uid, `s${id}`, { type: 'wedding', brand: 'miolove', title: id, legacySupabaseId: undefined, occasionType: 'other', accessMode: mode, trialPhotoCount: 1, trialPhotoLimit: 50, guestConfig: null, screenConfig: null, createdAt: new Date(at), updatedAt: new Date(at) })); await seedSet(`eventSlugs/s${id}`, { eventId: id }) }
+    const mk = async (id: string, mode: string, at: number) => { await seedSet(`events/${id}`, eventFields(owner.uid, `s${id}`, { type: 'wedding', brand: 'miolove', title: id, legacySupabaseId: undefined, occasionType: 'other', accessMode: mode, trialPhotoCount: 1, trialPhotoLimit: 50, ...(mode === 'activated' ? { activatedAt: new Date(), expiresAt: new Date(Date.now() + 200 * 86_400_000) } : {}), guestConfig: null, screenConfig: null, createdAt: new Date(at), updatedAt: new Date(at) })); await seedSet(`eventSlugs/s${id}`, { eventId: id }) }
     const A = `A${stamp}${order[0]}`, B = `B${stamp}${order[0]}`
-    await mk(A, 'activated', order === 'activated-first' ? stamp : stamp - 60_000); await mk(B, 'trial', order === 'activated-first' ? stamp - 60_000 : stamp)
+    await mk(A, 'activated', order === 'activated-first' ? stamp : stamp - 60_000); await mk(B, 'pending', order === 'activated-first' ? stamp - 60_000 : stamp)
     const ctx = await newCtx(); const page = await ctx.newPage(); const seen: any[] = []
     try {
       await fakeCheckout(page, `${M()}/billing?payment=cancelled`, seen)
       await login(page, owner.email); await page.goto(`${M()}/billing`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
-      const btn = page.getByTestId('plan-activate'); await btn.waitFor({ timeout: 90_000 }); await until(async () => !(await btn.isDisabled()), 30_000, 'button live')
-      assert.equal(await page.getByTestId('miolove-billing').getAttribute('data-plan'), 'trial', `${order}: the page is about the album still to activate`)
+      const btn = page.getByTestId('album-activate'); await btn.first().waitFor({ timeout: 90_000 }); await until(async () => !(await btn.first().isDisabled()), 30_000, 'button live')
+      assert.equal(await btn.count(), 1, `${order}: exactly one album can be paid`); assert.equal(await btn.getAttribute('data-album-id'), B)
+      assert.equal(await page.getByTestId('miolove-billing').getAttribute('data-to-activate'), '1')
+      assert.equal(await page.locator(`[data-testid="billing-album"][data-album-id="${A}"] [data-testid="album-activate"]`).count(), 0, 'A has no pay CTA')
       await btn.click(); await until(async () => seen.length === 1, 30_000, 'checkout requested'); assert.equal(seen[0].data.eventId, B, `${order}: checkout is for B, never A`)
     } finally { await ctx.close() }
   }

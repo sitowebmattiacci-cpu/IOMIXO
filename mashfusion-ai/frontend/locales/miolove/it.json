@@ -54,7 +54,9 @@
       "format": "Formato non supportato. Usa foto JPG, PNG o WebP, oppure video MP4, MOV o WebM.",
       "retry": "Caricamento non riuscito, riprova.",
       "videoTooLarge": "Il video supera il limite massimo di 150 MB."
-    }
+    },
+    "notActivated": "Questo album non è ancora attivo: al momento non è possibile caricare foto o video.",
+    "albumExpired": "Questo album è scaduto: non è più possibile aggiungere foto o video."
   },
   "wdAdmin": {
     "trial": {
@@ -67,23 +69,18 @@
     }
   },
   "albumPlan": {
-    "navLabel": "Piano",
-    "title": "Piano",
-    "subtitle": "Scegli come vivere il tuo album.",
-    "yourPlan": "Il tuo piano",
-    "statusTrial": "Prova gratis in corso",
-    "statusTrialEnded": "Prova gratis terminata",
-    "statusActive": "Album completo attivo",
+    "navLabel": "Pagamenti",
+    "title": "Attivazione album",
+    "subtitle": "Ogni album si attiva con un pagamento unico di {price} e resta tuo per 365 giorni.",
+    "statusTrial": "Prova gratuita",
+    "statusTrialEnded": "Prova terminata",
     "statusNone": "Nessun album ancora",
-    "trialLeft": "{n} giorni rimasti",
-    "trialLeftOne": "1 giorno rimasto",
-    "mediaUsed": "{n} / {max} contenuti",
     "trialName": "Prova gratis",
     "trialPrice": "Gratis",
-    "trialSub": "7 giorni · Nessuna carta di credito",
+    "trialSub": "7 giorni · Una per account · Nessuna carta di credito",
     "albumName": "Album completo",
-    "albumOnce": "una volta",
-    "albumSub": "Pagamento unico",
+    "albumOnce": "per album",
+    "albumSub": "Pagamento unico per album",
     "oneTime": "Pagamento unico",
     "notMonthly": "Non al mese",
     "notPerGuest": "Non per invitato",
@@ -91,7 +88,6 @@
     "noUpgrade": "Nessun upgrade",
     "included": "Incluso",
     "notIncluded": "Non incluso",
-    "current": "Piano attuale",
     "popular": "Consigliato",
     "activate": "Attiva album",
     "tryFree": "Prova gratis",
@@ -117,8 +113,8 @@
       "noWhiteLabel": "Rimozione del marchio MIOLOVE",
       "albumMediaPhotos": "Foto illimitate",
       "albumMedia": "Foto e video illimitati",
-      "months12Upload": "12 mesi per caricare e scaricare",
-      "months12Storage": "12 mesi di archiviazione",
+      "months12Upload": "365 giorni per caricare e scaricare",
+      "months12Storage": "365 giorni di archiviazione",
       "originalQuality": "Qualità originale",
       "downloadAll": "Scarica tutto con un click",
       "noBrand": "Nessun marchio MIOLOVE",
@@ -131,7 +127,27 @@
     "activating": "Apertura del pagamento…",
     "paymentReceived": "Pagamento ricevuto. Stiamo attivando il tuo album…",
     "albumActivated": "Album attivato! Ora puoi usare tutte le funzioni dell'album completo.",
-    "paymentSlow": "Il pagamento è in elaborazione: l'album si attiverà a breve. Puoi aggiornare la pagina tra qualche minuto."
+    "paymentSlow": "Il pagamento è in elaborazione: l'album si attiverà a breve. Puoi aggiornare la pagina tra qualche minuto.",
+    "yourAlbums": "I tuoi album",
+    "statusPending": "Da attivare",
+    "statusActive": "Attivo",
+    "statusExpired": "Scaduto",
+    "dayRemaining": "1 giorno rimanente",
+    "daysRemaining": "{n} giorni rimanenti",
+    "availableUntil": "Disponibile fino al {date}",
+    "trialUntil": "Prova gratuita fino al {date}",
+    "activateBefore": "Attivalo entro il {date} per non perdere foto e video",
+    "pendingHint": "Album non ancora attivo: attivalo per raccogliere foto e video per 365 giorni.",
+    "expiredHint": "I 365 giorni sono terminati: i contenuti di questo album vengono eliminati.",
+    "activateAlbum": "Attiva album — {price}",
+    "howTitle": "Come funziona",
+    "how1": "Una sola prova gratuita per account: 7 giorni, fino a 50 foto e video.",
+    "how2": "Ogni altro album si attiva con un pagamento unico di {price}.",
+    "how3": "Ogni album dura 365 giorni dalla sua attivazione, indipendentemente dagli altri.",
+    "how4": "Alla scadenza i contenuti dell'album vengono eliminati definitivamente: scarica tutto prima.",
+    "newAlbumNote": "Questo album non include una nuova prova gratuita: potrai attivarlo a {price} quando vuoi.",
+    "pendingBanner": "Album da attivare",
+    "openAlbum": "Apri album"
   },
   "albumPrivacy": {
     "guestUpload": "Invio foto degli ospiti",
@@ -349,7 +365,7 @@
     "pricing": {
       "eyebrow": "Prezzi",
       "title": "Semplice. Un solo pagamento.",
-      "sub": "Parti con 7 giorni di prova gratis, senza carta. Se l'album ti piace, lo attivi una volta e basta."
+      "sub": "Parti con 7 giorni di prova gratis, senza carta (una per account). Ogni album che vuoi tenere si attiva con un pagamento unico e dura 365 giorni."
     },
     "faq": {
       "eyebrow": "FAQ",
@@ -364,11 +380,11 @@
       },
       "q3": {
         "q": "Cosa succede dopo i 7 giorni di prova?",
-        "a": "L'album resta consultabile da te e le foto vengono conservate. I nuovi caricamenti si fermano finché non attivi l'Album completo."
+        "a": "L'album resta consultabile da te e i contenuti vengono conservati per altri 30 giorni. I nuovi caricamenti si fermano: attiva l'Album completo entro 30 giorni per non perderli."
       },
       "q4": {
         "q": "Quanto costa?",
-        "a": "La prova è gratis. L'Album completo costa {price} (invece di {list}) una volta sola: non è un abbonamento, non si paga al mese e non si paga per invitato."
+        "a": "La prova è gratis (una per account). L'Album completo costa {price} (invece di {list}) per ogni album, in un unico pagamento: dura 365 giorni dall'attivazione. Non è un abbonamento, non si paga al mese e non si paga per invitato."
       },
       "q5": {
         "q": "Serve la carta di credito per provare?",

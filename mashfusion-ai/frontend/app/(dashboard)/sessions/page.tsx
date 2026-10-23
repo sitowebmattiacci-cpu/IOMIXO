@@ -16,6 +16,8 @@ import { useAccountRole } from '@/lib/roles'
 import { sessionsOfBrand } from '@/lib/brand/eventBrand'
 import { COUPLE_DEFAULT_GUEST_CONFIG, ONBOARDING_PATH, OCCASIONS, type OccasionType } from '@/lib/coupleAlbum'
 import { occasionText } from '@/lib/occasion'
+import { CoupleAlbumCard } from '@/components/miolove/CoupleAlbumCard'
+import { formatAlbumPrice } from '@/lib/miolove/plans'
 
 type SessionType = 'standard' | 'party' | 'wedding'
 
@@ -38,7 +40,7 @@ const EMPTY_FORM = {
 type CreateStep = 'idle' | 'choose' | 'form'
 
 export default function LiveSessionsPage() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const { isCouple, accountType, portal } = useAccountRole()
   const { data: allSessions } = useSWR('live-sessions', () => live.listSessions())
   // One account, two products: each portal lists ONLY its own events.
@@ -116,7 +118,7 @@ export default function LiveSessionsPage() {
       await mutate('live-sessions')
       window.location.href = `/sessions/${session.id}`
     } catch (err: any) {
-      toast.error(err?.reason === 'miolove_trial_album_exists' ? t('onboarding.trialAlbumExists') : (err?.response?.data?.error ?? err?.message ?? t('common.errorGeneric')))
+      toast.error(err?.response?.data?.error ?? err?.message ?? t('common.errorGeneric'))
     } finally {
       setSubmitting(false)
     }
@@ -239,6 +241,11 @@ export default function LiveSessionsPage() {
               />
             </div>
             )}
+            {isCouple && (sessions?.length ?? 0) > 0 && (
+              <p className="rounded-lg border border-amber-300/40 bg-amber-100/60 px-3 py-2 text-xs font-medium text-wd-ink" data-testid="new-album-note">
+                {t('albumPlan.newAlbumNote').replace('{price}', formatAlbumPrice(locale))}
+              </p>
+            )}
             <div>
               <label className="text-xs text-white/60">{t('sessions.description')}</label>
               <textarea
@@ -344,8 +351,9 @@ export default function LiveSessionsPage() {
           </Card>
         )
       ) : (
-        <div className="space-y-2">
-          {sessions.map((s) => {
+        <div className="space-y-2" data-testid={isCouple ? 'album-list' : undefined}>
+          {isCouple && sessions.map((s) => <CoupleAlbumCard key={s.id} album={s} />)}
+          {!isCouple && sessions.map((s) => {
             const locked = isPremiumSession(s) && !isAdvance && !(isCouple && (s.access_mode === 'trial' || s.access_mode === 'activated'))
             return (
             <Link key={s.id} href={`/sessions/${s.id}`}>

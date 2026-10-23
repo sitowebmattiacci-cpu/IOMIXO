@@ -12,6 +12,7 @@ import { useLatestGames } from '@/lib/events/useGames'
 import { useI18n } from '@/lib/i18n'
 import { WeddingShell } from '@/components/wedding/WeddingUI'
 import { EVENT_BRAND_NAME, hasPhotoFeatures } from '@/lib/brand/eventBrand'
+import { screenClosedKind } from '@/lib/miolove/guestClosure'
 import { useEventBrand } from '@/lib/events/useEventBrand'
 import { screenShowsPhotos } from '@/lib/events/screenModel'
 import { FrameTitleProvider } from '@/components/brand/eventBrandContext'
@@ -178,6 +179,18 @@ export default function ScreenModePage() {
       <WeddingShell variant="stage">
         <div className="min-h-screen flex items-center justify-center">
           <p className="text-3xl text-wedding-ivory/30 font-wedding italic">{t('common.loading')}…</p>
+        </div>
+      </WeddingShell>
+    )
+  }
+
+  // MIOLOVE: an album still waiting for its payment, or whose 365 days are over, does not play as an active one (the content goes at the next retention run).
+  const closedKind = brand === 'miolove' && liveEvent ? screenClosedKind(liveEvent) : null
+  if (closedKind) {
+    return (
+      <WeddingShell variant="stage">
+        <div className="min-h-screen flex items-center justify-center px-8 text-center" data-testid="screen-album-closed" data-kind={closedKind}>
+          <p className="text-3xl text-wedding-ivory/60 font-wedding italic">{t(closedKind === 'pending' ? 'guestAlbum.notActivated' : 'guestAlbum.albumExpired')}</p>
         </div>
       </WeddingShell>
     )

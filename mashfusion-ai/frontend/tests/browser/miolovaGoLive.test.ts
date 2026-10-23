@@ -64,7 +64,7 @@ for (const w of [390, 768, 1280, 1440]) {
       assert.equal(await page.getByTestId('how-step').count(), 4); assert.equal(await page.getByTestId('event-type').count(), 4)
       assert.ok(await page.getByTestId('feature-card').count() >= 7)
       assert.match(await page.getByTestId('hero-note').innerText(), /7 giorni di prova gratis · Nessuna carta di credito/)
-      assert.equal(await page.getByTestId('album-price').innerText(), '€19,99'); assert.equal(await page.getByTestId('album-list-price').innerText(), '€39,99'); assert.match(await page.getByTestId('album-price-line').innerText(), /una volta · Nessun abbonamento/)
+      assert.equal(await page.getByTestId('album-price').innerText(), '€19,99'); assert.equal(await page.getByTestId('album-list-price').innerText(), '€39,99'); assert.match(await page.getByTestId('album-price-line').innerText(), /per album · Nessun abbonamento/)
       const body = await noReassure(page); assert.doesNotMatch(body, FORBIDDEN)
       for (const s of ['Prova gratis', 'Album completo', 'Foto e video illimitati', 'Slideshow live', 'Logo MIOLOVE visibile']) assert.ok(body.includes(s), s)
       for (const planned of ['12 mesi']) assert.ok(!body.includes(planned), `"${planned}" is not implemented: it must not be advertised`)
@@ -329,7 +329,7 @@ test('OWN3. poster / QR card: LOCKED on a trial album (Album completo CTA), open
 })
 
 // ── 5. Plan / billing ──────────────────────────────────────────────────────────────────────────────────
-test('BILL1. MIOLOVE "Piano" page: trial + full album €19,99 once, no Event Pass / Advance / monthly / IOMIXO, a live (enabled) activation button; 4 languages; 390 / 768 / 1280 / 1440', async () => {
+test('BILL1. MIOLOVE payments page: per-ALBUM status and activation (€19,99 once, 365 days), no account plan, no Event Pass / Advance / monthly / IOMIXO wording; 4 languages; 390 / 768 / 1280 / 1440', async () => {
   const a = await album('birthday')
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const page = await ctx.newPage()
   try {
@@ -337,21 +337,23 @@ test('BILL1. MIOLOVE "Piano" page: trial + full album €19,99 once, no Event Pa
     for (const w of [390, 768, 1280, 1440]) {
       await page.setViewportSize({ width: w, height: 900 })
       await page.goto(`${M()}/billing`, { waitUntil: 'domcontentloaded', timeout: 120_000 }); await page.getByTestId('miolove-billing').waitFor({ timeout: 90_000 })
-      await page.getByTestId('billing-status').filter({ hasText: 'Prova gratis in corso' }).waitFor({ timeout: 60_000 })
-      const t = await noReassure(page); assert.doesNotMatch(t, FORBIDDEN, `@${w}`); assert.doesNotMatch(t, /Abbonamento/)
-      for (const s of ['Prova gratis', 'Album completo', '€19,99', 'una volta']) assert.ok((await text(page)).includes(s), s)
-      await page.getByTestId('plan-activate').waitFor({ timeout: 60_000 }); await until(async () => !(await page.getByTestId('plan-activate').isDisabled()), 30_000, 'the activation button is live')
-      assert.match(await page.getByTestId('plan-activate-note').innerText(), /Pagamento unico.*Nessun abbonamento/)
+      await page.getByTestId('billing-album').first().waitFor({ timeout: 60_000 })
+      assert.match(await page.getByTestId('billing-album').first().innerText(), /Prova gratuita/)
+      const t = await noReassure(page); assert.doesNotMatch(t, FORBIDDEN, `@${w}`); assert.doesNotMatch(t, /Abbonamento|Piano attuale|Il tuo piano/)
+      for (const s of ['Prova gratuita', '€19,99', 'Come funziona', '365 giorni']) assert.ok((await text(page)).includes(s), s)
+      const btn = page.getByTestId('album-activate').first(); await btn.waitFor({ timeout: 60_000 }); await until(async () => !(await btn.isDisabled()), 30_000, 'the activation button is live')
+      assert.equal((await btn.innerText()).replace(/\s+/g, ' '), 'Attiva album — €19,99'); assert.equal(await btn.getAttribute('data-album-id'), a.id, 'the button names THIS album')
+      assert.match(await page.getByTestId('billing-how').innerText(), /pagamento unico/i)
       assert.equal(await overflow(page), false, `overflow @${w}`)
     }
-    const T: Record<L, string[]> = { it: ['Prova gratis', '€19,99'], en: ['Free trial', '$19.99'], fr: ['Essai gratuit', '19,99 €'], es: ['Prueba gratis', '19,99 €'] }
+    const T: Record<L, string[]> = { it: ['Prova gratuita', '€19,99'], en: ['Free trial', '$19.99'], fr: ['Essai gratuit', '19,99 €'], es: ['Prueba gratuita', '19,99 €'] }
     for (const l of ['en', 'fr', 'es', 'it'] as L[]) {
-      await setLocale(page, l); await page.reload({ waitUntil: 'domcontentloaded' }); await page.getByTestId('album-price').waitFor({ timeout: 60_000 })
+      await setLocale(page, l); await page.reload({ waitUntil: 'domcontentloaded' }); await page.getByTestId('billing-albums').waitFor({ timeout: 60_000 })
       const t = await text(page); for (const s of T[l]) assert.ok(t.includes(s), `${l} ${s}`); assert.doesNotMatch(await noReassure(page), FORBIDDEN, l)
     }
-    // sidebar / settings carry no IOMIXO plan names either
-    await setLocale(page, 'it'); await page.goto(`${M()}/settings`, { waitUntil: 'domcontentloaded' }); await page.getByTestId('settings-plan').waitFor({ timeout: 60_000 })
-    assert.equal(await page.getByTestId('settings-plan').innerText(), 'Prova gratis'); assert.doesNotMatch(await text(page), /Event Pass|Advance|\bfree\b|\bpro\b/i)
+    // sidebar / settings carry no plan at all (not an IOMIXO one, not an account-wide MIOLOVE one)
+    await setLocale(page, 'it'); await page.goto(`${M()}/settings`, { waitUntil: 'domcontentloaded' }); await page.getByText('Membro dal', { exact: false }).first().waitFor({ timeout: 60_000 })
+    assert.equal(await page.getByTestId('settings-plan').count(), 0); assert.doesNotMatch(await text(page), /Event Pass|Advance|\bfree\b|\bpro\b|Piano attuale|Il tuo piano/i)
   } finally { await ctx.close() }
 })
 

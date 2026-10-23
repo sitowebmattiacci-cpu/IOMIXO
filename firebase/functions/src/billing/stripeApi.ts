@@ -10,6 +10,8 @@ export interface StripeApi {
     create(params: Stripe.Checkout.SessionCreateParams): Promise<{ id: string; url: string | null }>
     listLineItems(id: string, params?: Stripe.Checkout.SessionListLineItemsParams): Promise<{ data: Array<{ price?: { id: string } | null }> }>
   } }
+  /** MIOLOVE webhook only: the money back for a payment that can activate nothing (idempotent through the key). */
+  refunds: { create(params: Stripe.RefundCreateParams, options?: { idempotencyKey?: string }): Promise<{ id: string; status: string | null }> }
   billingPortal: { sessions: { create(params: Stripe.BillingPortal.SessionCreateParams): Promise<{ url: string }> } }
   invoices: { retrieve(id: string): Promise<Stripe.Invoice> }
   subscriptions: {

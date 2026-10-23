@@ -49,14 +49,15 @@ test('PB3. couple album created BEFORE accessMode existed → couple (the owner 
   assert.deepEqual(await brandOf(await historicEvent(a.uid)), ['couple', null])
 })
 
-test('PB4. new events: couple trial → couple/trial; couple paid → couple/activated; DJ Wedding and Party → dj/null', async () => {
+test('PB4. new events: couple first album → couple/trial; couple second album → couple/pending; DJ Wedding and Party → dj/null', async () => {
   const free = await mk(); const paid = await mk(); const dj = await mk()
   await seedSet(`users/${free.uid}`, { uid: free.uid, accountType: 'couple', plan: { tier: 'free', source: 'default' } })
   await seedSet(`users/${paid.uid}`, { uid: paid.uid, accountType: 'couple', plan: { tier: 'free', source: 'default' }, miolovePlan: { tier: 'wedding', source: 'stripe' } })
   await seedSet(`users/${dj.uid}`, { uid: dj.uid, accountType: 'dj', plan: { tier: 'wedding', source: 'legacy' } })
   const ev = (c: TestClient, type: string) => callAs<{ slug: string }>(c, 'createEvent', { requestId: rid(), title: 'Evento', type })
   assert.deepEqual(await brandOf((await ev(free, 'wedding')).slug), ['couple', 'trial'])
-  assert.deepEqual(await brandOf((await ev(paid, 'wedding')).slug), ['couple', 'activated'])
+  await ev(paid, 'wedding')
+  assert.deepEqual(await brandOf((await ev(paid, 'wedding')).slug), ['couple', 'pending'])
   assert.deepEqual(await brandOf((await ev(dj, 'wedding')).slug), ['dj', null])
   assert.deepEqual(await brandOf((await ev(dj, 'party')).slug), ['dj', null])
 })
