@@ -6,6 +6,7 @@ import { defineSecret, defineBoolean } from 'firebase-functions/params'
 import { logger } from 'firebase-functions/logger'
 import { initializeApp, getApps } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
+import { getAuth } from 'firebase-admin/auth'
 import { parseRequestInput } from './requests/validation'
 import { createRequest } from './requests/createRequest'
 import { bridgeFromEnv } from './requests/legacyBridge'
@@ -28,6 +29,9 @@ import { makeStripe } from './billing/stripeApi'
 import { parseAlbumCheckoutInput, createAlbumCheckoutSession as createAlbumCheckoutSessionImpl } from './billing/albumCheckout'
 import { parseCheckoutInput, portalOf, createCheckoutSession as createCheckoutSessionImpl, createPortalSession as createPortalSessionImpl } from './billing/checkout'
 import { handleStripeWebhook } from './billing/webhook'
+import { OUTBOX, drainOutbox, processOutboxItem, scanMailTriggers } from './mail/miolove/outbox'
+import { parseSetMailLocaleInput, setMailLocale as setMailLocaleImpl } from './mail/miolove/locale'
+import { dryRunTransport, mailModeOf, resendTransport, type MailTransport } from './mail/transport'
 import { parseSlug, getPublicEvent as getPublicEventImpl } from './owner/publicEvent'
 
 // Cost baseline: europe-west1, scale to zero, bounded concurrency.
@@ -162,6 +166,43 @@ export const purgeExpiredMioloveAlbums = onSchedule(
   { schedule: 'every day 03:30', timeZone: 'Europe/Rome', memory: '512MiB', timeoutSeconds: 540, maxInstances: 1, serviceAccount: SERVICE_ACCOUNT },
   async () => { const r = await purgeExpiredAlbums(getFirestore()); logger.info('purgeExpiredMioloveAlbums', r) },
 )
+
+// ── MIOLOVE e-mails (Resend). Separate secret, sender, templates and outbox from anything IOMIXO; only MIOLOVE albums ever produce one (mail/miolove/*). ───────────────────────
+// `firebase functions:secrets:set RESEND_MIOLOVE_API_KEY`; MIOLOVE_MAIL_MODE=live switches sending on (unset = the queue just waits, dry = emulator / tests: nothing leaves).
+const RESEND_MIOLOVE_API_KEY = defineSecret('RESEND_MIOLOVE_API_KEY')
+const mioloveMailDeps = (): { deps: Parameters<typeof processOutboxItem>[0] | null } => {
+  const mode = mailModeOf(process.env.MIOLOVE_MAIL_MODE)
+  if (mode === 'off') return { deps: null }
+  const transport: MailTransport = mode === 'live' ? resendTransport(RESEND_MIOLOVE_API_KEY.value()) : dryRunTransport()
+  const allow = (process.env.MIOLOVE_MAIL_ALLOWLIST ?? '').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean)       // optional staging filter: only these recipients
+  return {
+    deps: {
+      db: getFirestore(), transport, baseUrl: process.env.MIOLOVE_BASE_URL || undefined,
+      resolveRecipient: async (uid) => { const e = (await getAuth().getUser(uid).catch(() => null))?.email?.toLowerCase() ?? null; return e && (!allow.length || allow.includes(e)) ? e : null },
+    },
+  }
+}
+const MAIL_FN = { secrets: [RESEND_MIOLOVE_API_KEY], serviceAccount: SERVICE_ACCOUNT, memory: '256MiB' as const, timeoutSeconds: 300, maxInstances: 3 }
+
+/** A new e-mail was queued: send it right away. If this fails or is disabled, the scheduler below picks it up (retries with back-off). */
+export const onMioloveMailQueued = onDocumentCreated({ document: `${OUTBOX}/{key}`, ...MAIL_FN }, async (event) => {
+  const { deps } = mioloveMailDeps()
+  if (!deps) { logger.warn('miolove_mail_disabled', { key: event.params.key }); return }
+  logger.info('miolove_mail', { key: event.params.key, result: await processOutboxItem(deps, event.params.key) })
+})
+/** Every 10 minutes: retries, expired leases, anything queued while sending was off. */
+export const drainMioloveMail = onSchedule({ schedule: 'every 10 minutes', timeZone: 'Europe/Rome', ...MAIL_FN, maxInstances: 1 }, async () => {
+  const { deps } = mioloveMailDeps()
+  if (!deps) return
+  logger.info('drainMioloveMail', await drainOutbox(deps))
+})
+/** Every day 09:00 (Rome): queues the due trial / expiry reminders, one e-mail per album. Only writes outbox documents. */
+export const scanMioloveMailTriggers = onSchedule(
+  { schedule: 'every day 09:00', timeZone: 'Europe/Rome', memory: '256MiB', timeoutSeconds: 540, maxInstances: 1, serviceAccount: SERVICE_ACCOUNT },
+  async () => { logger.info('scanMioloveMailTriggers', await scanMailTriggers(getFirestore())) },
+)
+/** Callable: remembers the language of the signed-in account's e-mails (the browser sends it when the language changes). */
+export const setMailLocale = ownerCall('setMailLocale', parseSetMailLocaleInput, (r, i) => setMailLocaleImpl(getFirestore(), r, i))
 
 // Guest photo callables: identity = verified token (anonymous allowed). Bytes never pass through them (the client writes to Storage under storage.rules).
 const photoCallOptions = { ...guestCallOptions(ENFORCE_PHOTO), secrets: [] }

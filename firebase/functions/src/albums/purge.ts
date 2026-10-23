@@ -3,6 +3,7 @@ import { brandFromEvent } from '../owner/brand'
 import { trialExpiresAt } from '../photos/trialQuota'
 import { albumExpiresAt, trialPurgeAt } from '../photos/albumLifecycle'
 import { countPrefix, deletePrefix } from '../photos/storage'
+import { enqueueMioloveMailSafe } from '../mail/miolove/outbox'
 
 /**
  * Retention purge of MIOLOVE albums (scheduled once a day, see index.ts → purgeExpiredMioloveAlbums).
@@ -97,6 +98,8 @@ export async function purgeAlbum(db: Firestore, ref: DocumentReference, now: Dat
     }
     // 5. tombstone (full replace: every personal / content field goes, purgeAfter with it so the scheduler never sees it again)
     await ref.set(tombstoneOf(album, why, now, counts))
+    // "Your album was deleted" e-mail, from the album's own snapshot (the tombstone keeps no title). Not for an album the owner had already deleted themselves. Never blocks the purge.
+    if (!album.deletedAt) await enqueueMioloveMailSafe(db, why === 'album_expired' ? 'album_deleted' : 'trial_deleted', ref.id, { ev: album, now })
     return 'purged'
   } catch (e) {
     console.error('[purge] failed', ref.id, errCode(e))

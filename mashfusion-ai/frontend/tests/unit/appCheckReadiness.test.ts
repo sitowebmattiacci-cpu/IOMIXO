@@ -10,7 +10,7 @@ const walk = (d: string): string[] => readdirSync(d).flatMap((f) => { const p = 
 
 test('every callable declares enforceAppCheck from its own parameter; none hard-codes false or reads the token by hand', () => {
   const callables = Array.from(fnSrc.matchAll(/export const (\w+)\s*=\s*(onCall|ownerCall)/g)).map((m) => m[1])
-  assert.deepEqual(callables.sort(), ['commitAvatar', 'createAlbumCheckoutSession', 'createCheckoutSession', 'createDedication', 'createEvent', 'createMusicRequest', 'createPhotoUpload', 'createPoll', 'createPortalSession', 'deleteEvent', 'finalizePhoto', 'getAlbumExportUrl', 'getPublicEvent', 'moderateDedication', 'moderatePhoto', 'moderateRequest', 'ownerGameAction', 'removeAvatar', 'requestAlbumExport', 'restoreEvent', 'setGameConfig', 'setPollStatus', 'updateEventConfig', 'votePoll'])
+  assert.deepEqual(callables.sort(), ['commitAvatar', 'createAlbumCheckoutSession', 'createCheckoutSession', 'createDedication', 'createEvent', 'createMusicRequest', 'createPhotoUpload', 'createPoll', 'createPortalSession', 'deleteEvent', 'finalizePhoto', 'getAlbumExportUrl', 'getPublicEvent', 'moderateDedication', 'moderatePhoto', 'moderateRequest', 'ownerGameAction', 'removeAvatar', 'requestAlbumExport', 'restoreEvent', 'setGameConfig', 'setMailLocale', 'setPollStatus', 'updateEventConfig', 'votePoll'])
   assert.ok(!/enforceAppCheck:\s*(false|true)\b/.test(fnSrc), 'enforceAppCheck must come from a parameter (default false, flipped per environment), never a literal')
   assert.ok(!/consumeAppCheckToken|verifyToken|appCheck\(\)\.verify/.test(fnSrc), 'no manual token handling / bypass')
   assert.match(fnSrc, /const ENFORCE_OWNER\s*=\s*defineBoolean\('APPCHECK_ENFORCE_OWNER',\s*\{ default: false \}\)/)

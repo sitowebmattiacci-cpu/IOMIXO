@@ -99,6 +99,10 @@ const forSession = async (sessionId: string) => (ownerOpsEnabled() ? resolveOwne
 /** Same, but only when the DASHBOARD switch is on (authoritative operations: lifecycle, core fields, games). */
 const forDashboard = async (sessionId: string) => (dashboardOn() ? resolveOwnerEvent(sessionId) : null)
 
+const storedLocale = (): string | undefined => { try { return window.localStorage.getItem('iomixo.locale') ?? undefined } catch { return undefined } }
+/** MIOLOVE e-mails: tells the server which language this account reads (users/{uid}.locale, written by the server only). */
+export const saveMailLocale = (locale: string) => (dashboardOn() ? callOwner<{ saved: boolean }>('setMailLocale', { locale }) : Promise.resolve({ saved: false }))
+
 const requestId = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}${Math.random().toString(36).slice(2)}`).replace(/[^A-Za-z0-9_-]/g, '')
 
 // id → eventId registry (module memory only)
@@ -124,6 +128,7 @@ export const ownerOps = {
         requestId: requestId(), title: input.event_name, djName: input.dj_name, description: input.description, type: input.session_type,
         coupleNames: input.couple_names, weddingDate: input.wedding_date, venueName: input.venue_name, screenModeEnabled: input.screen_mode_enabled,
         occasionType: input.occasion_type, brand: input.brand,
+        ...(input.brand === 'miolove' ? { locale: storedLocale() } : {}),               // language of the album's e-mails (the server ignores anything but it/en/fr/es)
       })
       const ev = await getEventById(getFirebaseDb(), r.eventId)
       if (!ev) throw new Error('Sessione creata ma non ancora leggibile, riprova')

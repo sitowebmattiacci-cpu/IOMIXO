@@ -4,6 +4,7 @@ import { logger } from 'firebase-functions/logger'
 import type { StripeApi } from './stripeApi'
 import { priceInfo, UnknownPriceError, type PriceInfo, type PriceTable } from './prices'
 import { eventBrandOf } from '../owner/brand'
+import { enqueueMioloveMailSafe } from '../mail/miolove/outbox'
 import { activationBlockReason, activationDates } from '../photos/albumLifecycle'
 
 /**
@@ -102,6 +103,7 @@ async function onCheckout(deps: MioloveWebhookDeps, event: Stripe.Event, s: Stri
       outcome = { v: 'activated', reason: null }
     })
   }
+  if (outcome.v === 'activated' && eventId) await enqueueMioloveMailSafe(deps.db, 'album_activated', eventId, { now })     // queued once per album (same payment replayed = same document); never fails the webhook
   if (outcome.v === 'blocked') logger.error('album_activation_blocked', { reason: outcome.reason, eventId, sessionId: s.id })
   if (!uid || !userOk) return                                                                                      // no known account to record the payment on: logged above, a human reconciles from Stripe
   await createOnce(deps.db.doc(`users/${uid}/payments/${key}`), {

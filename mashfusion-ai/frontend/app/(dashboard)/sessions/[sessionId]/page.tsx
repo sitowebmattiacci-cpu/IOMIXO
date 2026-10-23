@@ -318,6 +318,8 @@ export default function SessionDetailPage() {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [togglingActive, setTogglingActive] = useState(false)
   const [rawTab, setTab] = useState<WeddingNavKey>('home')
+  // E-mail links ("download your content") open the album straight on its Photos tab: ?tab=photos
+  useEffect(() => { if (new URLSearchParams(window.location.search).get('tab') === 'photos') setTab('photos') }, [])
 
   if (sessionErr) {
     return (

@@ -7,6 +7,8 @@ import { loadEntitlements } from '../entitlements/load'
 import { MIOLOVE_TRIAL_PHOTO_LIMIT, trialExpiryFrom } from '../photos/trialQuota'
 import { trialPurgeAt } from '../photos/albumLifecycle'
 import { idField, requireAccount, requireEventOwner, loadAccountType, type AccountType, type CallerAuth } from './guard'
+import { enqueueMioloveMailSafe } from '../mail/miolove/outbox'
+import { parseMailLocale, type MailLocale } from '../mail/miolove/templates'
 import { brandFromEvent, parseBrand, type EventBrand } from './brand'
 
 /**
@@ -34,6 +36,8 @@ export interface CreateEventInput {
   occasionType: OccasionType | null
   /** Portal the owner is creating from. null = a client that does not send it: the owner's legacy account type decides (couple → MIOLOVE, otherwise IOMIXO). */
   brand: EventBrand | null
+  /** Language of the account's e-mails (it/en/fr/es), when the client sends it. */
+  locale?: MailLocale
 }
 
 export function parseCreateEventInput(data: unknown): CreateEventInput {
@@ -56,6 +60,7 @@ export function parseCreateEventInput(data: unknown): CreateEventInput {
     // Only Wedding-type events carry an occasion; a missing value means "wedding" (every event created before this field).
     occasionType: wedding ? parseOccasion(d.occasionType) : null,
     brand: parseBrand(d.brand),
+    ...(parseMailLocale(d.locale) ? { locale: parseMailLocale(d.locale)! } : {}),
   }
 }
 
@@ -172,7 +177,13 @@ export async function createEvent(db: Firestore, request: CallerAuth, input: Cre
       })
       return { slug, created: true, accessMode }
     })
-    if (outcome) return { eventId, slug: outcome.slug, created: outcome.created }
+    if (outcome) {
+      if (outcome.created && brand === 'miolove') {
+        if (input.locale) await db.doc(`users/${uid}`).update({ locale: input.locale }).catch(() => {})                     // so the first e-mail already speaks the owner's language
+        if (outcome.accessMode === 'trial') await enqueueMioloveMailSafe(db, 'trial_started', eventId)
+      }
+      return { eventId, slug: outcome.slug, created: outcome.created }
+    }
   }
   throw fail('aborted', 'Could not generate a unique slug', 'slug_unavailable')
 }
