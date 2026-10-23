@@ -14,11 +14,12 @@ import { useAuth } from '@/lib/auth/AuthProvider'
 import { useI18n, type Locale } from '@/lib/i18n'
 import { formatAlbumListPrice, formatAlbumPrice, isFeatureAvailable, type FeatureId } from '@/lib/miolove/plans'
 import { reviewsEnv, reviewsToShow } from '@/lib/miolove/reviews'
-import { DEMO_EVENT, DEMO_PHOTOS, HERO_EXTRAS, OCCASION_COVERS } from '@/lib/miolove/demoMedia'
+import { DEMO_EVENT, DEMO_PHOTOS, OCCASION_COVERS } from '@/lib/miolove/demoMedia'
 import { MIOLOVE_EMAIL } from '@/lib/legal/types'
 import { PORTAL_CONFIG } from '@/lib/portal'
 import { cn } from '@/lib/utils'
 import { DemoPhotoImg, PhoneMock, ScreenMock, Section, SectionHead } from './parts'
+import { HeroVisual, Reveal } from './HeroMotion'
 import { IdeasTeaser } from '../ideas/IdeasTeaser'
 import { ideasPath } from '@/lib/miolove/paths'
 
@@ -75,41 +76,31 @@ export function Header({ showReviews, base = '' }: { showReviews: boolean; base?
 
 // ── Hero ─────────────────────────────────────────────────────────────────────
 function Hero() {
-  const { t, locale } = useI18n()
+  const { t } = useI18n()
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#FFF3F8] via-[#FFF9FB] to-white">
       <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-wd-pink/15 blur-3xl" aria-hidden />
       <div className="pointer-events-none absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-[#F7B98F]/20 blur-3xl" aria-hidden />
       <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-5 pb-16 pt-12 sm:px-8 sm:pb-24 sm:pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
-        <div className="text-center lg:text-left">
-          <p className="mx-auto inline-flex max-w-full items-center gap-2 rounded-full border border-wd-border bg-white px-4 py-1.5 text-[13px] font-semibold text-wd-pink-hover lg:mx-0">
+        <div className="min-w-0 text-center lg:text-left">
+          <noscript><style>{'[data-hero-in]{opacity:1!important;transform:none!important}'}</style></noscript>
+          <Reveal as="p" className="mx-auto inline-flex max-w-full items-center gap-2 rounded-full border border-wd-border bg-white px-4 py-1.5 text-[13px] font-semibold text-wd-pink-hover lg:mx-0">
             <Sparkles className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{t('home.hero.badge')}</span>
-          </p>
+          </Reveal>
+          {/* The H1 is never hidden: it is in the server HTML at full opacity (SEO, LCP, no-JS), without an entrance. */}
           <h1 className="mt-6 font-album text-[40px] font-semibold leading-[1.05] tracking-tight text-wd-ink sm:text-[56px] lg:text-[64px]" data-testid="home-h1">
             {t('home.hero.titleA')} <span className="italic text-wd-pink">{t('home.hero.titleB')}</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-[17px] leading-relaxed text-wd-muted sm:text-[19px] lg:mx-0">{t('home.hero.sub')}</p>
-          <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center lg:justify-start">
+          <Reveal as="p" delay={0.22} className="mx-auto mt-6 max-w-xl text-[17px] leading-relaxed text-wd-muted sm:text-[19px] lg:mx-0">{t('home.hero.sub')}</Reveal>
+          <Reveal delay={0.34} className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center lg:justify-start">
             <Link href="/register" className={btnPrimary} data-testid="hero-cta-primary">{t('home.hero.ctaPrimary')} <ArrowRight className="h-5 w-5" /></Link>
             <a href="#how" className={btnSecondary} data-testid="hero-cta-secondary">{t('home.hero.ctaSecondary')}</a>
-          </div>
-          <p className="mt-5 inline-flex items-center gap-2 text-[14px] font-medium text-wd-muted" data-testid="hero-note"><Check className="h-4 w-4 text-wd-pink" />{t('home.hero.note')}</p>
+          </Reveal>
+          <Reveal as="p" delay={0.46} className="mt-5 inline-flex items-center gap-2 text-[14px] font-medium text-wd-muted" data-testid="hero-note"><Check className="h-4 w-4 text-wd-pink" />{t('home.hero.note')}</Reveal>
         </div>
 
         {/* photo / phone / QR composition */}
-        <div className="relative mx-auto h-[420px] w-full max-w-[420px] sm:h-[500px]" data-testid="hero-visual">
-          <div className="absolute left-1/2 top-0 w-[210px] -translate-x-1/2 sm:w-[250px]"><PhoneMock title={t(DEMO_EVENT.titleKey)} date={formatWeddingGuestDate(DEMO_EVENT.date, locale) ?? ''} cta={t('home.preview.cta')} /></div>
-          <div className="absolute bottom-6 left-0 w-[132px] -rotate-6 rounded-3xl border border-wd-border bg-white p-3 shadow-[0_18px_40px_rgba(31,32,40,0.14)] sm:bottom-10 sm:w-[156px]">
-            <QRCodeSVG value={PORTAL_CONFIG.miolove.baseUrl} size={120} level="M" className="h-auto w-full" />
-            <p className="mt-2 text-center text-[11px] font-semibold text-wd-ink">{t('home.hero.qrLabel')}</p>
-          </div>
-          <div className="absolute right-0 top-10 flex items-center gap-2 rounded-2xl border border-wd-border bg-white px-3 py-2 shadow-[0_14px_30px_rgba(31,32,40,0.12)] sm:top-16">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-wd-active text-wd-pink"><Camera className="h-4 w-4" /></span>
-            <span className="text-[12px] font-semibold text-wd-ink">{t('home.hero.newPhoto')}</span>
-          </div>
-          <div className="absolute -left-1 top-24 w-[68px] -rotate-12 rounded-lg bg-white p-1 pb-3 shadow-lg sm:w-[84px]"><DemoPhotoImg photo={HERO_EXTRAS[0]} className="aspect-[4/5] w-full rounded" sizes="90px" /></div>
-          <div className="absolute bottom-24 right-0 w-[84px] rotate-6 rounded-lg bg-white p-1 pb-3 shadow-lg sm:bottom-28 sm:w-[100px]"><DemoPhotoImg photo={HERO_EXTRAS[1]} className="aspect-square w-full rounded" sizes="100px" /></div>
-        </div>
+        <HeroVisual />
       </div>
     </section>
   )
