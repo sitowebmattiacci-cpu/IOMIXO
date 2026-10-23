@@ -284,22 +284,28 @@ export default function ScreenModePage() {
   const selectedFont = session.screen_config?.couple_font ?? 'cormorant'
   const isWideFont = selectedFont === 'cinzel' || selectedFont === 'playfair'
   const coupleFontSize = session.screen_config?.couple_font_size ?? 'medium'
+  // Event name: the pixel sizes below are what the big screen (>= 1280px wide) has always shown; below that the size follows the viewport width
+  // (100% at 1280px, ~25% at 390px) so a long name wraps onto at most a couple of lines instead of running off the edge.
+  const fluidTitle = (px: number): React.CSSProperties => ({
+    fontSize: `clamp(2rem, calc((100vw - 100px) * ${(px / 1180).toFixed(4)}), ${px}px)`,
+    textWrap: 'balance', overflowWrap: 'break-word', maxWidth: '100%',
+  })
   // Empty state (couple names take the whole screen)
-  const largeSizeMap: Record<string, string> = {
-    small: isWideFont ? 'text-[8rem]' : 'text-[10rem]',
-    medium: isWideFont ? 'text-[11rem]' : 'text-[14rem]',
-    large: isWideFont ? 'text-[14rem]' : 'text-[17rem]',
-    xlarge: isWideFont ? 'text-[17rem]' : 'text-[20rem]',
+  const largeSizeMap: Record<string, number> = {
+    small: isWideFont ? 128 : 160,
+    medium: isWideFont ? 176 : 224,
+    large: isWideFont ? 224 : 272,
+    xlarge: isWideFont ? 272 : 320,
   }
   // Names shown above other content
-  const mediumSizeMap: Record<string, string> = {
-    small: isWideFont ? 'text-6xl' : 'text-7xl',
-    medium: isWideFont ? 'text-7xl' : 'text-8xl',
-    large: isWideFont ? 'text-8xl' : 'text-9xl',
-    xlarge: isWideFont ? 'text-9xl' : 'text-[10rem]',
+  const mediumSizeMap: Record<string, number> = {
+    small: isWideFont ? 60 : 72,
+    medium: isWideFont ? 72 : 96,
+    large: isWideFont ? 96 : 128,
+    xlarge: isWideFont ? 128 : 160,
   }
-  const largeFontSize = largeSizeMap[coupleFontSize] ?? largeSizeMap['medium']
-  const mediumFontSize = mediumSizeMap[coupleFontSize] ?? mediumSizeMap['medium']
+  const largeTitle = fluidTitle(largeSizeMap[coupleFontSize] ?? largeSizeMap['medium'])
+  const mediumTitle = fluidTitle(mediumSizeMap[coupleFontSize] ?? mediumSizeMap['medium'])
 
   return (
     <FrameTitleProvider title={brand === 'miolove' ? occasionText(t, liveEvent?.occasionType, 'frameTitle') : null}>
@@ -335,18 +341,18 @@ export default function ScreenModePage() {
 
         {/* Empty state - show only couple names centered */}
         {!hasContent && (
-          <div className="w-full flex flex-col items-center justify-center p-12 relative z-10">
-            <div className="text-center">
-              <h1 className={`${largeFontSize} text-wedding-ivory tracking-tight leading-[0.9]`} style={{ fontFamily: coupleFontFamily }}>
+          <div className="w-full flex flex-col items-center justify-center p-6 sm:p-12 relative z-10">
+            <div className="text-center w-full max-w-full">
+              <h1 className="text-wedding-ivory tracking-tight leading-[0.9]" style={{ fontFamily: coupleFontFamily, ...largeTitle }}>
                 {session.couple_names ?? session.event_name}
               </h1>
               {session.wedding_date && (
-                <p className="font-wedding text-5xl italic text-wedding-champagne/90 mt-8" style={bgTheme?.date ?? undefined}>
+                <p className="font-wedding text-3xl sm:text-5xl italic text-wedding-champagne/90 mt-8" style={bgTheme?.date ?? undefined}>
                   {new Date(session.wedding_date).toLocaleDateString(dateLoc, { dateStyle: 'long' })}
                 </p>
               )}
               {session.venue_name && (
-                <p className="text-xl uppercase tracking-[0.5em] text-wedding-taupe mt-6" style={bgTheme?.location ?? undefined}>
+                <p className="text-base sm:text-xl uppercase tracking-[0.25em] sm:tracking-[0.5em] text-wedding-taupe mt-6" style={bgTheme?.location ?? undefined}>
                   {session.venue_name}
                 </p>
               )}
@@ -361,7 +367,7 @@ export default function ScreenModePage() {
         {hasContent && singleSection && !immersivePhotos && (
           <div className="w-full flex flex-col items-center justify-center p-12 relative z-10 min-h-screen">
             <div className="text-center mb-12">
-              <h1 className={`${mediumFontSize} text-wedding-ivory tracking-tight leading-tight mb-4`} style={{ fontFamily: coupleFontFamily }}>
+              <h1 className="text-wedding-ivory tracking-tight leading-tight mb-4" style={{ fontFamily: coupleFontFamily, ...mediumTitle }}>
                 {session.couple_names ?? session.event_name}
               </h1>
               {session.wedding_date && (
@@ -488,7 +494,7 @@ export default function ScreenModePage() {
         {hasContent && !singleSection && onlyGames && (
           <div className="w-full flex flex-col items-center justify-center p-12 relative z-10 min-h-screen">
             <div className="text-center mb-12">
-              <h1 className={`${mediumFontSize} text-wedding-ivory tracking-tight leading-tight mb-4`} style={{ fontFamily: coupleFontFamily }}>
+              <h1 className="text-wedding-ivory tracking-tight leading-tight mb-4" style={{ fontFamily: coupleFontFamily, ...mediumTitle }}>
                 {session.couple_names ?? session.event_name}
               </h1>
               {session.wedding_date && (
@@ -546,7 +552,7 @@ export default function ScreenModePage() {
           <div className="w-full flex flex-col p-12 relative z-10">
           {/* Header */}
           <header className="text-center mb-10">
-            <h1 className={`${mediumFontSize} text-wedding-ivory tracking-tight leading-tight`} style={{ fontFamily: coupleFontFamily }}>
+            <h1 className="text-wedding-ivory tracking-tight leading-tight" style={{ fontFamily: coupleFontFamily, ...mediumTitle }}>
               {session.couple_names ?? session.event_name}
             </h1>
             {session.wedding_date && (
@@ -555,7 +561,7 @@ export default function ScreenModePage() {
               </p>
             )}
             {session.venue_name && (
-              <p className="text-base uppercase tracking-[0.35em] text-wedding-taupe mt-3" style={bgTheme?.location ?? undefined}>
+              <p className="text-base uppercase tracking-[0.2em] sm:tracking-[0.35em] text-wedding-taupe mt-3" style={bgTheme?.location ?? undefined}>
                 {session.venue_name}
               </p>
             )}
