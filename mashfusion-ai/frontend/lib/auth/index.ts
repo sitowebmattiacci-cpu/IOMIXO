@@ -31,7 +31,7 @@ export const authErrorI18nKey = (err: unknown): string | null => {
 /** i18n key for a refused MIOLOVE resend (the server's `details.reason`), or null for anything else. */
 export const resendErrorI18nKey = (err: unknown): string | null => {
   const r = (err as { details?: { reason?: string } } | null)?.details?.reason
-  return r === 'too_soon' ? 'auth.resendWait' : r === 'too_many' ? 'auth.resendTooMany' : null
+  return r === 'too_soon' ? 'auth.resendWait' : r === 'too_many' ? 'auth.resendTooMany' : r === 'busy' ? 'auth.resendBusy' : null
 }
 
 export const authErrorText = (err: unknown, t: (path: string) => string): string => t(authErrorI18nKey(err) ?? 'auth.err.generic')

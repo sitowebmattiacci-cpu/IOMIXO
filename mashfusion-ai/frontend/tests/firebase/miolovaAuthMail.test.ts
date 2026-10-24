@@ -1,8 +1,8 @@
-import { test } from 'node:test'
+import { test as nodeTest } from 'node:test'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 import { seedSet } from './seed'
-import { AUTH_MAIL_COLLECTION, RESET_EMAIL_LIMITS, RESET_GLOBAL_LIMITS, RESET_IP_LIMITS, reserveSlot, RESET_MIN_DURATION_MS, VERIFY_LIMITS, sendMioloveReset, sendMioloveVerification, type AuthMailDeps } from '../../../../firebase/functions/src/mail/miolove/authMail'
+import { AUTH_MAIL_COLLECTION, RESET_EMAIL_LIMITS, RESET_GLOBAL_LIMITS, RESET_IP_LIMITS, VERIFY_GLOBAL_LIMITS, reserveSlot, RESET_MIN_DURATION_MS, VERIFY_LIMITS, sendMioloveReset, sendMioloveVerification, type AuthMailDeps } from '../../../../firebase/functions/src/mail/miolove/authMail'
 import { MAIL_LOCALES } from '../../../../firebase/functions/src/mail/miolove/templates'
 import { MailError, dryRunTransport, type MailTransport } from '../../../../firebase/functions/src/mail/transport'
 
@@ -19,6 +19,8 @@ if (!getApps().length) initializeApp({ projectId: 'demo-iomixo' })
 const db = getFirestore(), adminAuth = getAuth()
 
 let n = 0
+const clearGlobals = () => Promise.all(['g_verify', 'g_reset'].map((k) => db.collection('mioloveAuthMail').doc(k).delete()))
+const test = (name: string, fn: () => Promise<void>) => nodeTest(name, async () => { await clearGlobals(); await fn() })
 const id = (p: string) => `${p}${Date.now().toString(36)}${n++}`
 const T0 = new Date('2026-10-24T09:00:00Z')
 const mk = (over: Partial<AuthMailDeps> = {}, t: () => Date = () => T0) => {
@@ -171,4 +173,39 @@ test('AUTHMAIL-F12. per-IP limit counts an IPv6 /64 as one customer: rotating in
   assert.equal(r.transport.sent.length, RESET_IP_LIMITS.maxPerHour, 'one /64 = one bucket')
   const other = await user('couple'); await sendMioloveReset(r.deps, { email: other.email, ip: '2001:db8:77:6::1' }); assert.equal(r.transport.sent.length, RESET_IP_LIMITS.maxPerHour + 1, 'the neighbouring /64 is another customer')
   const v4 = await user('couple'); await sendMioloveReset(r.deps, { email: v4.email, ip: '203.0.113.200' }); assert.equal(r.transport.sent.length, RESET_IP_LIMITS.maxPerHour + 2, 'IPv4 customers unaffected')
+})
+
+test('AUTHMAIL-F13. global verification cap (15/h): when it is full the customer gets a clean "busy", keeps their OWN resend budget, nothing is sent, and the cap frees up with the hour', async () => {
+  const t = new Date(T0.getTime() + 80 * 3_600_000); const r = mk({}, () => t)
+  const users = await Promise.all(Array.from({ length: VERIFY_GLOBAL_LIMITS.maxPerHour + 1 }, () => user('couple')))
+  for (const u of users.slice(0, VERIFY_GLOBAL_LIMITS.maxPerHour)) assert.deepEqual(await sendMioloveVerification(r.deps, u.uid, 'it'), { result: 'sent' })
+  const last = users[users.length - 1]
+  assert.equal(await reason(sendMioloveVerification(r.deps, last.uid, 'it')), 'busy'); assert.equal(r.transport.sent.length, VERIFY_GLOBAL_LIMITS.maxPerHour)
+  assert.deepEqual((await db.doc(`${AUTH_MAIL_COLLECTION}/v_${last.uid}`).get()).data()?.hits ?? [], [], 'the refused customer did not burn their own budget')
+  await clearGlobals(); assert.deepEqual(await sendMioloveVerification(r.deps, last.uid, 'it'), { result: 'sent' })                  // same minute: not "too_soon"
+  const later = mk({}, () => new Date(t.getTime() + 3_700_000)); await sendMioloveVerification(later.deps, users[0].uid, 'it'); assert.equal(later.transport.sent.length, 1, 'next hour: free again')
+})
+
+test('AUTHMAIL-F14. the quota is only spent on e-mails that really go out: refused / failed / pointless requests leave both global budgets untouched', async () => {
+  const dj = await user('dj'), ver = await user('couple', { verified: true }), dis = await user('couple', { disabled: true }), ok = await user('couple'), r = mk()
+  await reason(sendMioloveVerification(r.deps, dj.uid, 'it')); await sendMioloveVerification(r.deps, ver.uid, 'it'); await reason(sendMioloveVerification(r.deps, dis.uid, 'it'))
+  await reason(sendMioloveVerification(mk({ allowRecipient: () => false }).deps, ok.uid, 'it')); await reason(sendMioloveVerification(mk({ enabled: false }).deps, ok.uid, 'it'))
+  for (const email of [`ghost${id('g')}@example.com`, dj.email, dis.email, 'bad', undefined]) await sendMioloveReset(r.deps, { email, ip: null })
+  const g = (k: string) => db.collection('mioloveAuthMail').doc(k).get()
+  assert.equal((await g('g_verify')).exists, false, 'no verification budget used'); assert.equal((await g('g_reset')).exists, false, 'no reset budget used')
+  const boom: MailTransport = { async send() { throw new MailError('down', true, 'network') } }
+  const f = mk({ transport: boom }); await reason(sendMioloveVerification(f.deps, ok.uid, 'it')); await sendMioloveReset(f.deps, { email: (await user('couple')).email, ip: null })
+  assert.deepEqual((await g('g_verify')).data()?.hits ?? [], [], 'a failed verification send gives its slot back'); assert.deepEqual((await g('g_reset')).data()?.hits ?? [], [], 'a failed reset send gives its slot back')
+  assert.equal((await sendMioloveVerification(r.deps, ok.uid, 'it')).result, 'sent', 'and the customer can resend at once')
+  assert.equal((await g('g_verify')).data()?.hits.length, 1)
+})
+
+test('AUTHMAIL-F15. TTL safety: a counter document expires only AFTER every hit it holds has left its counting window (hour, or day for the capped global ones), so deleting it can never reset an active limit', async () => {
+  const t = new Date(T0.getTime() + 120 * 3_600_000), DAYMS = 86_400_000, HOURMS = 3_600_000
+  for (const [key, lim, window] of [[id('ttlh'), { minGapMs: 0, maxPerHour: 3 }, HOURMS], [id('ttld'), RESET_GLOBAL_LIMITS, DAYMS]] as const) {
+    await reserveSlot(db, key, t, lim); await reserveSlot(db, key, new Date(t.getTime() + 60_000), lim)
+    const d = (await db.doc(`${AUTH_MAIL_COLLECTION}/${key}`).get()).data()!, newest = Math.max(...d.hits as number[])
+    assert.ok(d.expireAt.toMillis() >= newest + window, `${key}: expireAt ${(d.expireAt.toMillis() - newest) / 60000} min after the newest hit, window ${window / 60000}`)
+    assert.equal(typeof d.expireAt.toMillis, 'function', 'a Firestore Timestamp (what TTL needs)')
+  }
 })

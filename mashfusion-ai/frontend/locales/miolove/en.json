@@ -168,7 +168,8 @@
     },
     "resendWait": "You just requested an e-mail: please wait about a minute before asking for another.",
     "resendTooMany": "You have requested too many e-mails. Try again in an hour or write to info@miolovealbum.com.",
-    "verifyNotSent": "We could not send the verification e-mail. Press “Resend verification email” to retry."
+    "verifyNotSent": "We could not send the verification e-mail. Press “Resend verification email” to retry.",
+    "resendBusy": "The e-mail service is very busy right now. Please try again in a few minutes."
   },
   "albumAuth": {
     "registerSub": "7-day free trial · No credit card",

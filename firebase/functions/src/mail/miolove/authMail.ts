@@ -20,12 +20,14 @@ import { DEFAULT_MAIL_LOCALE, DEFAULT_MIOLOVE_BASE_URL, MIOLOVE_REPLY_TO, MIOLOV
 export const AUTH_MAIL_COLLECTION = 'mioloveAuthMail'
 export const VERIFY_LIMITS = { minGapMs: 60_000, maxPerHour: 5 }
 export const RESET_EMAIL_LIMITS = { minGapMs: 60_000, maxPerHour: 3 }
-export const RESET_IP_LIMITS = { minGapMs: 0, maxPerHour: 20 }
+export const RESET_IP_LIMITS = { minGapMs: 0, maxPerHour: 5 }
 /**
- * Every reset e-mail that really goes out, all customers together. It protects the Resend quota (and with it the album e-mails and the verification) from someone who knows many
- * real addresses. Normal use is a handful a day; the numbers leave 10x room and keep one hour of abuse well below a free-plan day.
+ * Global budgets, all customers together, sized for the Resend FREE plan (100 e-mails/day, 3 000/month): reset 20/day + verification 40/day leave 40/day for the album e-mails and
+ * reminders, and an abuse run can never eat the day. They count only e-mails that REALLY go out (a real MIOLOVE account, every other check passed), and a send that fails gives its
+ * slot back. When a plan with more room is bought, raise these numbers (and nothing else) and redeploy the two callables.
  */
-export const RESET_GLOBAL_LIMITS = { minGapMs: 0, maxPerHour: 30, maxPerDay: 200 }
+export const RESET_GLOBAL_LIMITS = { minGapMs: 0, maxPerHour: 10, maxPerDay: 20 }
+export const VERIFY_GLOBAL_LIMITS = { minGapMs: 0, maxPerHour: 15, maxPerDay: 40 }
 export const RESET_MIN_DURATION_MS = 1_200
 const HOUR = 3_600_000, DAY = 24 * HOUR
 
@@ -147,12 +149,17 @@ export async function sendMioloveVerification(deps: AuthMailDeps, uid: string, a
   if (deps.allowRecipient && !deps.allowRecipient(to)) throw fail('failed-precondition', 'Recipient not allowed', 'recipient_not_allowed')
   const slot = await reserveSlot(deps.db, `v_${uid}`, now, VERIFY_LIMITS)
   if (slot !== 'ok') throw fail('resource-exhausted', 'Too many requests', slot)
+  if ((await reserveSlot(deps.db, 'g_verify', now, VERIFY_GLOBAL_LIMITS)) !== 'ok') {
+    await releaseSlot(deps.db, `v_${uid}`, now)                                                  // the customer did nothing wrong: their own resend budget is untouched
+    logger.warn('miolove_auth_mail_global_cap', { kind: 'verify_email' })
+    throw fail('resource-exhausted', 'Busy, try again later', 'busy')                           // the sign-up itself is already done: the screen keeps its resend button
+  }
   try {
     await deliver(deps, 'verify_email', to, await deps.auth.generateEmailVerificationLink(to), await localeOf(deps.db, uid, askedLocale), `verify_${uid}_${Math.floor(now.getTime() / 60_000)}`)
   } catch (e) {
     const code = e instanceof MailError ? e.code : String((e as { code?: unknown })?.code ?? 'error').slice(0, 80)
     logger.error('miolove_auth_mail_failed', { kind: 'verify_email', uid, code })
-    await releaseSlot(deps.db, `v_${uid}`, now)
+    await releaseSlot(deps.db, `v_${uid}`, now); await releaseSlot(deps.db, 'g_verify', now)
     throw fail('unavailable', 'Could not send the e-mail', 'send_failed')
   }
   logger.info('miolove_auth_mail', { kind: 'verify_email', uid, result: 'sent' })
@@ -186,7 +193,9 @@ async function resetWork(deps: AuthMailDeps, input: ResetInput): Promise<void> {
   const to = user.email.toLowerCase()
   if (deps.allowRecipient && !deps.allowRecipient(to)) return
   if ((await reserveSlot(deps.db, 'g_reset', now, RESET_GLOBAL_LIMITS)) !== 'ok') { logger.warn('miolove_auth_mail_global_cap', { kind: 'reset_password' }); return }   // only real sends count: strangers cannot fill it with made-up addresses
-  await deliver(deps, 'reset_password', to, await deps.auth.generatePasswordResetLink(to), await localeOf(deps.db, user.uid, input.locale), `reset_${sha(to)}_${Math.floor(now.getTime() / 60_000)}`)
+  try {
+    await deliver(deps, 'reset_password', to, await deps.auth.generatePasswordResetLink(to), await localeOf(deps.db, user.uid, input.locale), `reset_${sha(to)}_${Math.floor(now.getTime() / 60_000)}`)
+  } catch (e) { await releaseSlot(deps.db, 'g_reset', now); throw e }                         // a failed send did not use the quota
   logger.info('miolove_auth_mail', { kind: 'reset_password', result: 'sent' })
 }
 

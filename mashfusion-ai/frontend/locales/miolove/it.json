@@ -168,7 +168,8 @@
     },
     "resendWait": "Hai appena richiesto un’e-mail: attendi circa un minuto prima di chiederne un’altra.",
     "resendTooMany": "Hai richiesto troppe e-mail. Riprova tra un’ora o scrivi a info@miolovealbum.com.",
-    "verifyNotSent": "Non siamo riusciti a inviare l’e-mail di verifica. Premi «Reinvia email di verifica» per riprovare."
+    "verifyNotSent": "Non siamo riusciti a inviare l’e-mail di verifica. Premi «Reinvia email di verifica» per riprovare.",
+    "resendBusy": "Il servizio e-mail è molto richiesto in questo momento. Riprova tra qualche minuto."
   },
   "albumAuth": {
     "registerSub": "7 giorni di prova gratis · Nessuna carta di credito",

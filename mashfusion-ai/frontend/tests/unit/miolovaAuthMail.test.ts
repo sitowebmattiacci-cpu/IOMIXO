@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { MAIL_LOCALES, MIOLOVE_SENDER } from '../../../../firebase/functions/src/mail/miolove/templates'
 import { AUTH_MAIL_KINDS, renderAuthMail } from '../../../../firebase/functions/src/mail/miolove/authTemplates'
-import { actionLinkOf, clientIpOf, ipBucketOf, RESET_GLOBAL_LIMITS, oobCodeOf, parseResetInput, parseVerifyInput } from '../../../../firebase/functions/src/mail/miolove/authMail'
+import { actionLinkOf, clientIpOf, ipBucketOf, RESET_GLOBAL_LIMITS, RESET_IP_LIMITS, VERIFY_GLOBAL_LIMITS, oobCodeOf, parseResetInput, parseVerifyInput } from '../../../../firebase/functions/src/mail/miolove/authMail'
 
 const LINK = 'https://miolovealbum.com/auth/action?mode=verifyEmail&oobCode=abcDEF123_-xyz&lang=it'
 
@@ -88,6 +88,15 @@ test('AUTHMAIL-T9. IPv6 is counted per /64 (a household cannot dodge the limit b
   assert.equal(ipBucketOf('2001:db8::1:2:3:4'), '2001:0db8:0000:0000::/64')
 })
 
-test('AUTHMAIL-T10. the global reset cap is far above normal use (a handful a day) and below any realistic quota-burning rate', () => {
-  assert.ok(RESET_GLOBAL_LIMITS.maxPerHour >= 20 && RESET_GLOBAL_LIMITS.maxPerHour <= 60); assert.ok(RESET_GLOBAL_LIMITS.maxPerDay >= RESET_GLOBAL_LIMITS.maxPerHour * 4 && RESET_GLOBAL_LIMITS.maxPerDay <= 500)
+test('AUTHMAIL-T10. global budgets fit the Resend FREE plan (100/day, 3 000/month): reset 10/h 20/day, verification 15/h 40/day, at least 40/day left for album e-mails; the per-IP cap is below the global one', () => {
+  assert.deepEqual(RESET_GLOBAL_LIMITS, { minGapMs: 0, maxPerHour: 10, maxPerDay: 20 }); assert.deepEqual(VERIFY_GLOBAL_LIMITS, { minGapMs: 0, maxPerHour: 15, maxPerDay: 40 })
+  assert.ok(100 - RESET_GLOBAL_LIMITS.maxPerDay - VERIFY_GLOBAL_LIMITS.maxPerDay >= 40)
+  assert.ok(RESET_IP_LIMITS.maxPerHour < RESET_GLOBAL_LIMITS.maxPerHour, 'otherwise the per-IP limit could never be reached')
+})
+
+test('AUTHMAIL-T11. a busy service never blocks sign-up: the reason maps to a translated message in all 4 languages and the register screen keeps its resend button', () => {
+  const fe = join(__dirname, '..', '..'), idx = readFileSync(join(fe, 'lib/auth/index.ts'), 'utf8')
+  assert.match(idx, /r === 'busy' \? 'auth\.resendBusy'/)
+  for (const l of ['it', 'en', 'fr', 'es']) { const a = JSON.parse(readFileSync(join(fe, `locales/miolove/${l}.json`), 'utf8')).auth; for (const k of ['resendWait', 'resendTooMany', 'resendBusy', 'verifyNotSent']) assert.ok(typeof a[k] === 'string' && a[k].length > 10, `${l}.${k}`) }
+  assert.match(idx, /verificationSent: await fb\.sendMioloveVerificationEmail\(locale\)\.then\(\(\) => true, \(\) => false\)/, 'a refused / failed send is a flag, never a thrown sign-up error')
 })

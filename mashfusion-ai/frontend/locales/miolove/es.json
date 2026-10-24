@@ -168,7 +168,8 @@
     },
     "resendWait": "Acabas de pedir un correo: espera aproximadamente un minuto antes de pedir otro.",
     "resendTooMany": "Has pedido demasiados correos. Inténtalo de nuevo en una hora o escribe a info@miolovealbum.com.",
-    "verifyNotSent": "No hemos podido enviar el correo de verificación. Pulsa «Reenviar email de verificación» para reintentarlo."
+    "verifyNotSent": "No hemos podido enviar el correo de verificación. Pulsa «Reenviar email de verificación» para reintentarlo.",
+    "resendBusy": "El servicio de correo está muy solicitado en este momento. Inténtalo de nuevo en unos minutos."
   },
   "albumAuth": {
     "registerSub": "7 días de prueba gratis · Sin tarjeta de crédito",
