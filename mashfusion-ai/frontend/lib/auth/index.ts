@@ -28,13 +28,23 @@ export const authErrorI18nKey = (err: unknown): string | null => {
 }
 
 /** Translated, user-facing message for any auth error: never the raw (English / technical) Firebase text. */
+/** i18n key for a refused MIOLOVE resend (the server's `details.reason`), or null for anything else. */
+export const resendErrorI18nKey = (err: unknown): string | null => {
+  const r = (err as { details?: { reason?: string } } | null)?.details?.reason
+  return r === 'too_soon' ? 'auth.resendWait' : r === 'too_many' ? 'auth.resendTooMany' : null
+}
+
 export const authErrorText = (err: unknown, t: (path: string) => string): string => t(authErrorI18nKey(err) ?? 'auth.err.generic')
 
 export const signIn = (email: string, password: string) => fb.signInWithEmail(email, password).then(() => undefined)
 
-export const signUp = async (email: string, password: string, fullName: string, accountType: AccountType = 'dj') => {
-  await fb.signUpWithEmail(email, password, fullName)
-  await initAccountProfile(accountType)
+export const signUp = async (email: string, password: string, fullName: string, accountType: AccountType = 'dj', locale = 'it') => {
+  const couple = accountType === 'couple'                                  // MIOLOVE: branded verification e-mail (server); IOMIXO: the Firebase e-mail, exactly as before
+  await fb.signUpWithEmail(email, password, fullName, { sendVerification: !couple })
+  await initAccountProfile(accountType)                                    // the server only mails accounts whose profile says "couple", so this comes first
+  if (!couple) return { verificationSent: true }
+  // The account exists either way: a failed send is reported to the screen (which keeps the "resend" button), never turned into a failed sign-up.
+  return { verificationSent: await fb.sendMioloveVerificationEmail(locale).then(() => true, () => false) }
 }
 
 /**
@@ -65,8 +75,10 @@ export const googleErrorI18nKey = (err: unknown): string | null => {
   }
 }
 
-export const resendVerification = (_email: string) => fb.resendVerificationEmail()
+export const resendVerification = (_email: string, accountType: AccountType = 'dj', locale = 'it') =>
+  accountType === 'couple' ? fb.sendMioloveVerificationEmail(locale) : fb.resendVerificationEmail()
 
 export const signOut = () => fb.signOut()
 
-export const requestPasswordReset = (email: string) => fb.requestPasswordReset(email)
+export const requestPasswordReset = (email: string, accountType: AccountType = 'dj', locale = 'it') =>
+  accountType === 'couple' ? fb.requestMiolovePasswordReset(email, locale) : fb.requestPasswordReset(email)

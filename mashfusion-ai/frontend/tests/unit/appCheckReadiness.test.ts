@@ -10,7 +10,7 @@ const walk = (d: string): string[] => readdirSync(d).flatMap((f) => { const p = 
 
 test('every callable declares enforceAppCheck from its own parameter; none hard-codes false or reads the token by hand', () => {
   const callables = Array.from(fnSrc.matchAll(/export const (\w+)\s*=\s*(onCall|ownerCall)/g)).map((m) => m[1])
-  assert.deepEqual(callables.sort(), ['commitAvatar', 'createAlbumCheckoutSession', 'createCheckoutSession', 'createDedication', 'createEvent', 'createMusicRequest', 'createPhotoUpload', 'createPoll', 'createPortalSession', 'deleteEvent', 'finalizePhoto', 'getAlbumExportUrl', 'getPublicEvent', 'moderateDedication', 'moderatePhoto', 'moderateRequest', 'ownerGameAction', 'removeAvatar', 'requestAlbumExport', 'restoreEvent', 'setGameConfig', 'setMailLocale', 'setPollStatus', 'updateEventConfig', 'votePoll'])
+  assert.deepEqual(callables.sort(), ['commitAvatar', 'createAlbumCheckoutSession', 'createCheckoutSession', 'createDedication', 'createEvent', 'createMusicRequest', 'createPhotoUpload', 'createPoll', 'createPortalSession', 'deleteEvent', 'finalizePhoto', 'getAlbumExportUrl', 'getPublicEvent', 'moderateDedication', 'moderatePhoto', 'moderateRequest', 'ownerGameAction', 'removeAvatar', 'requestAlbumExport', 'restoreEvent', 'sendMioloveReset', 'sendMioloveVerification', 'setGameConfig', 'setMailLocale', 'setPollStatus', 'updateEventConfig', 'votePoll'])
   assert.ok(!/enforceAppCheck:\s*(false|true)\b/.test(fnSrc), 'enforceAppCheck must come from a parameter (default false, flipped per environment), never a literal')
   assert.ok(!/consumeAppCheckToken|verifyToken|appCheck\(\)\.verify/.test(fnSrc), 'no manual token handling / bypass')
   assert.match(fnSrc, /const ENFORCE_OWNER\s*=\s*defineBoolean\('APPCHECK_ENFORCE_OWNER',\s*\{ default: false \}\)/)
@@ -18,6 +18,8 @@ test('every callable declares enforceAppCheck from its own parameter; none hard-
   for (const fn of ['createPoll', 'setPollStatus', 'moderateRequest', 'moderateDedication', 'updateEventConfig', 'createEvent', 'deleteEvent', 'restoreEvent', 'ownerGameAction', 'setGameConfig', 'moderatePhoto', 'requestAlbumExport', 'getAlbumExportUrl', 'commitAvatar', 'removeAvatar']) assert.match(fnSrc, new RegExp(`export const ${fn}\\s*=\\s*ownerCall\\('${fn}'`))
   assert.match(fnSrc, /const ENFORCE_PHOTO\s*=\s*defineBoolean\('APPCHECK_ENFORCE_PHOTO',\s*\{ default: false \}\)/)
   assert.match(fnSrc, /photoCallOptions = \{ \.\.\.guestCallOptions\(ENFORCE_PHOTO\)/)
+  assert.match(fnSrc, /const ENFORCE_AUTHMAIL\s*=\s*defineBoolean\('APPCHECK_ENFORCE_AUTHMAIL',\s*\{ default: false \}\)/)
+  assert.match(fnSrc, /AUTHMAIL_FN = \{ \.\.\.guestCallOptions\(ENFORCE_AUTHMAIL\)/)
   assert.match(fnSrc, /const ENFORCE_BILLING\s*=\s*defineBoolean\('APPCHECK_ENFORCE_BILLING',\s*\{ default: false \}\)/)
   assert.match(fnSrc, /billingCallOptions = \{ \.\.\.guestCallOptions\(ENFORCE_BILLING\)/)
   assert.match(fnSrc, /defineSecret\('STRIPE_SECRET_KEY'\)/); assert.match(fnSrc, /defineSecret\('STRIPE_WEBHOOK_SECRET'\)/)

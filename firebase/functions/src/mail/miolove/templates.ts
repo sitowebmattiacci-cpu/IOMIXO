@@ -143,7 +143,7 @@ const FOOT: Record<MailLocale, { why: string; help: string }> = {
   es: { why: 'Has recibido este correo porque tienes un álbum en MIOLOVE Album.', help: 'Para ayuda, responde a este correo o escribe a' },
 }
 
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+export const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 const fill = (s: string, v: { title: string; date: string; amount?: string }) =>
   s.replace(/\{title\}/g, v.title).replace(/\{date\}/g, v.date).replace(/\{days\}/g, String(MIOLOVE_TRIAL_DAYS)).replace(/\{limit\}/g, String(MIOLOVE_TRIAL_PHOTO_LIMIT)).replace(/\{amount\}/g, v.amount ?? '')
 

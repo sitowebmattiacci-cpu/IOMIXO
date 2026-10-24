@@ -32,6 +32,8 @@ import { handleStripeWebhook } from './billing/webhook'
 import { OUTBOX, drainOutbox, processOutboxItem, scanMailTriggers } from './mail/miolove/outbox'
 import { parseSetMailLocaleInput, setMailLocale as setMailLocaleImpl } from './mail/miolove/locale'
 import { recipientResolver } from './mail/miolove/recipient'
+import { clientIpOf, parseResetInput, parseVerifyInput, sendMioloveReset as sendMioloveResetImpl, sendMioloveVerification as sendMioloveVerificationImpl, type AuthMailDeps } from './mail/miolove/authMail'
+import { requireAccount } from './owner/guard'
 import { dryRunTransport, mailModeOf, resendTransport, type MailTransport } from './mail/transport'
 import { parseSlug, getPublicEvent as getPublicEventImpl } from './owner/publicEvent'
 
@@ -65,6 +67,8 @@ const ENFORCE_OWNER        = defineBoolean('APPCHECK_ENFORCE_OWNER',        { de
 const ENFORCE_PUBLIC_EVENT = defineBoolean('APPCHECK_ENFORCE_PUBLIC_EVENT', { default: false })
 // Billing callables (checkout / portal): same convention, default false (observe only) until App Check is verified on the web client.
 const ENFORCE_BILLING      = defineBoolean('APPCHECK_ENFORCE_BILLING',      { default: false })
+// MIOLOVE account e-mails (verification / password reset): same convention, default false (observe only) until App Check is verified on the MIOLOVE web client.
+const ENFORCE_AUTHMAIL      = defineBoolean('APPCHECK_ENFORCE_AUTHMAIL',      { default: false })
 // Stripe secrets live ONLY in Secret Manager (`firebase functions:secrets:set STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET`); the webhook secret belongs to THIS endpoint.
 const STRIPE_SECRET_KEY    = defineSecret('STRIPE_SECRET_KEY')
 const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET')
@@ -205,6 +209,38 @@ export const scanMioloveMailTriggers = onSchedule(
 )
 /** Callable: remembers the language of the signed-in account's e-mails (the browser sends it when the language changes). */
 export const setMailLocale = ownerCall('setMailLocale', parseSetMailLocaleInput, (r, i) => setMailLocaleImpl(getFirestore(), r, i))
+
+// ── MIOLOVE account e-mails (address verification / password reset): Admin SDK link + Resend, mail/miolove/authMail.ts. IOMIXO accounts keep the Firebase templates untouched. ───────
+/** Dedicated identity of these two callables: it alone may generate Auth action links (custom role: firebaseauth.users.get + firebaseauth.users.sendEmail), so the other functions never can. */
+const AUTHMAIL_SERVICE_ACCOUNT = 'iomixo-authmail@iomixo-494817.iam.gserviceaccount.com'
+const mioloveAuthMailDeps = (): AuthMailDeps => {
+  const mode = mailModeOf(process.env.MIOLOVE_MAIL_MODE)
+  const allow = (process.env.MIOLOVE_MAIL_ALLOWLIST ?? '').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean)
+  const auth = getAuth()
+  return {
+    db: getFirestore(), enabled: mode !== 'off', baseUrl: process.env.MIOLOVE_BASE_URL || undefined,
+    transport: mode === 'live' ? resendTransport(RESEND_MIOLOVE_API_KEY.value()) : dryRunTransport(),
+    auth: {
+      getUser: (uid) => auth.getUser(uid), getUserByEmail: (email) => auth.getUserByEmail(email),
+      generateEmailVerificationLink: (email) => auth.generateEmailVerificationLink(email),
+      generatePasswordResetLink: (email) => auth.generatePasswordResetLink(email),
+    },
+    ...(allow.length ? { allowRecipient: (email: string) => allow.includes(email.toLowerCase()) } : {}),
+  }
+}
+const AUTHMAIL_FN = { ...guestCallOptions(ENFORCE_AUTHMAIL), secrets: [RESEND_MIOLOVE_API_KEY], serviceAccount: AUTHMAIL_SERVICE_ACCOUNT }
+/** Callable (signed-in MIOLOVE account): sends the branded verification e-mail to the caller's own address. The address is never taken from the payload. */
+export const sendMioloveVerification = onCall(AUTHMAIL_FN, async (request) => {
+  observeAppCheck('sendMioloveVerification', ENFORCE_AUTHMAIL, request)
+  const uid = requireAccount(request)
+  return sendMioloveVerificationImpl(mioloveAuthMailDeps(), uid, parseVerifyInput(request.data).locale)
+})
+/** Callable (public): branded password-reset e-mail. Always answers { ok: true } after a fixed minimum time, whatever the address (no account enumeration); throttled per address and per IP. */
+export const sendMioloveReset = onCall(AUTHMAIL_FN, async (request) => {
+  observeAppCheck('sendMioloveReset', ENFORCE_AUTHMAIL, request)
+  const i = parseResetInput(request.data)
+  return sendMioloveResetImpl(mioloveAuthMailDeps(), { email: i.email, locale: i.locale, ip: clientIpOf(request.rawRequest) })
+})
 
 // Guest photo callables: identity = verified token (anonymous allowed). Bytes never pass through them (the client writes to Storage under storage.rules).
 const photoCallOptions = { ...guestCallOptions(ENFORCE_PHOTO), secrets: [] }

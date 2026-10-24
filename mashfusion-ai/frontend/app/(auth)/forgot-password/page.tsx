@@ -6,11 +6,13 @@ import { motion } from 'framer-motion'
 import { Sparkles, Mail, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { requestPasswordReset, authErrorText } from '@/lib/auth'
 import { useI18n } from '@/lib/i18n'
+import { usePortal } from '@/components/portal/PortalProvider'
 import { Button } from '@/components/ui/Button'
 import toast from 'react-hot-toast'
 
 export default function ForgotPasswordPage() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const { config: portal } = usePortal()
   const [email,   setEmail]   = useState('')
   const [loading, setLoading] = useState(false)
   const [sent,    setSent]    = useState(false)
@@ -20,7 +22,7 @@ export default function ForgotPasswordPage() {
     if (!email) { toast.error(t('auth.enterEmailToast')); return }
     setLoading(true)
     try {
-      await requestPasswordReset(email.trim().toLowerCase())
+      await requestPasswordReset(email.trim().toLowerCase(), portal.accountType, locale)
       setSent(true)
     } catch (err: unknown) {
       toast.error(authErrorText(err, t))

@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Send, Music2, Mic, Gamepad2, Camera, Smartphone, QrCode, BookHeart, Presentation, type LucideIcon } from 'lucide-react'
-import { signUp, resendVerification, authErrorText } from '@/lib/auth'
+import { signUp, resendVerification, resendErrorI18nKey, authErrorText } from '@/lib/auth'
 import { Button } from '@/components/ui/Button'
 import { WdButton, WdInput } from '@/components/wedding/admin/WeddingAdminUI'
 import { PortalBrand } from '@/components/portal/PortalBrand'
@@ -16,7 +16,7 @@ import toast from 'react-hot-toast'
 const GRAD = 'bg-gradient-to-r from-[#FF2D8D] via-[#FF6A3D] to-[#FFC93C] bg-clip-text text-transparent'
 
 export default function RegisterPage() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   // The role comes from the portal (domain), never from a choice in the UI.
   const { config: portal } = usePortal()
   const accountType = portal.accountType
@@ -44,8 +44,9 @@ export default function RegisterPage() {
     if (password.length < 8) { toast.error(t('auth.passwordMin8')); return }
     setLoading(true)
     try {
-      await signUp(email.trim().toLowerCase(), password, fullName.trim(), accountType)
+      const { verificationSent } = await signUp(email.trim().toLowerCase(), password, fullName.trim(), accountType, locale)
       setDone(true)
+      if (!verificationSent) toast.error(t('auth.verifyNotSent'))
     } catch (err: unknown) {
       toast.error(authErrorText(err, t))
     } finally {
@@ -56,10 +57,10 @@ export default function RegisterPage() {
   const handleResend = async () => {
     setResending(true)
     try {
-      await resendVerification(email.trim().toLowerCase())
+      await resendVerification(email.trim().toLowerCase(), accountType, locale)
       toast.success(t('auth.newVerificationSent'))
-    } catch {
-      toast.error(t('auth.resendFailed'))
+    } catch (err) {
+      toast.error(t(resendErrorI18nKey(err) ?? 'auth.resendFailed'))
     } finally {
       setResending(false)
     }
@@ -93,7 +94,6 @@ export default function RegisterPage() {
               <WdButton variant="secondary" className="w-full !py-3" onClick={handleResend} disabled={resending} icon={<Send className="h-4 w-4" />}>{t('auth.resendVerification')}</WdButton>
               <Link href="/login" className="block"><WdButton variant="ghost" className="w-full !py-3">{t('auth.backToSignIn')}</WdButton></Link>
             </div>
-            <p className="mt-5 text-xs text-wd-muted">{t('auth.linkExpires24h')}</p>
           </div>
         ) : (
           <div className="grid w-full max-w-4xl items-center gap-10 md:grid-cols-2">

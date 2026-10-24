@@ -165,7 +165,10 @@
       "collision": "An account with this email already exists, created with another sign-in method. Sign in with email and password.",
       "unavailable": "Google sign-in is not available right now. Use email and password.",
       "failed": "Google sign-in failed. Please try again."
-    }
+    },
+    "resendWait": "You just requested an e-mail: please wait about a minute before asking for another.",
+    "resendTooMany": "You have requested too many e-mails. Try again in an hour or write to info@miolovealbum.com.",
+    "verifyNotSent": "We could not send the verification e-mail. Press “Resend verification email” to retry."
   },
   "albumAuth": {
     "registerSub": "7-day free trial · No credit card",

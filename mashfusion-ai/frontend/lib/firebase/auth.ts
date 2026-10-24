@@ -5,7 +5,8 @@ import {
   GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo,
   type User, type Unsubscribe,
 } from 'firebase/auth'
-import { getFirebaseAuth } from './client'
+import { httpsCallable } from 'firebase/functions'
+import { getFirebaseAuth, getFirebaseFunctions } from './client'
 import { getPortalFromHostname, PORTAL_CONFIG } from '../portal'
 
 /**
@@ -39,10 +40,11 @@ export async function signInWithGoogle(): Promise<{ user: User; isNewUser: boole
 }
 
 /** Creates the account, stores the display name and sends the verification email. */
-export async function signUpWithEmail(email: string, password: string, fullName: string): Promise<User> {
+/** `sendVerification: false` = the caller sends its own verification e-mail (MIOLOVE: branded, server-side). Default unchanged: the Firebase e-mail. */
+export async function signUpWithEmail(email: string, password: string, fullName: string, opts: { sendVerification?: boolean } = {}): Promise<User> {
   const cred = await createUserWithEmailAndPassword(getFirebaseAuth(), email, password)
   if (fullName) await updateProfile(cred.user, { displayName: fullName })
-  await sendEmailVerification(cred.user, actionSettings())
+  if (opts.sendVerification !== false) await sendEmailVerification(cred.user, actionSettings())
   return cred.user
 }
 
@@ -50,6 +52,16 @@ export async function resendVerificationEmail(): Promise<void> {
   const u = getFirebaseAuth().currentUser
   if (!u) throw new Error('Sign in again to resend the verification email.')
   await sendEmailVerification(u, actionSettings())
+}
+
+/** MIOLOVE: branded verification e-mail (Admin SDK link + Resend). The address is the signed-in account's own; the server decides, nothing but the language is sent. */
+export async function sendMioloveVerificationEmail(locale: string): Promise<void> {
+  await httpsCallable(getFirebaseFunctions(), 'sendMioloveVerification')({ locale })
+}
+
+/** MIOLOVE: branded password-reset e-mail. Resolves the same way for any address (the server never says whether the account exists). */
+export async function requestMiolovePasswordReset(email: string, locale: string): Promise<void> {
+  await httpsCallable(getFirebaseFunctions(), 'sendMioloveReset')({ email, locale })
 }
 
 export const signOut = () => fbSignOut(getFirebaseAuth())

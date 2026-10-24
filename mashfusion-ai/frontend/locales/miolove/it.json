@@ -165,7 +165,10 @@
       "collision": "Esiste già un account con questa email creato con un altro metodo di accesso. Accedi con email e password.",
       "unavailable": "L'accesso con Google non è disponibile al momento. Usa email e password.",
       "failed": "Accesso con Google non riuscito. Riprova."
-    }
+    },
+    "resendWait": "Hai appena richiesto un’e-mail: attendi circa un minuto prima di chiederne un’altra.",
+    "resendTooMany": "Hai richiesto troppe e-mail. Riprova tra un’ora o scrivi a info@miolovealbum.com.",
+    "verifyNotSent": "Non siamo riusciti a inviare l’e-mail di verifica. Premi «Reinvia email di verifica» per riprovare."
   },
   "albumAuth": {
     "registerSub": "7 giorni di prova gratis · Nessuna carta di credito",
