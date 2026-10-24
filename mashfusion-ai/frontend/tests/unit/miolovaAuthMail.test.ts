@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { MAIL_LOCALES, MIOLOVE_SENDER } from '../../../../firebase/functions/src/mail/miolove/templates'
 import { AUTH_MAIL_KINDS, renderAuthMail } from '../../../../firebase/functions/src/mail/miolove/authTemplates'
-import { actionLinkOf, clientIpOf, oobCodeOf, parseResetInput, parseVerifyInput } from '../../../../firebase/functions/src/mail/miolove/authMail'
+import { actionLinkOf, clientIpOf, ipBucketOf, RESET_GLOBAL_LIMITS, oobCodeOf, parseResetInput, parseVerifyInput } from '../../../../firebase/functions/src/mail/miolove/authMail'
 
 const LINK = 'https://miolovealbum.com/auth/action?mode=verifyEmail&oobCode=abcDEF123_-xyz&lang=it'
 
@@ -75,4 +75,19 @@ test('AUTHMAIL-T8. registration sends ONE verification e-mail on MIOLOVE (the Fi
   const couple = reg.slice(reg.indexOf('if (isCouple) {'), reg.indexOf('return (', reg.indexOf('if (isCouple) {') + 1000) > 0 ? reg.indexOf('<div className="grid w-full max-w-4xl') : undefined)
   assert.doesNotMatch(couple, /linkExpires24h/, 'no unverified validity period on the MIOLOVE screen')
   assert.match(reg, /if \(!verificationSent\) toast\.error\(t\('auth\.verifyNotSent'\)\)/, 'a failed first send is shown, with the resend button available')
+})
+
+test('AUTHMAIL-T9. IPv6 is counted per /64 (a household cannot dodge the limit by rotating addresses); IPv4 and IPv4-mapped addresses count as the IPv4; different networks never share a bucket', () => {
+  const same = ['2001:db8:abcd:12::1', '2001:db8:abcd:12:ffff:ffff:ffff:ffff', '2001:0DB8:ABCD:0012:0:0:0:5', '2001:db8:abcd:12::', '2001:db8:abcd:12::1%eth0']
+  assert.equal(new Set(same.map(ipBucketOf)).size, 1); assert.equal(ipBucketOf(same[0]), '2001:0db8:abcd:0012::/64')
+  assert.notEqual(ipBucketOf('2001:db8:abcd:13::1'), ipBucketOf('2001:db8:abcd:12::1'), 'the next /64 is another customer')
+  assert.notEqual(ipBucketOf('2001:db8:abcd:12::1'), ipBucketOf('2001:db9:abcd:12::1'))
+  assert.equal(ipBucketOf('::1'), '0000:0000:0000:0000::/64'); assert.equal(ipBucketOf('::'), '0000:0000:0000:0000::/64')
+  assert.equal(ipBucketOf('203.0.113.9'), '203.0.113.9'); assert.equal(ipBucketOf('::ffff:203.0.113.9'), '203.0.113.9'); assert.equal(ipBucketOf('::ffff:cb00:7109'), '203.0.113.9')
+  assert.notEqual(ipBucketOf('203.0.113.9'), ipBucketOf('203.0.113.10'), 'IPv4 is per address')
+  assert.equal(ipBucketOf('2001:db8::1:2:3:4'), '2001:0db8:0000:0000::/64')
+})
+
+test('AUTHMAIL-T10. the global reset cap is far above normal use (a handful a day) and below any realistic quota-burning rate', () => {
+  assert.ok(RESET_GLOBAL_LIMITS.maxPerHour >= 20 && RESET_GLOBAL_LIMITS.maxPerHour <= 60); assert.ok(RESET_GLOBAL_LIMITS.maxPerDay >= RESET_GLOBAL_LIMITS.maxPerHour * 4 && RESET_GLOBAL_LIMITS.maxPerDay <= 500)
 })

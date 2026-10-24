@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 import { seedSet } from './seed'
-import { AUTH_MAIL_COLLECTION, RESET_EMAIL_LIMITS, RESET_IP_LIMITS, RESET_MIN_DURATION_MS, VERIFY_LIMITS, sendMioloveReset, sendMioloveVerification, type AuthMailDeps } from '../../../../firebase/functions/src/mail/miolove/authMail'
+import { AUTH_MAIL_COLLECTION, RESET_EMAIL_LIMITS, RESET_GLOBAL_LIMITS, RESET_IP_LIMITS, reserveSlot, RESET_MIN_DURATION_MS, VERIFY_LIMITS, sendMioloveReset, sendMioloveVerification, type AuthMailDeps } from '../../../../firebase/functions/src/mail/miolove/authMail'
 import { MAIL_LOCALES } from '../../../../firebase/functions/src/mail/miolove/templates'
 import { MailError, dryRunTransport, type MailTransport } from '../../../../firebase/functions/src/mail/transport'
 
@@ -141,4 +141,34 @@ test('AUTHMAIL-F9. reset throttling: per address (3/hour, 60 s apart) and per IP
   const ipR = mk({}, () => new Date(T0.getTime() + 10 * 3_600_000)); const users = await Promise.all(Array.from({ length: RESET_IP_LIMITS.maxPerHour + 3 }, () => user('couple')))
   for (const x of users) await sendMioloveReset(ipR.deps, { email: x.email, ip: '192.0.2.99' })
   assert.equal(ipR.transport.sent.length, RESET_IP_LIMITS.maxPerHour, 'one IP cannot mail more than the cap')
+})
+
+test('AUTHMAIL-F10. global reset cap: the hour is capped, only REAL sends count (made-up addresses cannot fill it), the cap answers { ok: true } like everything else, and it never touches verification or other MIOLOVE mail', async () => {
+  const t = new Date(T0.getTime() + 30 * 3_600_000); const r = mk({}, () => t)
+  for (let i = 0; i < 40; i++) await sendMioloveReset(r.deps, { email: `ghost${id('g')}@example.com`, ip: null })                  // strangers: nothing is sent, nothing counted
+  assert.equal(r.transport.sent.length, 0)
+  const users = await Promise.all(Array.from({ length: RESET_GLOBAL_LIMITS.maxPerHour + 4 }, () => user('couple')))
+  const answers = []; for (const u of users) answers.push(await sendMioloveReset(r.deps, { email: u.email, ip: null }))
+  assert.equal(r.transport.sent.length, RESET_GLOBAL_LIMITS.maxPerHour, 'the cap is the cap'); for (const a of answers) assert.deepEqual(a, { ok: true })
+  const v = await user('couple'); assert.deepEqual(await sendMioloveVerification(r.deps, v.uid, 'it'), { result: 'sent' })                // verification is a different budget
+  const later = mk({}, () => new Date(t.getTime() + 3_700_000)); await sendMioloveReset(later.deps, { email: users[users.length - 1].email, ip: null }); assert.equal(later.transport.sent.length, 1, 'next hour: free again')
+})
+
+test('AUTHMAIL-F11. the day cap works on top of the hour cap (a slow drip cannot burn the quota either)', async () => {
+  const key = id('dc'), lim = { minGapMs: 0, maxPerHour: 3, maxPerDay: 5 }, base = T0.getTime() + 100 * 3_600_000
+  const at = (h: number) => new Date(base + h * 3_600_000)
+  for (const h of [0, 0.1, 0.2]) assert.equal(await reserveSlot(db, key, at(h), lim), 'ok')
+  assert.equal(await reserveSlot(db, key, at(0.3), lim), 'too_many', 'hour full')
+  for (const h of [2, 2.1]) assert.equal(await reserveSlot(db, key, at(h), lim), 'ok')
+  assert.equal(await reserveSlot(db, key, at(4), lim), 'too_many', 'day full (5) although the hour is empty')
+  assert.equal(await reserveSlot(db, key, at(24.5), lim), 'ok', 'a day later')
+})
+
+test('AUTHMAIL-F12. per-IP limit counts an IPv6 /64 as one customer: rotating inside it does not help, another network is untouched', async () => {
+  const t = new Date(T0.getTime() + 60 * 3_600_000); const r = mk({}, () => t)
+  const users = await Promise.all(Array.from({ length: RESET_IP_LIMITS.maxPerHour + 3 }, () => user('couple')))
+  for (let i = 0; i < users.length; i++) await sendMioloveReset(r.deps, { email: users[i].email, ip: `2001:db8:77:5::${(i + 1).toString(16)}` })
+  assert.equal(r.transport.sent.length, RESET_IP_LIMITS.maxPerHour, 'one /64 = one bucket')
+  const other = await user('couple'); await sendMioloveReset(r.deps, { email: other.email, ip: '2001:db8:77:6::1' }); assert.equal(r.transport.sent.length, RESET_IP_LIMITS.maxPerHour + 1, 'the neighbouring /64 is another customer')
+  const v4 = await user('couple'); await sendMioloveReset(r.deps, { email: v4.email, ip: '203.0.113.200' }); assert.equal(r.transport.sent.length, RESET_IP_LIMITS.maxPerHour + 2, 'IPv4 customers unaffected')
 })

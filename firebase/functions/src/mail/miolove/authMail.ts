@@ -21,8 +21,13 @@ export const AUTH_MAIL_COLLECTION = 'mioloveAuthMail'
 export const VERIFY_LIMITS = { minGapMs: 60_000, maxPerHour: 5 }
 export const RESET_EMAIL_LIMITS = { minGapMs: 60_000, maxPerHour: 3 }
 export const RESET_IP_LIMITS = { minGapMs: 0, maxPerHour: 20 }
+/**
+ * Every reset e-mail that really goes out, all customers together. It protects the Resend quota (and with it the album e-mails and the verification) from someone who knows many
+ * real addresses. Normal use is a handful a day; the numbers leave 10x room and keep one hour of abuse well below a free-plan day.
+ */
+export const RESET_GLOBAL_LIMITS = { minGapMs: 0, maxPerHour: 30, maxPerDay: 200 }
 export const RESET_MIN_DURATION_MS = 1_200
-const HOUR = 3_600_000
+const HOUR = 3_600_000, DAY = 24 * HOUR
 
 export interface AuthPort {
   getUser(uid: string): Promise<{ email?: string | null; emailVerified: boolean; disabled?: boolean }>
@@ -57,14 +62,15 @@ export function actionLinkOf(base: string, kind: AuthMailKind, oobCode: string, 
 }
 
 export type Slot = 'ok' | 'too_soon' | 'too_many'
-/** Counts one send against `key`; refuses (without counting) when the last one was too recent or the hour is full. Atomic. */
-export async function reserveSlot(db: Firestore, key: string, now: Date, lim: { minGapMs: number; maxPerHour: number }): Promise<Slot> {
-  const ref = db.collection(AUTH_MAIL_COLLECTION).doc(key), t = now.getTime()
+export interface SlotLimits { minGapMs: number; maxPerHour: number; maxPerDay?: number }
+/** Counts one send against `key`; refuses (without counting) when the last one was too recent or the hour (or the day, when capped) is full. Atomic. */
+export async function reserveSlot(db: Firestore, key: string, now: Date, lim: SlotLimits): Promise<Slot> {
+  const ref = db.collection(AUTH_MAIL_COLLECTION).doc(key), t = now.getTime(), keep = lim.maxPerDay ? DAY : HOUR
   return db.runTransaction(async (tx) => {
-    const hits = (((await tx.get(ref)).data()?.hits as number[] | undefined) ?? []).filter((h) => typeof h === 'number' && t - h < HOUR)
+    const hits = (((await tx.get(ref)).data()?.hits as number[] | undefined) ?? []).filter((h) => typeof h === 'number' && t - h < keep)
     if (lim.minGapMs && hits.length && t - Math.max(...hits) < lim.minGapMs) return 'too_soon' as const
-    if (hits.length >= lim.maxPerHour) return 'too_many' as const
-    tx.set(ref, { hits: [...hits, t], expireAt: Timestamp.fromMillis(t + 2 * HOUR) })
+    if (hits.filter((h) => t - h < HOUR).length >= lim.maxPerHour || (lim.maxPerDay !== undefined && hits.length >= lim.maxPerDay)) return 'too_many' as const
+    tx.set(ref, { hits: [...hits, t], expireAt: Timestamp.fromMillis(t + keep + HOUR) })
     return 'ok' as const
   })
 }
@@ -88,6 +94,28 @@ export function clientIpOf(req: { headers?: Record<string, unknown> } | undefine
   const raw = req?.headers?.['x-forwarded-for']
   const last = (Array.isArray(raw) ? raw.join(',') : typeof raw === 'string' ? raw : '').split(',').map((x) => x.trim()).filter(Boolean).pop()
   return last && isIP(last) ? last : null
+}
+
+/**
+ * The key the per-IP limit counts against. An IPv6 customer owns a whole /64 (a household can rotate through billions of addresses inside it), so the limit counts the /64;
+ * an IPv4-mapped IPv6 address counts as the IPv4 it carries. Different /64s and different IPv4s never share a bucket.
+ */
+export function ipBucketOf(ip: string): string {
+  const addr = ip.split('%')[0]
+  if (isIP(addr) !== 6) return addr
+  const groupsOf = (x: string | undefined): string[] => {
+    if (!x) return []
+    const g = x.split(':'), last = g[g.length - 1]
+    if (last.includes('.')) { const [a, b, c, d] = last.split('.').map(Number); g.splice(-1, 1, ((a << 8) | b).toString(16), ((c << 8) | d).toString(16)) }       // dotted tail = 2 groups
+    return g
+  }
+  const [head, tail] = addr.split('::'), h = groupsOf(head), t = groupsOf(tail)
+  const g = (addr.includes('::') ? [...h, ...Array(Math.max(0, 8 - h.length - t.length)).fill('0'), ...t] : h).map((x) => x.toLowerCase().padStart(4, '0'))
+  if (g.slice(0, 5).every((x) => x === '0000') && g[5] === 'ffff') {                                  // IPv4-mapped (::ffff:a.b.c.d): it IS that IPv4
+    const n = (x: string) => parseInt(x, 16)
+    return `${n(g[6]) >> 8}.${n(g[6]) & 255}.${n(g[7]) >> 8}.${n(g[7]) & 255}`
+  }
+  return `${g.slice(0, 4).join(':')}::/64`
 }
 
 const localeOf = async (db: Firestore, uid: string, asked: unknown): Promise<MailLocale> =>
@@ -147,7 +175,7 @@ async function resetWork(deps: AuthMailDeps, input: ResetInput): Promise<void> {
   const now = (deps.now ?? (() => new Date()))()
   const email = typeof input.email === 'string' ? input.email.trim().toLowerCase() : ''
   if (!deps.enabled || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return
-  if (input.ip && (await reserveSlot(deps.db, `i_${sha(input.ip)}`, now, RESET_IP_LIMITS)) !== 'ok') return
+  if (input.ip && (await reserveSlot(deps.db, `i_${sha(ipBucketOf(input.ip))}`, now, RESET_IP_LIMITS)) !== 'ok') return
   if ((await reserveSlot(deps.db, `r_${sha(email)}`, now, RESET_EMAIL_LIMITS)) !== 'ok') return        // counted for unknown addresses too: the counter does not reveal them
   let user: Awaited<ReturnType<AuthPort['getUserByEmail']>>
   try { user = await deps.auth.getUserByEmail(email) } catch (e) {
@@ -157,6 +185,7 @@ async function resetWork(deps: AuthMailDeps, input: ResetInput): Promise<void> {
   if (user.disabled || !user.email || !(await isCouple(deps.db, user.uid))) return                       // only MIOLOVE accounts: the IOMIXO reset is a different flow
   const to = user.email.toLowerCase()
   if (deps.allowRecipient && !deps.allowRecipient(to)) return
+  if ((await reserveSlot(deps.db, 'g_reset', now, RESET_GLOBAL_LIMITS)) !== 'ok') { logger.warn('miolove_auth_mail_global_cap', { kind: 'reset_password' }); return }   // only real sends count: strangers cannot fill it with made-up addresses
   await deliver(deps, 'reset_password', to, await deps.auth.generatePasswordResetLink(to), await localeOf(deps.db, user.uid, input.locale), `reset_${sha(to)}_${Math.floor(now.getTime() / 60_000)}`)
   logger.info('miolove_auth_mail', { kind: 'reset_password', result: 'sent' })
 }
