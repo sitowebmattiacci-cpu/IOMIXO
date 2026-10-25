@@ -9,6 +9,7 @@ import { useI18n } from '@/lib/i18n'
 import { useAccountRole } from '@/lib/roles'
 import { MioloveLanguageSwitcher } from '@/components/wedding/MioloveLanguageSwitcher'
 import { MioloveLogo } from '@/components/brand/MioloveLogo'
+import { VerifyEmailNotice } from '@/components/miolove/VerifyEmailNotice'
 import { WdButton, WdField, WdInput } from '@/components/wedding/admin/WeddingAdminUI'
 import { COUPLE_DEFAULT_GUEST_CONFIG, OCCASIONS, OCCASION_EMOJI, albumNamePlaceholder, firstNameOf, suggestAlbumName } from '@/lib/coupleAlbum'
 import { cn } from '@/lib/utils'
@@ -61,6 +62,8 @@ export function CoupleOnboarding() {
           <MioloveLanguageSwitcher />
         </div>
       </header>
+
+      <VerifyEmailNotice placement="onboarding" />
 
       <main className="mx-auto w-full max-w-[620px] px-4 pb-14 pt-6 sm:pt-10">
         <form onSubmit={create} className="rounded-[28px] border border-wd-border bg-white p-6 shadow-[0_10px_40px_rgba(240,106,155,0.08)] sm:p-10">

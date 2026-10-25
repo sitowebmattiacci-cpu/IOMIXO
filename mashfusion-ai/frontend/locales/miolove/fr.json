@@ -169,7 +169,11 @@
     "resendWait": "Vous venez de demander un e-mail : patientez environ une minute avant d’en demander un autre.",
     "resendTooMany": "Vous avez demandé trop d’e-mails. Réessayez dans une heure ou écrivez à info@miolovealbum.com.",
     "verifyNotSent": "Nous n’avons pas pu envoyer l’e-mail de vérification. Appuyez sur « Renvoyer l’email de vérification » pour réessayer.",
-    "resendBusy": "Le service e-mail est très sollicité en ce moment. Réessayez dans quelques minutes."
+    "resendBusy": "Le service e-mail est très sollicité en ce moment. Réessayez dans quelques minutes.",
+    "verifyNoticeText": "Confirmez votre adresse e-mail pour ne pas manquer les messages sur votre album. Vous pouvez continuer à utiliser MIOLOVE en attendant.",
+    "verifyNoticeResend": "Renvoyer l’e-mail",
+    "verifyNoticeSent": "E-mail envoyé : vérifiez aussi vos courriers indésirables.",
+    "verifyNoticeClose": "Fermer"
   },
   "albumAuth": {
     "registerSub": "7 jours d’essai gratuit · Sans carte bancaire",

@@ -12,7 +12,7 @@
     "dev:emulators": "NEXT_PUBLIC_FIREBASE_USE_EMULATORS=true next dev",
     "check:owner-cloud": "tsx scripts/owner-cloud-check.ts",
     "test:unit": "tsx --test tests/unit/*.test.ts",
-    "test:browser": "npm --prefix ../../firebase/functions run build && printf 'SUPABASE_SERVICE_ROLE_KEY=test-key\\nLEGACY_BRIDGE=mock\\nAPPCHECK_ENFORCE_VOTE=false\\nAPPCHECK_ENFORCE_DEDICATION=false\\nAPPCHECK_ENFORCE_REQUEST=false\\nAPPCHECK_ENFORCE_OWNER=false\\nAPPCHECK_ENFORCE_PUBLIC_EVENT=false\\nAPPCHECK_ENFORCE_PHOTO=false\\nAPPCHECK_ENFORCE_BILLING=false\\nAPPCHECK_ENFORCE_AUTHMAIL=false\\n' > ../../firebase/functions/.env.demo-iomixo && NEXT_PUBLIC_FIREBASE_USE_EMULATORS=true firebase emulators:exec --config ../../firebase/firebase.json --project demo-iomixo --only auth,firestore,functions,storage \"tsx --test --test-timeout=420000 --test-concurrency=1 tests/browser/*.test.ts\""
+    "test:browser": "npm --prefix ../../firebase/functions run build && printf 'SUPABASE_SERVICE_ROLE_KEY=test-key\\nLEGACY_BRIDGE=mock\\nMIOLOVE_MAIL_MODE=dry\\nAPPCHECK_ENFORCE_VOTE=false\\nAPPCHECK_ENFORCE_DEDICATION=false\\nAPPCHECK_ENFORCE_REQUEST=false\\nAPPCHECK_ENFORCE_OWNER=false\\nAPPCHECK_ENFORCE_PUBLIC_EVENT=false\\nAPPCHECK_ENFORCE_PHOTO=false\\nAPPCHECK_ENFORCE_BILLING=false\\nAPPCHECK_ENFORCE_AUTHMAIL=false\\n' > ../../firebase/functions/.env.demo-iomixo && NEXT_PUBLIC_FIREBASE_USE_EMULATORS=true firebase emulators:exec --config ../../firebase/firebase.json --project demo-iomixo --only auth,firestore,functions,storage \"tsx --test --test-timeout=420000 --test-concurrency=1 tests/browser/*.test.ts\""
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.0.4",
