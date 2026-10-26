@@ -9,6 +9,7 @@ import { useI18n } from '@/lib/i18n'
 import { usePortal } from '@/components/portal/PortalProvider'
 import { Button } from '@/components/ui/Button'
 import toast from 'react-hot-toast'
+import { HomeLink } from '@/components/portal/HomeLink'
 
 export default function ForgotPasswordPage() {
   const { t, locale } = useI18n()
@@ -45,7 +46,7 @@ export default function ForgotPasswordPage() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6"><PortalBrand onDark /></Link>
+          <HomeLink className="inline-flex items-center gap-2 mb-6"><PortalBrand onDark /></HomeLink>
           <h1 className="text-2xl font-bold text-white">{t('auth.forgotTitle')}</h1>
           <p className="mt-1 text-sm text-white/40">
             {sent ? t('auth.forgotSubtitleSent') : t('auth.forgotSubtitleDefault')}

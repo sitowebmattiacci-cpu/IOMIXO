@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getPortalFromHostname, normalizeHost, PORTAL_CONFIG } from '@/lib/portal'
 import { resolvePublicPath } from '@/lib/miolove/pages'
-import { DEFAULT_LANG } from '@/lib/miolove/langs'
 import { mioloveRobotsHeader } from '@/lib/miolove/indexing'
 
 // MIOLOVE: its root is the public home (app/page.tsx picks the portal from the host); "/" no longer redirects to the sign-in.
@@ -26,7 +25,7 @@ export function middleware(req: NextRequest) {
     if (hit) {
       const headers = new Headers(req.headers)
       headers.delete('x-ml-lang')
-      if (hit.lang !== DEFAULT_LANG) headers.set('x-ml-lang', hit.lang)
+      headers.set('x-ml-lang', hit.lang)  // Italian too: a public page is always in the language of its URL, whatever language the visitor saved
       const init = { request: { headers } }
       if (path !== hit.route && path.replace(/\/+$/, '') !== hit.route) { const url = req.nextUrl.clone(); url.pathname = hit.route; return NextResponse.rewrite(url, init) }
       return NextResponse.next(init)

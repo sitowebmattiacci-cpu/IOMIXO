@@ -10,6 +10,7 @@ import { useI18n } from '@/lib/i18n'
 import { completePasswordReset } from '@/lib/firebase/auth'
 import { Button } from '@/components/ui/Button'
 import toast from 'react-hot-toast'
+import { HomeLink } from '@/components/portal/HomeLink'
 
 function ResetPasswordContent() {
   const { t } = useI18n()
@@ -65,7 +66,7 @@ function ResetPasswordContent() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6"><PortalBrand onDark /></Link>
+          <HomeLink className="inline-flex items-center gap-2 mb-6"><PortalBrand onDark /></HomeLink>
           <h1 className="text-2xl font-bold text-white">
             {done ? t('auth.passwordUpdated') : t('auth.setNewPassword')}
           </h1>

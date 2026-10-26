@@ -12,6 +12,7 @@ import { usePortal } from '@/components/portal/PortalProvider'
 import { useI18n } from '@/lib/i18n'
 import { COUPLE_HOME } from '@/lib/roles'
 import toast from 'react-hot-toast'
+import { HomeLink } from '@/components/portal/HomeLink'
 
 const GRAD = 'bg-gradient-to-r from-[#FF2D8D] via-[#FF6A3D] to-[#FFC93C] bg-clip-text text-transparent'
 
@@ -113,7 +114,7 @@ export default function RegisterPage() {
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <div className="mb-6 pt-10 text-center md:hidden">
-                <Link href="/" className="inline-flex"><PortalBrand size={40} /></Link>
+                <HomeLink className="inline-flex"><PortalBrand size={40} /></HomeLink>
                 <p className="mx-auto mt-3 max-w-xs font-album text-2xl font-semibold leading-tight">{t('roles.authPage.coupleHeadline')}</p>
                 <ul className="mx-auto mt-3 flex max-w-xs flex-col gap-1.5 text-left">
                   {couplePerks.slice(0, 3).map(({ icon: Icon, text }) => (
@@ -236,7 +237,7 @@ export default function RegisterPage() {
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <div className="mb-6 pt-10 text-center md:hidden">
-              <Link href="/" className="inline-flex items-center justify-center"><PortalBrand size={36} textClass="text-lg" /></Link>
+              <HomeLink className="inline-flex items-center justify-center"><PortalBrand size={36} textClass="text-lg" /></HomeLink>
               <p className="mx-auto mt-3 max-w-xs text-xl font-black leading-tight text-white">{t('roles.authPage.djHeadlineA')} <span className={GRAD}>{t('roles.authPage.djHeadlineB')}</span></p>
               <ul className="mx-auto mt-3 flex max-w-xs flex-col gap-1.5 text-left">
                 {djPerks.slice(0, 3).map(({ icon: Icon, text }) => (

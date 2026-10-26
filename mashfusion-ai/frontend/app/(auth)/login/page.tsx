@@ -12,6 +12,7 @@ import { GoogleButton, OrDivider } from '@/components/auth/GoogleButton'
 import { usePortal } from '@/components/portal/PortalProvider'
 import { useI18n } from '@/lib/i18n'
 import toast from 'react-hot-toast'
+import { HomeLink } from '@/components/portal/HomeLink'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -44,7 +45,7 @@ export default function LoginPage() {
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white to-wd-active p-4 text-wd-ink" data-portal="miolove">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative w-full max-w-md">
           <div className="mb-8 pt-10 text-center md:pt-0">
-            <Link href="/" className="mb-6 inline-flex"><PortalBrand size={48} /></Link>
+            <HomeLink className="mb-6 inline-flex"><PortalBrand size={48} /></HomeLink>
             <h1 className="text-2xl font-bold">{t('auth.welcomeBack')}</h1>
             <p className="mt-1 text-sm text-wd-muted">{t('roles.authPage.loginSubtitleCouple')}</p>
           </div>
@@ -94,7 +95,7 @@ export default function LoginPage() {
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6"><PortalBrand size={40} /></Link>
+          <HomeLink className="inline-flex items-center gap-2 mb-6"><PortalBrand size={40} /></HomeLink>
           <h1 className="text-2xl font-bold text-white">{t('auth.welcomeBack')}</h1>
           <p className="mt-1 text-sm text-white/40">{t('roles.authPage.loginSubtitleDj')}</p>
         </div>

@@ -8,6 +8,7 @@ import { MioloveLanguageSwitcher } from '@/components/wedding/MioloveLanguageSwi
 import { Logo } from '@/components/Logo'
 import { MioloveLogo } from '@/components/brand/MioloveLogo'
 import type { PortalConfig } from '@/lib/portal'
+import { HomeLink } from '@/components/portal/HomeLink'
 
 // Colors come from CSS variables so the shared Section / LegalMail helpers follow the portal without prop drilling.
 const THEMES: Record<PortalConfig['id'], Record<string, string>> = {
@@ -48,7 +49,7 @@ export function LegalPage({ config, title, updated, otherLink, children }: {
       </div>
 
       <header className="relative z-20 flex items-center justify-between px-6 py-5 max-w-4xl mx-auto">
-        <Link href="/" className="flex items-center gap-2.5" aria-label={config.brand}>
+        <HomeLink className="flex items-center gap-2.5" aria-label={config.brand}>
           {miolove ? (
             <MioloveLogo height={36} variant="onLight" />
           ) : (
@@ -59,12 +60,12 @@ export function LegalPage({ config, title, updated, otherLink, children }: {
               </span>
             </>
           )}
-        </Link>
+        </HomeLink>
         <div className="flex items-center gap-4">
-          <Link href="/" aria-label={t('legal.back')} className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-[color:var(--lg-back)] hover:text-[color:var(--lg-back-hover)] transition-colors">
+          <HomeLink aria-label={t('legal.back')} className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-[color:var(--lg-back)] hover:text-[color:var(--lg-back-hover)] transition-colors">
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">{t('legal.back')}</span>
-          </Link>
+          </HomeLink>
           {miolove ? <MioloveLanguageSwitcher /> : <LanguageSwitcher />}
         </div>
       </header>
@@ -82,7 +83,7 @@ export function LegalPage({ config, title, updated, otherLink, children }: {
           <p>© 2026 {miolove ? config.brand : 'IOMIXO'}. {t('legal.rights')}</p>
           <div className="flex gap-4">
             <Link href={otherLink.href} className="hover:text-[color:var(--lg-foot-hover)] transition-colors">{otherLink.label}</Link>
-            <Link href="/" className="hover:text-[color:var(--lg-foot-hover)] transition-colors">{t('legal.home')}</Link>
+            <HomeLink className="hover:text-[color:var(--lg-foot-hover)] transition-colors">{t('legal.home')}</HomeLink>
           </div>
         </div>
       </main>

@@ -8,6 +8,7 @@ import { homePath } from '@/lib/miolove/paths'
 import { reviewsEnv, reviewsToShow } from '@/lib/miolove/reviews'
 import { cn } from '@/lib/utils'
 import { Footer, Header, btnPrimary, btnSecondary } from '../home/MioloveHome'
+import { UrlLocale } from '../UrlLocale'
 import { DemoPhotoImg, Section, SectionHead } from '../home/parts'
 
 /**
@@ -22,6 +23,7 @@ export function MioloveIdeas() {
   const benefits = ['b1', 'b2', 'b3', 'b4'] as const
   return (
     <main className="min-h-screen bg-[#FFF9FB] font-sans text-wd-ink antialiased" data-portal="miolove" data-testid="miolove-ideas">
+      <UrlLocale />
       <Header showReviews={showReviews} base={home} />
 
       {/* Hero */}

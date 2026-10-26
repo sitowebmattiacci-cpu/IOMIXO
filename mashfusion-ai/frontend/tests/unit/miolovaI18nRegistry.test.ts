@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { NextRequest } from 'next/server'
 import { middleware } from '../../middleware'
 import { DEFAULT_LANG, LANG_META, LIVE_LANGS, MIOLOVE_LANGS, isLiveLang, type MioloveLang } from '../../lib/miolove/langs'
-import { PAGES, PAGE_IDS, plannedPagePath, plannedPaths, publishedLangs, resolvePublicPath } from '../../lib/miolove/pages'
+import { PAGES, PAGE_IDS, plannedPagePath, plannedPaths, publishedLangs, resolvePublicPath, switchOptions, switchTarget, type PageDef, type PageId } from '../../lib/miolove/pages'
 import { HOME_PATH, IDEAS_PATH, homePath, ideasPath } from '../../lib/miolove/paths'
 import { hasMessages, loadMessages, makeT } from '../../lib/miolove/messages'
 import { MIOLOVE_PRIVATE_PREFIXES, MIOLOVE_SERVICE_PATHS, mioloveRobotsHeader } from '../../lib/miolove/indexing'
@@ -138,8 +138,8 @@ const call = (host: string, path: string, extra: Record<string, string> = {}) =>
 
 test('I18N-MW-1. the four published languages route exactly as before (rewrite target, language header)', () => {
   const table: Array<[string, string | null, string | null]> = [
-    ['/', null, null], ['/en', '/', 'en'], ['/fr', '/', 'fr'], ['/es', '/', 'es'], ['/en/', '/', 'en'],
-    ['/idee', null, null], ['/en/ideas', '/idee', 'en'], ['/fr/idees', '/idee', 'fr'], ['/es/ideas', '/idee', 'es'], ['/idee/', null, null],
+    ['/', null, 'it'], ['/en', '/', 'en'], ['/fr', '/', 'fr'], ['/es', '/', 'es'], ['/en/', '/', 'en'],
+    ['/idee', null, 'it'], ['/en/ideas', '/idee', 'en'], ['/fr/idees', '/idee', 'fr'], ['/es/ideas', '/idee', 'es'], ['/idee/', null, 'it'],
   ]
   for (const [path, rewrite, lang] of table) {
     const r = call('miolovealbum.com', path)
@@ -147,9 +147,9 @@ test('I18N-MW-1. the four published languages route exactly as before (rewrite t
   }
 })
 
-test('I18N-MW-2. a client-supplied language header is always dropped on public pages', () => {
-  assert.equal(call('miolovealbum.com', '/', { 'x-ml-lang': 'en' }).lang, null)
-  assert.equal(call('miolovealbum.com', '/idee', { 'x-ml-lang': 'fr' }).lang, null)
+test('I18N-MW-2. a client-supplied language header never decides a public page: the URL does ("/" and "/idee" are Italian, whatever is sent)', () => {
+  assert.equal(call('miolovealbum.com', '/', { 'x-ml-lang': 'en' }).lang, 'it')
+  assert.equal(call('miolovealbum.com', '/idee', { 'x-ml-lang': 'fr' }).lang, 'it')
   assert.equal(call('miolovealbum.com', '/en', { 'x-ml-lang': 'fr' }).lang, 'en')
 })
 
@@ -247,4 +247,43 @@ test('I18N-BUNDLE-2. server-only modules (SEO, messages) are never imported by a
   for (const f of ['middleware.ts', 'lib/miolove/langs.ts', 'lib/miolove/pages.ts', 'lib/miolove/paths.ts', 'lib/miolove/indexing.ts']) {
     assert.ok(!/\.json'/.test(readFileSync(join(fe, f), 'utf8')), `${f} must stay JSON-free (edge size)`)
   }
+})
+
+// ── Language switch (menu of the public pages) ───────────────────────────────────────────────────────────────────────────────────────────────
+test('SWITCH-1. every published page × every published language: the menu opens the equivalent URL, exactly, and offers only published languages', () => {
+  for (const id of PAGE_IDS) {
+    const opts = switchOptions(id)
+    assert.deepEqual(opts.map((o) => o.lang), [...LIVE_LANGS], `${id}: only published languages, registry order`)
+    for (const o of opts) {
+      assert.equal(o.exact, true); assert.equal(o.path, plannedPagePath(id, o.lang)); assert.equal(resolvePublicPath(o.path)?.lang, o.lang, `${o.path} routes to ${o.lang}`)
+      assert.equal(resolvePublicPath(o.path)?.page, id)
+    }
+    for (const l of NEW_LANGS) { assert.equal(switchTarget(id, l), null, `${l} draft: not offered`); assert.ok(!opts.some((o) => o.lang === l)) }
+  }
+  assert.deepEqual(switchOptions('ideas').map((o) => o.path), ['/idee', '/en/ideas', '/fr/idees', '/es/ideas'])
+  assert.deepEqual(switchOptions('home').map((o) => o.path), ['/', '/en', '/fr', '/es'])
+})
+
+test('SWITCH-2. a page missing in the chosen language opens that language\'s home; a language without a published home is not offered; drafts never appear', () => {
+  const pages: Record<PageId, PageDef> = {
+    home: { ...PAGES.home, langs: ['it', 'en', 'fr', 'de'] },
+    ideas: { ...PAGES.ideas, langs: ['it', 'en'] },
+  }
+  const cfg = { pages, live: ['it', 'en', 'fr'] as MioloveLang[] }          // fr has a home but no guide; de is listed by the pages but is not live
+  assert.deepEqual(switchOptions('ideas', cfg).map((o) => [o.lang, o.path, o.exact]), [['it', '/idee', true], ['en', '/en/ideas', true], ['fr', '/fr', false]])
+  assert.equal(switchTarget('ideas', 'de', cfg), null, 'a language that is not live is never offered, even if a page lists it')
+  const noHome: Record<PageId, PageDef> = { home: { ...PAGES.home, langs: ['it', 'en'] }, ideas: { ...PAGES.ideas, langs: ['it', 'en', 'fr'] } }
+  assert.equal(switchTarget('home', 'fr', { pages: noHome, live: ['it', 'en', 'fr'] }), null, 'no home → not offered (nothing Italian is ever shown under a foreign URL)')
+  assert.deepEqual(switchOptions('home', { pages: noHome, live: ['it', 'en', 'fr'] }).map((o) => o.lang), ['it', 'en'])
+})
+
+// ── Language continuity: source guards ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+test('SWITCH-3. the shared auth / legal pages go home through HomeLink (IOMIXO keeps <Link href="/">, MIOLOVE gets its language home); the public pages enforce their URL language', () => {
+  for (const f of ['app/(auth)/login/page.tsx', 'app/(auth)/register/page.tsx', 'app/(auth)/forgot-password/page.tsx', 'app/(auth)/reset-password/page.tsx', 'app/(auth)/verify-email/page.tsx', 'components/legal/LegalPage.tsx']) {
+    const src = readFileSync(join(fe, f), 'utf8')
+    assert.ok(!/<Link href="\/"/.test(src), `${f} still links to "/" directly`); assert.ok(src.includes('<HomeLink'), f)
+  }
+  const home = readFileSync(join(fe, 'components/portal/HomeLink.tsx'), 'utf8')
+  assert.ok(home.includes('<Link href="/" {...props} />'), 'non-MIOLOVE hosts: exactly the old link')
+  for (const f of ['components/miolove/home/MioloveHome.tsx', 'components/miolove/ideas/MioloveIdeas.tsx']) assert.ok(readFileSync(join(fe, f), 'utf8').includes('<UrlLocale />'), `${f} must enforce the URL language`)
 })

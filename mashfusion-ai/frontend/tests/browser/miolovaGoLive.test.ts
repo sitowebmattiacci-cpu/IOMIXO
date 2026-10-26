@@ -86,7 +86,8 @@ test('HOME2. language: IT/EN/FR/ES switch live and persist after a refresh; no I
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const page = await ctx.newPage()
   try {
     await page.goto(`${M()}/`, { waitUntil: 'networkidle', timeout: 120_000 }); await page.waitForTimeout(800)
-    const pick = async (l: L) => { const opt = page.locator(`[data-lang="${l}"]`); for (let i = 0; i < 10 && !(await opt.isVisible().catch(() => false)); i++) { await page.getByTestId('miolove-lang-trigger').first().click(); await page.waitForTimeout(300) } await opt.click() }
+    const PATH: Record<L, string> = { it: '/', en: '/en', fr: '/fr', es: '/es' }   // the menu of a public page navigates to the URL of the chosen language
+    const pick = async (l: L) => { const opt = page.locator(`[data-lang="${l}"]`); for (let i = 0; i < 10 && !(await opt.isVisible().catch(() => false)); i++) { await page.getByTestId('miolove-lang-trigger').first().click(); await page.waitForTimeout(300) } await opt.click(); await page.waitForURL((u) => u.pathname === PATH[l], { timeout: 30_000 }); await page.waitForLoadState('networkidle'); await page.waitForTimeout(500) }
     for (const l of ['en', 'fr', 'es', 'it'] as L[]) {
       await pick(l); assert.equal(await page.getByTestId('home-h1').innerText(), H1[l]); assert.equal(await page.getByTestId('album-price').innerText(), PRICE[l])
       const b = await noReassure(page); assert.doesNotMatch(b, FORBIDDEN, l)

@@ -35,8 +35,8 @@ export const PAGES: Record<PageId, PageDef> = {
 export const PAGE_IDS = Object.keys(PAGES) as PageId[]
 
 /** Public path of a page in a language, published or not (draft URLs are only ever PLANNED: they answer 404). */
-export function plannedPagePath(id: PageId, lang: MioloveLang): string {
-  const prefix = LANG_META[lang].prefix, slug = PAGES[id].slugs[lang]
+export function plannedPagePath(id: PageId, lang: MioloveLang, pages: Record<PageId, PageDef> = PAGES): string {
+  const prefix = LANG_META[lang].prefix, slug = pages[id].slugs[lang]
   const path = [prefix, slug].filter(Boolean).join('/')
   return path ? `/${path}` : '/'
 }
@@ -61,3 +61,25 @@ export function resolvePublicPath(path: string): { page: PageId; lang: MioloveLa
 
 /** Every URL the registry PLANS for a language (published or not), for audits and tests. */
 export const plannedPaths = (lang: MioloveLang): string[] => PAGE_IDS.map((id) => plannedPagePath(id, lang))
+
+// ── Language switch on a public page ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// What the language menu of a public page offers: for each PUBLISHED language the URL to open. The same page when it is published there ("exact"); otherwise
+// the home of that language when the home is published ("fallback"); otherwise nothing: the language is not offered (a draft never appears, and a page is
+// never shown in a language it does not exist in). `cfg` lets the tests describe registries that do not exist yet; production code passes nothing.
+export interface SwitchConfig { pages?: Record<PageId, PageDef>; live?: readonly MioloveLang[] }
+export interface SwitchTarget { lang: MioloveLang; path: string; exact: boolean }
+
+export function switchTarget(id: PageId, lang: MioloveLang, cfg: SwitchConfig = {}): SwitchTarget | null {
+  const pages = cfg.pages ?? PAGES, live = cfg.live ?? LIVE_LANGS
+  if (!live.includes(lang)) return null
+  const has = (page: PageId) => pages[page].langs.includes(lang)
+  if (has(id)) return { lang, path: plannedPagePath(id, lang, pages), exact: true }
+  if (has('home')) return { lang, path: plannedPagePath('home', lang, pages), exact: false }
+  return null
+}
+
+/** The entries of the language menu of page `id`, in registry order. */
+export function switchOptions(id: PageId, cfg: SwitchConfig = {}): SwitchTarget[] {
+  const live = cfg.live ?? LIVE_LANGS
+  return live.flatMap((l) => switchTarget(id, l, cfg) ?? [])
+}

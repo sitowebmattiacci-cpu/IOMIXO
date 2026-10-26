@@ -21,7 +21,8 @@ import { cn } from '@/lib/utils'
 import { DemoPhotoImg, PhoneMock, ScreenMock, Section, SectionHead } from './parts'
 import { HeroVisual, Reveal } from './HeroMotion'
 import { IdeasTeaser } from '../ideas/IdeasTeaser'
-import { ideasPath } from '@/lib/miolove/paths'
+import { homePath, ideasPath } from '@/lib/miolove/paths'
+import { UrlLocale } from '../UrlLocale'
 
 export const btnPrimary = 'inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-wd-pink px-7 text-[16px] font-semibold text-white shadow-[0_10px_30px_rgba(240,106,155,0.35)] transition hover:bg-wd-pink-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/50'
 export const btnSecondary = 'inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl border border-wd-border bg-white px-7 text-[16px] font-semibold text-wd-ink transition hover:bg-wd-active focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/40'
@@ -41,7 +42,7 @@ export function Header({ showReviews, base = '' }: { showReviews: boolean; base?
   return (
     <header className="sticky top-0 z-50 border-b border-wd-border bg-white/90 backdrop-blur" data-testid="home-header">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-5 sm:px-8">
-        <Link href={base || '/'} aria-label="MIOLOVE ALBUM" className="shrink-0"><MioloveLogo height={42} /></Link>
+        <Link href={base || homePath(locale)} aria-label="MIOLOVE ALBUM" className="shrink-0"><MioloveLogo height={42} /></Link>
         <nav className="hidden items-center gap-7 text-[15px] font-medium text-wd-muted lg:flex" aria-label="Home">
           {links.map(([href, label]) => <a key={href} href={href} className="transition hover:text-wd-ink">{label}</a>)}
         </nav>
@@ -397,6 +398,7 @@ export function MioloveHome() {
   const showReviews = reviews.items.length > 0
   return (
     <main className="min-h-screen bg-[#FFF9FB] font-sans text-wd-ink antialiased" data-portal="miolove" data-testid="miolove-home">
+      <UrlLocale />
       <Header showReviews={showReviews} />
       <Hero />
       <How />

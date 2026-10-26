@@ -5,6 +5,7 @@ import { Sparkles, Mail } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { useI18n } from '@/lib/i18n'
+import { HomeLink } from '@/components/portal/HomeLink'
 
 /**
  * This page is shown after register when Firebase sends the verification email.
@@ -25,7 +26,7 @@ export default function VerifyEmailPage() {
         className="relative w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2"><PortalBrand onDark /></Link>
+          <HomeLink className="inline-flex items-center gap-2"><PortalBrand onDark /></HomeLink>
         </div>
 
         <div className="glass rounded-2xl p-10 text-center space-y-5">
