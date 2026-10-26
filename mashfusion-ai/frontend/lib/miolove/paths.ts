@@ -1,16 +1,22 @@
-// Public paths of the MIOLOVE pages that exist in four languages. Pure module (safe in client components, middleware and unit tests).
+// Public paths of the MIOLOVE pages that exist in several languages. Pure module (safe in client components, middleware and unit tests).
 // Italian is the bare path; the other languages carry a language prefix (the middleware rewrites them to the Italian route and forwards the language).
+// The URLs themselves live in the registry (lib/miolove/pages.ts); this file keeps the helpers the components already use, answering for PUBLISHED languages only.
+import { publishedLangs, pagePath, resolvePublicPath } from './pages'
+
+/** A language whose pages are published today (it | en | fr | es). Draft languages have no public path. */
 export type PathLang = 'it' | 'en' | 'fr' | 'es'
 
-export const HOME_PATH: Record<PathLang, string> = { it: '/', en: '/en', fr: '/fr', es: '/es' }
-export const IDEAS_PATH: Record<PathLang, string> = { it: '/idee', en: '/en/ideas', fr: '/fr/idees', es: '/es/ideas' }
+const pathsOf = (id: 'home' | 'ideas'): Record<PathLang, string> =>
+  Object.fromEntries(publishedLangs(id).map((l) => [l, pagePath(id, l)])) as Record<PathLang, string>
 
-export const homePath = (lang: string): string => HOME_PATH[lang as PathLang] ?? '/'
-export const ideasPath = (lang: string): string => IDEAS_PATH[lang as PathLang] ?? '/idee'
+export const HOME_PATH: Record<PathLang, string> = pathsOf('home')
+export const IDEAS_PATH: Record<PathLang, string> = pathsOf('ideas')
+
+export const homePath = (lang: string): string => pagePath('home', lang)
+export const ideasPath = (lang: string): string => pagePath('ideas', lang)
 
 /** "/en/ideas" → 'en' (also with a trailing slash); anything else → null. */
 export function ideasLangOfPath(path: string): PathLang | null {
-  const p = path.length > 1 ? path.replace(/\/+$/, '') : path
-  for (const [lang, v] of Object.entries(IDEAS_PATH)) if (v === p) return lang as PathLang
-  return null
+  const r = resolvePublicPath(path)
+  return r && r.page === 'ideas' ? (r.lang as PathLang) : null
 }

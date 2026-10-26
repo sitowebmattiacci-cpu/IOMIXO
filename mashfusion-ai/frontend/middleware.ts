@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getPortalFromHostname, normalizeHost, PORTAL_CONFIG } from '@/lib/portal'
-import { ideasLangOfPath } from '@/lib/miolove/paths'
+import { resolvePublicPath } from '@/lib/miolove/pages'
+import { DEFAULT_LANG } from '@/lib/miolove/langs'
 import { mioloveRobotsHeader } from '@/lib/miolove/indexing'
 
 // MIOLOVE: its root is the public home (app/page.tsx picks the portal from the host); "/" no longer redirects to the sign-in.
@@ -10,8 +11,6 @@ import { mioloveRobotsHeader } from '@/lib/miolove/indexing'
 // Private surfaces of MIOLOVE are never indexed: guest album pages, the TV screen, the owner's area and the auth action handler answer with
 // X-Robots-Tag: noindex (robots.txt alone cannot keep a linked URL out of a search index). Login, sign-up and the password / e-mail pages are noindex too
 // but stay crawlable. Which paths are which lives in lib/miolove/indexing.ts.
-const LANGS = ['it', 'en', 'fr', 'es']
-
 export function middleware(req: NextRequest) {
   const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host')
   if (getPortalFromHostname(host) === 'miolove') {
@@ -20,25 +19,16 @@ export function middleware(req: NextRequest) {
       return NextResponse.redirect(`${canonical.baseUrl}${req.nextUrl.pathname}${req.nextUrl.search}`, 308)
     }
     const path = req.nextUrl.pathname
-    // Language home pages: /en, /fr, /es are the same home rendered in that language (hreflang URLs; Italian is the bare root). The language travels to
-    // the root layout and the page metadata in a request header (a client-supplied value is always dropped).
-    const m = path.match(/^\/(en|fr|es)\/?$/)
-    if (path === '/' || m) {
+    // Public pages in a language (home, guide: lib/miolove/pages.ts): /en, /fr, /es, /en/ideas… are the same Next route rendered in that language (hreflang URLs;
+    // Italian is the bare root). Only PUBLISHED pages match: a draft language has no entry here, so its URLs fall through and answer 404. The language travels
+    // to the root layout and the page metadata in a request header (a client-supplied value is always dropped).
+    const hit = resolvePublicPath(path)
+    if (hit) {
       const headers = new Headers(req.headers)
       headers.delete('x-ml-lang')
-      if (m && LANGS.includes(m[1])) headers.set('x-ml-lang', m[1])
+      if (hit.lang !== DEFAULT_LANG) headers.set('x-ml-lang', hit.lang)
       const init = { request: { headers } }
-      if (m) { const url = req.nextUrl.clone(); url.pathname = '/'; return NextResponse.rewrite(url, init) }
-      return NextResponse.next(init)
-    }
-    // "Idee per usare MIOLOVE": one route (/idee) served at four public URLs (/idee, /en/ideas, /fr/idees, /es/ideas); same language-header rule as the home.
-    const ideasLang = ideasLangOfPath(path)
-    if (ideasLang) {
-      const headers = new Headers(req.headers)
-      headers.delete('x-ml-lang')
-      if (ideasLang !== 'it') headers.set('x-ml-lang', ideasLang)
-      const init = { request: { headers } }
-      if (path.replace(/\/+$/, '') !== '/idee') { const url = req.nextUrl.clone(); url.pathname = '/idee'; return NextResponse.rewrite(url, init) }
+      if (path !== hit.route && path.replace(/\/+$/, '') !== hit.route) { const url = req.nextUrl.clone(); url.pathname = hit.route; return NextResponse.rewrite(url, init) }
       return NextResponse.next(init)
     }
     const robotsTag = mioloveRobotsHeader(path)

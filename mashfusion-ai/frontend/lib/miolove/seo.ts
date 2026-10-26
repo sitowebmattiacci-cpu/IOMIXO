@@ -7,31 +7,56 @@ import es from '@/locales/miolove/es.json'
 import { PORTAL_CONFIG } from '@/lib/portal'
 import { currencyForLocale } from '../pricing'
 import { ALBUM_PRICING } from './plans'
-import { IDEAS_PATH, HOME_PATH } from './paths'
 import { IDEAS, FAQ_KEYS } from './ideas'
+import { DEFAULT_LANG, LANG_META, LIVE_LANGS, type MioloveLang } from './langs'
+import { PAGE_IDS, isPublished, pagePath, publishedLangs, type PageId } from './pages'
 
-type L = 'it' | 'en' | 'fr' | 'es'
-const DICT: Record<L, any> = { it, en, fr, es }
-const OG_LOCALE: Record<L, string> = { it: 'it_IT', en: 'en_GB', fr: 'fr_FR', es: 'es_ES' }
-export const SEO_LANGUAGES: L[] = ['it', 'en', 'fr', 'es']
+type L = MioloveLang
+// Dictionaries read at build / request time by the SERVER (metadata, structured data): this module is imported by server routes only, never by a client
+// component, so these files stay out of the browser bundle. A language is added here together with its files, when it goes live (see langs.ts).
+const DICT: Partial<Record<L, any>> = { it, en, fr, es }
+const dict = (lang: L): any => {
+  const d = DICT[lang]
+  if (!d) throw new Error(`MIOLOVE: no dictionary for "${lang}" (language not published)`)
+  return d
+}
+/** Published languages, in registry order (hreflang, structured data, sitemap). */
+export const SEO_LANGUAGES: readonly L[] = LIVE_LANGS
+const hreflangs = () => SEO_LANGUAGES.map((l) => LANG_META[l].hreflang)
+const ogAlternates = (lang: L) => SEO_LANGUAGES.filter((l) => l !== lang).map((l) => LANG_META[l].og)
 
 const base = () => PORTAL_CONFIG.miolove.baseUrl
+/** Absolute URL of a page in a language ("/" = Italian home); a page that is not published in `lang` resolves to its Italian URL. */
+export const pageUrl = (id: PageId, lang: L): string => `${base()}${pagePath(id, lang)}`
 /** Absolute URL of the home in one language (Italian = the bare root). */
-export const homeUrl = (lang: L): string => (lang === 'it' ? `${base()}/` : `${base()}${HOME_PATH[lang]}`)
+export const homeUrl = (lang: L): string => pageUrl('home', lang)
 /** Absolute URL of the "Idee per usare MIOLOVE" guide in one language (/idee, /en/ideas, /fr/idees, /es/ideas). */
-export const ideasUrl = (lang: L): string => `${base()}${IDEAS_PATH[lang]}`
+export const ideasUrl = (lang: L): string => pageUrl('ideas', lang)
+
+/** hreflang map of a page: ONLY the languages it is published in (drafts never appear), each pointing at its own URL, plus x-default (Italian when it exists). */
+export function pageAlternates(id: PageId): Record<string, string> {
+  const langs = publishedLangs(id)
+  const languages: Record<string, string> = Object.fromEntries(langs.map((l) => [LANG_META[l].hreflang, pageUrl(id, l)]))
+  languages['x-default'] = pageUrl(id, langs.includes(DEFAULT_LANG) ? DEFAULT_LANG : langs[0])
+  return languages
+}
+
+/** A page is never rendered, nor described to search engines, in a language it is not published in. */
+function assertPublished(id: PageId, lang: L): void {
+  if (!isPublished(id, lang)) throw new Error(`MIOLOVE: page "${id}" is not published in "${lang}"`)
+}
 
 export function mioloveHomeMetadata(lang: L = 'it'): Metadata {
-  const m = DICT[lang].home.meta as { title: string; description: string; ogTitle: string }
-  const languages: Record<string, string> = Object.fromEntries(SEO_LANGUAGES.map((l) => [l, homeUrl(l)]))
-  languages['x-default'] = homeUrl('it')
+  assertPublished('home', lang)
+  const m = dict(lang).home.meta as { title: string; description: string; ogTitle: string }
+  const languages = pageAlternates('home')
   return {
     title: { absolute: m.title },
     description: m.description,
     alternates: { canonical: homeUrl(lang), languages },
     openGraph: {
       type: 'website', url: homeUrl(lang), siteName: 'MIOLOVE ALBUM', title: m.ogTitle, description: m.description,
-      locale: OG_LOCALE[lang], alternateLocale: SEO_LANGUAGES.filter((l) => l !== lang).map((l) => OG_LOCALE[l]),
+      locale: LANG_META[lang].og, alternateLocale: ogAlternates(lang),
       images: [{ url: `${base()}/brand/miolove/miolove-album-logo.png` }],
     },
     twitter: { card: 'summary', title: m.ogTitle, description: m.description, images: [`${base()}/brand/miolove/miolove-album-logo.png`] },
@@ -40,16 +65,16 @@ export function mioloveHomeMetadata(lang: L = 'it'): Metadata {
 }
 
 export function mioloveIdeasMetadata(lang: L = 'it'): Metadata {
-  const m = DICT[lang].ideas.meta as { title: string; description: string; ogTitle: string }
-  const languages: Record<string, string> = Object.fromEntries(SEO_LANGUAGES.map((l) => [l, ideasUrl(l)]))
-  languages['x-default'] = ideasUrl('it')
+  assertPublished('ideas', lang)
+  const m = dict(lang).ideas.meta as { title: string; description: string; ogTitle: string }
+  const languages = pageAlternates('ideas')
   return {
     title: { absolute: m.title },
     description: m.description,
     alternates: { canonical: ideasUrl(lang), languages },
     openGraph: {
       type: 'article', url: ideasUrl(lang), siteName: 'MIOLOVE ALBUM', title: m.ogTitle, description: m.description,
-      locale: OG_LOCALE[lang], alternateLocale: SEO_LANGUAGES.filter((l) => l !== lang).map((l) => OG_LOCALE[l]),
+      locale: LANG_META[lang].og, alternateLocale: ogAlternates(lang),
       images: [{ url: `${base()}/brand/miolove/miolove-album-logo.png` }],
     },
     twitter: { card: 'summary', title: m.ogTitle, description: m.description, images: [`${base()}/brand/miolove/miolove-album-logo.png`] },
@@ -59,12 +84,13 @@ export function mioloveIdeasMetadata(lang: L = 'it'): Metadata {
 
 /** schema.org graph of the guide: the article, its breadcrumb, the list of ideas and the FAQ (only text that is visible on the page). */
 export function mioloveIdeasStructuredData(lang: L = 'it') {
-  const d = DICT[lang].ideas
+  assertPublished('ideas', lang)
+  const d = dict(lang).ideas
   const url = ideasUrl(lang), orgId = `${base()}/#organization`
   return {
     '@context': 'https://schema.org',
     '@graph': [
-      { '@type': 'Article', '@id': `${url}#article`, headline: d.hero.titleA + ' ' + d.hero.titleB, description: d.meta.description, inLanguage: lang, mainEntityOfPage: url, author: { '@id': orgId }, publisher: { '@id': orgId } },
+      { '@type': 'Article', '@id': `${url}#article`, headline: d.hero.titleA + ' ' + d.hero.titleB, description: d.meta.description, inLanguage: LANG_META[lang].hreflang, mainEntityOfPage: url, author: { '@id': orgId }, publisher: { '@id': orgId } },
       { '@type': 'BreadcrumbList', itemListElement: [
         { '@type': 'ListItem', position: 1, name: d.nav.breadcrumbHome, item: homeUrl(lang) },
         { '@type': 'ListItem', position: 2, name: d.nav.breadcrumbIdeas, item: url },
@@ -77,19 +103,20 @@ export function mioloveIdeasStructuredData(lang: L = 'it') {
 
 /** schema.org graph: Organization + WebSite + SoftwareApplication with the two real offers. No aggregateRating / reviews: none exist. */
 export function mioloveStructuredData(lang: L = 'it') {
-  const m = DICT[lang].home.meta as { title: string; description: string }
+  assertPublished('home', lang)
+  const m = dict(lang).home.meta as { title: string; description: string }
   const orgId = `${base()}/#organization`, siteId = `${base()}/#website`
   return {
     '@context': 'https://schema.org',
     '@graph': [
       { '@type': 'Organization', '@id': orgId, name: 'MIOLOVE ALBUM', url: base(), logo: `${base()}/brand/miolove/miolove-album-logo.png` },
-      { '@type': 'WebSite', '@id': siteId, url: base(), name: 'MIOLOVE ALBUM', inLanguage: SEO_LANGUAGES, publisher: { '@id': orgId } },
+      { '@type': 'WebSite', '@id': siteId, url: base(), name: 'MIOLOVE ALBUM', inLanguage: hreflangs(), publisher: { '@id': orgId } },
       {
         '@type': 'SoftwareApplication', name: 'MIOLOVE ALBUM', url: base(), description: m.description, applicationCategory: 'LifestyleApplication',
-        operatingSystem: 'Web', inLanguage: SEO_LANGUAGES, publisher: { '@id': orgId },
+        operatingSystem: 'Web', inLanguage: hreflangs(), publisher: { '@id': orgId },
         offers: [
-          { '@type': 'Offer', name: DICT[lang].albumPlan.trialName, price: '0', priceCurrency: 'EUR', url: `${base()}/register` },
-          { '@type': 'Offer', name: DICT[lang].albumPlan.albumName, price: ALBUM_PRICING.current[currencyForLocale(lang)].toFixed(2), priceCurrency: currencyForLocale(lang).toUpperCase(), url: `${base()}/register` },
+          { '@type': 'Offer', name: dict(lang).albumPlan.trialName, price: '0', priceCurrency: 'EUR', url: `${base()}/register` },
+          { '@type': 'Offer', name: dict(lang).albumPlan.albumName, price: ALBUM_PRICING.current[currencyForLocale(lang)].toFixed(2), priceCurrency: currencyForLocale(lang).toUpperCase(), url: `${base()}/register` },
         ],
       },
     ],
@@ -98,8 +125,10 @@ export function mioloveStructuredData(lang: L = 'it') {
 
 /** robots.txt Disallow list of MIOLOVE (only /api/): pages that must stay out of the index use noindex instead and remain crawlable. Lives in indexing.ts. */
 export { MIOLOVE_DISALLOW } from './indexing'
-/** Public, indexable URLs of MIOLOVE (sitemap.xml). Login and sign-up are service pages (noindex): they are not listed. */
-export const miolovePublicUrls = (): string[] => [...SEO_LANGUAGES.map(homeUrl), ...SEO_LANGUAGES.map(ideasUrl), `${base()}/privacy`, `${base()}/terms`]
+/** Documents that exist once, whatever the visitor's language (one URL, no hreflang). */
+export const SINGLE_URL_PATHS = ['/privacy', '/terms'] as const
+/** Public, indexable URLs of MIOLOVE (sitemap.xml), generated from the page registry: published pages only, pages first (registry order), then the legal documents. Login and sign-up are service pages (noindex): they are not listed. */
+export const miolovePublicUrls = (): string[] => [...PAGE_IDS.flatMap((id) => publishedLangs(id).map((l) => pageUrl(id, l))), ...SINGLE_URL_PATHS.map((p) => `${base()}${p}`)]
 
 // ── Secondary pages ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 // Login, sign-up, password and e-mail pages are client components whose language is the visitor's (unknown to the server), so their title / description
@@ -137,7 +166,7 @@ export function mioloveLegalMetadata(kind: 'privacy' | 'terms'): Metadata {
     title: { absolute: m.title },
     description: m.description,
     alternates: { canonical: url },
-    openGraph: { type: 'website', url, siteName: 'MIOLOVE ALBUM', title: m.title, description: m.description, locale: OG_LOCALE.it, images: [{ url: `${base()}/brand/miolove/miolove-album-logo.png` }] },
+    openGraph: { type: 'website', url, siteName: 'MIOLOVE ALBUM', title: m.title, description: m.description, locale: LANG_META.it.og, images: [{ url: `${base()}/brand/miolove/miolove-album-logo.png` }] },
     twitter: { card: 'summary', title: m.title, description: m.description, images: [`${base()}/brand/miolove/miolove-album-logo.png`] },
     robots: { index: true, follow: true },
   }
