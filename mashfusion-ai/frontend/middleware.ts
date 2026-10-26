@@ -1,15 +1,16 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getPortalFromHostname, normalizeHost, PORTAL_CONFIG } from '@/lib/portal'
 import { ideasLangOfPath } from '@/lib/miolove/paths'
+import { mioloveRobotsHeader } from '@/lib/miolove/indexing'
 
 // MIOLOVE: its root is the public home (app/page.tsx picks the portal from the host); "/" no longer redirects to the sign-in.
 // IOMIXO and every non-portal host (localhost, hosted.app) keep the existing landing at "/".
 // www.miolovealbum.com is a pure alias: every path moves permanently to the canonical apex host (the only origin Firebase Auth, links and QR codes use).
 //
 // Private surfaces of MIOLOVE are never indexed: guest album pages, the TV screen, the owner's area and the auth action handler answer with
-// X-Robots-Tag: noindex (robots.txt alone cannot keep a linked URL out of a search index).
+// X-Robots-Tag: noindex (robots.txt alone cannot keep a linked URL out of a search index). Login, sign-up and the password / e-mail pages are noindex too
+// but stay crawlable. Which paths are which lives in lib/miolove/indexing.ts.
 const LANGS = ['it', 'en', 'fr', 'es']
-const PRIVATE_PREFIXES = ['/live/', '/booth/', '/screen/', '/remote/', '/sessions', '/onboarding', '/billing', '/settings', '/auth/']
 
 export function middleware(req: NextRequest) {
   const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host')
@@ -40,9 +41,10 @@ export function middleware(req: NextRequest) {
       if (path.replace(/\/+$/, '') !== '/idee') { const url = req.nextUrl.clone(); url.pathname = '/idee'; return NextResponse.rewrite(url, init) }
       return NextResponse.next(init)
     }
-    if (PRIVATE_PREFIXES.some((p) => path.startsWith(p))) {
+    const robotsTag = mioloveRobotsHeader(path)
+    if (robotsTag) {
       const res = NextResponse.next()
-      res.headers.set('X-Robots-Tag', 'noindex, nofollow')
+      res.headers.set('X-Robots-Tag', robotsTag)
       return res
     }
   }

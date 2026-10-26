@@ -86,7 +86,9 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
       assert.ok(await page.locator('[role="img"][aria-label="MIOLOVE ALBUM"]:visible').first().isVisible()); assert.equal(await page.locator('img[alt="IOMIXO Logo"]').count(), 0)
       assert.equal(await overflow(page), false, 'register overflow')
       const h = await head(page)
-      assert.equal(h.title, 'MIOLOVE ALBUM'); assert.equal(h.canonical, 'https://miolovealbum.com'); assert.equal(h.ogSite, 'MIOLOVE ALBUM'); assert.match(h.ogTitle ?? '', /MIOLOVE/); assert.equal(h.ogUrl, 'https://miolovealbum.com')
+      // sign-up is a noindex service page with its own title: no longer a "copy of the home" (no canonical / og:url pointing at it)
+      assert.equal(h.title, 'Crea il tuo account — MIOLOVE ALBUM'); assert.equal(h.canonical, null); assert.equal(h.ogSite, 'MIOLOVE ALBUM'); assert.match(h.ogTitle ?? '', /MIOLOVE/); assert.equal(h.ogUrl, null)
+      assert.equal(await page.locator('meta[name="robots"]').getAttribute('content'), 'noindex, follow'); assert.equal(await page.locator('meta[name="keywords"]').count(), 0)
       assert.match(h.description ?? '', /album|foto/i)
       assert.doesNotMatch(JSON.stringify(h), /IOMIXO/i, 'MIOLOVE metadata never mentions IOMIXO')
 

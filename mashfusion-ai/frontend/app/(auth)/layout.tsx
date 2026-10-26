@@ -2,11 +2,14 @@ import type { Metadata } from 'next'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { MioloveLanguageSwitcher } from '@/components/wedding/MioloveLanguageSwitcher'
 import { getRequestPortal } from '@/lib/portalServer'
+import { MIOLOVE_SERVICE_ROBOTS } from '@/lib/miolove/seo'
 
 export function generateMetadata(): Metadata {
   const { config } = getRequestPortal()
-  const name = config.id === 'miolove' ? config.brand : 'IOMIXO'
-  return { title: { template: `%s — ${name}`, default: name } }
+  const miolove = config.id === 'miolove'
+  const name = miolove ? config.brand : 'IOMIXO'
+  // MIOLOVE: sign-in / sign-up / password / e-mail pages are not for search engines (noindex, links still followed). IOMIXO: unchanged.
+  return { title: { template: `%s — ${name}`, default: name }, ...(miolove ? { robots: MIOLOVE_SERVICE_ROBOTS } : {}) }
 }
 
 // Each auth page manages its own full-screen layout.

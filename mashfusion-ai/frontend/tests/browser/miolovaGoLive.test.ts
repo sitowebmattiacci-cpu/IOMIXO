@@ -114,11 +114,22 @@ test('SEO1. metadata, hreflang, language URLs, structured data, robots, sitemap,
     // language URL: the FIRST html is already French
     const fr = await get('miolovealbum.com', '/fr'); assert.match(fr.body, /<html lang="fr"/); assert.match(fr.body, /Vos souvenirs/); assert.match(fr.body, /rel="canonical" href="https:\/\/miolovealbum\.com\/fr"/); assert.match(fr.body, /hrefLang="en" href="https:\/\/miolovealbum\.com\/en"/)
     // robots / sitemap
-    const rb = await get('miolovealbum.com', '/robots.txt'); assert.match(rb.body, /Disallow: \/live\//); assert.match(rb.body, /Sitemap: https:\/\/miolovealbum\.com\/sitemap\.xml/)
+    const rb = await get('miolovealbum.com', '/robots.txt'); assert.match(rb.body, /Sitemap: https:\/\/miolovealbum\.com\/sitemap\.xml/)
     const sm = await get('miolovealbum.com', '/sitemap.xml'); assert.match(sm.body, /miolovealbum\.com\/en/); assert.doesNotMatch(sm.body, /\/live\/|\/sessions/)
     // private surfaces: noindex
     for (const path of ['/live/abc', '/booth/abc', '/screen/abc', '/sessions', '/billing']) assert.match(String((await get('miolovealbum.com', path)).headers['x-robots-tag']), /noindex/, path)
-    assert.equal((await get('miolovealbum.com', '/login')).headers['x-robots-tag'], undefined)
+    // service pages and the owner's area: noindex via header + meta, crawlable (not in robots.txt), not in the sitemap, no canonical, no keywords tag
+    for (const path of ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email']) assert.equal((await get('miolovealbum.com', path)).headers['x-robots-tag'], 'noindex, follow', path)
+    for (const path of ['/dashboard', '/events', '/profile']) assert.equal((await get('miolovealbum.com', path)).headers['x-robots-tag'], 'noindex, nofollow', path)
+    // robots.txt never contradicts noindex: only /api/ is blocked, so the crawler can fetch every noindex page and read the header
+    assert.deepEqual(rb.body.match(/^Disallow:.*$/gm), ['Disallow: /api/'])
+    assert.doesNotMatch(sm.body, /\/login|\/register/); assert.match(sm.body, /miolovealbum\.com\/privacy/)
+    for (const path of ['/login', '/register', '/dashboard']) { const b = (await get('miolovealbum.com', path)).body; assert.doesNotMatch(b, /rel="canonical"/, `${path}: no canonical`); assert.match(b, /name="robots" content="noindex/, path); assert.doesNotMatch(b, /name="keywords"/, path) }
+    for (const path of ['/privacy', '/terms']) { const b = (await get('miolovealbum.com', path)).body; assert.match(b, new RegExp(`rel="canonical" href="https://miolovealbum\\.com${path}"`), path); assert.match(b, /name="robots" content="index, follow"/, path); assert.doesNotMatch(b, /name="keywords"/, path) }
+    assert.doesNotMatch((await get('miolovealbum.com', '/')).body, /name="keywords"/); assert.doesNotMatch((await get('miolovealbum.com', '/en/ideas')).body, /name="keywords"/)
+    // IOMIXO keeps exactly what it had: its canonical and keywords, no robots header on its own login / dashboard
+    const il = await get('iomixo.com', '/login'); assert.equal(il.headers['x-robots-tag'], undefined); assert.match(il.body, /rel="canonical" href="https:\/\/iomixo\.com"/); assert.match(il.body, /name="keywords"/)
+    assert.equal((await get('iomixo.com', '/dashboard')).headers['x-robots-tag'], undefined)
     // IOMIXO: its own landing, no sitemap entries other than root, open robots, no noindex header
     const io = await get('iomixo.com', '/'); assert.match(io.body, /data-portal="iomixo"|IOMIXO/); assert.doesNotMatch(io.body, /miolove-home/)
     const ir = await get('iomixo.com', '/robots.txt'); assert.doesNotMatch(ir.body, /Disallow: \/live/)

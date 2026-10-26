@@ -96,7 +96,49 @@ export function mioloveStructuredData(lang: L = 'it') {
   }
 }
 
-/** Paths of MIOLOVE that must never be crawled (robots.txt): the owner's area, guest album pages, the TV screen and the auth handlers. */
-export const MIOLOVE_DISALLOW = ['/live/', '/booth/', '/screen/', '/remote/', '/sessions', '/onboarding', '/billing', '/settings', '/auth/', '/api/']
-/** Public, indexable URLs of MIOLOVE (sitemap.xml). */
-export const miolovePublicUrls = (): string[] => [...SEO_LANGUAGES.map(homeUrl), ...SEO_LANGUAGES.map(ideasUrl), `${base()}/login`, `${base()}/register`, `${base()}/privacy`, `${base()}/terms`]
+/** robots.txt Disallow list of MIOLOVE (only /api/): pages that must stay out of the index use noindex instead and remain crawlable. Lives in indexing.ts. */
+export { MIOLOVE_DISALLOW } from './indexing'
+/** Public, indexable URLs of MIOLOVE (sitemap.xml). Login and sign-up are service pages (noindex): they are not listed. */
+export const miolovePublicUrls = (): string[] => [...SEO_LANGUAGES.map(homeUrl), ...SEO_LANGUAGES.map(ideasUrl), `${base()}/privacy`, `${base()}/terms`]
+
+// ── Secondary pages ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// Login, sign-up, password and e-mail pages are client components whose language is the visitor's (unknown to the server), so their title / description
+// are Italian, the language of the root. They are noindex (follow: the link back to the home still counts) and carry NO canonical: the root layout no longer
+// hands every page the home as canonical.
+const SERVICE_META = {
+  login: { title: 'Accedi', description: 'Accedi a MIOLOVE ALBUM per gestire i tuoi album, le foto degli invitati e lo slideshow dell’evento.' },
+  register: { title: 'Crea il tuo account', description: 'Crea il tuo account MIOLOVE ALBUM e prova gratis per 7 giorni: un album condiviso dove gli invitati caricano le foto con un QR code.' },
+  forgot: { title: 'Password dimenticata', description: 'Recupera l’accesso al tuo account MIOLOVE ALBUM: ti inviamo un’e-mail per scegliere una nuova password.' },
+  reset: { title: 'Scegli una nuova password', description: 'Scegli una nuova password per il tuo account MIOLOVE ALBUM.' },
+  verify: { title: 'Conferma la tua e-mail', description: 'Conferma l’indirizzo e-mail del tuo account MIOLOVE ALBUM.' },
+} as const
+export type MioloveServicePage = keyof typeof SERVICE_META
+
+/** Robots directive of the service pages: kept out of the index, links still followed. */
+export const MIOLOVE_SERVICE_ROBOTS = { index: false, follow: true } as const
+/** Robots directive of the private area. */
+export const MIOLOVE_PRIVATE_ROBOTS = { index: false, follow: false } as const
+
+/** Title (the auth layout appends " — MIOLOVE ALBUM") and description of a service page; the robots directive comes from the auth layout. */
+export function mioloveServiceMetadata(page: MioloveServicePage): Metadata {
+  const m = SERVICE_META[page]
+  return { title: m.title, description: m.description, robots: MIOLOVE_SERVICE_ROBOTS }
+}
+
+const LEGAL_META = {
+  privacy: { path: '/privacy', title: 'Informativa sulla privacy — MIOLOVE ALBUM', description: 'Come MIOLOVE ALBUM raccoglie, usa e protegge i dati dell’account e le foto degli album, e quali diritti hai sui tuoi dati (GDPR).' },
+  terms: { path: '/terms', title: 'Termini di servizio — MIOLOVE ALBUM', description: 'Le condizioni che regolano l’uso di MIOLOVE ALBUM: account, album, contenuti degli invitati, pagamento e responsabilità.' },
+} as const
+
+/** Privacy policy / terms: indexable, each with its own canonical (the document itself follows the visitor's language; there is one URL per document). */
+export function mioloveLegalMetadata(kind: 'privacy' | 'terms'): Metadata {
+  const m = LEGAL_META[kind], url = `${base()}${m.path}`
+  return {
+    title: { absolute: m.title },
+    description: m.description,
+    alternates: { canonical: url },
+    openGraph: { type: 'website', url, siteName: 'MIOLOVE ALBUM', title: m.title, description: m.description, locale: OG_LOCALE.it, images: [{ url: `${base()}/brand/miolove/miolove-album-logo.png` }] },
+    twitter: { card: 'summary', title: m.title, description: m.description, images: [`${base()}/brand/miolove/miolove-album-logo.png`] },
+    robots: { index: true, follow: true },
+  }
+}

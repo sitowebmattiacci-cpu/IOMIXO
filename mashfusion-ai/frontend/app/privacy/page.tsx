@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 import { LegalDocument } from '@/components/legal/LegalDocument'
 import { getRequestPortal } from '@/lib/portalServer'
+import { mioloveLegalMetadata } from '@/lib/miolove/seo'
 
 export function generateMetadata(): Metadata {
   const { config } = getRequestPortal()
-  return config.id === 'miolove'
-    ? { title: `Privacy Policy — ${config.brand}`, description: `How ${config.brand} collects, processes, and protects your data.` }
+  return config.id === 'miolove' ? mioloveLegalMetadata('privacy')
     : { title: 'Privacy Policy', description: 'How IOMIXO collects, processes, and protects your data.' }
 }
 

@@ -3,6 +3,14 @@ import { DashboardRoleGuard } from '@/components/auth/RoleGuard'
 import { MailLocaleSync } from '@/components/miolove/MailLocaleSync'
 import { VerifyEmailNotice } from '@/components/miolove/VerifyEmailNotice'
 import { Sidebar } from '@/components/layout/Sidebar'
+import type { Metadata } from 'next'
+import { getRequestPortal } from '@/lib/portalServer'
+import { MIOLOVE_PRIVATE_ROBOTS } from '@/lib/miolove/seo'
+
+// MIOLOVE: the owner's area is never indexed (the middleware also sends X-Robots-Tag). IOMIXO: unchanged.
+export function generateMetadata(): Metadata {
+  return getRequestPortal().config.id === 'miolove' ? { robots: MIOLOVE_PRIVATE_ROBOTS } : {}
+}
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (

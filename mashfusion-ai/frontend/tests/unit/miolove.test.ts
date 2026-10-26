@@ -12,6 +12,7 @@ import { albumStatus } from '../../lib/miolove/albumStatus'
 import { DEMO_REVIEWS, reviewsToShow } from '../../lib/miolove/reviews'
 import { asOccasionType, occasionText } from '../../lib/occasion'
 import { mioloveHomeMetadata, mioloveStructuredData, MIOLOVE_DISALLOW, miolovePublicUrls } from '../../lib/miolove/seo'
+import { mioloveRobotsHeader } from '../../lib/miolove/indexing'
 import { screenShowsPhotos, composeScreenPayload } from '../../lib/events/screenModel'
 
 const D: Record<string, any> = { it, en, fr, es }
@@ -110,7 +111,8 @@ test('SEO. title, description, canonical, hreflang for IT/EN/FR/ES, OpenGraph, T
   const g = mioloveStructuredData('it')['@graph']
   assert.deepEqual(g.map((x: any) => x['@type']), ['Organization', 'WebSite', 'SoftwareApplication'])
   assert.deepEqual(g[2].offers.map((o: any) => o.price), ['0', '19.99']); assert.doesNotMatch(JSON.stringify(g), /aggregateRating|review/i)
-  for (const p of ['/live/', '/booth/', '/screen/', '/sessions', '/billing']) assert.ok(MIOLOVE_DISALLOW.includes(p))
+  for (const p of ['/live/x', '/booth/x', '/screen/x', '/sessions', '/billing']) assert.match(String(mioloveRobotsHeader(p)), /noindex/, `${p} is noindex`)
+  assert.deepEqual(MIOLOVE_DISALLOW, ['/api/'], 'noindex pages stay crawlable: robots.txt blocks only the API')
   assert.ok(miolovePublicUrls().every((u) => !/\/(live|booth|screen|sessions)\//.test(u)), 'no album in the sitemap')
 })
 
