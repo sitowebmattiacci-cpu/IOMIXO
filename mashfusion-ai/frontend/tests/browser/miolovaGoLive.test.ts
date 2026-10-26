@@ -137,6 +137,41 @@ test('SEO1. metadata, hreflang, language URLs, structured data, robots, sitemap,
   } finally { await ctx.close() }
 })
 
+test('SEO2. album pages and the auth handler: the meta robots matches the X-Robots-Tag (noindex, nofollow); IOMIXO keeps its own', async () => {
+  for (const path of ['/live/abc', '/booth/abc', '/screen/abc', '/remote/abc', '/auth/action']) {
+    const r = await get('miolovealbum.com', path)
+    assert.equal(r.headers['x-robots-tag'], 'noindex, nofollow', path)
+    assert.deepEqual(r.body.match(/<meta name="robots" content="[^"]*"\/>/g), ['<meta name="robots" content="noindex, nofollow"/>'], `${path}: one robots meta, and it agrees with the header`)
+  }
+  for (const path of ['/live/abc', '/screen/abc', '/auth/action']) {
+    const r = await get('iomixo.com', path)
+    assert.equal(r.headers['x-robots-tag'], undefined, `IOMIXO ${path}`); assert.match(r.body, /<meta name="robots" content="index, follow"\/>/, `IOMIXO ${path} unchanged`)
+  }
+})
+
+for (const w of [390, 1280]) {
+  test(`PERF1. home @${w}: optimised AVIF/WebP images only (no demo PNG downloaded), light image weight, WebP logo, no overflow`, async () => {
+    const ctx = await browser.newContext({ viewport: { width: w, height: 844 }, deviceScaleFactor: 2 }); const page = await ctx.newPage()
+    const imgs: { url: string; type: string; bytes: number }[] = []
+    page.on('response', async (res) => { const ct = res.headers()['content-type'] ?? ''; if (ct.startsWith('image/')) imgs.push({ url: res.url(), type: ct, bytes: (await res.body().catch(() => Buffer.alloc(0))).length }) })
+    try {
+      await page.goto(`${M()}/`, { waitUntil: 'networkidle', timeout: 120_000 })
+      await page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 500) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 120)) } window.scrollTo(0, 0) })   // reveal every lazy image
+      await page.waitForTimeout(1500)
+      const demo = imgs.filter((i) => i.url.includes('/demo/miolove/')), total = imgs.reduce((a, i) => a + i.bytes, 0)
+      assert.ok(demo.length > 0, 'the demo photos load')
+      assert.ok(demo.every((i) => /\/demo\/miolove\/opt\/.+\.(avif|webp)$/.test(new URL(i.url).pathname)), `only optimised copies: ${demo.map((i) => i.url).join(', ')}`)
+      assert.ok(imgs.every((i) => !/\.png(\?|$)/.test(i.url)), 'no PNG at all on the home')
+      assert.ok(total < 1_200_000, `image weight ${(total / 1024).toFixed(0)} KB (was ~11 MB)`)
+      const logo = await page.locator('[role="img"][aria-label="MIOLOVE ALBUM"] img').first().evaluate((e: HTMLImageElement) => ({ src: e.currentSrc, nw: e.naturalWidth, ok: e.complete && e.naturalWidth > 0 }))
+      assert.match(logo.src, /\/brand\/miolove\/opt\/miolove-album-logo(-636)?\.webp$/); assert.ok(logo.ok, 'logo decoded')
+      const broken = await page.evaluate(() => Array.from(document.images).filter((i) => i.complete && i.naturalWidth === 0).map((i) => i.currentSrc || i.src))
+      assert.deepEqual(broken, [], 'no broken image')
+      assert.equal(await overflow(page), false, 'overflow')
+    } finally { await ctx.close() }
+  })
+}
+
 // ── 2. Google login ─────────────────────────────────────────────────────────────────────────────
 const GOOGLE: Record<L, string> = { it: 'Continua con Google', en: 'Continue with Google', fr: 'Continuer avec Google', es: 'Continuar con Google' }
 for (const route of ['login', 'register']) {

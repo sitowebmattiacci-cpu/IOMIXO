@@ -25,6 +25,16 @@ const nextConfig = {
           { key: 'Permissions-Policy',         value: 'camera=(self), microphone=(), geolocation=()' },
         ],
       },
+      // MIOLOVE home images and logo: pre-generated static copies (scripts/optimize-miolove-images.mjs), served from paths that only MIOLOVE pages use. They are
+      // cacheable by the browser and the CDN; to change one, regenerate it under a new name (or wait out the week). Nothing else gets a cache header here.
+      {
+        source: '/demo/miolove/opt/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=604800, stale-while-revalidate=2592000' }],
+      },
+      {
+        source: '/brand/miolove/opt/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=604800, stale-while-revalidate=2592000' }],
+      },
       // The owner's dashboard previews embed the REAL guest page and TV screen (same origin only: other sites still cannot frame them).
       {
         source: '/live/:slug',

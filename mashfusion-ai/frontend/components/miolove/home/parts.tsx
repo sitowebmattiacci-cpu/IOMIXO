@@ -1,17 +1,26 @@
 'use client'
 import type { ReactNode } from 'react'
-import Image from 'next/image'
 import { Camera } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
-import { DEMO_EVENT, type DemoPhoto } from '@/lib/miolove/demoMedia'
+import { DEMO_EVENT, demoFallbackSrc, demoSrcSet, type DemoPhoto } from '@/lib/miolove/demoMedia'
 import { cn } from '@/lib/utils'
 
-/** A demo photograph (see lib/miolove/demoMedia.ts), optimised by next/image. `sizes` tells the browser how wide it is drawn, so it never downloads more than needed. */
-export function DemoPhotoImg({ photo, className, sizes, priority = false }: { photo: DemoPhoto; className?: string; sizes: string; priority?: boolean }) {
+/**
+ * A demo photograph (see lib/miolove/demoMedia.ts): AVIF, then WebP, from the pre-generated copies (the Next.js image optimizer is not available on App
+ * Hosting). `sizes` tells the browser how wide it is drawn, so it never downloads more than needed. Below the fold it is lazy; `eager` loads it at once
+ * (normal priority), `priority` also marks it high priority: only for an image that is the largest thing on screen.
+ */
+export function DemoPhotoImg({ photo, className, sizes, priority = false, eager = false }: { photo: DemoPhoto; className?: string; sizes: string; priority?: boolean; eager?: boolean }) {
   const { t } = useI18n()
   return (
-    <Image src={photo.src} width={photo.width} height={photo.height} alt={t(photo.altKey)} sizes={sizes} priority={priority} draggable={false} quality={80}
-      style={{ objectPosition: photo.focus }} className={cn('select-none object-cover', className)} />
+    <picture>
+      <source type="image/avif" srcSet={demoSrcSet(photo, 'avif')} sizes={sizes} />
+      <source type="image/webp" srcSet={demoSrcSet(photo, 'webp')} sizes={sizes} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={demoFallbackSrc(photo)} width={photo.width} height={photo.height} alt={t(photo.altKey)} draggable={false} decoding="async"
+        loading={priority || eager ? 'eager' : 'lazy'} {...(priority ? { fetchPriority: 'high' as const } : {})}
+        style={{ objectPosition: photo.focus }} className={cn('select-none object-cover', className)} />
+    </picture>
   )
 }
 
@@ -37,11 +46,11 @@ export function Section({ id, children, tone = 'plain', className }: { id?: stri
  * The guest's phone for the sample event: cover photo, event title + date, the upload button and a strip of the gallery. Same structure as the real
  * guest page (title, date, one clear action), built from the demo photos.
  */
-export function PhoneMock({ title, date, cta, className, photos = DEMO_EVENT.photos }: { title: string; date: string; cta: string; className?: string; photos?: readonly DemoPhoto[] }) {
+export function PhoneMock({ title, date, cta, className, photos = DEMO_EVENT.photos, eager = false }: { title: string; date: string; cta: string; className?: string; photos?: readonly DemoPhoto[]; eager?: boolean }) {
   return (
     <div className={cn('relative aspect-[9/18.5] w-full overflow-hidden rounded-[34px] border-[6px] border-wd-ink bg-wd-bg shadow-[0_30px_60px_rgba(240,106,155,0.28)]', className)}>
       <div className="relative h-[56%] w-full">
-        <DemoPhotoImg photo={photos[0]} className="h-full w-full" sizes="250px" priority />
+        <DemoPhotoImg photo={photos[0]} className="h-full w-full" sizes="250px" eager={eager} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
         <div className="absolute left-1/2 top-2 h-1.5 w-12 -translate-x-1/2 rounded-full bg-white/60" />
       </div>

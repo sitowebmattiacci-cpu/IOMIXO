@@ -1,6 +1,7 @@
 // Demo photographs of the MIOLOVE home (hero, phone, screen, album, occasions). One manifest: replacing a picture means dropping a file in
-// public/demo/miolove/ and editing its entry here. The files are the SOURCE images (PNG, 1086×1448 portrait; party-friends 1448×1086 landscape): they are never re-encoded; next/image serves
-// resized WebP/AVIF versions to the browser.
+// public/demo/miolove/, editing its entry here and running scripts/optimize-miolove-images.mjs. The files are the SOURCE images (PNG, 1086×1448 portrait;
+// party-friends 1448×1086 landscape): they are never sent to the browser. App Hosting does not run the Next.js image optimizer (/_next/image answers 404),
+// so the browser gets the pre-generated AVIF / WebP copies in public/demo/miolove/opt/ (see demoSrcSet below).
 
 export type DemoOccasion = 'wedding' | 'birthday' | 'baptism' | 'other'
 export interface DemoPhoto {
@@ -12,6 +13,15 @@ export interface DemoPhoto {
   /** CSS object-position used when the picture is cropped (landscape screen, square thumbnails): keeps the faces in frame. */
   focus?: string
 }
+
+/** Widths of the generated copies (keep in sync with WIDTHS in scripts/optimize-miolove-images.mjs); a photo wider than the last one also has its own native width. */
+export const DEMO_WIDTHS = [240, 360, 540, 828, 1086] as const
+const demoWidths = (p: DemoPhoto): number[] => (p.width > DEMO_WIDTHS[DEMO_WIDTHS.length - 1] ? [...DEMO_WIDTHS, p.width] : [...DEMO_WIDTHS])
+const optStem = (p: DemoPhoto): string => p.src.replace('/demo/miolove/', '/demo/miolove/opt/').replace(/\.png$/, '')
+/** `srcset` of the optimised copies of a photo in one format. */
+export const demoSrcSet = (p: DemoPhoto, ext: 'avif' | 'webp'): string => demoWidths(p).map((w) => `${optStem(p)}-${w}.${ext} ${w}w`).join(', ')
+/** `src` of the plain <img> (browsers without srcset / picture support): the 828 px WebP. */
+export const demoFallbackSrc = (p: DemoPhoto): string => `${optStem(p)}-828.webp`
 
 const P = (name: string, altKey: string, focus = '50% 40%', [width, height]: readonly [number, number] = [1086, 1448]): DemoPhoto => ({ src: `/demo/miolove/${name}.png`, width, height, altKey: `home.demoAlt.${altKey}`, focus })
 

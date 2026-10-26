@@ -11,7 +11,7 @@ import toast from 'react-hot-toast'
 import { live, liveDedications, liveGames, livePhotos, type LiveRequestStatus } from '@/lib/api'
 import { eventIdForSlug } from '@/lib/events/photoService'
 import { resolveOwnerEvent } from '@/lib/events/ownerService'
-import { AuthGate } from '@/lib/auth/AuthProvider'
+import { AuthGate } from '@/lib/auth/AuthGate'
 import { DjOnly } from '@/components/auth/RoleGuard'
 import {
   RemoteShell, RemoteHeader, RemoteTab, RemoteCard, RemoteButton, RemoteStatus, RemoteEmpty, RemoteAccordion,

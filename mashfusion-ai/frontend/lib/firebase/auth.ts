@@ -6,7 +6,7 @@ import {
   type User, type Unsubscribe,
 } from 'firebase/auth'
 import { httpsCallable } from 'firebase/functions'
-import { getFirebaseAuth, getFirebaseFunctions } from './client'
+import { getFirebaseAuth, getFirebaseFunctions } from './app'
 import { getPortalFromHostname, PORTAL_CONFIG } from '../portal'
 
 /**

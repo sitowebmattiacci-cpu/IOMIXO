@@ -270,7 +270,7 @@ export function HeroVisual() {
       <div className="absolute left-1/2 top-0 w-[210px] -translate-x-1/2 sm:w-[250px]">
         <motion.div data-hero-in style={{ ...layerStyle(phone), transformPerspective: perspective }}>
           <motion.div ref={phoneEl} data-hero-in style={{ ...phoneF.style, transformPerspective: perspective }}>
-            <PhoneMock title={t(DEMO_EVENT.titleKey)} date={formatWeddingGuestDate(DEMO_EVENT.date, locale) ?? ''} cta={t('home.preview.cta')} />
+            <PhoneMock title={t(DEMO_EVENT.titleKey)} date={formatWeddingGuestDate(DEMO_EVENT.date, locale) ?? ''} cta={t('home.preview.cta')} eager />
           </motion.div>
         </motion.div>
       </div>

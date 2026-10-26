@@ -1,4 +1,4 @@
-import { AuthGate } from '@/lib/auth/AuthProvider'
+import { AuthGate } from '@/lib/auth/AuthGate'
 import { DashboardRoleGuard } from '@/components/auth/RoleGuard'
 import { MailLocaleSync } from '@/components/miolove/MailLocaleSync'
 import { VerifyEmailNotice } from '@/components/miolove/VerifyEmailNotice'

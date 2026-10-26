@@ -308,7 +308,7 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
       // MIOLOVE logo: the transparent asset, never the ivory canvas that shows as a box on the tinted page
       await page.goto(`${M()}/register`, { waitUntil: 'networkidle', timeout: 120_000 })
       const logoSrc = await page.locator('[role="img"][aria-label="MIOLOVE ALBUM"]:visible img').first().getAttribute('src')
-      assert.match(logoSrc ?? '', /miolove-album-logo\.png/); assert.doesNotMatch(logoSrc ?? '', /on-light|on-dark/)
+      assert.match(logoSrc ?? '', /miolove-album-logo\.(png|webp)/); assert.doesNotMatch(logoSrc ?? '', /on-light|on-dark/)
       assert.equal(await overflow(page), false, 'register overflow')
 
       await signIn(page, M(), couple.email); await page.waitForURL(/\/sessions/, { timeout: 60_000 })

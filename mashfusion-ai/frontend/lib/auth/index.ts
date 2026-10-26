@@ -2,8 +2,7 @@ import * as fb from '@/lib/firebase/auth'
 import { initAccountProfile } from '@/lib/users/userService'
 import type { AccountType } from '@/lib/firebase/models'
 
-/** Single entry point for authentication used by pages: Firebase Auth is the only provider. */
-export const authProvider = () => 'firebase' as const
+export { authProvider } from './provider'
 
 export const authErrorMessage = (err: unknown, _fallback: string) => fb.mapAuthError(err)
 

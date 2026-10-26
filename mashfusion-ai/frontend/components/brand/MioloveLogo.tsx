@@ -1,13 +1,13 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { WEDDING_BRAND_LOGO, WEDDING_BRAND_LOGO_CANVAS, WEDDING_BRAND_LOGO_CROP, WEDDING_BRAND_NAME } from '@/lib/brand/wedding'
+import { WEDDING_BRAND_LOGO_CROP, WEDDING_BRAND_LOGO_OPT, WEDDING_BRAND_NAME } from '@/lib/brand/wedding'
 import { cn } from '@/lib/utils'
 import { useEventBrandName, useWhiteLabel } from './eventBrandContext'
 
 /** Official MIOLOVE ALBUM logo, never stretched (height driven, width auto). Falls back to the plain brand name if the asset is missing. */
 export function MioloveLogo({ height = 32, variant = 'default', className }: {
   height?: number
-  variant?: keyof typeof WEDDING_BRAND_LOGO
+  variant?: keyof typeof WEDDING_BRAND_LOGO_OPT
   className?: string
 }) {
   const [failed, setFailed] = useState(false)
@@ -16,7 +16,7 @@ export function MioloveLogo({ height = 32, variant = 'default', className }: {
   }
   const crop = WEDDING_BRAND_LOGO_CROP[variant]
   const width = (height * crop.w) / crop.h
-  const scale = width / crop.w
+  const opt = WEDDING_BRAND_LOGO_OPT[variant]
   return (
     <span
       role="img"
@@ -25,18 +25,15 @@ export function MioloveLogo({ height = 32, variant = 'default', className }: {
       style={{ height, width, aspectRatio: `${crop.w} / ${crop.h}` }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
+      {/* The optimised copy is already cropped to the logo area (same aspect ratio as this box), so it simply fills it. */}
       <img
-        src={WEDDING_BRAND_LOGO[variant]}
+        src={`${opt}.webp`}
+        srcSet={`${opt}-636.webp 636w, ${opt}.webp 1060w`}
+        sizes={`${Math.round(width)}px`}
         alt=""
         onError={() => setFailed(true)}
         draggable={false}
-        className="pointer-events-none absolute max-w-none select-none"
-        style={{
-          width: WEDDING_BRAND_LOGO_CANVAS * scale,
-          height: WEDDING_BRAND_LOGO_CANVAS * scale,
-          left: -crop.x * scale,
-          top: -crop.y * scale,
-        }}
+        className="pointer-events-none absolute inset-0 h-full w-full select-none"
       />
     </span>
   )
