@@ -1,9 +1,6 @@
 // SEO of the MIOLOVE public home: metadata, hreflang alternates and structured data. Pure module (no React / next imports besides types): unit-tested.
 import type { Metadata } from 'next'
-import it from '@/locales/miolove/it.json'
-import en from '@/locales/miolove/en.json'
-import fr from '@/locales/miolove/fr.json'
-import es from '@/locales/miolove/es.json'
+import { MIOLOVE_FULL } from './fullMessages'
 import { PORTAL_CONFIG } from '@/lib/portal'
 import { currencyForLocale } from '../pricing'
 import { ALBUM_PRICING } from './plans'
@@ -14,7 +11,7 @@ import { PAGE_IDS, isPublished, pagePath, publishedLangs, type PageId } from './
 type L = MioloveLang
 // Dictionaries read at build / request time by the SERVER (metadata, structured data): this module is imported by server routes only, never by a client
 // component, so these files stay out of the browser bundle. A language is added here together with its files, when it goes live (see langs.ts).
-const DICT: Partial<Record<L, any>> = { it, en, fr, es }
+const DICT: Partial<Record<L, any>> = MIOLOVE_FULL
 const dict = (lang: L): any => {
   const d = DICT[lang]
   if (!d) throw new Error(`MIOLOVE: no dictionary for "${lang}" (language not published)`)
@@ -125,14 +122,14 @@ export function mioloveStructuredData(lang: L = 'it') {
 
 /** robots.txt Disallow list of MIOLOVE (only /api/): pages that must stay out of the index use noindex instead and remain crawlable. Lives in indexing.ts. */
 export { MIOLOVE_DISALLOW } from './indexing'
-/** Documents that exist once, whatever the visitor's language (one URL, no hreflang). */
-export const SINGLE_URL_PATHS = ['/privacy', '/terms'] as const
+export { SINGLE_URL_PATHS } from './indexing'
+import { SINGLE_URL_PATHS } from './indexing'
 /** Public, indexable URLs of MIOLOVE (sitemap.xml), generated from the page registry: published pages only, pages first (registry order), then the legal documents. Login and sign-up are service pages (noindex): they are not listed. */
 export const miolovePublicUrls = (): string[] => [...PAGE_IDS.flatMap((id) => publishedLangs(id).map((l) => pageUrl(id, l))), ...SINGLE_URL_PATHS.map((p) => `${base()}${p}`)]
 
 // ── Secondary pages ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 // Login, sign-up, password and e-mail pages are client components whose language is the visitor's (unknown to the server), so their title / description
-// are Italian, the language of the root. They are noindex (follow: the link back to the home still counts) and carry NO canonical: the root layout no longer
+// follow the language the visitor last chose (server-readable cookie), Italian by default. They are noindex (follow: the link back to the home still counts) and carry NO canonical: the root layout no longer
 // hands every page the home as canonical.
 const SERVICE_META = {
   login: { title: 'Accedi', description: 'Accedi a MIOLOVE ALBUM per gestire i tuoi album, le foto degli invitati e lo slideshow dell’evento.' },
@@ -149,8 +146,9 @@ export const MIOLOVE_SERVICE_ROBOTS = { index: false, follow: true } as const
 export const MIOLOVE_PRIVATE_ROBOTS = { index: false, follow: false } as const
 
 /** Title (the auth layout appends " — MIOLOVE ALBUM") and description of a service page; the robots directive comes from the auth layout. */
-export function mioloveServiceMetadata(page: MioloveServicePage): Metadata {
-  const m = SERVICE_META[page]
+export function mioloveServiceMetadata(page: MioloveServicePage, lang: L = 'it'): Metadata {
+  // The visitor's language (cookie) picks the wording; Italian constants are the fallback. Still noindex, no canonical, not in the sitemap.
+  const m: { title: string; description: string } = DICT[lang]?.servicePages?.[page] ?? SERVICE_META[page]
   return { title: m.title, description: m.description, robots: MIOLOVE_SERVICE_ROBOTS }
 }
 

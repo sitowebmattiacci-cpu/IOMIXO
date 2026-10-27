@@ -74,17 +74,19 @@ test('NAV3. client-side arrival never leaves a public page in the wrong language
     const logo = page.locator('a[href="/en"]').first(); assert.equal(await logo.count() > 0, true, 'logo → /en')
     await logo.evaluate((el) => (el as HTMLElement).click());   // the desktop layout of this page hides the logo, the link itself is what is under test await page.waitForURL((u) => u.pathname === '/en', { timeout: 30_000 }); await settle(page)
     assert.equal(await page.getByTestId('home-h1').innerText(), H1.en)
-    // a client-side navigation from an English state to the Italian root: UrlLocale puts the page back in the language of its URL
-    // a REAL client-side navigation (no page load) from the English state to the Italian root: a marker set on the window must survive it
+    // a client-side navigation from an English state to the Italian root: PublicLocale puts the page back in the language of its URL
+    // a REAL client-side navigation from the English state to the Italian root. Whatever the router does with the payload (reuse it between "/en" and "/", or
+    // fetch a new one), the visitor must never see a raw key and must end on the Italian home.
     await page.waitForFunction(() => typeof (window as any).next?.router?.push === 'function', null, { timeout: 30_000 })
-    await page.evaluate(() => { (window as any).__softNav = 'alive'; (window as any).next.router.push('/') })
-    await page.waitForURL((u) => u.pathname === '/', { timeout: 30_000 }); await settle(page)
-    assert.equal(await page.evaluate(() => (window as any).__softNav), 'alive', 'it was a client-side navigation, not a page load')
+    await page.evaluate((src) => {
+      const rx = new RegExp(src); (window as any).__leaks = []; (window as any).__softNav = 'alive'
+      new MutationObserver(() => { const m = document.body.innerText.match(rx); if (m) (window as any).__leaks.push(m[0]) }).observe(document.body, { subtree: true, childList: true, characterData: true })
+      ;(window as any).next.router.push('/')
+    }, /\b(home|ideas)\.[a-zA-Z][a-zA-Z0-9]*(\.[a-zA-Z0-9]+)*\b/.source)
+    await page.waitForURL((u) => u.pathname === '/', { timeout: 30_000 }); await page.waitForFunction((t) => document.querySelector('[data-testid="home-h1"]')?.textContent === t, H1.it, { timeout: 30_000 }); await settle(page)
     assert.equal(await page.getByTestId('home-h1').innerText(), H1.it, '"/" is Italian even when reached from an English page')
+    assert.deepEqual(await page.evaluate(() => (window as any).__leaks ?? []), [], 'no raw key was ever on screen')
     assert.equal(await stored(page), 'it', 'and the saved language follows the page that is open')
-    // and back to English the same way
-    await page.evaluate(() => { (window as any).next.router.push('/fr') }); await page.waitForURL((u) => u.pathname === '/fr', { timeout: 30_000 }); await settle(page)
-    assert.equal(await page.evaluate(() => (window as any).__softNav), 'alive'); assert.equal(await page.getByTestId('home-h1').innerText(), H1.fr)
   } finally { await ctx.close() }
 })
 

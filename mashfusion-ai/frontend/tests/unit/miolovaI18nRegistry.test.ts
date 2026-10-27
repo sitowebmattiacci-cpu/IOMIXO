@@ -7,11 +7,14 @@ import { middleware } from '../../middleware'
 import { DEFAULT_LANG, LANG_META, LIVE_LANGS, MIOLOVE_LANGS, isLiveLang, type MioloveLang } from '../../lib/miolove/langs'
 import { PAGES, PAGE_IDS, plannedPagePath, plannedPaths, publishedLangs, resolvePublicPath, switchOptions, switchTarget, type PageDef, type PageId } from '../../lib/miolove/pages'
 import { HOME_PATH, IDEAS_PATH, homePath, ideasPath } from '../../lib/miolove/paths'
-import { hasMessages, loadMessages, makeT } from '../../lib/miolove/messages'
+import { PUBLIC_ONLY_NAMESPACES, SERVER_ONLY_NAMESPACES, hasMessages, loadCoreMessages, loadMessages, makeT } from '../../lib/miolove/messages'
 import { MIOLOVE_PRIVATE_PREFIXES, MIOLOVE_SERVICE_PATHS, mioloveRobotsHeader } from '../../lib/miolove/indexing'
-import { SEO_LANGUAGES, homeUrl, ideasUrl, mioloveHomeMetadata, mioloveIdeasMetadata, mioloveIdeasStructuredData, mioloveStructuredData, miolovePublicUrls, pageAlternates } from '../../lib/miolove/seo'
-import { LOCALES } from '../../lib/locales'
-import it from '../../locales/miolove/it.json'
+import { mioloveServiceMetadata, SEO_LANGUAGES, homeUrl, ideasUrl, mioloveHomeMetadata, mioloveIdeasMetadata, mioloveIdeasStructuredData, mioloveStructuredData, miolovePublicUrls, pageAlternates } from '../../lib/miolove/seo'
+import { LOCALES, type Locale } from '../../lib/locales'
+import { MIOLOVE_LOCALES, intlLocale, isSharedLocale, type MioloveLocale } from '../../lib/miolove/locale'
+import { localeFromAcceptLanguage } from '../../lib/miolove/requestLang'
+import { CORE_FILES, MIOLOVE_FULL } from '../../lib/miolove/fullMessages'
+const it = MIOLOVE_FULL.it
 
 const fe = join(__dirname, '..', '..')
 const NEW_LANGS: MioloveLang[] = ['de', 'pt-BR', 'pt-PT', 'nl', 'pl', 'el', 'ja', 'ko']
@@ -204,7 +207,7 @@ test('I18N-DICT-1. every published language has a registered, complete dictionar
 
 test('I18N-DICT-2. the completeness check really catches an unfinished language (a copy of the Italian file, a missing key, a lost placeholder)', () => {
   assert.ok(dictionaryProblems(it, it).length > 100, 'an untranslated copy is refused')
-  const en = JSON.parse(readFileSync(join(fe, 'locales/miolove/en.json'), 'utf8'))
+  const en = JSON.parse(JSON.stringify(MIOLOVE_FULL.en))
   assert.deepEqual(dictionaryProblems(it, en), [])
   const broken = JSON.parse(JSON.stringify(en)); delete broken.home.meta.title
   assert.deepEqual(dictionaryProblems(it, broken), ['missing home.meta.title'])
@@ -234,7 +237,10 @@ test('I18N-BUNDLE-1. no source file loads a dictionary of a draft language; the 
   const draftDict = new RegExp(`locales/miolove/(${NEW_LANGS.join('|')})[/.']`, 'i')
   for (const f of files) assert.ok(!draftDict.test(readFileSync(f, 'utf8')), `${f} references a draft dictionary`)
   const importers = files.filter((f) => /from '@\/locales\/miolove\/|import\('@\/locales\/miolove\//.test(readFileSync(f, 'utf8'))).map((f) => f.slice(fe.length + 1)).sort()
-  assert.deepEqual(importers, ['lib/i18n.tsx', 'lib/miolove/messages.ts', 'lib/miolove/seo.ts'], 'who may read the MIOLOVE dictionaries')
+  assert.deepEqual(importers, ['lib/i18n.tsx', 'lib/miolove/fullMessages.ts', 'lib/miolove/messages.ts'], 'who may read the MIOLOVE dictionaries')
+  const publicImporters = files.filter((f) => /locales\/miolove\/public\//.test(readFileSync(f, 'utf8'))).map((f) => f.slice(fe.length + 1)).sort()
+  assert.deepEqual(publicImporters, ['lib/miolove/fullMessages.ts', 'lib/miolove/messages.ts'], 'the public-page texts are read by server modules only')
+  assert.ok(/from '@\/locales\/miolove\/(it|en|es|fr)\.json'/.test(readFileSync(join(fe, 'lib/i18n.tsx'), 'utf8')) && !readFileSync(join(fe, 'lib/i18n.tsx'), 'utf8').includes('miolove/public'), 'the provider bundles the core files only')
 })
 
 test('I18N-BUNDLE-2. server-only modules (SEO, messages) are never imported by a client component; the edge modules import no dictionary', () => {
@@ -242,7 +248,7 @@ test('I18N-BUNDLE-2. server-only modules (SEO, messages) are never imported by a
   for (const f of files) {
     const src = readFileSync(f, 'utf8')
     if (!/^['"]use client['"]/m.test(src.split('\n').slice(0, 3).join('\n'))) continue
-    assert.ok(!/miolove\/(seo|messages)'/.test(src), `${f.slice(fe.length + 1)} is a client component importing a server module`)
+    assert.ok(!/miolove\/(seo|messages|fullMessages|publicTexts)'/.test(src), `${f.slice(fe.length + 1)} is a client component importing a server module`)
   }
   for (const f of ['middleware.ts', 'lib/miolove/langs.ts', 'lib/miolove/pages.ts', 'lib/miolove/paths.ts', 'lib/miolove/indexing.ts']) {
     assert.ok(!/\.json'/.test(readFileSync(join(fe, f), 'utf8')), `${f} must stay JSON-free (edge size)`)
@@ -286,4 +292,61 @@ test('SWITCH-3. the shared auth / legal pages go home through HomeLink (IOMIXO k
   const home = readFileSync(join(fe, 'components/portal/HomeLink.tsx'), 'utf8')
   assert.ok(home.includes('<Link href="/" {...props} />'), 'non-MIOLOVE hosts: exactly the old link')
   for (const f of ['components/miolove/home/MioloveHome.tsx', 'components/miolove/ideas/MioloveIdeas.tsx']) assert.ok(readFileSync(join(fe, f), 'utf8').includes('<UrlLocale />'), `${f} must enforce the URL language`)
+})
+
+// ── Phase B: language per request, service-page titles, what the bundle must never hold ──────────────────────────────────────────────────────────
+test('I18N-B1. the texts of a language can be loaded whole, by namespace, or as "core" (everything but what only the public pages read)', async () => {
+  for (const l of LIVE_LANGS) {
+    const all = await loadMessages(l), core = await loadCoreMessages(l)
+    for (const ns of PUBLIC_ONLY_NAMESPACES) { assert.ok(ns in all); assert.ok(!(ns in core), `${l}: core has no "${ns}"`) }
+    assert.equal(Object.keys(core).length + PUBLIC_ONLY_NAMESPACES.length + SERVER_ONLY_NAMESPACES.length, Object.keys(all).length)
+    assert.deepEqual(Object.keys(await loadMessages(l, ['home'])), ['home'])
+    assert.deepEqual(Object.keys(core).sort(), Object.keys(CORE_FILES[l as 'it']).sort(), `${l}: core = the file the browser bundles`)
+  }
+})
+
+test('I18N-B2. home / guide texts are read only by the home and guide components: every other page can be served without them', () => {
+  const files = ['app', 'components', 'lib'].flatMap((d) => walk(join(fe, d)))
+  for (const f of files) {
+    const rel = f.slice(fe.length + 1)
+    if (/^components\/miolove\/(home|ideas)\//.test(rel) || ['lib/miolove/demoMedia.ts', 'lib/miolove/ideas.ts', 'lib/miolove/seo.ts'].includes(rel)) continue
+    assert.ok(!/['"`](home|ideas)\.[a-zA-Z]/.test(readFileSync(f, 'utf8').replace(/\/\/.*$/gm, '')), `${rel} reads a home / guide text`)
+  }
+})
+
+test('I18N-B3. service pages (sign-in, sign-up, password, e-mail): title and description follow the visitor\'s language, stay noindex, carry no canonical', () => {
+  for (const p of ['login', 'register', 'forgot', 'reset', 'verify'] as const) {
+    const titles = new Set<string>()
+    for (const l of LIVE_LANGS) {
+      const m = mioloveServiceMetadata(p, l) as any
+      assert.ok(m.title && m.description.length > 30, `${p} ${l}`); assert.deepEqual(m.robots, { index: false, follow: true }); assert.equal(m.alternates, undefined, 'no canonical')
+      titles.add(m.title)
+    }
+    assert.equal(titles.size, 4, `${p}: four different titles`)
+    assert.deepEqual(mioloveServiceMetadata(p), mioloveServiceMetadata(p, 'it'), 'Italian by default')
+  }
+})
+
+test('I18N-B4. the browser language is read on the server exactly as the client reads navigator.language (first tag, two letters, supported or Italian)', async () => {
+  const fn = localeFromAcceptLanguage
+  assert.deepEqual(['fr-FR,fr;q=0.9', 'en-GB', 'es', 'IT-it', 'de-DE,en;q=0.8', '', undefined, 'pt-BR'].map(fn), ['fr', 'en', 'es', 'it', 'it', 'it', 'it', 'it'])
+})
+
+test('I18N-B5. IOMIXO\'s provider behaviour is untouched: the layout hands the MIOLOVE-only options to MIOLOVE alone, and the dictionaries IOMIXO reads are still the merged ones', () => {
+  const layout = readFileSync(join(fe, 'app/layout.tsx'), 'utf8')
+  assert.ok(layout.includes("ssrLocale={miolove ? ssrLang : undefined} rememberInCookie={miolove}"), 'non-MIOLOVE hosts get neither option')
+  assert.ok(layout.includes("<html lang={miolove ? ssrLang : (lang ?? 'it')}"), 'IOMIXO keeps its <html lang>')
+  assert.ok(layout.includes("const urlChosen = isLocale(urlLang) ? urlLang : undefined"))
+  const i18n = readFileSync(join(fe, 'lib/i18n.tsx'), 'utf8')
+  assert.ok(i18n.includes('deepMerge(it, mlIt)') && i18n.includes('deepMerge(fr, mlFr)'))
+})
+
+test('I18N-B6. MioloveLocale is independent of the shared Locale: twelve languages vs the four IOMIXO supports, which are unchanged', () => {
+  const widen = (l: Locale): MioloveLocale => l          // compile-time: every shared Locale is a MioloveLocale
+  assert.deepEqual(LOCALES.map(widen), ['it', 'en', 'es', 'fr'], 'the shared type and IOMIXO\'s languages did not change')
+  assert.equal(MIOLOVE_LOCALES.length, 12)
+  assert.deepEqual(MIOLOVE_LOCALES.filter(isSharedLocale), ['it', 'en', 'fr', 'es'])
+  assert.deepEqual(MIOLOVE_LOCALES.filter((l) => !isSharedLocale(l)), NEW_LANGS, 'the eight new languages are MIOLOVE-only')
+  assert.deepEqual(MIOLOVE_LOCALES.map(intlLocale).slice(0, 4), ['it-IT', 'en-GB', 'fr-FR', 'es-ES'])
+  const lib = readFileSync(join(fe, 'lib/locales.ts'), 'utf8'); assert.ok(lib.includes("export type Locale = 'it' | 'en' | 'es' | 'fr'"), 'lib/locales.ts untouched')
 })

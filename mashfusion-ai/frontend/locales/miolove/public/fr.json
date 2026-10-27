@@ -1,0 +1,474 @@
+{
+  "home": {
+    "meta": {
+      "title": "MIOLOVE ALBUM — L’album photo numérique de vos événements",
+      "description": "Les invités scannent un QR code et partagent les photos de votre mariage, anniversaire ou baptême dans un seul album, avec diaporama en direct. Sans application. Essai gratuit de 7 jours.",
+      "ogTitle": "MIOLOVE ALBUM — Vos souvenirs, racontés par ceux qui les vivent"
+    },
+    "nav": {
+      "how": "Comment ça marche",
+      "features": "Ce qui est inclus",
+      "pricing": "Tarifs",
+      "faq": "FAQ",
+      "reviews": "Avis",
+      "login": "Se connecter",
+      "tryFree": "Essai gratuit",
+      "myAlbums": "Mes albums",
+      "menu": "Menu"
+    },
+    "hero": {
+      "badge": "Mariages, anniversaires, baptêmes et toutes les occasions",
+      "titleA": "Vos souvenirs,",
+      "titleB": "racontés par ceux qui les vivent.",
+      "sub": "Un seul album où tous vos invités partagent leurs photos en temps réel. Aucune application à installer : il suffit de scanner un QR code.",
+      "ctaPrimary": "Essai gratuit",
+      "ctaSecondary": "Découvrir comment ça marche",
+      "note": "7 jours d’essai gratuit · Sans carte bancaire",
+      "newPhoto": "Nouvelle photo dans l'album",
+      "qrLabel": "Scannez et partagez",
+      "album": "Votre album"
+    },
+    "how": {
+      "eyebrow": "Comment ça marche",
+      "title": "Prêt en une minute, simple pour tous",
+      "sub": "Vous créez l’album. Vos invités font le reste.",
+      "s1": {
+        "title": "Créez votre album",
+        "text": "Choisissez l'occasion, nommez l'album et fixez la date. Moins d'une minute."
+      },
+      "s2": {
+        "title": "Partagez le QR code",
+        "text": "Montrez-le sur les tables, envoyez le lien ou imprimez-le. Les invités le scannent avec leur téléphone."
+      },
+      "s3": {
+        "title": "Les invités envoient leurs photos",
+        "text": "Depuis le navigateur, sans application ni inscription : ils prennent ou choisissent une photo et l’envoient."
+      },
+      "s4": {
+        "title": "Revivez les souvenirs",
+        "text": "Les photos arrivent dans l'album et défilent en direct sur grand écran grâce au diaporama."
+      },
+      "qrPhotoCaption": "Une carte sur la table : les invités scannent le QR code et partagent leurs photos dans l'album."
+    },
+    "features": {
+      "eyebrow": "Ce qui est inclus",
+      "title": "Tout ce qu’il faut, sans complication",
+      "sub": "Des outils pensés pour profiter de l'événement, pas pour le compliquer.",
+      "qr": {
+        "title": "QR code et lien",
+        "text": "Un QR code et un lien dédiés à votre album, à partager comme vous voulez."
+      },
+      "guests": {
+        "title": "Invités illimités",
+        "text": "Aucune limite au nombre de personnes qui peuvent participer."
+      },
+      "noApp": {
+        "title": "Aucune application",
+        "text": "Ça fonctionne dans le navigateur du téléphone : pas de téléchargement, pas de compte pour les invités."
+      },
+      "slideshow": {
+        "title": "Diaporama en direct",
+        "text": "Les photos arrivent sur grand écran au moment où elles sont prises."
+      },
+      "booth": {
+        "title": "Photos et vidéos des invités",
+        "text": "Ils prennent ou choisissent photos et vidéos sur leur téléphone : elles arrivent dans votre album, en qualité originale."
+      },
+      "privacy": {
+        "title": "Vous décidez de ce qui s'affiche",
+        "text": "Deux interrupteurs suspendent l'envoi des invités et choisissent si les photos passent sur le grand écran. Seuls ceux qui ont le QR code ou le lien entrent."
+      },
+      "custom": {
+        "title": "Personnalisation",
+        "text": "Nom, date, lieu et occasion : la page des invités vous ressemble."
+      },
+      "poster": {
+        "title": "Cartes et affiches QR",
+        "text": "Imprimez la carte de table et l'affiche avec le QR de votre album (Album complet)."
+      },
+      "languages": {
+        "title": "4 langues",
+        "text": "Italien, anglais, français et espagnol, en un geste."
+      }
+    },
+    "benefits": {
+      "eyebrow": "Pourquoi le choisir",
+      "title": "Les plus belles photos sont dans les téléphones de vos invités",
+      "b1": {
+        "title": "Tout au même endroit",
+        "text": "Fini les photos éparpillées entre conversations, groupes et pellicules : chaque cliché va dans le même album."
+      },
+      "b2": {
+        "title": "Zéro effort pour les invités",
+        "text": "On scanne, on photographie, on envoie. Même pour ceux qui n’aiment pas la technologie."
+      },
+      "b3": {
+        "title": "Un souvenir qui vit en direct",
+        "text": "Le diaporama affiche les photos sur grand écran pendant l'événement, pas des semaines plus tard."
+      },
+      "b4": {
+        "title": "Pour toutes les occasions",
+        "text": "Mariage, anniversaire, baptême ou tout autre événement : la même simplicité."
+      }
+    },
+    "whatsapp": {
+      "eyebrow": "Pourquoi pas WhatsApp",
+      "title": "Un groupe n’est pas un album",
+      "sub": "WhatsApp est fait pour discuter. MIOLOVE ALBUM est fait pour collecter des souvenirs.",
+      "colA": "Groupe WhatsApp",
+      "colB": "MIOLOVE ALBUM",
+      "r1": {
+        "a": "Il faut le numéro de chacun et un groupe à créer",
+        "b": "Un simple QR code à scanner"
+      },
+      "r2": {
+        "a": "Les photos se perdent entre messages et vocaux",
+        "b": "Les photos sont rangées dans un album dédié"
+      },
+      "r3": {
+        "a": "Ceux qui ne sont pas dans le groupe restent dehors",
+        "b": "Toute personne avec le QR ou le lien peut participer"
+      },
+      "r4": {
+        "a": "Aucun écran pour montrer les photos",
+        "b": "Diaporama en direct sur grand écran"
+      },
+      "r5": {
+        "a": "Tout récupérer après la fête est une chasse au trésor",
+        "b": "Tout est déjà rassemblé, au même endroit"
+      }
+    },
+    "events": {
+      "eyebrow": "Toutes les occasions",
+      "title": "Un album pour chaque moment à retenir",
+      "sub": "Choisissez l'occasion en créant l'album : la page des invités s'adapte.",
+      "wedding": {
+        "title": "Mariage",
+        "text": "Le jour le plus attendu, vu par tous les invités."
+      },
+      "birthday": {
+        "title": "Anniversaire",
+        "text": "Gâteau, toasts et rires : toutes les photos de la fête."
+      },
+      "baptism": {
+        "title": "Baptême",
+        "text": "Un souvenir précieux, rassemblé par la famille."
+      },
+      "other": {
+        "title": "Autre événement",
+        "text": "Anniversaires de mariage, diplômes, fêtes : chaque événement mérite son album."
+      }
+    },
+    "preview": {
+      "eyebrow": "Aperçu du produit",
+      "title": "Téléphone, album et grand écran, toujours synchronisés",
+      "sub": "La même fête, trois écrans : ce qu'un invité envoie est dans l'album et sur le grand écran.",
+      "guest": "Page des invités",
+      "screen": "Grand écran",
+      "album": "Votre album",
+      "sample": "Aperçu illustratif",
+      "sampleName": "Anniversaire de Martina",
+      "cta": "Envoyer photos et vidéos",
+      "albumCount": "{n} photos et vidéos",
+      "albumLive": "En direct"
+    },
+    "reviews": {
+      "eyebrow": "Avis",
+      "title": "Ce que l’on dit de MIOLOVE ALBUM",
+      "sub": "Les expériences de ceux qui ont déjà rassemblé les souvenirs de leur événement.",
+      "demoBadge": "DÉMO · mise en page d’exemple",
+      "demoNote": "Témoignages d’exemple : ce ne sont pas de vrais avis."
+    },
+    "pricing": {
+      "eyebrow": "Tarifs",
+      "title": "Simple. Un seul paiement.",
+      "sub": "Commencez avec 7 jours d'essai gratuit, sans carte (un par compte). Chaque album que vous voulez garder s'active par un paiement unique et dure 365 jours."
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title": "Questions fréquentes",
+      "q1": {
+        "q": "Dois-je installer une application ?",
+        "a": "Non. Vous gérez l'album dans le navigateur et les invités participent depuis le navigateur de leur téléphone en scannant le QR code."
+      },
+      "q2": {
+        "q": "Comment les invités participent-ils ?",
+        "a": "Ils scannent le QR code ou ouvrent le lien, prennent ou choisissent une photo et l’envoient. Aucune inscription."
+      },
+      "q3": {
+        "q": "Que se passe-t-il après les 7 jours d’essai ?",
+        "a": "Vous pouvez toujours consulter l'album et son contenu est conservé 30 jours de plus. Les nouveaux envois s'arrêtent : activez l'Album complet dans les 30 jours pour ne rien perdre."
+      },
+      "q4": {
+        "q": "Combien ça coûte ?",
+        "a": "L'essai est gratuit (un par compte). L'Album complet coûte {price} (au lieu de {list}) pour chaque album, en un seul paiement : il dure 365 jours à partir de l'activation. Ce n'est pas un abonnement, il ne se paie pas au mois ni par invité."
+      },
+      "q5": {
+        "q": "Faut-il une carte bancaire pour essayer ?",
+        "a": "Non, l’essai gratuit ne demande aucune carte bancaire."
+      },
+      "q6": {
+        "q": "Puis-je l’utiliser pour autre chose qu’un mariage ?",
+        "a": "Oui : mariage, anniversaire, baptême ou tout autre événement. Choisissez l'occasion en créant l'album."
+      },
+      "q7": {
+        "q": "Les photos sont-elles privées ?",
+        "a": "Seules les personnes qui ont le QR code ou le lien peuvent participer. Dans les réglages de confidentialité, vous décidez si les invités peuvent envoyer des photos et si elles s'affichent à l'écran."
+      },
+      "q8": {
+        "q": "Dans quelles langues est-ce disponible ?",
+        "a": "Italien, anglais, français et espagnol, pour vous comme pour vos invités."
+      }
+    },
+    "cta": {
+      "title": "Créez votre album en une minute",
+      "text": "Essayez gratuitement pendant 7 jours. Sans carte bancaire.",
+      "button": "Essai gratuit"
+    },
+    "footer": {
+      "tagline": "Vos souvenirs, racontés par ceux qui les vivent.",
+      "product": "Produit",
+      "account": "Compte",
+      "legal": "Mentions légales",
+      "privacy": "Confidentialité",
+      "terms": "Conditions d’utilisation",
+      "rights": "Tous droits réservés.",
+      "language": "Langue"
+    },
+    "demoAlt": {
+      "martinaCandles": "Martina souffle les bougies de son gâteau d'anniversaire entourée de ses amies",
+      "martinaSelfie": "Selfie de groupe de Martina et de ses amies à la fête d'anniversaire",
+      "martinaGarden": "Une petite fille rit devant le gâteau aux bougies à la fête dans le jardin",
+      "martinaQrTable": "Table dressée avec la carte MIOLOVE « Compleanno di Martina » et le QR code à scanner",
+      "weddingParty": "Les mariés dansent avec leurs invités pendant la soirée",
+      "weddingGuestsPhones": "Des invités souriants photographient les mariés avec leur téléphone",
+      "baptism": "Une famille admire le bébé en robe blanche près des fonts baptismaux",
+      "partyFriends": "Des amis dansent et trinquent, un verre à la main, lors d'une soirée dans un jardin sous les guirlandes lumineuses"
+    }
+  },
+  "ideas": {
+    "meta": {
+      "title": "Jeux photo pour mariage et fêtes : 10 idées avec QR code",
+      "description": "Idées de jeux photo pour mariage, anniversaire, baptême et fêtes : des défis simples avec le QR code MIOLOVE pour des photos d'invités vraies et spontanées.",
+      "ogTitle": "10 idées pour faire prendre des photos à vos invités avec le QR code MIOLOVE"
+    },
+    "nav": {
+      "label": "Idées",
+      "breadcrumbHome": "MIOLOVE ALBUM",
+      "breadcrumbIdeas": "Idées pour utiliser MIOLOVE"
+    },
+    "hero": {
+      "eyebrow": "Idées pour utiliser MIOLOVE",
+      "titleA": "Des jeux photo pour vos invités,",
+      "titleB": "avec un seul QR code",
+      "sub": "Mariage, anniversaire, baptême ou simple fête : 10 idées originales pour transformer le QR code de l'album en un jeu qui fait prendre plus de photos, et de plus belles, à ceux qui sont là.",
+      "ctaPrimary": "Créez votre album gratuitement",
+      "ctaSecondary": "Voir les idées",
+      "note": "Aucune appli pour les invités. Aucun moteur de jeu : les fonctions de l'album suffisent."
+    },
+    "concept": {
+      "title": "Qu'est-ce qu'un jeu photo avec QR code ?",
+      "p1": "Le QR code de l'album finit souvent en simple carton sur la table : quelques personnes le scannent, puis l'oublient. Un jeu photo lui donne une raison d'être utilisé : un petit défi, un thème, une compétition entre tables qui invite chacun à regarder autour de soi et à prendre une photo.",
+      "p2": "Il n'y a rien de nouveau à configurer. Les invités scannent le QR code, envoient photos et vidéos depuis leur téléphone sans s'inscrire, et vous voyez tout dans l'album et sur le grand écran. Le jeu, c'est vous qui le décidez, à voix haute : sur le carton, au micro, sur un petit mot posé à table.",
+      "note": "Ce sont des idées et des conseils pratiques, pas des règles : choisissez celle qui vous ressemble et adaptez-la à votre événement."
+    },
+    "steps": {
+      "title": "Comment ça marche, en 3 étapes",
+      "sub": "De l'idée à la première photo en moins d'une minute par invité.",
+      "s1": {
+        "t": "Choisissez une idée",
+        "d": "Prenez le défi qui convient à l'événement et à vos invités. Un seul, bien annoncé, suffit."
+      },
+      "s2": {
+        "t": "Partagez le QR code",
+        "d": "Imprimez le carton MIOLOVE et ajoutez une ligne avec le défi : « Une couleur, une photo » ou « Chasse aux moments »."
+      },
+      "s3": {
+        "t": "Regardez les photos arriver",
+        "d": "Les invités envoient photos et vidéos sans appli ni compte. Vous les retrouvez dans l'album en qualité originale et pouvez les afficher sur le grand écran."
+      }
+    },
+    "list": {
+      "title": "10 idées originales pour faire prendre des photos",
+      "sub": "Pour chacune, vous voyez sa facilité de mise en place, quand elle fonctionne le mieux et pourquoi elle fait la différence.",
+      "difficulty": "Difficulté",
+      "when": "Quand l'utiliser",
+      "why": "Pourquoi ça marche",
+      "easy": "Facile",
+      "medium": "Moyenne",
+      "fitsFor": "Convient pour"
+    },
+    "items": {
+      "hunt": {
+        "title": "Chasse aux moments",
+        "text": "Une liste de petits moments à capturer pendant la soirée : le premier toast, quelqu'un qui danse pieds nus, un câlin entre grands-parents et petits-enfants, l'arrivée du gâteau. Celui qui voit le moment le photographie.",
+        "when": "Pendant toute la fête, en annonçant la liste au début de la réception.",
+        "why": "Chaque invité a une mission concrète : les photos viennent justement des moments que personne ne prendrait autrement."
+      },
+      "tables": {
+        "title": "Table contre table",
+        "text": "Chaque table essaie de raconter la soirée à sa façon. Demandez d'écrire « Prénom · Table 4 » dans le champ du nom et, après le dîner, regardez quelle table a réuni les clichés les plus drôles.",
+        "when": "Pendant le dîner, quand les tables sont pleines et l'ambiance détendue.",
+        "why": "Une saine compétition entre tables fait participer même les plus timides et permet de retrouver facilement qui a pris quoi."
+      },
+      "beforeAfter": {
+        "title": "Avant et après",
+        "text": "Demandez deux photos du même endroit ou des mêmes personnes : au début de la soirée et à la fin. La table bien dressée puis la table dévastée, le groupe en pose puis décoiffé.",
+        "when": "Ouvrez le jeu à l'arrivée et clôturez-le avec la dernière danse ou la découpe du gâteau.",
+        "why": "La comparaison raconte le temps qui passe et la fête réussie mieux que mille mots : une petite histoire en deux clichés."
+      },
+      "colour": {
+        "title": "Une couleur, une photo",
+        "text": "Choisissez une couleur (le rouge, par exemple) et invitez chacun à trouver quelque chose de cette couleur et à le photographier de façon créative. Changez de couleur à chaque plat ou chaque heure.",
+        "when": "Apéritif, attente entre deux plats, tous les moments où l'on patiente.",
+        "why": "La photo devient un jeu d'observation : on regarde les lieux d'un œil neuf et on découvre des détails que personne n'avait remarqués."
+      },
+      "generations": {
+        "title": "Générations réunies",
+        "text": "Invitez à faire une photo avec une personne d'un autre âge : petit-fils et grand-mère, petit cousin et oncle, une amie et sa maman. Chaque duo de générations devient un portrait à garder.",
+        "when": "Après la partie formelle, quand tout le monde s'est détendu et se mélange.",
+        "why": "Les plus belles photos de famille sont celles entre générations, et elles manquent souvent parce que personne ne pense à les organiser."
+      },
+      "details": {
+        "title": "Les détails qui échappent",
+        "text": "Les photographes se concentrent sur les moments clés ; les invités voient tout le reste. Demandez-leur de photographier les détails : les chaussures, les mains, le centre de table, un petit mot, le verre oublié.",
+        "when": "Avant la cérémonie, pendant l'installation ou pendant la réception.",
+        "why": "On obtient un album plein d'atmosphère, avec de petites choses qui rappellent la journée plus que les grands moments posés."
+      },
+      "emoji": {
+        "title": "Émojis en direct",
+        "text": "Annoncez un émoji à la fois : 😂 un fou rire, 😍 un regard amoureux, 🥳 une tête de fête. Les invités l'interprètent en direct et envoient le cliché.",
+        "when": "Pendant les pauses musicales, avant le dessert, ou pour se mettre en train au début.",
+        "why": "C'est immédiat, drôle et ça marche à tout âge : même ceux qui détestent poser s'amusent à faire la bonne grimace."
+      },
+      "angle": {
+        "title": "Angle insolite",
+        "text": "Demandez des photos sous un angle inattendu : en contre-plongée, de dos, du haut d'une chaise, reflétées dans un verre, juste des ombres ou des pieds qui dansent.",
+        "when": "Sur la piste ou après le dîner, quand il y a de l'énergie et l'envie d'expérimenter.",
+        "why": "Les photos différentes de d'habitude sont celles qui surprennent : on voit la fête comme la voient les invités, pas comme un scénario."
+      },
+      "candid": {
+        "title": "La photo la plus spontanée",
+        "text": "Aucune pose : récompensez le cliché le plus sincère de la soirée, celui où quelqu'un rit sans se rendre compte qu'on le photographie. À la fin, choisissez ensemble un gagnant.",
+        "when": "Toute la soirée, avec un petit prix symbolique à la fin de la fête.",
+        "why": "On aime revoir les photos spontanées, et un objectif à gagner encourage les invités à les chercher."
+      },
+      "keepsake": {
+        "title": "Un souvenir pour l'invité d'honneur",
+        "text": "Chaque invité envoie une photo ou une courte vidéo avec un vœu, un souvenir ou un conseil pour la personne fêtée : les mariés, la personne qui fête son anniversaire, l'enfant baptisé. On regarde le tout ensemble plus tard.",
+        "when": "À demander avant la fête, ou à collecter pendant la réception.",
+        "why": "Cela devient un cadeau collectif sans frais ni organisation : un album de voix et de visages que la personne fêtée revoira pendant des années."
+      }
+    },
+    "occasions": {
+      "title": "La bonne idée pour chaque occasion",
+      "sub": "Comment adapter les jeux à chaque type de fête, avec les conseils qui marchent le mieux.",
+      "ideasLabel": "Idées conseillées",
+      "wedding": {
+        "title": "Jeux photo pour le mariage",
+        "text": "À un mariage, les invités sont nombreux et issus de cercles différents : les jeux qui mélangent tables et générations fonctionnent très bien. Gardez des défis légers qui n'enlèvent rien à la cérémonie.",
+        "tip": "Posez le QR code sur la table et sur le carton du programme, et annoncez le jeu au micro après l'entrée."
+      },
+      "birthday": {
+        "title": "Jeux photo pour l'anniversaire",
+        "text": "Pour un anniversaire, on veut du plaisir immédiat : défis rapides, émojis, photos rigolotes. Si la fête est pour un enfant, impliquez les adultes avec l'idée du souvenir pour la personne fêtée.",
+        "tip": "Préparez une liste de 3 défis et affichez-la près du gâteau, là où tout le monde passe."
+      },
+      "baptism": {
+        "title": "Idées photo pour le baptême",
+        "text": "Le baptême est une fête de famille : les photos entre générations, les détails et un message de vœux pour le petit qui grandira en regardant l'album fonctionnent très bien.",
+        "tip": "Demandez aux grands-parents de commencer : s'ils se lancent, tous les autres suivent."
+      },
+      "other": {
+        "title": "Albums QR pour fêtes et autres événements",
+        "text": "Anniversaires de mariage, remises de diplôme, enterrements de vie de jeune fille ou de garçon, dîners entre amis : toute occasion réunissant un groupe peut avoir son album partagé et son défi.",
+        "tip": "Choisissez un seul défi facile et répétez-le : une chose claire vaut mieux qu'une longue liste."
+      }
+    },
+    "benefits": {
+      "title": "Pourquoi jouer avec le QR code améliore l'album",
+      "b1": {
+        "t": "Plus de photos, sous plus d'angles",
+        "d": "Un défi fait participer même ceux qui ne photographient pas d'habitude : l'album raconte la fête à travers de nombreux regards."
+      },
+      "b2": {
+        "t": "Pas d'appli, pas de compte",
+        "d": "Les invités scannent le QR code et envoient. Vous n'avez rien de compliqué à expliquer."
+      },
+      "b3": {
+        "t": "Qualité originale",
+        "d": "Les photos et vidéos gardent la qualité d'origine et vous pouvez toutes les télécharger dans un seul ZIP."
+      },
+      "b4": {
+        "t": "Tout au même endroit",
+        "d": "Plus de discussions éparpillées ni de liens expirés : chaque souvenir arrive dans l'album de l'événement et peut s'afficher sur le grand écran."
+      }
+    },
+    "faq": {
+      "title": "Questions fréquentes sur les idées",
+      "q1": {
+        "q": "Faut-il configurer quelque chose pour jouer ?",
+        "a": "Non. Les idées utilisent ce que l'album fait déjà : les invités scannent le QR code et envoient photos et vidéos. Le défi, c'est vous qui l'annoncez, à voix haute ou sur un carton, sans réglage supplémentaire."
+      },
+      "q2": {
+        "q": "Les invités doivent-ils installer une appli ou s'inscrire ?",
+        "a": "Non. Cela s'ouvre sur leur téléphone après avoir scanné le QR code, sans appli et sans compte. Ils peuvent indiquer un prénom, mais c'est facultatif."
+      },
+      "q3": {
+        "q": "Comment distinguer les photos d'une table ou d'un défi ?",
+        "a": "Demandez aux invités d'écrire un nom du type « Julie · Table 4 » dans le champ facultatif : vous le verrez à côté de chaque photo dans l'album."
+      },
+      "q4": {
+        "q": "Puis-je utiliser plusieurs idées pendant la même fête ?",
+        "a": "Bien sûr, mais mieux vaut peu et clair : un défi à la fois, annoncé au bon moment, marche mieux qu'une longue liste."
+      },
+      "q5": {
+        "q": "Les idées valent-elles aussi pour les anniversaires, baptêmes et autres fêtes ?",
+        "a": "Oui. Chaque idée indique les occasions auxquelles elle convient, et ce guide donne des conseils précis pour le mariage, l'anniversaire, le baptême et les autres événements."
+      },
+      "q6": {
+        "q": "Puis-je essayer avant de payer ?",
+        "a": "Oui : vous pouvez créer un album d'essai gratuit et voir comment cela se passe avec vos invités avant d'activer l'album complet."
+      }
+    },
+    "cta": {
+      "title": "Prêt à faire jouer vos invités ?",
+      "text": "Créez l'album, imprimez le QR code et choisissez votre défi. Quelques minutes suffisent.",
+      "button": "Créez votre album gratuitement",
+      "home": "Découvrir comment fonctionne MIOLOVE"
+    },
+    "teaser": {
+      "eyebrow": "Idées pour utiliser MIOLOVE",
+      "title": "Le QR code devient un jeu",
+      "text": "Chasse aux moments, table contre table, une couleur une photo : découvrez 10 idées simples pour faire prendre plus de photos à vos invités.",
+      "button": "Découvrir les idées",
+      "moreAria": "Aller à la page avec toutes les idées"
+    },
+    "bridge": {
+      "seeHome": "Retour à l'accueil",
+      "createAlbum": "Créez votre album"
+    }
+  },
+  "servicePages": {
+    "login": {
+      "title": "Se connecter",
+      "description": "Connectez-vous à MIOLOVE ALBUM pour gérer vos albums, les photos de vos invités et le diaporama de votre événement."
+    },
+    "register": {
+      "title": "Créez votre compte",
+      "description": "Créez votre compte MIOLOVE ALBUM et essayez-le gratuitement pendant 7 jours : un album partagé où les invités ajoutent leurs photos avec un QR code."
+    },
+    "forgot": {
+      "title": "Mot de passe oublié",
+      "description": "Retrouvez l’accès à votre compte MIOLOVE ALBUM : nous vous envoyons un e-mail pour choisir un nouveau mot de passe."
+    },
+    "reset": {
+      "title": "Choisissez un nouveau mot de passe",
+      "description": "Choisissez un nouveau mot de passe pour votre compte MIOLOVE ALBUM."
+    },
+    "verify": {
+      "title": "Confirmez votre e-mail",
+      "description": "Confirmez l’adresse e-mail de votre compte MIOLOVE ALBUM."
+    }
+  }
+}

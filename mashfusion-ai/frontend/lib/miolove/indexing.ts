@@ -15,6 +15,8 @@ export const MIOLOVE_PRIVATE_PREFIXES = ['/live/', '/booth/', '/screen/', '/remo
 /** Pages a visitor needs but a search engine must not list. */
 export const MIOLOVE_SERVICE_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email']
 /** robots.txt Disallow list: only the API (no page, nothing to index there). Nothing that carries noindex may ever be added. */
+/** Documents that exist once, whatever the visitor's language (one URL, no hreflang). Here so the middleware can use it without pulling the SEO texts. */
+export const SINGLE_URL_PATHS = ['/privacy', '/terms'] as const
 export const MIOLOVE_DISALLOW = ['/api/']
 
 const clean = (path: string): string => (path.length > 1 ? path.replace(/\/+$/, '') : path)

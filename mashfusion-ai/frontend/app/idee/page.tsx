@@ -5,6 +5,8 @@ import { isLocale, type Locale } from '@/lib/locales'
 import { getRequestPortal } from '@/lib/portalServer'
 import { MioloveIdeas } from '@/components/miolove/ideas/MioloveIdeas'
 import { mioloveIdeasMetadata, mioloveIdeasStructuredData } from '@/lib/miolove/seo'
+import { publicTexts } from '@/lib/miolove/publicTexts'
+import { PublicTexts } from '@/components/miolove/PublicTexts'
 
 // "Idee per usare MIOLOVE": the public guide of MIOLOVE. One route, four public URLs (/idee, /en/ideas, /fr/idees, /es/ideas: the middleware rewrites the
 // last three here and forwards the language in x-ml-lang, exactly like the home). Other portals have no such page.
@@ -16,10 +18,11 @@ export function generateMetadata(): Metadata {
 
 export default function IdeasPage() {
   if (getRequestPortal().config.id !== 'miolove') notFound()
+  const lang = urlLang() ?? 'it'
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(mioloveIdeasStructuredData(urlLang() ?? 'it')) }} />
-      <MioloveIdeas />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(mioloveIdeasStructuredData(lang)) }} />
+      <PublicTexts lang={lang} texts={publicTexts(lang)}><MioloveIdeas /></PublicTexts>
     </>
   )
 }

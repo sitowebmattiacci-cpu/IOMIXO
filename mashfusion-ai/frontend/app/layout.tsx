@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast'
 import { headers } from 'next/headers'
 import { I18nProvider } from '@/lib/i18n'
 import { isLocale } from '@/lib/locales'
+import { requestLanguage } from '@/lib/miolove/requestLang'
 import { AuthProvider } from '@/lib/auth/AuthProvider'
 import './globals.css'
 import { getRequestPortal } from '@/lib/portalServer'
@@ -125,17 +126,18 @@ const FIREBASE_ORIGINS = process.env.NEXT_PUBLIC_FIREBASE_USE_EMULATORS === 'tru
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const { config, matched } = getRequestPortal()
-  // MIOLOVE home language pages (/?lang=en): the middleware forwards the language so the very first HTML is already in it (SEO + no flash).
+  const miolove = config.id === 'miolove'
+  // MIOLOVE public pages (home, guide) are rendered in the language of their URL: the middleware forwards it in x-ml-lang (also "it" for the bare root).
   const urlLang = headers().get('x-ml-lang')
-  const lang = isLocale(urlLang) ? urlLang : undefined
-  return (
-    <html lang={lang ?? 'it'} className={`${inter.variable} ${cormorant.variable} ${playfair.variable} ${greatVibes.variable} ${dancingScript.variable} ${cinzel.variable} ${tangerine.variable} ${fraunces.variable} dark`} suppressHydrationWarning>
-      <head>
-        {/* Guest critical path: App Check (reCAPTCHA) → anonymous sign-in → callable → Firestore. Open those connections during HTML parse. */}
-        {FIREBASE_ORIGINS.map((o) => <link key={o} rel="preconnect" href={o} crossOrigin="anonymous" />)}
-      </head>
-      <body className="bg-surface-400 text-white antialiased" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false">
-        <I18nProvider initialLocale={lang}>
+  const urlChosen = isLocale(urlLang) ? urlLang : undefined
+  // Every other MIOLOVE page (sign-in, dashboard, guest page…) is rendered in the language the visitor chose last (cookie), else the browser's, so the first
+  // HTML is already in it. `lang` is an explicit choice (URL or cookie); `ssrLang` is what is rendered.
+  // Except the indexable single-URL pages (/privacy, /terms), whose HTML never depends on cookie or Accept-Language (the middleware flags them).
+  const requested = miolove && !urlChosen && headers().get('x-ml-single') !== '1' ? requestLanguage() : null
+  const lang = urlChosen ?? (requested?.explicit ? requested.lang : undefined)
+  const ssrLang = lang ?? requested?.lang ?? 'it'
+  const app = (
+    <>
           <PortalProvider portalId={config.id} matched={matched}>
           <AuthProvider>{children}</AuthProvider>
           </PortalProvider>
@@ -158,7 +160,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             },
           }}
         />
-        </I18nProvider>
+    </>
+  )
+  return (
+    <html lang={miolove ? ssrLang : (lang ?? 'it')} className={`${inter.variable} ${cormorant.variable} ${playfair.variable} ${greatVibes.variable} ${dancingScript.variable} ${cinzel.variable} ${tangerine.variable} ${fraunces.variable} dark`} suppressHydrationWarning>
+      <head>
+        {/* Guest critical path: App Check (reCAPTCHA) → anonymous sign-in → callable → Firestore. Open those connections during HTML parse. */}
+        {FIREBASE_ORIGINS.map((o) => <link key={o} rel="preconnect" href={o} crossOrigin="anonymous" />)}
+      </head>
+      <body className="bg-surface-400 text-white antialiased" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false">
+        <I18nProvider initialLocale={lang} ssrLocale={miolove ? ssrLang : undefined} rememberInCookie={miolove}>{app}</I18nProvider>
       </body>
     </html>
   )

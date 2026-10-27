@@ -5,6 +5,8 @@ import { getRequestPortal } from '@/lib/portalServer'
 import { IomixoLanding } from '@/components/portal/IomixoLanding'
 import { MioloveHome } from '@/components/miolove/home/MioloveHome'
 import { mioloveHomeMetadata, mioloveStructuredData } from '@/lib/miolove/seo'
+import { publicTexts } from '@/lib/miolove/publicTexts'
+import { PublicTexts } from '@/components/miolove/PublicTexts'
 
 // "/" belongs to the portal of the request host: MIOLOVE gets its own public home, every other host (IOMIXO, localhost, previews) keeps the IOMIXO landing.
 // The home is rendered in the language of its URL: / (Italian), /en, /fr, /es (middleware rewrites them to "/" and forwards the language in x-ml-lang);
@@ -20,11 +22,11 @@ export function generateMetadata(): Metadata {
 export default function HomePage() {
   const { config } = getRequestPortal()
   if (config.id !== 'miolove') return <IomixoLanding />
-  const lang = urlLang()
+  const lang = urlLang() ?? 'it'
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(mioloveStructuredData(lang ?? 'it')) }} />
-      <MioloveHome />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(mioloveStructuredData(lang)) }} />
+      <PublicTexts lang={lang} texts={publicTexts(lang)}><MioloveHome /></PublicTexts>
     </>
   )
 }

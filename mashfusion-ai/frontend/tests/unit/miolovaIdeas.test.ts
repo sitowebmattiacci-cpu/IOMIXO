@@ -1,9 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import it from '../../locales/miolove/it.json'
-import en from '../../locales/miolove/en.json'
-import fr from '../../locales/miolove/fr.json'
-import es from '../../locales/miolove/es.json'
+import { MIOLOVE_FULL } from '../../lib/miolove/fullMessages'
+const { it, en, fr, es } = MIOLOVE_FULL
 import { MIOLOVE_FORBIDDEN_COPY } from '../../lib/miolove/plans'
 import { GUEST_NAME_MAX, cleanGuestName, displayGuestName, loadGuestName, saveGuestName } from '../../lib/media/guestName'
 import { IDEAS, IDEA_OCCASIONS, IDEAS_BY_OCCASION, FAQ_KEYS } from '../../lib/miolove/ideas'

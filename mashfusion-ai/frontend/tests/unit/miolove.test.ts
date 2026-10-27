@@ -1,9 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import it from '../../locales/miolove/it.json'
-import en from '../../locales/miolove/en.json'
-import fr from '../../locales/miolove/fr.json'
-import es from '../../locales/miolove/es.json'
+import { MIOLOVE_FULL } from '../../lib/miolove/fullMessages'
+const { it, en, fr, es } = MIOLOVE_FULL
 import {
   ALBUM_INCLUDED, ALBUM_PRICE_EUR, ALBUM_PRICING, formatAlbumListPrice, FEATURE_STATUS, TRIAL_EXCLUDED, TRIAL_INCLUDED, formatAlbumPrice, visibleItems, MIOLOVE_FORBIDDEN_COPY,
   type FeatureId,

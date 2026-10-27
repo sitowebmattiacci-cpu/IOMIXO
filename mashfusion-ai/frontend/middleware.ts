@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getPortalFromHostname, normalizeHost, PORTAL_CONFIG } from '@/lib/portal'
 import { resolvePublicPath } from '@/lib/miolove/pages'
-import { mioloveRobotsHeader } from '@/lib/miolove/indexing'
+import { mioloveRobotsHeader, SINGLE_URL_PATHS } from '@/lib/miolove/indexing'
 
 // MIOLOVE: its root is the public home (app/page.tsx picks the portal from the host); "/" no longer redirects to the sign-in.
 // IOMIXO and every non-portal host (localhost, hosted.app) keep the existing landing at "/".
@@ -29,6 +29,14 @@ export function middleware(req: NextRequest) {
       const init = { request: { headers } }
       if (path !== hit.route && path.replace(/\/+$/, '') !== hit.route) { const url = req.nextUrl.clone(); url.pathname = hit.route; return NextResponse.rewrite(url, init) }
       return NextResponse.next(init)
+    }
+    // /privacy and /terms are indexable single-URL pages with Italian metadata: the server renders them in Italian for everyone, whatever cookie or
+    // Accept-Language comes with the request (the browser then switches to the saved language, as it always did). The layout reads this flag.
+    if (SINGLE_URL_PATHS.some((p) => path.replace(/\/+$/, '') === p)) {
+      const headers = new Headers(req.headers)
+      headers.delete('x-ml-lang')
+      headers.set('x-ml-single', '1')
+      return NextResponse.next({ request: { headers } })
     }
     const robotsTag = mioloveRobotsHeader(path)
     if (robotsTag) {
