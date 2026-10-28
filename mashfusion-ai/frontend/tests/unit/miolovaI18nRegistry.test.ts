@@ -334,9 +334,10 @@ test('I18N-B4. the browser language is read on the server exactly as the client 
 
 test('I18N-B5. IOMIXO\'s provider behaviour is untouched: the layout hands the MIOLOVE-only options to MIOLOVE alone, and the dictionaries IOMIXO reads are still the merged ones', () => {
   const layout = readFileSync(join(fe, 'app/layout.tsx'), 'utf8')
-  assert.ok(layout.includes("ssrLocale={miolove ? ssrLang : undefined} rememberInCookie={miolove}"), 'non-MIOLOVE hosts get neither option')
+  assert.ok(layout.includes('<I18nProvider initialLocale={isLocale(lang) ? lang : undefined}>{app}</I18nProvider>'), 'IOMIXO\'s provider gets no MIOLOVE-only option: those belong to MIOLOVE\'s own provider')
+  assert.ok(!/ssrLocale|rememberInCookie/.test(readFileSync(join(fe, 'lib/i18n.tsx'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')), 'IOMIXO\'s provider has no MIOLOVE-only code')
   assert.ok(layout.includes("<html lang={miolove ? ssrLang : (lang ?? 'it')}"), 'IOMIXO keeps its <html lang>')
-  assert.ok(layout.includes("const urlChosen = isLocale(urlLang) ? urlLang : undefined"))
+  assert.ok(layout.includes("const urlChosen = isLiveLang(urlLang) ? urlLang : undefined"))
   const i18n = readFileSync(join(fe, 'lib/i18n.tsx'), 'utf8')
   assert.ok(i18n.includes('deepMerge(it, mlIt)') && i18n.includes('deepMerge(fr, mlFr)'))
 })

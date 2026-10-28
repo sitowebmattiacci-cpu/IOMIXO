@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, type ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
-import { useI18n, type Locale } from '@/lib/i18n'
+import { useMioloveI18n } from '@/lib/miolove/useMioloveLocale'
+import type { MioloveLocale } from '@/lib/miolove/locale'
 import { resolvePublicPath } from '@/lib/miolove/pages'
 
 /**
@@ -9,8 +10,8 @@ import { resolvePublicPath } from '@/lib/miolove/pages'
  * Safety net: if the page the router shows was rendered for a different language than its URL says (the router reusing a payload between two URLs of the same
  * route, e.g. "/en" → "/"), the page is not shown with texts it cannot resolve: it reloads, and the server renders it in the language of the URL.
  */
-export function PublicTexts({ lang, texts, children }: { lang: Locale; texts: Record<string, any>; children: ReactNode }) {
-  const { provide } = useI18n()
+export function PublicTexts({ lang, texts, children }: { lang: MioloveLocale; texts: Record<string, any>; children: ReactNode }) {
+  const { provide } = useMioloveI18n()
   const path = usePathname()
   const urlLang = path ? resolvePublicPath(path)?.lang : undefined
   const stale = !!urlLang && urlLang !== lang

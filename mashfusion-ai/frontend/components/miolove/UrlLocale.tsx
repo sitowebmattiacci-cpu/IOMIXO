@@ -1,8 +1,7 @@
 'use client'
 import { useLayoutEffect } from 'react'
 import { usePathname } from 'next/navigation'
-import { useI18n } from '@/lib/i18n'
-import { isLocale } from '@/lib/locales'
+import { useMioloveI18n } from '@/lib/miolove/useMioloveLocale'
 import { resolvePublicPath } from '@/lib/miolove/pages'
 
 /**
@@ -12,9 +11,9 @@ import { resolvePublicPath } from '@/lib/miolove/pages'
  */
 export function UrlLocale() {
   const path = usePathname()
-  const { locale, setLocale } = useI18n()
+  const { locale, setLocale } = useMioloveI18n()
   const hit = path ? resolvePublicPath(path) : null
-  const lang = hit && isLocale(hit.lang) ? hit.lang : null
+  const lang = hit?.lang ?? null
   useLayoutEffect(() => { if (lang && lang !== locale) setLocale(lang) }, [lang, locale]) // eslint-disable-line react-hooks/exhaustive-deps
   return null
 }

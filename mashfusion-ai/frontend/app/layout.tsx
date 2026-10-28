@@ -4,7 +4,10 @@ import { Toaster } from 'react-hot-toast'
 import { headers } from 'next/headers'
 import { I18nProvider } from '@/lib/i18n'
 import { isLocale } from '@/lib/locales'
+import { isLiveLang } from '@/lib/miolove/langs'
 import { requestLanguage } from '@/lib/miolove/requestLang'
+import { MioloveI18nProvider } from '@/lib/miolove/MioloveI18nProvider'
+import { messagesToSend } from '@/lib/miolove/serverMessages'
 import { AuthProvider } from '@/lib/auth/AuthProvider'
 import './globals.css'
 import { getRequestPortal } from '@/lib/portalServer'
@@ -129,7 +132,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const miolove = config.id === 'miolove'
   // MIOLOVE public pages (home, guide) are rendered in the language of their URL: the middleware forwards it in x-ml-lang (also "it" for the bare root).
   const urlLang = headers().get('x-ml-lang')
-  const urlChosen = isLocale(urlLang) ? urlLang : undefined
+  const urlChosen = isLiveLang(urlLang) ? urlLang : undefined
   // Every other MIOLOVE page (sign-in, dashboard, guest page…) is rendered in the language the visitor chose last (cookie), else the browser's, so the first
   // HTML is already in it. `lang` is an explicit choice (URL or cookie); `ssrLang` is what is rendered.
   // Except the indexable single-URL pages (/privacy, /terms), whose HTML never depends on cookie or Accept-Language (the middleware flags them).
@@ -169,7 +172,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {FIREBASE_ORIGINS.map((o) => <link key={o} rel="preconnect" href={o} crossOrigin="anonymous" />)}
       </head>
       <body className="bg-surface-400 text-white antialiased" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false">
-        <I18nProvider initialLocale={lang} ssrLocale={miolove ? ssrLang : undefined} rememberInCookie={miolove}>{app}</I18nProvider>
+        {/* Each portal has its own provider over the same context: MIOLOVE's receives the texts of its language from the server, IOMIXO's is untouched. */}
+        {miolove
+          ? <MioloveI18nProvider initialLocale={lang} ssrLocale={ssrLang} messages={messagesToSend(lang ?? ssrLang)}>{app}</MioloveI18nProvider>
+          : <I18nProvider initialLocale={isLocale(lang) ? lang : undefined}>{app}</I18nProvider>}
       </body>
     </html>
   )

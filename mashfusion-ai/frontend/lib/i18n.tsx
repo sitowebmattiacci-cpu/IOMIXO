@@ -6,7 +6,7 @@ import es from '@/locales/es.json'
 import fr from '@/locales/fr.json'
 // MIOLOVE-only strings live in their own files (locales/miolove/*): these files hold the CORE texts (everything but home / guide / service-page titles, which live in a separate file per language and are delivered by the server).
 import { type Locale, LOCALES } from '@/lib/locales'
-import { LANG_COOKIE } from '@/lib/miolove/langCookie'
+import { I18nContext, pick, type I18nCtx } from '@/lib/i18nContext'
 import mlIt from '@/locales/miolove/it.json'
 import mlEn from '@/locales/miolove/en.json'
 import mlEs from '@/locales/miolove/es.json'
@@ -24,24 +24,17 @@ function deepMerge(base: any, over: any): any {
 
 // MIOLOVE core texts over the platform ones, exactly as before; the home / guide texts (read by no other page) arrive with those pages (see `provide`).
 const DICTS: Record<Locale, any> = { it: deepMerge(it, mlIt), en: deepMerge(en, mlEn), es: deepMerge(es, mlEs), fr: deepMerge(fr, mlFr) }
-const LOCALE_STORAGE_KEY = 'iomixo.locale'
+export const LOCALE_STORAGE_KEY = 'iomixo.locale'
 const SUPPORTED: Locale[] = LOCALES
 
-interface I18nCtx {
-  locale: Locale
-  setLocale: (l: Locale) => void
-  t: (path: string, fallback?: string) => string
-  /** MIOLOVE public pages: hands the provider the texts only they read (home, guide) for the language they were rendered in. Nothing else calls it. */
-  provide?: (locale: Locale, texts: Record<string, any>) => void
+/** A text of the bundled dictionaries (the four shared languages), or undefined. The MIOLOVE provider reads through this while it migrates off the bundled tables. */
+export function bundledText(locale: string, path: string): string | undefined {
+  const dict = (DICTS as Record<string, any>)[locale]
+  const v = dict ? pick(dict, path) : undefined
+  return typeof v === 'string' ? v : undefined
 }
 
-const Ctx = createContext<I18nCtx | null>(null)
-
-function pick(dict: any, path: string): string | undefined {
-  return path.split('.').reduce<any>((acc, key) => (acc != null ? acc[key] : undefined), dict)
-}
-
-function detectInitial(): Locale {
+export function detectInitial(): Locale {
   if (typeof window === 'undefined') return 'it'
   const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY) as Locale | null
   if (stored && SUPPORTED.includes(stored)) return stored
@@ -50,28 +43,21 @@ function detectInitial(): Locale {
 }
 
 /**
- * `initialLocale`: an explicit language chosen by the URL (?lang=) wins over the stored / browser one; without it nothing changes.
- * MIOLOVE only (the layout passes them, IOMIXO never does, so for IOMIXO this provider behaves exactly as it always did):
- *  • `ssrLocale`: the language the server rendered when nothing was chosen explicitly (the browser's, from Accept-Language), so the first HTML is not Italian
- *    for a visitor who reads another language; a saved language that differs still wins after hydration, as before.
- *  • `rememberInCookie`: also keep the chosen language in a cookie, so the server can render the next request in it from the first byte.
+ * IOMIXO's provider (the four shared languages, bundled dictionaries). `initialLocale`: an explicit language chosen by the URL (?lang=) wins over the stored /
+ * browser one; without it nothing changes. MIOLOVE has its own provider (lib/miolove/MioloveI18nProvider.tsx) over the same context.
  */
-export function I18nProvider({ children, initialLocale, ssrLocale, rememberInCookie }: { children: ReactNode; initialLocale?: Locale; ssrLocale?: Locale; rememberInCookie?: boolean }) {
-  const [locale, setLocaleState] = useState<Locale>(initialLocale ?? ssrLocale ?? 'it')
-  const remember = (l: Locale) => {
-    try { window.localStorage.setItem(LOCALE_STORAGE_KEY, l) } catch { /* private mode */ }
-    if (rememberInCookie) { try { document.cookie = `${LANG_COOKIE}=${l}; path=/; max-age=31536000; samesite=lax` } catch { /* cookies blocked */ } }
-  }
+export function I18nProvider({ children, initialLocale }: { children: ReactNode; initialLocale?: Locale }) {
+  const [locale, setLocaleState] = useState<Locale>(initialLocale ?? 'it')
 
   useEffect(() => {
     if (!initialLocale) { setLocaleState(detectInitial()); return }
     // A language chosen by the URL is remembered too, so the pages the visitor opens next stay in it.
-    remember(initialLocale)
-  }, [initialLocale])      // eslint-disable-line react-hooks/exhaustive-deps
+    try { window.localStorage.setItem(LOCALE_STORAGE_KEY, initialLocale) } catch { /* private mode */ }
+  }, [initialLocale])
 
   const setLocale = (l: Locale) => {
     setLocaleState(l)
-    if (typeof window !== 'undefined') { if (rememberInCookie) remember(l); else window.localStorage.setItem(LOCALE_STORAGE_KEY, l) }
+    if (typeof window !== 'undefined') window.localStorage.setItem(LOCALE_STORAGE_KEY, l)
   }
 
   // Texts delivered by the server with a page (MIOLOVE home / guide), per language. Read at call time; empty everywhere else, IOMIXO included.
@@ -90,11 +76,15 @@ export function I18nProvider({ children, initialLocale, ssrLocale, rememberInCoo
     return fallback ?? path
   }
 
-  return <Ctx.Provider value={{ locale, setLocale, t, provide }}>{children}</Ctx.Provider>
+  return <I18nContext.Provider value={{ locale, setLocale, t, provide }}>{children}</I18nContext.Provider>
 }
 
+/**
+ * Shared hook, typed with the shared `Locale`. Under IOMIXO's provider that is exact. Under MIOLOVE's it is exact for the published languages; a language only
+ * MIOLOVE has (de…) is read with `useMioloveLocale()` instead, which is why that hook exists. `t` and `setLocale` are the same in both.
+ */
 export function useI18n(): I18nCtx {
-  const c = useContext(Ctx)
+  const c = useContext(I18nContext) as I18nCtx | null
   if (!c) {
     // Fallback (renders outside the provider during SSR pre-hydration)
     return {
