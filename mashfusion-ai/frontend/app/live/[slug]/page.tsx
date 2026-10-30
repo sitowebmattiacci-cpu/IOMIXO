@@ -9,7 +9,8 @@ import { useI18n } from '@/lib/i18n'
 import { useLiveEvent } from '@/lib/events/useLiveEvent'
 import { useGuestRequests } from '@/lib/events/useRequests'
 import { sendMusicRequest } from '@/lib/events/requestService'
-import { fetchPublicLive } from '@/lib/events/publicEventService'
+import { fetchPublicLive, isEventNotFound } from '@/lib/events/publicEventService'
+import { GuestLoading, GuestLoadError } from '@/components/live/GuestLoadState'
 import { sendDedication } from '@/lib/events/dedicationService'
 import { useApprovedDedications } from '@/lib/events/useDedications'
 import { useActivePoll, toLegacyPoll } from '@/lib/events/usePolls'
@@ -46,7 +47,7 @@ export default function PublicLivePage() {
   // Realtime event state (Firestore). When available it replaces the 15s polling of
   // the session fields; the backend payload is still fetched for profile/plan/features.
   const liveEvent = useLiveEvent(slug)
-  const { data: payload, error, isLoading } = useSWR(
+  const { data: payload, error, isLoading, mutate: reload } = useSWR(
     slug ? ['public-live', slug] : null,
     () => fetchPublicLive(slug!),
     { refreshInterval: liveEvent ? 0 : 15_000 },
@@ -91,8 +92,10 @@ export default function PublicLivePage() {
   }
 
   if (isLoading || (payload && !brand)) {
-    return <Center><p className="text-white/50">{t('live.loading')}</p></Center>
+    return <Center><GuestLoading /></Center>
   }
+  // The album is fine but the request failed (network, App Check, server): say so and offer a retry; only a missing event is "not found".
+  if (error && !data && !isEventNotFound(error)) return <Center><GuestLoadError onRetry={() => { void reload() }} /></Center>
   if (error || !data) {
     return (
       <Center>

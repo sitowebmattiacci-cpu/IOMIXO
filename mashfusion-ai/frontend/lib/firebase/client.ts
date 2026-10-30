@@ -1,4 +1,4 @@
-import { getFirestore, connectFirestoreEmulator, type Firestore } from 'firebase/firestore'
+import { getFirestore, initializeFirestore, connectFirestoreEmulator, type Firestore } from 'firebase/firestore'
 import { getStorage, connectStorageEmulator, type FirebaseStorage } from 'firebase/storage'
 import { getFirebaseApp, host, once, useEmulators } from './app'
 
@@ -8,8 +8,20 @@ import { getFirebaseApp, host, once, useEmulators } from './app'
  */
 export * from './app'
 
+/**
+ * Firestore with automatic transport detection: the default streaming channel (WebChannel) is held up by some in-app browsers, proxies and
+ * privacy layers, and a guest on such a phone would wait forever for the album's first read (and for the upload's event lookup). With auto-detect
+ * the SDK falls back to long polling when streaming does not connect; where streaming works nothing changes. Not used with the emulators.
+ * initializeFirestore may only run once per app, so a second call (hot reload, another module got there first) falls back to getFirestore.
+ */
+function firestoreInstance(): Firestore {
+  const app = getFirebaseApp()
+  if (useEmulators) return getFirestore(app)
+  try { return initializeFirestore(app, { experimentalAutoDetectLongPolling: true }) } catch { return getFirestore(app) }
+}
+
 export function getFirebaseDb(): Firestore {
-  const db = getFirestore(getFirebaseApp())
+  const db = firestoreInstance()
   if (useEmulators) once('firestore', () => connectFirestoreEmulator(db, host, 8080))
   return db
 }

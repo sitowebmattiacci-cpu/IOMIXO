@@ -5,7 +5,8 @@ import useSWR from 'swr'
 import { useState, useRef, useEffect } from 'react'
 import { Camera, X, RotateCw, Check, Sparkles, ArrowLeft, RefreshCw, ImagePlus, AlertTriangle } from 'lucide-react'
 import { livePhotos } from '@/lib/api'
-import { fetchPublicLive } from '@/lib/events/publicEventService'
+import { fetchPublicLive, isEventNotFound } from '@/lib/events/publicEventService'
+import { GuestLoading, GuestLoadError } from '@/components/live/GuestLoadState'
 import { useEventBrand } from '@/lib/events/useEventBrand'
 import { compressImage } from '@/lib/imageCompress'
 import { UPLOAD_ERROR_KEYS } from '@/lib/media/uploadErrors'
@@ -29,7 +30,7 @@ const REASON_KEYS = UPLOAD_ERROR_KEYS
 export default function LiveBoothPage() {
   const { t, locale } = useI18n()
   const { slug } = useParams<{ slug: string }>()
-  const { data, error } = useSWR(
+  const { data, error, mutate: reload } = useSWR(
     slug ? ['public-live', slug] : null,
     () => fetchPublicLive(slug!),
     { refreshInterval: 30_000 },
@@ -109,6 +110,12 @@ export default function LiveBoothPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraActive])
 
+  if (!error && !data) {
+    return <PartyShell><div className="min-h-screen flex items-center justify-center px-6"><GuestLoading onRetry={() => { void reload() }} /></div></PartyShell>
+  }
+  if (error && !data && !isEventNotFound(error)) {
+    return <PartyShell><div className="min-h-screen flex items-center justify-center px-6"><GuestLoadError onRetry={() => { void reload() }} /></div></PartyShell>
+  }
   if (error || !data) {
     return (
       <PartyShell>
