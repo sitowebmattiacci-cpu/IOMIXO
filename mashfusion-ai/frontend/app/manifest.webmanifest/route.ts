@@ -1,10 +1,9 @@
-import type { MetadataRoute } from 'next'
 import { getRequestPortal } from '@/lib/portalServer'
 
 // Per-request (the host picks the portal), so each domain serves its own installable-app identity.
 export const dynamic = 'force-dynamic'
 
-export default function manifest(): MetadataRoute.Manifest {
+function buildManifest() {
   const { config } = getRequestPortal()
   if (config.id === 'miolove') {
     return {
@@ -36,4 +35,10 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
   }
+}
+
+// A route handler (not the app/manifest.ts file convention) so that the <link rel=manifest> is ordinary metadata: the guest surfaces can switch it off
+// (lib/guestPageMetadata.ts); a file-convention manifest is added by Next to every page and cannot be removed per route.
+export async function GET() {
+  return new Response(JSON.stringify(buildManifest()), { headers: { 'content-type': 'application/manifest+json', 'cache-control': 'public, max-age=0, must-revalidate' } })
 }

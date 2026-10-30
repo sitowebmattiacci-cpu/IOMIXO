@@ -79,6 +79,7 @@ export function generateMetadata(): Metadata {
     metadataBase: new URL(config.baseUrl),
     title: miolove ? { default: config.meta.title, template: '%s' } : { default: config.meta.title, template: '%s | IOMIXO Live Hub' },
     description: config.meta.description,
+    manifest: '/manifest.webmanifest',   // guest pages turn it off (lib/guestPageMetadata.ts)
     // MIOLOVE: no keywords tag (search engines ignore it) and no site-wide canonical / og:url: a canonical pointing at the home on every page told Google
     // that login, privacy, terms... were copies of it. Each public MIOLOVE page sets its own (lib/miolove/seo.ts); noindex pages have none.
     keywords: miolove ? undefined : ['Live Hub', 'DJ', 'Weddings', 'Events', 'Music Requests', 'Interactive DJ', 'Wedding Roulette', 'QR Sessions', 'Guest Photos'],
