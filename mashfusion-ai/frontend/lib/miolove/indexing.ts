@@ -11,7 +11,7 @@
 // auth, App Check and the Firestore and Functions rules.
 
 /** Private surfaces. A trailing slash means "only below this folder" (/live/<slug>); otherwise the path itself and everything below it. */
-export const MIOLOVE_PRIVATE_PREFIXES = ['/live/', '/booth/', '/screen/', '/remote/', '/sessions', '/onboarding', '/billing', '/settings', '/auth/', '/dashboard', '/events', '/profile']
+export const MIOLOVE_PRIVATE_PREFIXES = ['/live/', '/booth/', '/screen/', '/remote/', '/sessions', '/onboarding', '/billing', '/settings', '/auth/', '/dashboard', '/events', '/profile', '/diag']
 /** Pages a visitor needs but a search engine must not list. */
 export const MIOLOVE_SERVICE_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email']
 /** robots.txt Disallow list: only the API (no page, nothing to index there). Nothing that carries noindex may ever be added. */
