@@ -930,7 +930,8 @@ function PartyMusicBattle({ slug: _slug, eventId }: { slug: string; eventId?: st
   useEffect(() => {
     if (!poll) return
     const key = `iomixo.partyPollVote.${poll.id}`
-    const v = typeof window !== 'undefined' ? localStorage.getItem(key) : null
+    let v: string | null = null
+    try { v = localStorage.getItem(key) } catch { /* storage refused: the vote simply is not remembered */ }
     setVoted(v ? Number(v) : null)
   }, [poll?.id])
 
@@ -943,7 +944,7 @@ function PartyMusicBattle({ slug: _slug, eventId }: { slug: string; eventId?: st
     setVoting(true)
     try {
       await castVote({ eventId, pollId: poll.id, index: idx })
-      localStorage.setItem(`iomixo.partyPollVote.${poll.id}`, String(idx))
+      try { localStorage.setItem(`iomixo.partyPollVote.${poll.id}`, String(idx)) } catch { /* storage refused */ }
       setVoted(idx)
     } catch (e: any) {
       toast.error(e?.message ?? t('live.errorVote'))

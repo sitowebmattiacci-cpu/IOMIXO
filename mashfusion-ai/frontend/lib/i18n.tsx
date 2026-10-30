@@ -36,7 +36,8 @@ export function bundledText(locale: string, path: string): string | undefined {
 
 export function detectInitial(): Locale {
   if (typeof window === 'undefined') return 'it'
-  const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY) as Locale | null
+  let stored: Locale | null = null
+  try { stored = window.localStorage.getItem(LOCALE_STORAGE_KEY) as Locale | null } catch { /* storage refused (restrictive in-app browser, blocked site data): the page must still render */ }
   if (stored && SUPPORTED.includes(stored)) return stored
   const nav = (navigator.language || 'it').slice(0, 2).toLowerCase()
   return (SUPPORTED as string[]).includes(nav) ? (nav as Locale) : 'it'
@@ -57,7 +58,7 @@ export function I18nProvider({ children, initialLocale }: { children: ReactNode;
 
   const setLocale = (l: Locale) => {
     setLocaleState(l)
-    if (typeof window !== 'undefined') window.localStorage.setItem(LOCALE_STORAGE_KEY, l)
+    if (typeof window !== 'undefined') { try { window.localStorage.setItem(LOCALE_STORAGE_KEY, l) } catch { /* storage refused: the language just is not remembered */ } }
   }
 
   // Texts delivered by the server with a page (MIOLOVE home / guide), per language. Read at call time; empty everywhere else, IOMIXO included.

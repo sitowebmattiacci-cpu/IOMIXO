@@ -189,3 +189,19 @@ test('GU8. /diag (device diagnostics) renders its report, is noindex and sends n
     assert.equal(posts.filter((p) => !/identitytoolkit|firestore|getPublicEvent|firebasestorage|\/live\//.test(p)).length, 0, `nothing but the guest page's own calls: ${posts.join(' | ')}`)
   } finally { await ctx.close() }
 })
+
+test('GU9. IOMIXO side (iomixo.com, Party event): with every browser storage refused the guest page still renders (the shared i18n provider read localStorage unguarded)', async () => {
+  const owner = await newClient('account'), id = `gup${Date.now()}`, slug = `gups${Date.now()}`
+  await seedSet(`users/${owner.uid}`, { uid: owner.uid, email: owner.email, displayName: 'DJ Test', accountType: 'dj', plan: { tier: 'free', source: 'default' }, createdAt: new Date(), updatedAt: new Date() })
+  await seedSet(`events/${id}`, eventFields(owner.uid, slug, { type: 'party', title: 'Serata Test', legacySupabaseId: undefined }))
+  await seedSet(`eventSlugs/${slug}`, { eventId: id })
+  const ctx = await phone('Facebook in-app'), page = await ctx.newPage()
+  await page.addInitScript(`(() => {
+    const deny = () => { throw new DOMException('denied', 'SecurityError') }
+    for (const k of ['localStorage', 'sessionStorage']) Object.defineProperty(window, k, { get: deny, configurable: true })
+  })()`)
+  try {
+    await page.goto(`${portalUrl(app, 'iomixo.com')}/live/${slug}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
+    await page.getByText('Serata Test').first().waitFor({ timeout: 90_000 })
+  } finally { await ctx.close() }
+})
