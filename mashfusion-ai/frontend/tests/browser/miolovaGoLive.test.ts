@@ -23,6 +23,15 @@ async function until<T>(fn: () => Promise<T | undefined | false>, ms = 30_000, l
 const get = (host: string, path: string) => new Promise<{ status: number; headers: http.IncomingHttpHeaders; body: string }>((resolve, reject) => {
   http.get({ host: '127.0.0.1', port: app.port, path, headers: { host: `${host}:${app.port}`, 'x-forwarded-host': host } }, (res) => { let b = ''; res.on('data', (c) => { b += c }); res.on('end', () => resolve({ status: res.statusCode ?? 0, headers: res.headers, body: b })) }).on('error', reject)
 })
+/** The dev server can serve a cold page whose client bundle never attaches (no error, nothing pending): wait for React to attach to the menu button and reload once if it did not. */
+async function hydrated(page: Page) {
+  const attached = () => page.evaluate(() => { const b = document.querySelector('[data-testid="nav-menu"]') as unknown as Record<string, unknown> | null; return !!b && Object.keys(b).some((k) => k.startsWith('__reactProps')) })
+  for (let r = 0; r < 3; r++) {
+    for (let i = 0; i < 12 && !(await attached()); i++) await page.waitForTimeout(500)
+    if (await attached()) return
+    await page.reload({ waitUntil: 'networkidle', timeout: 120_000 })
+  }
+}
 const FORBIDDEN = /Event\s*Pass|Advance|Pro\s*DJ|IOMIXO|7,99|19,99\s*\/|\/\s*mese|al mese|per month|par mois|al mes\b|upgrade|piano mensile/i
 /** The page text without the five reassurances ("non è un abbonamento…"), which deny a subscription on purpose. */
 const noReassure = (p: Page) => p.evaluate(() => { const c = document.body.cloneNode(true) as HTMLElement; c.querySelectorAll('[data-reassure],[data-testid="faq-list"],script,style,noscript').forEach((e) => e.remove()); return c.textContent || '' })
@@ -74,7 +83,7 @@ for (const w of [390, 768, 1280, 1440]) {
       // reviews: development shows the DEMO layout only under a visible demo badge
       assert.equal(await page.getByTestId('reviews-demo-badge').count(), 1); assert.equal(await page.getByTestId('reviews-list').getAttribute('data-demo'), 'true')
       assert.doesNotMatch(body, /Trustpilot|10\.000|premi|award/i)
-      if (w < 1024) { await page.waitForTimeout(2500)  /* hydration */; for (let i = 0; i < 25 && (await page.getByTestId('nav-menu').getAttribute('aria-expanded')) !== 'true'; i++) { await page.getByTestId('nav-menu').click(); await page.waitForTimeout(800) }; assert.equal(await page.getByTestId('nav-menu').getAttribute('aria-expanded'), 'true', 'mobile menu opens'); assert.ok(await page.getByTestId('nav-drawer').count() === 1, 'drawer rendered') }
+      if (w < 1024) { await hydrated(page); for (let i = 0; i < 25 && (await page.getByTestId('nav-menu').getAttribute('aria-expanded')) !== 'true'; i++) { await page.getByTestId('nav-menu').click(); await page.waitForTimeout(800) }; assert.equal(await page.getByTestId('nav-menu').getAttribute('aria-expanded'), 'true', 'mobile menu opens'); assert.ok(await page.getByTestId('nav-drawer').count() === 1, 'drawer rendered') }
       await page.screenshot({ path: `/tmp/claude-501/home-${w}.png`, fullPage: true }).catch(() => {})
     } finally { await ctx.close() }
   })
