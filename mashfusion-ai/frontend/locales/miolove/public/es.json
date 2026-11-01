@@ -1,8 +1,8 @@
 {
   "home": {
     "meta": {
-      "title": "MIOLOVE ALBUM — El álbum de fotos digital para tus eventos",
-      "description": "Los invitados escanean un código QR y comparten las fotos de tu boda, cumpleaños o bautizo en un único álbum, con presentación en vivo. Sin apps. Prueba gratis 7 días.",
+      "title": "MIOLOVE ALBUM — Álbum de fotos con QR para bodas y fiestas",
+      "description": "Tus invitados escanean un código QR y comparten las fotos de tu boda, cumpleaños o bautizo en un álbum con proyección en vivo. Sin apps. Prueba gratis 7 días.",
       "ogTitle": "MIOLOVE ALBUM — Tus recuerdos, contados por quienes los viven"
     },
     "nav": {
@@ -38,11 +38,11 @@
       },
       "s2": {
         "title": "Comparte el código QR",
-        "text": "Muéstralo en las mesas, envía el enlace o imprímelo. Los invitados lo escanean con el móvil."
+        "text": "Muéstralo en las mesas, envía el enlace o imprímelo. Los invitados lo escanean con el teléfono."
       },
       "s3": {
         "title": "Los invitados suben sus fotos",
-        "text": "Desde el navegador, sin apps ni registro: hacen o eligen una foto y la envían."
+        "text": "Desde el navegador, sin apps ni registro: toman o eligen una foto y la envían."
       },
       "s4": {
         "title": "Revive los recuerdos",
@@ -64,15 +64,15 @@
       },
       "noApp": {
         "title": "Sin apps",
-        "text": "Funciona en el navegador del móvil: sin descargas ni cuenta para los invitados."
+        "text": "Funciona en el navegador del teléfono: sin descargas ni cuenta para los invitados."
       },
       "slideshow": {
         "title": "Presentación en vivo",
         "text": "Las fotos llegan a la pantalla grande mientras se hacen."
       },
       "booth": {
-        "title": "Fotos y vídeos de los invitados",
-        "text": "Hacen o eligen fotos y vídeos desde el móvil: llegan a tu álbum, en calidad original."
+        "title": "Fotos y videos de los invitados",
+        "text": "Toman o eligen fotos y videos desde el teléfono: llegan a tu álbum, en calidad original."
       },
       "privacy": {
         "title": "Tú decides qué se ve",
@@ -93,7 +93,7 @@
     },
     "benefits": {
       "eyebrow": "Por qué elegirlo",
-      "title": "Las mejores fotos están en los móviles de tus invitados",
+      "title": "Las mejores fotos están en los teléfonos de tus invitados",
       "b1": {
         "title": "Todo en un solo lugar",
         "text": "Se acabaron las fotos repartidas entre chats, grupos y carretes: cada foto va al mismo álbum."
@@ -161,15 +161,15 @@
     },
     "preview": {
       "eyebrow": "Vista previa del producto",
-      "title": "Móvil, álbum y pantalla grande, siempre sincronizados",
+      "title": "Teléfono, álbum y pantalla grande, siempre sincronizados",
       "sub": "La misma fiesta, tres pantallas: lo que envía un invitado está en el álbum y en la pantalla grande.",
       "guest": "Página de invitados",
       "screen": "Pantalla grande",
       "album": "Tu álbum",
       "sample": "Vista previa ilustrativa",
       "sampleName": "Cumpleaños de Martina",
-      "cta": "Enviar fotos y vídeos",
-      "albumCount": "{n} fotos y vídeos",
+      "cta": "Enviar fotos y videos",
+      "albumCount": "{n} fotos y videos",
       "albumLive": "En directo"
     },
     "reviews": {
@@ -189,11 +189,11 @@
       "title": "Preguntas frecuentes",
       "q1": {
         "q": "¿Tengo que instalar una app?",
-        "a": "No. Tú gestionas el álbum desde el navegador y los invitados participan desde el navegador del móvil escaneando el código QR."
+        "a": "No. Tú gestionas el álbum desde el navegador y los invitados participan desde el navegador del teléfono escaneando el código QR."
       },
       "q2": {
         "q": "¿Cómo participan los invitados?",
-        "a": "Escanean el código QR o abren el enlace, hacen o eligen una foto y la envían. No necesitan registrarse."
+        "a": "Escanean el código QR o abren el enlace, toman o eligen una foto y la envían. No necesitan registrarse."
       },
       "q3": {
         "q": "¿Qué pasa después de los 7 días de prueba?",
@@ -241,7 +241,7 @@
       "martinaGarden": "Una niña se ríe delante de la tarta con velas en la fiesta en el jardín",
       "martinaQrTable": "Mesa puesta con la tarjeta MIOLOVE «Compleanno di Martina» y el código QR para escanear",
       "weddingParty": "Los novios bailan con los invitados en la fiesta nocturna",
-      "weddingGuestsPhones": "Invitados sonrientes fotografían a los novios con el móvil",
+      "weddingGuestsPhones": "Invitados sonrientes fotografían a los novios con el teléfono",
       "baptism": "Una familia admira al bebé con vestido blanco junto a la pila bautismal",
       "partyFriends": "Amigos bailando y brindando con una copa en la mano en una fiesta nocturna en el jardín bajo las luces"
     }
@@ -249,8 +249,8 @@
   "ideas": {
     "meta": {
       "title": "Juegos de fotos para bodas y fiestas: 10 ideas con QR",
-      "description": "Ideas de juegos de fotos para bodas, cumpleaños, bautizos y fiestas: retos sencillos con el QR de MIOLOVE para que tus invitados hagan fotos reales y espontáneas.",
-      "ogTitle": "10 ideas para que tus invitados hagan fotos con el código QR de MIOLOVE"
+      "description": "Ideas de juegos de fotos para bodas, cumpleaños, bautizos y fiestas: retos sencillos con el QR de MIOLOVE para que tus invitados tomen fotos espontáneas.",
+      "ogTitle": "10 ideas para que tus invitados tomen fotos con el código QR de MIOLOVE"
     },
     "nav": {
       "label": "Ideas",
@@ -268,8 +268,8 @@
     },
     "concept": {
       "title": "Qué es un juego de fotos con QR",
-      "p1": "El QR del álbum suele quedarse en una tarjeta sobre la mesa: unos pocos lo escanean y luego se olvidan. Un juego de fotos le da un motivo para usarse: un pequeño reto, un tema, una competición entre mesas que invita a todos a mirar a su alrededor y a hacer una foto.",
-      "p2": "No hay nada nuevo que configurar. Los invitados escanean el QR, envían fotos y vídeos desde su móvil sin registrarse, y tú lo ves todo en el álbum y en la pantalla grande. El juego lo decides tú, de palabra: en la tarjeta, por el micrófono, en una notita en cada mesa.",
+      "p1": "El QR del álbum suele quedarse en una tarjeta sobre la mesa: unos pocos lo escanean y luego se olvidan. Un juego de fotos le da un motivo para usarse: un pequeño reto, un tema, una competición entre mesas que invita a todos a mirar a su alrededor y a tomar una foto.",
+      "p2": "No hay nada nuevo que configurar. Los invitados escanean el QR, envían fotos y videos desde su teléfono sin registrarse, y tú lo ves todo en el álbum y en la pantalla grande. El juego lo decides tú, de palabra: en la tarjeta, por el micrófono, en una notita en cada mesa.",
       "note": "Son ideas y consejos prácticos, no reglas fijas: elige la que más te guste y adáptala a tu evento."
     },
     "steps": {
@@ -285,11 +285,11 @@
       },
       "s3": {
         "t": "Mira cómo llegan las fotos",
-        "d": "Los invitados envían fotos y vídeos sin app ni cuenta. Tú los encuentras en el álbum en calidad original y puedes mostrarlos en la pantalla grande."
+        "d": "Los invitados envían fotos y videos sin app ni cuenta. Tú los encuentras en el álbum en calidad original y puedes mostrarlos en la pantalla grande."
       }
     },
     "list": {
-      "title": "10 ideas originales para que tus invitados hagan fotos",
+      "title": "10 ideas originales para que tus invitados tomen fotos",
       "sub": "De cada una verás lo fácil que es organizarla, cuándo funciona mejor y por qué marca la diferencia.",
       "difficulty": "Dificultad",
       "when": "Cuándo usarla",
@@ -325,7 +325,7 @@
       },
       "generations": {
         "title": "Generaciones juntas",
-        "text": "Invita a hacerse una foto con alguien de otra edad: nieto y abuela, primo pequeño y tío, una amiga y su madre. Cada pareja de generaciones se convierte en un retrato para guardar.",
+        "text": "Invita a tomarse una foto con alguien de otra edad: nieto y abuela, primo pequeño y tío, una amiga y su madre. Cada pareja de generaciones se convierte en un retrato para guardar.",
         "when": "Después de la parte formal, cuando todos se han relajado y se mezclan.",
         "why": "Las fotos de familia más queridas son las que juntan generaciones, y suelen faltar porque a nadie se le ocurre organizarlas."
       },
@@ -355,7 +355,7 @@
       },
       "keepsake": {
         "title": "Un recuerdo para el homenajeado",
-        "text": "Cada invitado envía una foto o un vídeo corto con un deseo, un recuerdo o un consejo para quien se celebra: los novios, el cumpleañero, el niño bautizado. Después se ve todo juntos.",
+        "text": "Cada invitado envía una foto o un video corto con un deseo, un recuerdo o un consejo para quien se celebra: los novios, el cumpleañero, el niño bautizado. Después se ve todo juntos.",
         "when": "Pídelo antes de la fiesta o recoge los mensajes durante la celebración.",
         "why": "Se convierte en un regalo colectivo sin coste ni organización: un álbum de voces y rostros que el homenajeado volverá a ver durante años."
       }
@@ -389,7 +389,7 @@
       "title": "Por qué jugar con el QR mejora el álbum",
       "b1": {
         "t": "Más fotos, desde más puntos de vista",
-        "d": "Un reto anima a participar a quien normalmente no hace fotos: el álbum cuenta la fiesta con muchos ojos distintos."
+        "d": "Un reto anima a participar a quien normalmente no toma fotos: el álbum cuenta la fiesta con muchos ojos distintos."
       },
       "b2": {
         "t": "Sin app, sin cuenta",
@@ -397,7 +397,7 @@
       },
       "b3": {
         "t": "Calidad original",
-        "d": "Las fotos y los vídeos conservan la calidad con que se hicieron y puedes descargarlos todos en un único ZIP."
+        "d": "Las fotos y los videos conservan la calidad con que se hicieron y puedes descargarlos todos en un único ZIP."
       },
       "b4": {
         "t": "Todo en un solo lugar",
@@ -408,11 +408,11 @@
       "title": "Preguntas frecuentes sobre las ideas",
       "q1": {
         "q": "¿Hay que configurar algo para jugar?",
-        "a": "No. Las ideas usan lo que el álbum ya hace: los invitados escanean el QR y envían fotos y vídeos. El reto lo anuncias tú, de palabra o en una tarjeta, sin ajustes adicionales."
+        "a": "No. Las ideas usan lo que el álbum ya hace: los invitados escanean el QR y envían fotos y videos. El reto lo anuncias tú, de palabra o en una tarjeta, sin ajustes adicionales."
       },
       "q2": {
         "q": "¿Los invitados tienen que instalar una app o registrarse?",
-        "a": "No. Se abre en su móvil tras escanear el QR, sin app y sin cuenta. Pueden dejar un nombre, pero es opcional."
+        "a": "No. Se abre en su teléfono tras escanear el QR, sin app y sin cuenta. Pueden dejar un nombre, pero es opcional."
       },
       "q3": {
         "q": "¿Cómo distingo las fotos de una mesa o de un reto?",
@@ -440,7 +440,7 @@
     "teaser": {
       "eyebrow": "Ideas para usar MIOLOVE",
       "title": "El QR se convierte en un juego",
-      "text": "Caza de momentos, mesa contra mesa, un color una foto: descubre 10 ideas sencillas para que tus invitados hagan más fotos.",
+      "text": "Caza de momentos, mesa contra mesa, un color una foto: descubre 10 ideas sencillas para que tus invitados tomen más fotos.",
       "button": "Descubre las ideas",
       "moreAria": "Ir a la página con todas las ideas"
     },

@@ -9,16 +9,16 @@
       "namesLabel": "Nombres de los novios",
       "namesDesc": "Los nombres que se muestran en la página de invitados, en la pantalla y en el póster.",
       "namesPlaceholder": "Anna y Marco",
-      "boothIntro": "Haz una foto o elige fotos y vídeos de tu galería: irán al álbum de la boda y aparecerán enseguida en la pantalla.",
+      "boothIntro": "Toma una foto o elige fotos y videos de tu galería: irán al álbum de la boda y aparecerán enseguida en la pantalla.",
       "frameTitle": "Recién casados",
-      "homeSubtitle": "Todo bajo control para vuestro gran día.",
+      "homeSubtitle": "Todo bajo control para su gran día.",
       "photoTitle": "Comparte tus fotos de la boda"
     },
     "birthday": {
       "namesLabel": "Nombre del cumpleañero/a",
       "namesDesc": "El nombre que se muestra en la página de invitados, en la pantalla y en el póster.",
       "namesPlaceholder": "Martina",
-      "boothIntro": "Haz una foto o elige fotos y vídeos de tu galería: irán al álbum del cumpleaños y aparecerán enseguida en la pantalla.",
+      "boothIntro": "Toma una foto o elige fotos y videos de tu galería: irán al álbum del cumpleaños y aparecerán enseguida en la pantalla.",
       "frameTitle": "Feliz cumpleaños",
       "homeSubtitle": "Todo bajo control para tu fiesta.",
       "photoTitle": "Comparte tus fotos de la fiesta"
@@ -27,7 +27,7 @@
       "namesLabel": "Nombre del niño/a",
       "namesDesc": "El nombre que se muestra en la página de invitados, en la pantalla y en el póster.",
       "namesPlaceholder": "Leonardo",
-      "boothIntro": "Haz una foto o elige fotos y vídeos de tu galería: irán al álbum del bautizo y aparecerán enseguida en la pantalla.",
+      "boothIntro": "Toma una foto o elige fotos y videos de tu galería: irán al álbum del bautizo y aparecerán enseguida en la pantalla.",
       "frameTitle": "Bienvenido",
       "homeSubtitle": "Todo bajo control para este día especial.",
       "photoTitle": "Comparte tus fotos del bautizo"
@@ -36,27 +36,27 @@
       "namesLabel": "Nombre que mostrar",
       "namesDesc": "El nombre que se muestra en la página de invitados, en la pantalla y en el póster.",
       "namesPlaceholder": "Nuestro evento",
-      "boothIntro": "Haz una foto o elige fotos y vídeos de tu galería: irán al álbum del evento y aparecerán enseguida en la pantalla.",
+      "boothIntro": "Toma una foto o elige fotos y videos de tu galería: irán al álbum del evento y aparecerán enseguida en la pantalla.",
       "frameTitle": "Un bonito recuerdo",
       "homeSubtitle": "Todo bajo control para tu evento.",
       "photoTitle": "Comparte tus fotos del evento"
     }
   },
   "guestAlbum": {
-    "trialEnded": "La prueba gratuita de este álbum ha terminado: ya no se pueden añadir fotos ni vídeos nuevos. Los ya subidos siguen visibles.",
-    "limitReached": "Este álbum ha alcanzado el límite de la prueba gratuita (50 contenidos, fotos y vídeos juntos).",
-    "photosOff": "El envío de fotos y vídeos no está activo en este momento. Inténtalo más tarde.",
-    "photoTitle": "Envía fotos y vídeos",
+    "trialEnded": "La prueba gratuita de este álbum ha terminado: ya no se pueden añadir fotos ni videos nuevos. Los ya subidos siguen visibles.",
+    "limitReached": "Este álbum ha alcanzado el límite de la prueba gratuita (50 contenidos, fotos y videos juntos).",
+    "photosOff": "El envío de fotos y videos no está activo en este momento. Inténtalo más tarde.",
+    "photoTitle": "Envía fotos y videos",
     "err": {
       "cooldown": "Inténtalo de nuevo en unos segundos.",
       "guestLimit": "Ya has enviado muchísimos archivos: ¡gracias!",
       "tooLarge": "La foto es demasiado grande (máx. 50 MB).",
-      "format": "Formato no admitido. Usa fotos JPG, PNG o WebP, o vídeos MP4, MOV o WebM.",
+      "format": "Formato no admitido. Usa fotos JPG, PNG o WebP, o videos MP4, MOV o WebM.",
       "retry": "La subida ha fallado, inténtalo de nuevo.",
-      "videoTooLarge": "El vídeo supera el límite máximo de 150 MB."
+      "videoTooLarge": "El video supera el límite máximo de 150 MB."
     },
-    "notActivated": "Este álbum aún no está activo: por ahora no se pueden subir fotos ni vídeos.",
-    "albumExpired": "Este álbum ha caducado: ya no se pueden añadir fotos ni vídeos."
+    "notActivated": "Este álbum aún no está activo: por ahora no se pueden subir fotos ni videos.",
+    "albumExpired": "Este álbum ha caducado: ya no se pueden añadir fotos ni videos."
   },
   "wdAdmin": {
     "trial": {
@@ -65,7 +65,7 @@
       "expiredTitle": "La prueba gratuita ha terminado",
       "expiredHint": "Tu álbum sigue siendo legible y tus fotos se conservan. Activa el álbum para volver a añadir contenido.",
       "unit": "contenidos",
-      "hint": "Puedes reunir hasta {max} contenidos (fotos y vídeos juntos) gratis."
+      "hint": "Puedes reunir hasta {max} contenidos (fotos y videos juntos) gratis."
     }
   },
   "albumPlan": {
@@ -100,7 +100,7 @@
     "history": "Pagos",
     "f": {
       "trialQuotaPhotos": "50 fotos",
-      "trialQuotaMedia": "50 contenidos, fotos y vídeos juntos",
+      "trialQuotaMedia": "50 contenidos, fotos y videos juntos",
       "guests": "Invitados ilimitados",
       "noApp": "Sin apps que instalar",
       "qrLink": "Código QR y enlace",
@@ -112,7 +112,7 @@
       "noDownloadAll": "Descargarlo todo con un clic",
       "noWhiteLabel": "Eliminación de la marca MIOLOVE",
       "albumMediaPhotos": "Fotos ilimitadas",
-      "albumMedia": "Fotos y vídeos ilimitados",
+      "albumMedia": "Fotos y videos ilimitados",
       "months12Upload": "365 días para subir y descargar",
       "months12Storage": "365 días de almacenamiento",
       "originalQuality": "Calidad original",
@@ -136,12 +136,12 @@
     "daysRemaining": "{n} días restantes",
     "availableUntil": "Disponible hasta el {date}",
     "trialUntil": "Prueba gratuita hasta el {date}",
-    "activateBefore": "Actívalo antes del {date} para conservar tus fotos y vídeos",
-    "pendingHint": "Álbum aún no activo: actívalo para recoger fotos y vídeos durante 365 días.",
+    "activateBefore": "Actívalo antes del {date} para conservar tus fotos y videos",
+    "pendingHint": "Álbum aún no activo: actívalo para recoger fotos y videos durante 365 días.",
     "expiredHint": "Han pasado los 365 días: el contenido de este álbum se está eliminando.",
     "activateAlbum": "Activar álbum — {price}",
     "howTitle": "Cómo funciona",
-    "how1": "Una sola prueba gratuita por cuenta: 7 días, hasta 50 fotos y vídeos.",
+    "how1": "Una sola prueba gratuita por cuenta: 7 días, hasta 50 fotos y videos.",
     "how2": "Cada otro álbum se activa con un pago único de {price}.",
     "how3": "Cada álbum dura 365 días desde su propia activación, independientemente de los demás.",
     "how4": "Al vencer, el contenido del álbum se elimina definitivamente: descárgalo todo antes.",
@@ -151,7 +151,7 @@
   },
   "albumPrivacy": {
     "guestUpload": "Envío de fotos de los invitados",
-    "guestUploadDesc": "Los invitados pueden hacer y subir fotos al álbum.",
+    "guestUploadDesc": "Los invitados pueden tomar y subir fotos al álbum.",
     "screenPhotos": "Fotos en la pantalla",
     "screenPhotosDesc": "Las fotos de los invitados se reproducen en el monitor (presentación en vivo)."
   },
@@ -192,9 +192,9 @@
   },
   "media": {
     "guest": {
-      "pick": "Elegir fotos o vídeos",
+      "pick": "Elegir fotos o videos",
       "more": "Añadir más archivos",
-      "hint": "Puedes elegir varios archivos a la vez. Vídeos de hasta 150 MB cada uno.",
+      "hint": "Puedes elegir varios archivos a la vez. Videos de hasta 150 MB cada uno.",
       "queue": "Tus archivos",
       "waiting": "En espera",
       "preparing": "Preparando…",
@@ -206,16 +206,16 @@
       "keepOpen": "Mantén esta página abierta hasta que se envíen los archivos.",
       "nameLabel": "Tu nombre (opcional)",
       "namePlaceholder": "Ej. Julia",
-      "nameHint": "Aparecerá junto a tus fotos y vídeos. Si lo dejas vacío aparecerás como «Anónimo»."
+      "nameHint": "Aparecerá junto a tus fotos y videos. Si lo dejas vacío aparecerás como «Anónimo»."
     },
     "gallery": {
       "close": "Cerrar",
       "prev": "Anterior",
       "next": "Siguiente",
       "openPhoto": "Abrir la foto",
-      "openVideo": "Reproducir el vídeo",
+      "openVideo": "Reproducir el video",
       "downloadOriginal": "Descargar original",
-      "videoUnsupported": "Tu navegador no puede reproducir este vídeo. Descarga el original para verlo."
+      "videoUnsupported": "Tu navegador no puede reproducir este video. Descarga el original para verlo."
     },
     "export": {
       "starting": "Iniciando…",
@@ -224,9 +224,9 @@
       "again": "Descargar de nuevo",
       "failed": "La preparación ha fallado.",
       "retry": "Reintentar",
-      "empty": "El álbum aún no contiene fotos ni vídeos.",
+      "empty": "El álbum aún no contiene fotos ni videos.",
       "expired": "El archivo ha caducado: prepara uno nuevo.",
-      "hint": "Un único archivo ZIP con los originales de todas las fotos y vídeos.",
+      "hint": "Un único archivo ZIP con los originales de todas las fotos y videos.",
       "keepOpen": "Puedes seguir usando el álbum mientras preparamos el archivo.",
       "selectionPreparing": "Preparando la descarga…",
       "selectionReadyButton": "Descargar de nuevo",
@@ -237,7 +237,7 @@
     }
   },
   "guestMenu": {
-    "photos": "Enviar fotos y vídeos",
-    "photosDesc": "Haz una foto o elige fotos y vídeos de tu galería"
+    "photos": "Enviar fotos y videos",
+    "photosDesc": "Toma una foto o elige fotos y videos de tu galería"
   }
 }

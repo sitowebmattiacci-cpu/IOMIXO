@@ -114,7 +114,7 @@ test('MEDIA-2. refusals are local, clear and localized (IT / EN / FR / ES): vide
     it: { pick: 'Scegli foto o video', big: 'Il video supera il limite massimo di 150 MB.', fmt: 'Formato non supportato.' },
     en: { pick: 'Choose photos or videos', big: 'The video exceeds the maximum of 150 MB.', fmt: 'Unsupported format.' },
     fr: { pick: 'Choisir photos ou vidéos', big: 'La vidéo dépasse la limite maximale de 150 Mo.', fmt: 'Format non pris en charge.' },
-    es: { pick: 'Elegir fotos o vídeos', big: 'El vídeo supera el límite máximo de 150 MB.', fmt: 'Formato no admitido.' },
+    es: { pick: 'Elegir fotos o videos', big: 'El video supera el límite máximo de 150 MB.', fmt: 'Formato no admitido.' },
   }
   for (const [lang, txt] of Object.entries(L)) {
     const ctx = await newCtx({ width: 390, height: 844 }, lang)

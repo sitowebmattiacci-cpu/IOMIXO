@@ -108,7 +108,7 @@ test('SEO1. metadata, hreflang, language URLs, structured data, robots, sitemap,
       desc: document.querySelector('meta[name="description"]')?.getAttribute('content'), ld: Array.from(document.querySelectorAll('script[type="application/ld+json"]')).map((e) => e.textContent),
       robots: document.querySelector('meta[name="robots"]')?.getAttribute('content'), lang: document.documentElement.lang,
     }))
-    assert.match(h.title, /MIOLOVE ALBUM — Album fotografico digitale/); assert.equal((h.canonical ?? '').replace(/\/$/, ''), 'https://miolovealbum.com'); assert.match(h.desc ?? '', /QR code/)
+    assert.match(h.title, /MIOLOVE ALBUM — Album foto con QR code per matrimoni e feste/); assert.equal((h.canonical ?? '').replace(/\/$/, ''), 'https://miolovealbum.com'); assert.match(h.desc ?? '', /QR code/)
     assert.deepEqual(h.alt.map((a) => a[0]).sort(), ['en', 'es', 'fr', 'it', 'x-default']); assert.equal(h.tw, 'summary'); assert.match(h.og ?? '', /MIOLOVE/); assert.match(h.robots ?? '', /index/)
     const ld = JSON.parse(h.ld.join('')); assert.deepEqual(ld['@graph'].map((x: any) => x['@type']), ['Organization', 'WebSite', 'SoftwareApplication'])
     assert.doesNotMatch(JSON.stringify(h), /iomixo/i, 'no IOMIXO in the MIOLOVE head')
