@@ -24,7 +24,7 @@ import { IdeasTeaser } from '../ideas/IdeasTeaser'
 import { homePath, ideasPath } from '@/lib/miolove/paths'
 import { UrlLocale } from '../UrlLocale'
 
-export const btnPrimary = 'inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-wd-pink px-7 text-[16px] font-semibold text-white shadow-[0_10px_30px_rgba(240,106,155,0.35)] transition hover:bg-wd-pink-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/50'
+export const btnPrimary = 'inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-wd-pink px-7 text-[16px] font-semibold text-wd-ink shadow-[0_10px_30px_rgba(240,106,155,0.35)] transition hover:bg-wd-pink-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/50'
 export const btnSecondary = 'inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl border border-wd-border bg-white px-7 text-[16px] font-semibold text-wd-ink transition hover:bg-wd-active focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/40'
 
 // ── Header ───────────────────────────────────────────────────────────────────
@@ -49,10 +49,10 @@ export function Header({ showReviews, base = '' }: { showReviews: boolean; base?
         <div className="flex items-center gap-2 sm:gap-3">
           <MioloveLanguageSwitcher />
           {signedIn ? (
-            <Link href="/sessions" className="hidden min-h-[44px] items-center rounded-full bg-wd-pink px-5 text-sm font-semibold text-white hover:bg-wd-pink-hover sm:inline-flex" data-testid="nav-my-albums">{t('home.nav.myAlbums')}</Link>
+            <Link href="/sessions" className="hidden min-h-[44px] items-center rounded-full bg-wd-pink px-5 text-sm font-semibold text-wd-ink hover:bg-wd-pink-hover sm:inline-flex" data-testid="nav-my-albums">{t('home.nav.myAlbums')}</Link>
           ) : (<>
-            <Link href="/login" className="hidden min-h-[44px] items-center px-2 text-[15px] font-semibold text-wd-ink hover:text-wd-pink md:inline-flex" data-testid="nav-login">{t('home.nav.login')}</Link>
-            <Link href="/register" className="hidden min-h-[44px] items-center rounded-full bg-wd-pink px-5 text-sm font-semibold text-white hover:bg-wd-pink-hover sm:inline-flex" data-testid="nav-try-free">{t('home.nav.tryFree')}</Link>
+            <Link href="/login" className="hidden min-h-[44px] items-center px-2 text-[15px] font-semibold text-wd-ink hover:text-wd-pink-ink md:inline-flex" data-testid="nav-login">{t('home.nav.login')}</Link>
+            <Link href="/register" className="hidden min-h-[44px] items-center rounded-full bg-wd-pink px-5 text-sm font-semibold text-wd-ink hover:bg-wd-pink-hover sm:inline-flex" data-testid="nav-try-free">{t('home.nav.tryFree')}</Link>
           </>)}
           <button type="button" onClick={() => setOpen((o) => !o)} aria-label={t('home.nav.menu')} aria-expanded={open} data-testid="nav-menu"
             className="flex h-11 w-11 items-center justify-center rounded-xl border border-wd-border bg-white text-wd-ink lg:hidden">
@@ -85,19 +85,19 @@ function Hero() {
       <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-5 pb-16 pt-12 sm:px-8 sm:pb-24 sm:pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
         <div className="min-w-0 text-center lg:text-left">
           <noscript><style>{'[data-hero-in]{opacity:1!important;transform:none!important}'}</style></noscript>
-          <Reveal as="p" className="mx-auto inline-flex max-w-full items-center gap-2 rounded-full border border-wd-border bg-white px-4 py-1.5 text-[13px] font-semibold text-wd-pink-hover lg:mx-0">
+          <Reveal as="p" className="mx-auto inline-flex max-w-full items-center gap-2 rounded-full border border-wd-border bg-white px-4 py-1.5 text-[13px] font-semibold text-wd-pink-ink lg:mx-0">
             <Sparkles className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{t('home.hero.badge')}</span>
           </Reveal>
           {/* The H1 is never hidden: it is in the server HTML at full opacity (SEO, LCP, no-JS), without an entrance. */}
           <h1 className="mt-6 font-album text-[40px] font-semibold leading-[1.05] tracking-tight text-wd-ink sm:text-[56px] lg:text-[64px]" data-testid="home-h1">
-            {t('home.hero.titleA')} <span className="italic text-wd-pink">{t('home.hero.titleB')}</span>
+            {t('home.hero.titleA')} <span className="italic text-wd-pink-ink">{t('home.hero.titleB')}</span>
           </h1>
           <Reveal as="p" delay={0.22} className="mx-auto mt-6 max-w-xl text-[17px] leading-relaxed text-wd-muted sm:text-[19px] lg:mx-0">{t('home.hero.sub')}</Reveal>
           <Reveal delay={0.34} className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center lg:justify-start">
             <Link href="/register" className={btnPrimary} data-testid="hero-cta-primary">{t('home.hero.ctaPrimary')} <ArrowRight className="h-5 w-5" /></Link>
             <a href="#how" className={btnSecondary} data-testid="hero-cta-secondary">{t('home.hero.ctaSecondary')}</a>
           </Reveal>
-          <Reveal as="p" delay={0.46} className="mt-5 inline-flex items-center gap-2 text-[14px] font-medium text-wd-muted" data-testid="hero-note"><Check className="h-4 w-4 text-wd-pink" />{t('home.hero.note')}</Reveal>
+          <Reveal as="p" delay={0.46} className="mt-5 inline-flex items-center gap-2 text-[14px] font-medium text-wd-muted" data-testid="hero-note"><Check className="h-4 w-4 text-wd-pink-ink" />{t('home.hero.note')}</Reveal>
         </div>
 
         {/* photo / phone / QR composition */}
@@ -120,7 +120,7 @@ function How() {
           return (
             <li key={k} className="relative rounded-3xl border border-wd-border bg-wd-bg p-6" data-testid="how-step">
               <span className="font-album text-[44px] font-semibold leading-none text-wd-pink/30">{i + 1}</span>
-              <span className="mt-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-wd-pink shadow-sm"><Icon className="h-6 w-6" /></span>
+              <span className="mt-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-wd-pink-ink shadow-sm"><Icon className="h-6 w-6" /></span>
               <h3 className="mt-4 text-[18px] font-bold text-wd-ink">{t(`home.how.${k}.title`)}</h3>
               <p className="mt-2 text-[15px] leading-relaxed text-wd-muted">{t(`home.how.${k}.text`)}</p>
             </li>
@@ -149,7 +149,7 @@ function Features() {
       <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {FEATURE_ITEMS.filter((f) => isFeatureAvailable(f.feature)).map(({ key, icon: Icon }) => (
           <li key={key} className="rounded-3xl border border-wd-border bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(240,106,155,0.14)]" data-testid="feature-card">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-wd-active text-wd-pink"><Icon className="h-6 w-6" /></span>
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-wd-active text-wd-pink-ink"><Icon className="h-6 w-6" /></span>
             <h3 className="mt-4 text-[18px] font-bold text-wd-ink">{t(`home.features.${key}.title`)}</h3>
             <p className="mt-2 text-[15px] leading-relaxed text-wd-muted">{t(`home.features.${key}.text`)}</p>
           </li>
@@ -167,7 +167,7 @@ function Benefits() {
     <Section tone="blush">
       <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
         <div>
-          <p className="text-[12px] font-bold uppercase tracking-[0.22em] text-wd-pink">{t('home.benefits.eyebrow')}</p>
+          <p className="text-[12px] font-bold uppercase tracking-[0.22em] text-wd-pink-ink">{t('home.benefits.eyebrow')}</p>
           <h2 className="mt-3 font-album text-[32px] font-semibold leading-[1.1] tracking-tight text-wd-ink sm:text-[42px]">{t('home.benefits.title')}</h2>
         </div>
         <ul className="grid gap-4 sm:grid-cols-2">
@@ -175,7 +175,7 @@ function Benefits() {
             const Icon = icons[i]
             return (
               <li key={k} className="rounded-3xl bg-white p-6 shadow-[0_8px_24px_rgba(240,106,155,0.10)]" data-testid="benefit-card">
-                <Icon className="h-6 w-6 text-wd-pink" />
+                <Icon className="h-6 w-6 text-wd-pink-ink" />
                 <h3 className="mt-3 text-[17px] font-bold text-wd-ink">{t(`home.benefits.${k}.title`)}</h3>
                 <p className="mt-1.5 text-[15px] leading-relaxed text-wd-muted">{t(`home.benefits.${k}.text`)}</p>
               </li>
@@ -196,12 +196,12 @@ function WhyNotWhatsapp() {
       <div className="mx-auto mt-12 max-w-4xl overflow-hidden rounded-[28px] border border-wd-border" data-testid="whatsapp-compare">
         <div className="grid grid-cols-2 bg-wd-bg text-[13px] font-bold uppercase tracking-wide sm:text-sm">
           <p className="px-4 py-3 text-wd-muted sm:px-6">{t('home.whatsapp.colA')}</p>
-          <p className="bg-wd-active px-4 py-3 text-wd-pink-hover sm:px-6">{t('home.whatsapp.colB')}</p>
+          <p className="bg-wd-active px-4 py-3 text-wd-pink-ink sm:px-6">{t('home.whatsapp.colB')}</p>
         </div>
         {(['r1', 'r2', 'r3', 'r4', 'r5'] as const).map((k) => (
           <div key={k} className="grid grid-cols-2 border-t border-wd-border">
-            <p className="flex items-start gap-2 px-4 py-4 text-[14px] leading-snug text-wd-muted sm:gap-3 sm:px-6 sm:text-[15px]"><X className="mt-0.5 h-4 w-4 shrink-0 text-wd-muted/70" />{t(`home.whatsapp.${k}.a`)}</p>
-            <p className="flex items-start gap-2 bg-wd-active/50 px-4 py-4 text-[14px] font-medium leading-snug text-wd-ink sm:gap-3 sm:px-6 sm:text-[15px]"><Check className="mt-0.5 h-4 w-4 shrink-0 text-wd-pink" strokeWidth={3} />{t(`home.whatsapp.${k}.b`)}</p>
+            <p className="flex items-start gap-2 px-4 py-4 text-[14px] leading-snug text-wd-muted sm:gap-3 sm:px-6 sm:text-[15px]"><X className="mt-0.5 h-4 w-4 shrink-0 text-wd-muted" />{t(`home.whatsapp.${k}.a`)}</p>
+            <p className="flex items-start gap-2 bg-wd-active/50 px-4 py-4 text-[14px] font-medium leading-snug text-wd-ink sm:gap-3 sm:px-6 sm:text-[15px]"><Check className="mt-0.5 h-4 w-4 shrink-0 text-wd-pink-ink" strokeWidth={3} />{t(`home.whatsapp.${k}.b`)}</p>
           </div>
         ))}
       </div>
@@ -259,7 +259,7 @@ function Preview() {
                 <p className="truncate font-album text-[17px] font-semibold text-wd-ink">{title}</p>
                 <p className="text-[11px] font-medium text-wd-muted">{t('home.preview.albumCount').replace('{n}', String(photos.length))}</p>
               </div>
-              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-wd-active px-2.5 py-1 text-[11px] font-bold text-wd-pink-hover"><span className="h-1.5 w-1.5 rounded-full bg-wd-pink" />{t('home.preview.albumLive')}</span>
+              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-wd-active px-2.5 py-1 text-[11px] font-bold text-wd-pink-ink"><span className="h-1.5 w-1.5 rounded-full bg-wd-pink" />{t('home.preview.albumLive')}</span>
             </div>
             <div className="grid grid-cols-4 gap-2">
               {photos.map((p, i) => <DemoPhotoImg key={i} photo={p} className="aspect-[3/4] w-full rounded-xl" sizes="(min-width:1024px) 90px, 20vw" />)}
@@ -284,7 +284,7 @@ function Reviews({ items, demo }: { items: ReturnType<typeof reviewsToShow>['ite
     <Section id="reviews" tone="white">
       <SectionHead eyebrow={t('home.reviews.eyebrow')} title={t('home.reviews.title')} sub={t('home.reviews.sub')} />
       {demo && (
-        <p className="mx-auto mt-6 flex max-w-xl items-center justify-center gap-2 rounded-full border border-dashed border-wd-pink/60 bg-wd-active px-4 py-2 text-center text-xs font-bold text-wd-pink-hover" data-testid="reviews-demo-badge">
+        <p className="mx-auto mt-6 flex max-w-xl items-center justify-center gap-2 rounded-full border border-dashed border-wd-pink/60 bg-wd-active px-4 py-2 text-center text-xs font-bold text-wd-pink-ink" data-testid="reviews-demo-badge">
           {t('home.reviews.demoBadge')} · {t('home.reviews.demoNote')}
         </p>
       )}
@@ -294,7 +294,7 @@ function Reviews({ items, demo }: { items: ReturnType<typeof reviewsToShow>['ite
             <Quote className="h-8 w-8 text-wd-pink/50" />
             <p className="mt-4 flex-1 font-album text-[18px] leading-relaxed text-wd-ink">{r.text[locale as Locale]}</p>
             <footer className="mt-6 flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-wd-active font-bold text-wd-pink">{r.author[0]}</span>
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-wd-active font-bold text-wd-pink-ink">{r.author[0]}</span>
               <span><span className="block text-sm font-bold text-wd-ink">{r.author}</span><span className="block text-xs text-wd-muted">{r.context[locale as Locale]}</span></span>
             </footer>
             {r.placeholder && <span className="absolute right-4 top-4 rounded-full bg-wd-ink px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">DEMO</span>}
@@ -328,7 +328,7 @@ function Faq() {
           <details key={k} className="group rounded-2xl border border-wd-border bg-white px-5 py-1 open:shadow-[0_10px_30px_rgba(240,106,155,0.10)]">
             <summary className="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-4 text-[16px] font-semibold text-wd-ink [&::-webkit-details-marker]:hidden">
               {t(`home.faq.${k}.q`)}
-              <ChevronDown className="h-5 w-5 shrink-0 text-wd-pink transition group-open:rotate-180" />
+              <ChevronDown className="h-5 w-5 shrink-0 text-wd-pink-ink transition group-open:rotate-180" />
             </summary>
             <p className="pb-4 pr-8 text-[15px] leading-relaxed text-wd-muted">{answer(k)}</p>
           </details>
@@ -348,7 +348,7 @@ function FinalCta() {
         <div className="pointer-events-none absolute -bottom-12 -right-8 h-56 w-56 rounded-full bg-white/10" aria-hidden />
         <h2 className="relative font-album text-[32px] font-semibold leading-tight sm:text-[46px]">{t('home.cta.title')}</h2>
         <p className="relative mx-auto mt-4 max-w-md text-[17px] text-white/90">{t('home.cta.text')}</p>
-        <Link href="/register" className="relative mt-8 inline-flex min-h-[54px] items-center justify-center gap-2 rounded-2xl bg-white px-8 text-[16px] font-bold text-wd-pink-hover shadow-lg transition hover:bg-wd-bg" data-testid="final-cta">
+        <Link href="/register" className="relative mt-8 inline-flex min-h-[54px] items-center justify-center gap-2 rounded-2xl bg-white px-8 text-[16px] font-bold text-wd-pink-ink shadow-lg transition hover:bg-wd-bg" data-testid="final-cta">
           {t('home.cta.button')} <ArrowRight className="h-5 w-5" />
         </Link>
       </div>

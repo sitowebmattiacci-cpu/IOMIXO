@@ -75,11 +75,13 @@ const config: Config = {
         wd: {
           pink:    '#F06A9B',
           'pink-hover': '#E8538A',
+          // Text-safe pink: the brand pinks fail WCAG AA as small text on the light backgrounds (2.5–3.5:1); this one keeps the hue and reaches ≥ 4.5:1 on white / #FFF7FA / #FDEFF4 / #FCE8F0.
+          'pink-ink': '#CF1C5E',
           bg:      '#FFF7FA',
           active:  '#FCE8F0',
           border:  '#F3D7E1',
           ink:     '#1F2028',
-          muted:   '#85858C',
+          muted:   '#6B6B73',   // was #85858C (3.7:1 on white): ≥ 4.5:1 on every light background of the palette
         },
         // Wedding Edition palette — romantic red/blush/taupe
         wedding: {

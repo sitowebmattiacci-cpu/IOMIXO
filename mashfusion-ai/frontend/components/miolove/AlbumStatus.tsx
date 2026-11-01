@@ -61,7 +61,7 @@ export function ActivateAlbumButton({ albumId, className, compact }: { albumId: 
     <button
       type="button" data-testid="album-activate" data-album-id={albumId} disabled={!!busyId}
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); void activate(albumId) }}
-      className={cn('inline-flex items-center justify-center rounded-2xl bg-wd-pink font-semibold text-white transition hover:bg-wd-pink-hover disabled:cursor-not-allowed disabled:opacity-60', compact ? 'min-h-[40px] px-4 text-sm' : 'min-h-[48px] w-full px-5 text-[15px]', className)}
+      className={cn('inline-flex items-center justify-center rounded-2xl bg-wd-pink font-semibold text-wd-ink transition hover:bg-wd-pink-hover disabled:cursor-not-allowed disabled:opacity-60', compact ? 'min-h-[40px] px-4 text-sm' : 'min-h-[48px] w-full px-5 text-[15px]', className)}
     >
       {busy ? t('albumPlan.activating') : t('albumPlan.activateAlbum').replace('{price}', formatAlbumPrice(locale))}
     </button>

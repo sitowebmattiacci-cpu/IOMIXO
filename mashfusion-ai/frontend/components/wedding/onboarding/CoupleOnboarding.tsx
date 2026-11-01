@@ -113,7 +113,7 @@ export function CoupleOnboarding() {
                 onClick={() => { setDateUnknown(!dateUnknown); setDate('') }}
                 className="mt-2.5 inline-flex min-h-[32px] items-center gap-2 rounded-lg text-sm font-medium text-wd-pink-hover hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/40"
               >
-                <span className={cn('flex h-4 w-4 items-center justify-center rounded border', dateUnknown ? 'border-wd-pink bg-wd-pink text-white' : 'border-wd-border bg-white')}>
+                <span className={cn('flex h-4 w-4 items-center justify-center rounded border', dateUnknown ? 'border-wd-pink bg-wd-pink text-wd-ink' : 'border-wd-border bg-white')}>
                   {dateUnknown && <Check className="h-3 w-3" strokeWidth={3} />}
                 </span>
                 {t('onboarding.unknownDate')}

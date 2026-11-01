@@ -25,7 +25,8 @@ const open = async (p: Page, path: string, host = M()) => { await p.goto(`${host
 /** Opens the menu and returns the codes it offers. */
 async function menu(p: Page): Promise<string[]> {
   const trigger = p.getByTestId('miolove-lang-trigger').first()
-  for (let i = 0; i < 10 && (await p.locator('[role="listbox"]').count()) === 0; i++) { await trigger.click(); await p.waitForTimeout(350) }
+  for (let i = 0; i < 40 && (await p.locator('[role="listbox"]').count()) === 0; i++) { await trigger.click(); await p.waitForTimeout(350) }
+  await p.locator('[role="listbox"] [role="option"]').first().waitFor({ timeout: 10_000 }).catch(() => {})     // the options render a tick after the listbox on a cold dev server
   return p.locator('[role="listbox"] [role="option"]').evaluateAll((els) => els.map((e) => e.getAttribute('data-lang') ?? ''))
 }
 async function choose(p: Page, to: L, expectPath: string) {

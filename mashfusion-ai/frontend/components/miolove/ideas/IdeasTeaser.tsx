@@ -16,7 +16,7 @@ export function IdeasTeaser() {
       <div className="grid items-center gap-8 overflow-hidden rounded-[32px] border border-wd-border bg-wd-bg lg:grid-cols-[1fr_1.05fr]" data-testid="ideas-teaser">
         <DemoPhotoImg photo={DEMO_PHOTOS.partyFriends} className="h-64 w-full sm:h-80 lg:h-full lg:min-h-[360px]" sizes="(min-width:1024px) 520px, 100vw" />
         <div className="px-6 pb-8 pt-2 sm:px-10 lg:py-10 lg:pl-2">
-          <p className="inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.22em] text-wd-pink"><Sparkles className="h-3.5 w-3.5" />{t('ideas.teaser.eyebrow')}</p>
+          <p className="inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.22em] text-wd-pink-ink"><Sparkles className="h-3.5 w-3.5" />{t('ideas.teaser.eyebrow')}</p>
           <h2 className="mt-3 font-album text-[30px] font-semibold leading-[1.12] tracking-tight text-wd-ink sm:text-[38px]">{t('ideas.teaser.title')}</h2>
           <p className="mt-4 text-[16px] leading-relaxed text-wd-muted sm:text-[17px]">{t('ideas.teaser.text')}</p>
           <ul className="mt-5 flex flex-wrap gap-2" aria-label={t('ideas.list.title')}>
@@ -25,7 +25,7 @@ export function IdeasTeaser() {
             ))}
           </ul>
           <Link href={href} data-testid="ideas-teaser-cta" aria-label={t('ideas.teaser.moreAria')}
-            className="mt-7 inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-wd-pink px-7 text-[16px] font-semibold text-white shadow-[0_10px_30px_rgba(240,106,155,0.35)] transition hover:bg-wd-pink-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/50">
+            className="mt-7 inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-wd-pink px-7 text-[16px] font-semibold text-wd-ink shadow-[0_10px_30px_rgba(240,106,155,0.35)] transition hover:bg-wd-pink-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/50">
             {t('ideas.teaser.button')} <ArrowRight className="h-5 w-5" />
           </Link>
         </div>

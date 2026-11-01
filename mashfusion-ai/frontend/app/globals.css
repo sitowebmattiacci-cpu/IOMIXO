@@ -503,7 +503,7 @@ body.iomixo-dragging .clip-block {
 /* ── Wedding admin theme (scoped to .wedding-admin; Party/DJ untouched) ──
    Remaps the legacy burgundy/ivory utility colors used by shared wedding panels
    (games, requests, dedications) to the light pink wedding-admin palette. */
-.wedding-admin { --wd-pink:#F06A9B; --wd-pink-hover:#E8538A; --wd-active:#FCE8F0; --wd-border:#F3D7E1; --wd-ink:#1F2028; --wd-muted:#85858C; }
+.wedding-admin { --wd-pink:#F06A9B; --wd-pink-hover:#E8538A; --wd-active:#FCE8F0; --wd-border:#F3D7E1; --wd-ink:#1F2028; --wd-muted:#6B6B73; }
 .wedding-admin .font-wedding { font-family: inherit; font-style: normal; letter-spacing: normal; }
 .wedding-admin [class*="bg-gradient-to-"] { background-image: none; }
 .wedding-admin .bg-\[\#F7F4F3\],

@@ -27,7 +27,7 @@ export function DemoPhotoImg({ photo, className, sizes, priority = false, eager 
 export function SectionHead({ eyebrow, title, sub, center = true }: { eyebrow?: string; title: string; sub?: string; center?: boolean }) {
   return (
     <header className={cn('mx-auto max-w-2xl', center && 'text-center')}>
-      {eyebrow && <p className="text-[12px] font-bold uppercase tracking-[0.22em] text-wd-pink">{eyebrow}</p>}
+      {eyebrow && <p className="text-[12px] font-bold uppercase tracking-[0.22em] text-wd-pink-ink">{eyebrow}</p>}
       <h2 className="mt-3 font-album text-[30px] font-semibold leading-[1.12] tracking-tight text-wd-ink sm:text-[40px]">{title}</h2>
       {sub && <p className="mt-4 text-[16px] leading-relaxed text-wd-muted sm:text-[17px]">{sub}</p>}
     </header>
@@ -57,7 +57,7 @@ export function PhoneMock({ title, date, cta, className, photos = DEMO_EVENT.pho
       <div className="-mt-6 relative rounded-t-[26px] bg-wd-bg px-3 pt-4">
         <p className="text-center font-album text-[17px] font-semibold leading-tight text-wd-ink">{title}</p>
         <p className="mt-0.5 text-center text-[11px] font-medium text-wd-muted">{date}</p>
-        <span className="mt-3 flex h-10 items-center justify-center gap-1.5 rounded-xl bg-wd-pink text-[12px] font-semibold text-white shadow-[0_8px_18px_rgba(240,106,155,0.35)]"><Camera className="h-4 w-4" />{cta}</span>
+        <span className="mt-3 flex h-10 items-center justify-center gap-1.5 rounded-xl bg-wd-pink text-[12px] font-semibold text-wd-ink shadow-[0_8px_18px_rgba(240,106,155,0.35)]"><Camera className="h-4 w-4" />{cta}</span>
         <div className="mt-3 grid grid-cols-3 gap-1.5">
           {photos.slice(1, 4).map((p, i) => <DemoPhotoImg key={i} photo={p} className="aspect-[3/4] w-full rounded-lg" sizes="80px" />)}
         </div>

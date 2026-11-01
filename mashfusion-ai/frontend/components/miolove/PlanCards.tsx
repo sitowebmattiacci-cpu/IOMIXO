@@ -15,7 +15,7 @@ export function PlanCards({ trialCta, albumCta, className }: {
   const { t, locale } = useI18n()
   const row = (key: string, ok: boolean) => (
     <li key={key} className={cn('flex items-start gap-3 text-[15px] leading-snug', ok ? 'text-wd-ink' : 'text-wd-muted')}>
-      <span className={cn('mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full', ok ? 'bg-wd-active text-wd-pink' : 'bg-wd-bg text-wd-muted')}>
+      <span className={cn('mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full', ok ? 'bg-wd-active text-wd-pink-ink' : 'bg-wd-bg text-wd-muted')}>
         {ok ? <Check className="h-3 w-3" strokeWidth={3} /> : <Minus className="h-3 w-3" strokeWidth={3} />}
       </span>
       <span>{t(`albumPlan.f.${key}`)}</span>
@@ -43,7 +43,7 @@ export function PlanCards({ trialCta, albumCta, className }: {
 
       {/* Full album */}
       <article className="relative flex flex-col rounded-[28px] border-2 border-wd-pink bg-white p-6 shadow-[0_18px_50px_rgba(240,106,155,0.14)] sm:p-8" data-testid="plan-album">
-        <span className="absolute -top-3 left-6 rounded-full bg-wd-pink px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">{t('albumPlan.popular')}</span>
+        <span className="absolute -top-3 left-6 rounded-full bg-wd-pink px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-wd-ink">{t('albumPlan.popular')}</span>
         <header>
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-xl font-bold text-wd-ink">{t('albumPlan.albumName')}</h3>
@@ -52,11 +52,11 @@ export function PlanCards({ trialCta, albumCta, className }: {
             <s className="text-2xl font-semibold text-wd-muted/80 decoration-wd-pink/70 decoration-2" data-testid="album-list-price" aria-label={t('albumPlan.listPrice')}>{formatAlbumListPrice(locale)}</s>
             <span className="text-5xl font-bold tracking-tight text-wd-ink" data-testid="album-price">{formatAlbumPrice(locale)}</span>
           </p>
-          <p className="mt-1.5 text-[15px] font-semibold text-wd-pink-hover" data-testid="album-price-line">{t('albumPlan.albumOnce')} · {t('albumPlan.noSubscription')}</p>
+          <p className="mt-1.5 text-[15px] font-semibold text-wd-pink-ink" data-testid="album-price-line">{t('albumPlan.albumOnce')} · {t('albumPlan.noSubscription')}</p>
           {/* The five reassurances: they deny a subscription on purpose (tests ignore this block when they look for subscription wording). */}
           <ul className="mt-3 flex flex-wrap gap-2" data-reassure="true">
             {['oneTime', 'notMonthly', 'notPerGuest', 'noUpgrade'].map((k) => (
-              <li key={k} className="rounded-full bg-wd-active px-3 py-1 text-xs font-semibold text-wd-pink-hover">{t(`albumPlan.${k}`)}</li>
+              <li key={k} className="rounded-full bg-wd-active px-3 py-1 text-xs font-semibold text-wd-pink-ink">{t(`albumPlan.${k}`)}</li>
             ))}
           </ul>
         </header>
@@ -71,7 +71,7 @@ export function PlanCards({ trialCta, albumCta, className }: {
 }
 
 export const planBtn = 'inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl px-5 text-[15px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/40'
-export const planBtnPrimary = `${planBtn} bg-wd-pink text-white hover:bg-wd-pink-hover`
+export const planBtnPrimary = `${planBtn} bg-wd-pink text-wd-ink hover:bg-wd-pink-hover`
 export const planBtnSecondary = `${planBtn} border border-wd-border bg-white text-wd-ink hover:bg-wd-active`
 
 /** Public-home call to action: both offers start from the free trial. */
