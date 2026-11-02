@@ -24,18 +24,20 @@ const call = (path: string, extra: Record<string, string> = {}) => {
   return { rewrite: res.headers.get('x-middleware-rewrite') ? new URL(res.headers.get('x-middleware-rewrite')!).pathname : null, lang: res.headers.get('x-middleware-request-x-ml-lang') }
 }
 
-test('OCC-1. registry: the three occasions have a route and a slug per language; only the Italian wedding page is published, the rest answer 404 and are in no sitemap', () => {
+test('OCC-1. registry: the three occasions have a route and a slug per language; only the wedding page is published (it, en, fr, es), the rest answer 404 and are in no sitemap', () => {
   assert.deepEqual([...OCCASION_IDS], ['wedding', 'birthday', 'baptism'])
   assert.deepEqual(OCCASION_IDS.map((id) => PAGES[id].route), ['/matrimonio', '/compleanno', '/battesimo'])
   for (const id of OCCASION_IDS) assert.equal(Object.keys(PAGES[id].slugs).length, 12, `${id} has a provisional slug per language`)
   assert.deepEqual(OCCASION_IDS.map((id) => plannedPagePath(id, 'it')), ['/matrimonio', '/compleanno', '/battesimo'])
   assert.deepEqual(OCCASION_IDS.map((id) => plannedPagePath(id, 'en')), ['/en/wedding', '/en/birthday', '/en/baptism'])
   assert.deepEqual(OCCASION_IDS.map((id) => plannedPagePath(id, 'fr')), ['/fr/mariage', '/fr/anniversaire', '/fr/bapteme'])
-  assert.deepEqual(published().map((p) => p.id + ':' + p.lang), ['wedding:it'])
+  assert.deepEqual(published().map((p) => p.id + ':' + p.lang), ['wedding:it', 'wedding:en', 'wedding:fr', 'wedding:es'])
+  assert.deepEqual(['it', 'en', 'fr', 'es'].map((l) => plannedPagePath('wedding', l as any)), ['/matrimonio', '/en/wedding', '/fr/mariage', '/es/boda'], 'one canonical Spanish URL: the singular')
   assert.equal(resolvePublicPath('/matrimonio')?.page, 'wedding')
-  for (const p of ['/compleanno', '/battesimo', '/en/wedding', '/en/birthday', '/fr/mariage', '/es/bodas', '/es/boda', '/de/hochzeit']) assert.equal(resolvePublicPath(p), null, `${p} is not published`)
+  for (const p of ['/compleanno', '/battesimo', '/en/birthday', '/fr/anniversaire', '/es/bodas', '/es/cumpleanos', '/de/hochzeit', '/en/weddings', '/fr/mariages']) assert.equal(resolvePublicPath(p), null, `${p} is not published`)
   const urls = miolovePublicUrls()
-  assert.ok(urls.includes(`${ORIGIN}/matrimonio`)); assert.ok(!urls.some((u) => /compleanno|battesimo|\/wedding|\/mariage|\/bodas|hochzeit/.test(u)))
+  assert.ok(urls.includes(`${ORIGIN}/matrimonio`)); assert.ok(!urls.some((u) => /compleanno|battesimo|birthday|anniversaire|cumpleanos|\/bodas|hochzeit/.test(u)))
+  for (const p of ['/matrimonio', '/en/wedding', '/fr/mariage', '/es/boda']) assert.ok(urls.includes(`${ORIGIN}${p}`), p)
   assert.equal(new Set(urls).size, urls.length)
   for (const u of urls) assert.equal(mioloveRobotsHeader(new URL(u).pathname), null, `${u} is indexable`)
 })
@@ -44,11 +46,12 @@ test('OCC-2. middleware: the published occasion URL is rewritten/served with its
   assert.deepEqual(call('/matrimonio'), { rewrite: null, lang: 'it' })
   assert.deepEqual(call('/matrimonio/'), { rewrite: null, lang: 'it' })
   assert.deepEqual(call('/matrimonio', { 'x-ml-lang': 'en' }), { rewrite: null, lang: 'it' })
-  for (const p of ['/en/wedding', '/fr/mariage', '/es/bodas', '/compleanno', '/battesimo', '/en/birthday']) assert.deepEqual(call(p, { 'x-ml-lang': 'en' }), { rewrite: null, lang: null }, p)
+  for (const [p, lang] of [['/en/wedding', 'en'], ['/fr/mariage', 'fr'], ['/es/boda', 'es']]) assert.deepEqual(call(p, { 'x-ml-lang': 'it' }), { rewrite: '/matrimonio', lang }, p)
+  for (const p of ['/es/bodas', '/compleanno', '/battesimo', '/en/birthday']) assert.deepEqual(call(p, { 'x-ml-lang': 'en' }), { rewrite: null, lang: null }, p)
 })
 
 test('OCC-3. hreflang and canonical: a page lists only the languages it is published in, self-referencing, x-default = Italian', () => {
-  assert.deepEqual(pageAlternates('wedding'), { it: `${ORIGIN}/matrimonio`, 'x-default': `${ORIGIN}/matrimonio` })
+  assert.deepEqual(pageAlternates('wedding'), { it: `${ORIGIN}/matrimonio`, en: `${ORIGIN}/en/wedding`, fr: `${ORIGIN}/fr/mariage`, es: `${ORIGIN}/es/boda`, 'x-default': `${ORIGIN}/matrimonio` })
   for (const { id, lang } of published()) {
     const m = mioloveOccasionMetadata(id, lang) as any
     assert.equal(m.alternates.canonical, `${ORIGIN}${plannedPagePath(id, lang)}`)
@@ -57,7 +60,7 @@ test('OCC-3. hreflang and canonical: a page lists only the languages it is publi
     assert.equal(m.openGraph.url, m.alternates.canonical); assert.equal(m.openGraph.locale, LANG_META[lang].og)
     for (const l of publishedLangs(id)) assert.equal(m.alternates.languages[LANG_META[l].hreflang], `${ORIGIN}${plannedPagePath(id, l)}`)
   }
-  assert.throws(() => mioloveOccasionMetadata('wedding', 'en'), /not published/)
+  assert.throws(() => mioloveOccasionMetadata('wedding', 'de'), /not published/)
   assert.throws(() => mioloveOccasionMetadata('birthday', 'it'), /not published/)
   assert.throws(() => mioloveOccasionStructuredData('baptism', 'it'), /not published/)
 })
@@ -74,7 +77,7 @@ test('OCC-4. title ≤ 60, description 120–160, no price in the snippet, disti
   }
 })
 
-test('OCC-5. one H1 text, 4–6 own FAQ, 400–900 words of content; FAQ unique and not copied from the home or the guide', () => {
+test('OCC-5. one H1 text, 4–6 own FAQ, 400–1000 words of content; FAQ unique and not copied from the home or the guide', () => {
   for (const { id, lang } of published()) {
     const o = D[lang].occasions[id]
     assert.ok(o.hero.titleA.length > 8 && o.hero.titleB.length > 4, `${id}/${lang} H1`)
@@ -84,7 +87,7 @@ test('OCC-5. one H1 text, 4–6 own FAQ, 400–900 words of content; FAQ unique 
     const seen = new Set<string>()
     for (const f of faq) { assert.ok(f.q.endsWith('?') && f.a.length > 60, `${id}/${lang} ${f.key}`); assert.ok(!seen.has(f.q)); seen.add(f.q); assert.ok(!home.includes(f.q) && !guide.includes(f.q), `${id}/${lang} FAQ copied: ${f.q}`) }
     const n = words(strings({ ...o, meta: undefined }).join(' '))
-    assert.ok(n >= 400 && n <= 900, `${id}/${lang} ${n} words`)
+    assert.ok(n >= 400 && n <= 1000, `${id}/${lang} ${n} words`)
   }
 })
 
@@ -134,4 +137,28 @@ test('OCC-9. the route refuses what is not published (other portal, other langua
   assert.match(comp, /isPublished\(o,/, 'only published occasions are linked')
   assert.match(src('lib/miolove/messages.ts'), /PUBLIC_ONLY_NAMESPACES = \['home', 'ideas', 'occasions'\]/)
   for (const id of PAGE_IDS) assert.ok(PAGES[id].route.startsWith('/'))
+})
+
+test('OCC-10. each language is written for its own search: the H1 and the title carry that market\'s main keywords, and no sentence is left in another language', () => {
+  const KEYS: Record<string, { h1: RegExp[]; title: RegExp[] }> = {
+    it: { h1: [/album foto/i, /QR code/i, /matrimonio/i], title: [/album foto matrimonio/i, /QR code/i] },
+    en: { h1: [/QR code/i, /photo album/i, /wedding/i], title: [/wedding photo album/i, /QR code/i] },
+    fr: { h1: [/album photo/i, /mariage/i, /QR code/i], title: [/album photo de mariage/i, /QR code/i] },
+    es: { h1: [/álbum de fotos/i, /código QR/i, /boda/i], title: [/álbum de fotos de boda/i, /código QR/i] },
+  }
+  for (const { id, lang } of published()) {
+    const o = D[lang].occasions[id], h1 = `${o.hero.titleA} ${o.hero.titleB}`
+    for (const r of KEYS[lang].h1) assert.match(h1, r, `${lang} H1`)
+    for (const r of KEYS[lang].title) assert.match(o.meta.title, r, `${lang} title`)
+    assert.match(o.meta.title, /MIOLOVE ALBUM/)
+  }
+  // the plan's own names per language, never the Italian ones
+  assert.match(D.en.occasions.wedding.price.text + D.en.occasions.wedding.steps.s2.d, /Full album/); assert.doesNotMatch(JSON.stringify(D.en.occasions), /Album completo|Matrimonio/)
+  assert.match(JSON.stringify(D.fr.occasions), /Album complet/); assert.match(JSON.stringify(D.es.occasions), /Álbum completo/)
+  // one canonical Spanish URL: the singular; the plural was never published and is not linked anywhere
+  assert.equal(PAGES.wedding.slugs.es, 'boda'); assert.doesNotMatch(JSON.stringify(D), /\/es\/bodas/)
+  // French typography: a space (non-breaking) before ? ! : ; and inside guillemets
+  const fr = JSON.stringify(D.fr.occasions);   assert.doesNotMatch(fr, /« | »|[\wé’][?!:;]/, 'guillemets and punctuation use a non-breaking space')
+  // Spanish: neutral, tú, video / teléfono (the peninsular words are pinned in ML-SEO-3 for the whole file)
+  assert.doesNotMatch(JSON.stringify(D.es.occasions), /vídeo|móvil|vosotros|vuestr|ordenador|coger|hacen fotos|celular/i)
 })

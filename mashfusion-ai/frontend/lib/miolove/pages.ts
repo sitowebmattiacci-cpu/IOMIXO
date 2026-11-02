@@ -34,12 +34,12 @@ export const PAGES: Record<PageId, PageDef> = {
     slugs: { it: 'idee', en: 'ideas', fr: 'idees', es: 'ideas', de: 'ideen', 'pt-BR': 'ideias', 'pt-PT': 'ideias', nl: 'ideeen', pl: 'pomysly', el: 'ideas', ja: 'ideas', ko: 'ideas' },
     langs: ['it', 'en', 'fr', 'es'],
   },
-  // Occasion pages. Slugs of the four online languages are the planned URLs (the Spanish one is fixed with the keyword check of the Spanish text); `langs` grows
+  // Occasion pages. Slugs of the four online languages are the planned URLs (Spanish: `boda`, singular, like the Italian, English and French slugs: it is the noun of the product search "álbum de boda"; `bodas` is the plural of directories and is not published); `langs` grows
   // one language at a time, as its text is written and reviewed. An empty list = not published anywhere: every URL answers 404, nothing in sitemap or hreflang.
   wedding: {
     id: 'wedding', route: '/matrimonio',
-    slugs: { it: 'matrimonio', en: 'wedding', fr: 'mariage', es: 'bodas', de: 'hochzeit', 'pt-BR': 'casamento', 'pt-PT': 'casamento', nl: 'bruiloft', pl: 'wesele', el: 'gamos', ja: 'wedding', ko: 'wedding' },
-    langs: ['it'],
+    slugs: { it: 'matrimonio', en: 'wedding', fr: 'mariage', es: 'boda', de: 'hochzeit', 'pt-BR': 'casamento', 'pt-PT': 'casamento', nl: 'bruiloft', pl: 'wesele', el: 'gamos', ja: 'wedding', ko: 'wedding' },
+    langs: ['it', 'en', 'fr', 'es'],
   },
   birthday: {
     id: 'birthday', route: '/compleanno',

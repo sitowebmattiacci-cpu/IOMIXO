@@ -470,5 +470,134 @@
       "title": "Confirm your email",
       "description": "Confirm the email address of your MIOLOVE ALBUM account."
     }
+  },
+  "occasions": {
+    "common": {
+      "breadcrumbHome": "MIOLOVE ALBUM",
+      "ctaPrimary": "Try it free for 7 days",
+      "otherTitle": "Other occasions",
+      "guideTitle": "Ideas and photo games",
+      "guideLink": "See ideas that get guests taking more photos",
+      "homeLink": "See how MIOLOVE ALBUM works",
+      "faqTitle": "Frequently asked questions",
+      "includeTitle": "What you get with your album",
+      "priceTitle": "How much does it cost?"
+    },
+    "wedding": {
+      "meta": {
+        "title": "Wedding Photo Album with QR Code | MIOLOVE ALBUM",
+        "description": "Guests scan a QR code and upload photos and videos from your wedding to one shared album, with a live slideshow. No app to install. Try it free for 7 days.",
+        "ogTitle": "A QR code photo album for your wedding — MIOLOVE ALBUM"
+      },
+      "name": "Wedding",
+      "hero": {
+        "eyebrow": "Wedding",
+        "titleA": "A QR code photo album",
+        "titleB": "for your wedding",
+        "sub": "Put a QR code on every table. Guests scan it with their phone camera, add their photos and videos, and everything lands in one album you can also show on a screen during the reception.",
+        "ctaSecondary": "How it works at a wedding",
+        "note": "Guests don’t install an app or create an account. The trial lasts 7 days, it’s free and asks for no credit card."
+      },
+      "why": {
+        "title": "Your photographer won’t catch everything. Your guests will.",
+        "p1": "A photographer tells the story you planned. Your guests see the rest: the toast that went off script, grandpa on the dance floor, the kids’ table plotting something, the cake from a better angle. Those shots sit in a hundred camera rolls, and most of them never reach you.",
+        "p2": "MIOLOVE ALBUM gathers them in one place without asking anyone to download an app, and without chasing people through a group chat for weeks after the honeymoon."
+      },
+      "steps": {
+        "title": "How it works at your wedding",
+        "sub": "Four steps you can finish well before the big day.",
+        "s1": {
+          "t": "Create your album",
+          "d": "Choose “Wedding” as the occasion and add your names, the date and the venue. The page your guests see is built for a wedding."
+        },
+        "s2": {
+          "t": "Put the QR code where everyone sees it",
+          "d": "Print it on table cards, a welcome sign or your ceremony program. With the Full album, MIOLOVE’s card and poster editor lays them out for you."
+        },
+        "s3": {
+          "t": "Guests send photos and videos",
+          "d": "They scan the code or open the link, snap or pick a shot and send it. Adding a name is optional and there is nothing to sign up for."
+        },
+        "s4": {
+          "t": "Watch, project, download",
+          "d": "Uploads appear in your album as they arrive. Run them as a slideshow on a screen at the reception, then download everything as one ZIP after the party."
+        }
+      },
+      "moments": {
+        "title": "Where a QR code works best at a wedding",
+        "sub": "No big announcement needed: the right sign in the right spot does the job.",
+        "m1": {
+          "t": "On the reception tables",
+          "d": "One card per table turns the wait between courses into photos. Add a short line such as “Scan to share your photos” so every generation knows what to do."
+        },
+        "m2": {
+          "t": "At the ceremony",
+          "d": "Put it on the program or on the sign at the entrance so early arrivals can share the build-up. If you’re planning an unplugged ceremony, ask guests to keep phones away until the recessional."
+        },
+        "m3": {
+          "t": "During the party",
+          "d": "A slideshow on a screen lets guests watch their own photos appear, which is the easiest nudge for anyone who hasn’t uploaded yet."
+        },
+        "m4": {
+          "t": "The morning after",
+          "d": "Guests who didn’t upload during the party can still do it from the same link over the following days, while your album is active."
+        }
+      },
+      "include": {
+        "i1": {
+          "t": "Photos and videos from every guest",
+          "d": "The album takes videos too and plays them in the gallery and in the slideshow."
+        },
+        "i2": {
+          "t": "Original files, not compressed copies",
+          "d": "We keep each photo and video exactly as it was sent. The album shows lighter copies; downloading gives you the original."
+        },
+        "i3": {
+          "t": "One ZIP with everything",
+          "d": "With the Full album you download every original in a single click."
+        },
+        "i4": {
+          "t": "A slideshow for any screen",
+          "d": "Show the photos on a TV or projector while guests keep adding more."
+        },
+        "i5": {
+          "t": "You stay in control",
+          "d": "In the privacy settings you choose whether guests can upload and whether photos appear on the screen. Only people with the QR code or link can take part."
+        },
+        "i6": {
+          "t": "365 days of album",
+          "d": "Your album stays yours for 365 days from activation. Download the originals before it ends: after that, the content is deleted."
+        }
+      },
+      "price": {
+        "text": "The trial is free for 7 days, needs no credit card (one per account) and holds up to {trialLimit} photos and videos in total: enough to test the flow with a few friends, not to cover a full reception. For the wedding itself, activate the Full album: {price} as a single payment per album, valid for 365 days, with unlimited photos and videos. No monthly fee and no charge per guest."
+      },
+      "faq": {
+        "q1": {
+          "q": "Do my guests need to download an app or make an account?",
+          "a": "No. They point their phone camera at the QR code, a page opens in the browser and they tap to send. The same link works for everyone, on any phone."
+        },
+        "q2": {
+          "q": "Can I use it alongside my wedding photographer?",
+          "a": "Yes. The album doesn’t replace professional photos: it adds the candid ones your photographer can’t take from everywhere in the room, from every table and at every moment."
+        },
+        "q3": {
+          "q": "Can guests still upload after the wedding?",
+          "a": "Yes, from the same link, as long as your album is active. In the privacy settings you can also decide when guests may send photos and whether they show on the screen."
+        },
+        "q4": {
+          "q": "How many photos and videos can guests upload?",
+          "a": "With the Full album, guests and uploads are unlimited. The free trial holds up to {trialLimit} photos and videos in total, so activate the Full album before the wedding date."
+        },
+        "q5": {
+          "q": "How long are our wedding photos kept?",
+          "a": "An active album stays yours for 365 days from activation. Download all the originals as one ZIP before it ends; after that the content is deleted."
+        }
+      },
+      "cta": {
+        "title": "Set up your wedding album",
+        "text": "Create it in a few minutes, try it free for 7 days and activate it before the date to collect every photo your guests take."
+      }
+    }
   }
 }

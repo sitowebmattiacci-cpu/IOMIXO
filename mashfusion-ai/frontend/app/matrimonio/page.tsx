@@ -9,7 +9,7 @@ import { mioloveOccasionMetadata, mioloveOccasionStructuredData, occasionFaq } f
 import { publicTexts } from '@/lib/miolove/publicTexts'
 import { PublicTexts } from '@/components/miolove/PublicTexts'
 
-// Wedding page of MIOLOVE: one route, one public URL per language where its text is published (/matrimonio today; the middleware rewrites the others here and
+// Wedding page of MIOLOVE: one route, one public URL per language where its text is published (/matrimonio, /en/wedding, /fr/mariage, /es/boda; the middleware rewrites the others here and
 // forwards the language in x-ml-lang). Other portals have no such page, and neither has a language it is not published in (404).
 const urlLang = (): MioloveLang | undefined => { const v = headers().get('x-ml-lang'); return isLiveLang(v) ? v : undefined }
 const live = (): MioloveLang | null => { const l = urlLang() ?? 'it'; return getRequestPortal().config.id === 'miolove' && isPublished('wedding', l) ? l : null }

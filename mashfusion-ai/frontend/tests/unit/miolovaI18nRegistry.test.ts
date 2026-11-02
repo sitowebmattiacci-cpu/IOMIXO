@@ -56,7 +56,7 @@ test('I18N-URL-1. the eight URLs already online, the sitemap and the helpers are
   assert.deepEqual(miolovePublicUrls(), [
     `${ORIGIN}/`, `${ORIGIN}/en`, `${ORIGIN}/fr`, `${ORIGIN}/es`,
     `${ORIGIN}/idee`, `${ORIGIN}/en/ideas`, `${ORIGIN}/fr/idees`, `${ORIGIN}/es/ideas`,
-    `${ORIGIN}/matrimonio`,  // occasion pages join as their text is published (see miolovaOccasions.test.ts)
+    `${ORIGIN}/matrimonio`, `${ORIGIN}/en/wedding`, `${ORIGIN}/fr/mariage`, `${ORIGIN}/es/boda`,  // occasion pages join as their text is published (see miolovaOccasions.test.ts)
     `${ORIGIN}/privacy`, `${ORIGIN}/terms`,
   ])
   assert.equal(homePath('xx'), '/'); assert.equal(ideasPath('xx'), '/idee')
@@ -283,7 +283,7 @@ test('SWITCH-1. every published page × every published language: the menu opens
   }
   assert.deepEqual(switchOptions('ideas').map((o) => o.path), ['/idee', '/en/ideas', '/fr/idees', '/es/ideas'])
   assert.deepEqual(switchOptions('home').map((o) => o.path), ['/', '/en', '/fr', '/es'])
-  assert.deepEqual(switchOptions('wedding').map((o) => [o.path, o.exact]), [['/matrimonio', true], ['/en', false], ['/fr', false], ['/es', false]])
+  assert.deepEqual(switchOptions('wedding').map((o) => [o.path, o.exact]), [['/matrimonio', true], ['/en/wedding', true], ['/fr/mariage', true], ['/es/boda', true]])
 })
 
 test('SWITCH-2. a page missing in the chosen language opens that language\'s home; a language without a published home is not offered; drafts never appear', () => {

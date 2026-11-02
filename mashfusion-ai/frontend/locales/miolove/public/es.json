@@ -470,5 +470,134 @@
       "title": "Confirma tu correo electrónico",
       "description": "Confirma la dirección de correo de tu cuenta de MIOLOVE ALBUM."
     }
+  },
+  "occasions": {
+    "common": {
+      "breadcrumbHome": "MIOLOVE ALBUM",
+      "ctaPrimary": "Prueba gratis 7 días",
+      "otherTitle": "Otras ocasiones",
+      "guideTitle": "Ideas y juegos de fotos",
+      "guideLink": "Ver ideas para que tus invitados tomen más fotos",
+      "homeLink": "Descubre cómo funciona MIOLOVE ALBUM",
+      "faqTitle": "Preguntas frecuentes",
+      "includeTitle": "Qué recibes con tu álbum",
+      "priceTitle": "¿Cuánto cuesta?"
+    },
+    "wedding": {
+      "meta": {
+        "title": "Álbum de fotos de boda con código QR | MIOLOVE ALBUM",
+        "description": "Tus invitados escanean un código QR y suben las fotos y los videos de tu boda a un solo álbum, con slideshow en vivo. Sin instalar apps. Prueba gratis 7 días.",
+        "ogTitle": "Álbum de fotos con código QR para tu boda — MIOLOVE ALBUM"
+      },
+      "name": "Boda",
+      "hero": {
+        "eyebrow": "Boda",
+        "titleA": "Álbum de fotos con código QR",
+        "titleB": "para tu boda",
+        "sub": "Pon un código QR en cada mesa. Tus invitados lo escanean con la cámara del teléfono, suben sus fotos y videos, y todo llega a un solo álbum que también puedes proyectar en una pantalla durante la fiesta.",
+        "ctaSecondary": "Cómo funciona en una boda",
+        "note": "Tus invitados no instalan ninguna app ni crean una cuenta. La prueba dura 7 días, es gratis y no pide tarjeta de crédito."
+      },
+      "why": {
+        "title": "El fotógrafo no puede estar en todas partes. Tus invitados sí.",
+        "p1": "El fotógrafo cuenta el día que planeaste. Tus invitados ven todo lo demás: el brindis que se salió del guion, el abuelo bailando, la mesa de los niños tramando algo, el pastel desde otro ángulo. En tu boda —o en tu casamiento, según el país— esas fotos quedan repartidas en cien teléfonos y casi ninguna llega a ti.",
+        "p2": "MIOLOVE ALBUM las reúne en un solo lugar, sin pedir a nadie que instale una app y sin perseguir a tus invitados durante semanas después de la luna de miel."
+      },
+      "steps": {
+        "title": "Cómo funciona en tu boda",
+        "sub": "Cuatro pasos que puedes dejar listos mucho antes del gran día.",
+        "s1": {
+          "t": "Creas el álbum",
+          "d": "Elige «Boda» como ocasión y añade los nombres de los novios, la fecha y el lugar: la página que verán tus invitados está pensada para una boda."
+        },
+        "s2": {
+          "t": "Pones el código QR donde todos lo vean",
+          "d": "Imprímelo en tarjetas para las mesas, un cartel de bienvenida o el programa de la ceremonia. Con el Álbum completo, el editor de MIOLOVE prepara por ti tarjetas y carteles con el QR de tu álbum."
+        },
+        "s3": {
+          "t": "Tus invitados envían fotos y videos",
+          "d": "Escanean el código o abren el enlace, toman o eligen una foto y la envían. El nombre es opcional y no hay que registrarse."
+        },
+        "s4": {
+          "t": "Miras, proyectas, descargas",
+          "d": "Los envíos aparecen en el álbum a medida que llegan. Proyéctalos como slideshow en una pantalla durante la recepción y, después de la fiesta, descarga todo en un solo ZIP."
+        }
+      },
+      "moments": {
+        "title": "Dónde funciona mejor el código QR en una boda",
+        "sub": "No hace falta un gran anuncio: un buen cartel en el lugar justo hace el trabajo.",
+        "m1": {
+          "t": "En las mesas del banquete",
+          "d": "Una tarjeta por mesa convierte la espera entre un plato y otro en fotos. Añade una frase corta como «Escanea para compartir tus fotos» y invitados de todas las edades sabrán qué hacer."
+        },
+        "m2": {
+          "t": "En la ceremonia",
+          "d": "En el programa o en el cartel de la entrada, para que quienes llegan temprano compartan la espera. Si quieres una ceremonia sin teléfonos, pídeles que los guarden hasta que salgan los novios."
+        },
+        "m3": {
+          "t": "Durante la fiesta",
+          "d": "Un slideshow en una pantalla deja que cada invitado vea aparecer sus propias fotos: es el empujón más fácil para quien aún no ha enviado nada."
+        },
+        "m4": {
+          "t": "Al día siguiente",
+          "d": "Quien no subió nada durante la fiesta puede hacerlo con el mismo enlace en los días siguientes, mientras tu álbum esté activo."
+        }
+      },
+      "include": {
+        "i1": {
+          "t": "Fotos y videos de todos tus invitados",
+          "d": "El álbum también recibe videos y los reproduce en la galería y en el slideshow."
+        },
+        "i2": {
+          "t": "Los archivos originales, no copias comprimidas",
+          "d": "Guardamos cada foto y cada video tal como se envió: el álbum muestra copias más ligeras y la descarga te devuelve el original."
+        },
+        "i3": {
+          "t": "Todo en un solo ZIP",
+          "d": "Con el Álbum completo descargas todos los originales con un clic."
+        },
+        "i4": {
+          "t": "Un slideshow para cualquier pantalla",
+          "d": "Muestra las fotos en un televisor o un proyector mientras tus invitados siguen añadiendo más."
+        },
+        "i5": {
+          "t": "Tú decides",
+          "d": "En los ajustes de privacidad eliges si los invitados pueden enviar fotos y si se muestran en la pantalla. Solo participa quien tiene el código QR o el enlace."
+        },
+        "i6": {
+          "t": "365 días de álbum",
+          "d": "El álbum es tuyo durante 365 días desde su activación. Descarga los originales antes de que termine: después, el contenido se elimina."
+        }
+      },
+      "price": {
+        "text": "La prueba es gratis durante 7 días, sin tarjeta de crédito (una por cuenta) y admite hasta {trialLimit} fotos y videos en total: sirve para probar el funcionamiento con unos amigos, no para cubrir toda la fiesta. Para la boda, activa el Álbum completo: {price} con un único pago por álbum, válido por 365 días, con fotos y videos ilimitados. Sin cuota mensual y sin costo por invitado."
+      },
+      "faq": {
+        "q1": {
+          "q": "¿Mis invitados tienen que instalar una app o crear una cuenta?",
+          "a": "No. Apuntan la cámara del teléfono al código QR, se abre una página en el navegador y tocan para enviar. El mismo enlace sirve para todos, con cualquier teléfono."
+        },
+        "q2": {
+          "q": "¿Puedo usarlo además del fotógrafo de la boda?",
+          "a": "Sí. El álbum no sustituye las fotos profesionales: suma las espontáneas que el fotógrafo no puede tomar desde todas las mesas y en todos los momentos."
+        },
+        "q3": {
+          "q": "¿Mis invitados pueden subir fotos después de la boda?",
+          "a": "Sí, con el mismo enlace, mientras tu álbum esté activo. En los ajustes de privacidad también decides si los invitados pueden enviar fotos y si se muestran en la pantalla."
+        },
+        "q4": {
+          "q": "¿Cuántas fotos y videos pueden subir los invitados?",
+          "a": "Con el Álbum completo, los invitados y los envíos son ilimitados. La prueba gratis admite hasta {trialLimit} fotos y videos en total, así que activa el Álbum completo antes de la fecha de la boda."
+        },
+        "q5": {
+          "q": "¿Cuánto tiempo se conservan las fotos de nuestra boda?",
+          "a": "Un álbum activo es tuyo durante 365 días desde su activación. Descarga todos los originales en un solo ZIP antes de que termine; después, el contenido se elimina."
+        }
+      },
+      "cta": {
+        "title": "Prepara el álbum de tu boda",
+        "text": "Créalo en pocos minutos, pruébalo gratis 7 días y actívalo antes de la fecha para reunir todas las fotos de tus invitados."
+      }
+    }
   }
 }

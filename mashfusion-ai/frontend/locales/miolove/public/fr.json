@@ -239,7 +239,7 @@
       "martinaCandles": "Martina souffle les bougies de son gâteau d'anniversaire entourée de ses amies",
       "martinaSelfie": "Selfie de groupe de Martina et de ses amies à la fête d'anniversaire",
       "martinaGarden": "Une petite fille rit devant le gâteau aux bougies à la fête dans le jardin",
-      "martinaQrTable": "Table dressée avec la carte MIOLOVE « Compleanno di Martina » et le QR code à scanner",
+      "martinaQrTable": "Table dressée avec la carte MIOLOVE « Compleanno di Martina » et le QR code à scanner",
       "weddingParty": "Les mariés dansent avec leurs invités pendant la soirée",
       "weddingGuestsPhones": "Des invités souriants photographient les mariés avec leur téléphone",
       "baptism": "Une famille admire le bébé en robe blanche près des fonts baptismaux",
@@ -281,7 +281,7 @@
       },
       "s2": {
         "t": "Partagez le QR code",
-        "d": "Imprimez le carton MIOLOVE et ajoutez une ligne avec le défi : « Une couleur, une photo » ou « Chasse aux moments »."
+        "d": "Imprimez le carton MIOLOVE et ajoutez une ligne avec le défi : « Une couleur, une photo » ou « Chasse aux moments »."
       },
       "s3": {
         "t": "Regardez les photos arriver",
@@ -307,7 +307,7 @@
       },
       "tables": {
         "title": "Table contre table",
-        "text": "Chaque table essaie de raconter la soirée à sa façon. Demandez d'écrire « Prénom · Table 4 » dans le champ du nom et, après le dîner, regardez quelle table a réuni les clichés les plus drôles.",
+        "text": "Chaque table essaie de raconter la soirée à sa façon. Demandez d'écrire « Prénom · Table 4 » dans le champ du nom et, après le dîner, regardez quelle table a réuni les clichés les plus drôles.",
         "when": "Pendant le dîner, quand les tables sont pleines et l'ambiance détendue.",
         "why": "Une saine compétition entre tables fait participer même les plus timides et permet de retrouver facilement qui a pris quoi."
       },
@@ -416,7 +416,7 @@
       },
       "q3": {
         "q": "Comment distinguer les photos d'une table ou d'un défi ?",
-        "a": "Demandez aux invités d'écrire un nom du type « Julie · Table 4 » dans le champ facultatif : vous le verrez à côté de chaque photo dans l'album."
+        "a": "Demandez aux invités d'écrire un nom du type « Julie · Table 4 » dans le champ facultatif : vous le verrez à côté de chaque photo dans l'album."
       },
       "q4": {
         "q": "Puis-je utiliser plusieurs idées pendant la même fête ?",
@@ -469,6 +469,135 @@
     "verify": {
       "title": "Confirmez votre e-mail",
       "description": "Confirmez l’adresse e-mail de votre compte MIOLOVE ALBUM."
+    }
+  },
+  "occasions": {
+    "common": {
+      "breadcrumbHome": "MIOLOVE ALBUM",
+      "ctaPrimary": "Essai gratuit 7 jours",
+      "otherTitle": "Autres occasions",
+      "guideTitle": "Idées et jeux photo",
+      "guideLink": "Voir les idées pour que vos invités prennent plus de photos",
+      "homeLink": "Découvrir MIOLOVE ALBUM",
+      "faqTitle": "Questions fréquentes",
+      "includeTitle": "Ce que vous recevez avec votre album",
+      "priceTitle": "Combien ça coûte ?"
+    },
+    "wedding": {
+      "meta": {
+        "title": "Album photo de mariage avec QR code | MIOLOVE ALBUM",
+        "description": "Vos invités scannent un QR code et déposent photos et vidéos de votre mariage dans un seul album, avec diaporama en direct. Sans appli. Essai gratuit 7 jours.",
+        "ogTitle": "Un album photo de mariage avec QR code — MIOLOVE ALBUM"
+      },
+      "name": "Mariage",
+      "hero": {
+        "eyebrow": "Mariage",
+        "titleA": "Un album photo de mariage",
+        "titleB": "avec QR code pour vos invités",
+        "sub": "Posez un QR code sur chaque table. Vos invités le scannent avec l’appareil photo de leur téléphone, ajoutent leurs photos et vidéos, et tout arrive dans un seul album que vous pouvez aussi projeter pendant la soirée.",
+        "ctaSecondary": "Comment ça marche pour un mariage",
+        "note": "Vos invités n’installent aucune appli et ne créent aucun compte. L’essai dure 7 jours, il est gratuit et sans carte bancaire."
+      },
+      "why": {
+        "title": "Le photographe ne peut pas être partout. Vos invités, si.",
+        "p1": "Le photographe raconte la journée que vous avez préparée. Vos invités, eux, voient tout le reste : le fou rire pendant le vin d’honneur, mamie sur la piste, la table des enfants qui prépare un coup, le gâteau sous un autre angle. Ces photos dorment dans cent téléphones et la plupart ne vous parviennent jamais.",
+        "p2": "MIOLOVE ALBUM les réunit au même endroit, sans demander d’installer une appli et sans relancer vos proches pendant des semaines après le voyage de noces."
+      },
+      "steps": {
+        "title": "Comment ça marche pour votre mariage",
+        "sub": "Quatre étapes à finaliser bien avant le jour J.",
+        "s1": {
+          "t": "Vous créez l’album",
+          "d": "Choisissez « Mariage » comme occasion, ajoutez vos prénoms, la date et le lieu : la page que verront vos invités est pensée pour un mariage."
+        },
+        "s2": {
+          "t": "Vous placez le QR code là où tout le monde le voit",
+          "d": "Imprimez-le sur des cartes de table, un panneau d’accueil ou le livret de cérémonie. Avec l’Album complet, l’éditeur de MIOLOVE prépare pour vous cartes et affiches avec le QR de votre album."
+        },
+        "s3": {
+          "t": "Vos invités envoient photos et vidéos",
+          "d": "Ils scannent le QR code ou ouvrent le lien, prennent ou choisissent une photo et l’envoient. Le prénom est facultatif et il n’y a aucune inscription."
+        },
+        "s4": {
+          "t": "Vous regardez, projetez, téléchargez",
+          "d": "Les envois apparaissent dans l’album au fur et à mesure. Projetez-les en diaporama sur un écran pendant la soirée, puis téléchargez tout en un seul ZIP après la fête."
+        }
+      },
+      "moments": {
+        "title": "Où placer le QR code pendant un mariage",
+        "sub": "Pas besoin d’annonce solennelle : un bon panneau au bon endroit suffit.",
+        "m1": {
+          "t": "Sur les tables du dîner",
+          "d": "Une carte par table transforme l’attente entre deux plats en photos. Ajoutez une phrase simple comme « Scannez pour partager vos photos » : les invités de toutes les générations sauront quoi faire."
+        },
+        "m2": {
+          "t": "À la mairie et à la cérémonie",
+          "d": "Sur le livret ou sur le panneau d’entrée, pour que ceux qui arrivent en avance partagent déjà l’attente. Si vous souhaitez une cérémonie sans téléphones, demandez-leur de les ranger jusqu’à la sortie des mariés."
+        },
+        "m3": {
+          "t": "Au vin d’honneur et pendant la soirée",
+          "d": "Le diaporama sur un écran permet à chacun de voir arriver ses propres photos : c’est la meilleure façon d’encourager ceux qui n’ont encore rien envoyé."
+        },
+        "m4": {
+          "t": "Le lendemain, au brunch",
+          "d": "Ceux qui n’ont rien envoyé pendant la fête peuvent le faire avec le même lien les jours suivants, tant que votre album est actif."
+        }
+      },
+      "include": {
+        "i1": {
+          "t": "Photos et vidéos de tous vos invités",
+          "d": "L’album accepte aussi les vidéos et les lit dans la galerie et dans le diaporama."
+        },
+        "i2": {
+          "t": "Les fichiers originaux, pas des copies compressées",
+          "d": "Nous conservons chaque photo et chaque vidéo telle qu’elle a été envoyée : l’album affiche des copies allégées, le téléchargement redonne l’original."
+        },
+        "i3": {
+          "t": "Tout dans un seul ZIP",
+          "d": "Avec l’Album complet, vous téléchargez tous les originaux en un clic."
+        },
+        "i4": {
+          "t": "Un diaporama pour n’importe quel écran",
+          "d": "Affichez les photos sur une télé ou un vidéoprojecteur pendant que les invités en ajoutent d’autres."
+        },
+        "i5": {
+          "t": "Vous gardez la main",
+          "d": "Dans les réglages de confidentialité, vous choisissez si les invités peuvent envoyer des photos et si elles s’affichent sur l’écran. Seules les personnes qui ont le QR code ou le lien peuvent participer."
+        },
+        "i6": {
+          "t": "365 jours d’album",
+          "d": "L’album reste à vous 365 jours à partir de son activation. Téléchargez les originaux avant la fin : ensuite, le contenu est supprimé."
+        }
+      },
+      "price": {
+        "text": "L’essai est gratuit pendant 7 jours, sans carte bancaire (un par compte) et accepte jusqu’à {trialLimit} photos et vidéos au total : de quoi tester le principe avec quelques amis, pas de couvrir toute une soirée. Pour le mariage, activez l’Album complet : {price} en un seul paiement par album, valable 365 jours, avec photos et vidéos illimitées. Pas de frais mensuels et rien à payer par invité."
+      },
+      "faq": {
+        "q1": {
+          "q": "Mes invités doivent-ils télécharger une appli ou créer un compte ?",
+          "a": "Non. Ils pointent l’appareil photo de leur téléphone vers le QR code, une page s’ouvre dans le navigateur et ils appuient pour envoyer. Le même lien fonctionne pour tout le monde, sur n’importe quel téléphone."
+        },
+        "q2": {
+          "q": "Puis-je l’utiliser en plus du photographe de mariage ?",
+          "a": "Oui. L’album ne remplace pas les photos professionnelles : il ajoute les clichés spontanés que le photographe ne peut pas prendre à toutes les tables et à tous les moments."
+        },
+        "q3": {
+          "q": "Mes invités peuvent-ils encore envoyer des photos après le mariage ?",
+          "a": "Oui, avec le même lien, tant que votre album est actif. Dans les réglages de confidentialité, vous décidez aussi si les invités peuvent envoyer des photos et si elles s’affichent sur l’écran."
+        },
+        "q4": {
+          "q": "Combien de photos et de vidéos mes invités peuvent-ils envoyer ?",
+          "a": "Avec l’Album complet, invités et envois sont illimités. L’essai gratuit accepte jusqu’à {trialLimit} photos et vidéos au total : activez l’Album complet avant la date du mariage."
+        },
+        "q5": {
+          "q": "Combien de temps nos photos de mariage sont-elles conservées ?",
+          "a": "Un album actif reste à vous 365 jours à partir de son activation. Téléchargez tous les originaux en un seul ZIP avant la fin ; ensuite, le contenu est supprimé."
+        }
+      },
+      "cta": {
+        "title": "Préparez l’album de votre mariage",
+        "text": "Créez-le en quelques minutes, essayez-le gratuitement 7 jours et activez-le avant la date pour recueillir toutes les photos de vos invités."
+      }
     }
   }
 }
