@@ -34,7 +34,7 @@ async function ownerSetup(over: Record<string, unknown> = {}, accountType: 'coup
   const owner = await newClient('account'), stamp = Date.now(), id = `phev${stamp}`, slug = `phslug${stamp}`
   await seedSet(`users/${owner.uid}`, { uid: owner.uid, email: owner.email, accountType, plan: { tier: 'wedding', source: 'legacy' }, createdAt: new Date(), updatedAt: new Date() })
   if (accountType === 'couple') over = { accessMode: 'activated', ...over }
-  await seedSet(`events/${id}`, eventFields(owner.uid, slug, { type: 'wedding', title: 'Foto Browser', legacySupabaseId: undefined, screenConfig: { show_photos: true, live_booth_layout: 'grid' }, guestConfig: { requests: true }, ...over }))
+  await seedSet(`events/${id}`, eventFields(owner.uid, slug, { type: 'wedding', title: 'Foto Browser', legacySupabaseId: undefined, screenConfig: { show_photos: true, live_booth_layout: 'grid' }, guestConfig: { requests: true, shared_gallery: true }, ...over }))
   await seedSet(`eventSlugs/${slug}`, { eventId: id })
   const ctx = await browser.newContext(); const page = await ctx.newPage(); page.on('dialog', (d) => d.accept())
   await page.goto(`${app.url}/login`, { waitUntil: 'networkidle', timeout: 120_000 }); await page.waitForTimeout(1500)

@@ -44,7 +44,7 @@ test('MEDIA-U3. client and server agree on every number (a drift would let a fil
   // storage.rules mirrors the derivative caps and the legacy ceiling
   const rules = readFileSync(join(__dirname, '../../../../firebase/storage.rules'), 'utf8')
   assert.match(rules, new RegExp(`validDerivative\\(${SERVER_LIMITS.optimizedBytes / MiB} \\* 1024 \\* 1024\\)`)); assert.match(rules, /validDerivative\(1024 \* 1024\)/); assert.equal(SERVER_LIMITS.thumbBytes, MiB)
-  assert.match(rules, /maxBytes' in ph \? ph\.maxBytes : 8 \* 1024 \* 1024/); assert.equal((rules.match(/firestore\.get\(/g) ?? []).length, 3, 'photo() / event() are each defined once and passed down: no repeated Firestore reads per request'); assert.equal(SERVER_LIMITS.legacyPhotoBytes, 8 * MiB)
+  assert.match(rules, /maxBytes' in ph \? ph\.maxBytes : 8 \* 1024 \* 1024/); assert.equal((rules.match(/firestore\.get\(/g) ?? []).length, 4, 'photo() / event() are each defined once and passed down: no repeated Firestore reads per request; the 4th is the owner\'s users/{uid} doc, read ONLY for an event with neither brand nor accessMode (same legacy classification as firestore.rules isMioloveEvent, for the shared-gallery switch)'); assert.equal(SERVER_LIMITS.legacyPhotoBytes, 8 * MiB)
   for (const ext of ['jpg', 'jpeg', 'png', 'webp', 'mp4', 'mov', 'webm']) { assert.ok(rules.includes(ext), `storage.rules accepts .${ext}`); assert.ok(MIME_BY_EXT[ext]) }
 })
 

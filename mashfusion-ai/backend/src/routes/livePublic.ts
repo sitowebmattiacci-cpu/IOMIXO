@@ -7,6 +7,7 @@ import { markPresent } from '../services/livePresence'
 import { PLAN_LIMITS } from '../config/plans'
 import { getEffectivePlan } from '../services/plan'
 import { createWeddingPhotoSignedUrl } from '../services/storage'
+import { legacyPhotosHiddenFromGuests } from '../services/sharedGalleryGate'
 import { getSmartRandomOption } from '../utils/smartRandom'
 import { projectRequestCreated, projectRequestStatus, projectDedicationStatus, projectGameRound } from '../services/eventProjection'
 
@@ -277,6 +278,7 @@ livePublicRouter.get('/:slug/photos', async (req, res, next) => {
       .from('live_sessions').select('id')
       .eq('public_slug', req.params.slug).maybeSingle()
     if (!session) throw new AppError('Sessione non trovata', 404)
+    if (await legacyPhotosHiddenFromGuests(req.params.slug)) return res.json({ data: [] })      // MIOLOVE album with "Galleria condivisa" off
 
     const { data, error } = await supabaseAdmin
       .from('live_photos')

@@ -2,7 +2,8 @@ import { FieldValue, type Firestore } from 'firebase-admin/firestore'
 import { HttpsError } from 'firebase-functions/v2/https'
 import { idField, requireEventOwner, requireIomixoEvent, type CallerAuth } from './guard'
 import { eventBrandOf } from './brand'
-import { deleteObjects } from '../photos/storage'
+import { deleteObjects, rotateDownloadToken } from '../photos/storage'
+import { ownedPaths } from '../photos/media'
 
 export const CONFIG_MAX_BYTES = 16_000
 /** Stable IDs of the MIOLOVE screen backgrounds (never paths). MUST match SCREEN_BACKGROUND_IDS in the frontend (lib/miolove/screenBackgrounds.ts; a unit test compares them). */
@@ -63,6 +64,11 @@ const plainObject = (v: unknown, field: string): Record<string, unknown> | null 
   if (JSON.stringify(v).length > CONFIG_MAX_BYTES) throw new HttpsError('invalid-argument', `${field} too large`, { reason: 'invalid_payload', field })
   return v as Record<string, unknown>
 }
+/** guestConfig.shared_gallery decides whether guests of a MIOLOVE album may SEE the shared photos / videos (firestore.rules + storage.rules read it): only a real boolean is stored. */
+const checkGuestConfig = (v: Record<string, unknown> | null): Record<string, unknown> | null => {
+  if (v && 'shared_gallery' in v && typeof v.shared_gallery !== 'boolean') throw new HttpsError('invalid-argument', 'shared_gallery must be a boolean', { reason: 'invalid_payload', field: 'shared_gallery' })
+  return v
+}
 const textField = (v: unknown, field: string, max: number, nullable: boolean): string | null => {
   if (v === null && nullable) return null
   if (typeof v !== 'string' || v.length > max || (!nullable && v.trim() === '')) throw new HttpsError('invalid-argument', `${field} invalid`, { reason: 'invalid_payload', field })
@@ -87,7 +93,7 @@ export function parseConfigInput(data: unknown): UpdateEventConfigInput {
   const d = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>
   const out: UpdateEventConfigInput = { eventId: idField(d.eventId, 'eventId') }
   if ('screenConfig' in d) out.screenConfig = plainObject(d.screenConfig, 'screenConfig')
-  if ('guestConfig' in d) out.guestConfig = plainObject(d.guestConfig, 'guestConfig')
+  if ('guestConfig' in d) out.guestConfig = checkGuestConfig(plainObject(d.guestConfig, 'guestConfig'))
   if ('winnerAnnouncement' in d) out.winnerAnnouncement = plainObject(d.winnerAnnouncement, 'winnerAnnouncement')
   if ('screenModeEnabled' in d) {
     if (typeof d.screenModeEnabled !== 'boolean') throw new HttpsError('invalid-argument', 'screenModeEnabled must be a boolean', { reason: 'invalid_payload', field: 'screenModeEnabled' })
@@ -145,8 +151,10 @@ export async function updateEventConfig(db: Firestore, request: CallerAuth, inpu
     }
   }
   const stale: string[] = []
+  let galleryClosed = false
   const result = await db.runTransaction(async (tx) => {
     stale.length = 0
+    galleryClosed = false
     const cur = (await tx.get(ref)).data()!
     const patch: Record<string, unknown> = {}
     const curCfg = cur.screenConfig as Record<string, unknown> | null | undefined
@@ -168,7 +176,11 @@ export async function updateEventConfig(db: Firestore, request: CallerAuth, inpu
       const winner = input.winnerAnnouncement !== undefined ? input.winnerAnnouncement : curCfg?.winner_announcement
       patch.screenConfig = input.screenConfig === null && input.winnerAnnouncement === undefined ? null : winner === undefined ? base : { ...base, winner_announcement: winner }
     }
-    if (input.guestConfig !== undefined) patch.guestConfig = input.guestConfig
+    if (input.guestConfig !== undefined) {
+      patch.guestConfig = input.guestConfig
+      const was = (cur.guestConfig as Record<string, unknown> | null | undefined)?.shared_gallery === true
+      galleryClosed = was && input.guestConfig?.shared_gallery !== true
+    }
     if (input.screenModeEnabled !== undefined) patch.screenModeEnabled = input.screenModeEnabled
     if (input.posterConfig !== undefined) patch.posterConfig = input.posterConfig
     if (input.eventFields) Object.assign(patch, input.eventFields)
@@ -176,5 +188,21 @@ export async function updateEventConfig(db: Firestore, request: CallerAuth, inpu
     return { updated: Object.keys(patch) }
   })
   if (stale.length) await deleteObjects(stale)            // after the commit, best effort (never blocks the owner)
+  if (galleryClosed && (await eventBrandOf(db, ownedEvent)) === 'miolove') await revokeGalleryLinks(db, input.eventId)
   return result
+}
+
+/**
+ * "Galleria condivisa" went ON → OFF: the rules already refuse new reads, but a Firebase download URL carries a token that works without the rules, so every
+ * link handed out while the gallery was open is killed by rotating the token of each approved photo's files (original, optimized copy, thumbnail / poster).
+ * Awaited (the owner's switch returns once the links are dead) with bounded concurrency; a single failure is logged by rotateDownloadToken and never blocks.
+ */
+export async function revokeGalleryLinks(db: Firestore, eventId: string): Promise<number> {
+  const snap = await db.collection(`events/${eventId}/photos`).where('status', '==', 'approved').get()
+  const paths = snap.docs.flatMap((d) => ownedPaths(d.data()))
+  let next = 0, done = 0
+  await Promise.all(Array.from({ length: Math.min(20, paths.length) }, async () => {
+    while (next < paths.length) { const p = paths[next++]; if (await rotateDownloadToken(p)) done++ }
+  }))
+  return done
 }

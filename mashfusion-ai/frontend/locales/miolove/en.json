@@ -43,6 +43,7 @@
     }
   },
   "guestAlbum": {
+    "gallery": { "title": "Album gallery", "empty": "No photos or videos yet: be the first!", "error": "We could not load the gallery.", "add": "Add photos and videos" },
     "trialEnded": "The free trial of this album has ended: new photos or videos can no longer be added. The ones already uploaded stay visible.",
     "limitReached": "This album has reached the free trial limit (50 items, photos and videos together).",
     "photosOff": "Sharing photos and videos is not active right now. Please try again later.",
@@ -150,6 +151,8 @@
     "limitsNote": "No limit on the number of guests or on the album’s total. To prevent abuse: up to {guestCap} files per guest, videos up to {videoMax} MB, photos up to {photoMax} MB."
   },
   "albumPrivacy": {
+    "sharedGallery": "Shared gallery",
+    "sharedGalleryDesc": "Guests can see the photos and videos uploaded by others. When off, they can only upload their own; you always see everything. With the gallery off, the live slideshow on the screen stays empty too.",
     "guestUpload": "Guest photo uploads",
     "guestUploadDesc": "Guests can take and upload photos to the album.",
     "screenPhotos": "Photos on the screen",

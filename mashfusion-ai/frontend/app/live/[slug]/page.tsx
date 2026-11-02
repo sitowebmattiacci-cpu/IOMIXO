@@ -29,6 +29,8 @@ import { EventBrandProvider, WhiteLabelProvider } from '@/components/brand/Event
 import { COUPLE_DEFAULT_GUEST_CONFIG } from '@/lib/coupleAlbum'
 import { occasionEyebrow, occasionText } from '@/lib/occasion'
 import { guestAlbumClosure } from '@/lib/miolove/guestClosure'
+import { sharedGalleryOn } from '@/lib/miolove/sharedGallery'
+import { GuestGallery } from '@/components/wedding/guest/GuestGallery'
 
 const STATUS_STYLE: Record<LiveRequestStatus, string> = {
   pending:  'bg-amber-500/15 text-amber-300 border-amber-500/30',
@@ -214,6 +216,11 @@ export default function PublicLivePage() {
               languageSlot={languageSlot}
               notice={notice}
             />
+          )}
+
+          {/* MIOLOVE "Galleria condivisa": only while the owner's switch is on (the server refuses the media otherwise). The add button stays pinned. */}
+          {!activeWeddingKey && isAlbum && photosAllowed && sharedGalleryOn(session.guest_config) && (
+            <GuestGallery slug={slug!} uploadHref={weddingKeys.includes('photos') && !closed && !trialExpired ? `/booth/${slug}` : null} />
           )}
 
           {!activeWeddingKey && myRequests && myRequests.length > 0 && (

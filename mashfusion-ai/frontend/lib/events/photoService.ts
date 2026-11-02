@@ -5,7 +5,7 @@ import { ensureAnonymousSession } from '../firebase/auth'
 import { authProvider } from '../auth'
 import { publicReadFlag } from './flags'
 import { getEventIdBySlug } from '../firebase/repositories/eventRepository'
-import { listApprovedPhotos, docToLivePhoto } from '../firebase/repositories/photoRepository'
+import { listApprovedPhotos, listApprovedPage, photoUrl, docToLivePhoto } from '../firebase/repositories/photoRepository'
 import { callGuestFunction, GuestCallError } from './guestCallable'
 import { classifyFile, refusalReason, attachmentDisposition } from '../media/mediaTypes'
 import { preparePhoto, prepareVideo } from '../media/prepare'
@@ -149,6 +149,23 @@ export async function listApprovedForGuest(slug: string): Promise<LivePhoto[] | 
   const eventId = await eventIdForSlug(slug); if (!eventId) return null
   return toLegacyPhotos(await listApprovedPhotos(getFirebaseDb(), eventId, 50))
 }
+
+/**
+ * Shared guest gallery (MIOLOVE "Galleria condivisa"): one page of the approved media, newest first. Grid items carry the thumbnail only; the big file is
+ * resolved by `galleryMediaUrl` when a media is opened. The SERVER decides who may read: with the switch off Firestore refuses the query (permission-denied),
+ * whatever this client does. `cursor` is opaque.
+ */
+export async function listGalleryPage(slug: string, size: number, cursor?: unknown): Promise<{ items: LivePhoto[]; cursor: unknown; done: boolean } | null> {
+  if (!guestPhotosEnabled()) return null
+  const eventId = await eventIdForSlug(slug); if (!eventId) return null
+  const page = await listApprovedPage(getFirebaseDb(), eventId, size, (cursor ?? null) as Parameters<typeof listApprovedPage>[3])
+  const storage = getFirebaseStorage()
+  const rows = await Promise.all(page.docs.filter((p) => p.storagePath).map((p) => docToLivePhoto(storage, p, { gallery: true })))
+  return { items: rows.filter((p) => p.url || p.url_path), cursor: page.cursor, done: page.done }
+}
+/** URL of the file shown when a gallery media is opened (optimized image / the video itself). Guests cannot resolve anything else. */
+export const galleryMediaUrl = (path: string): Promise<string> =>
+  photoUrl(getFirebaseStorage(), path).then((u) => { if (!u) throw new Error('media_unavailable'); return u })
 
 /** For tests / diagnostics: the raw callable (guest). */
 export const rawCreatePhotoUpload = (payload: object) => httpsCallable(getFirebaseFunctions(), 'createPhotoUpload')(payload)

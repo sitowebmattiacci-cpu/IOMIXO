@@ -5,6 +5,7 @@ import { AppError } from '../middleware/errorHandler'
 import { hashClient, rateLimitBurst } from '../utils/ipHash'
 import { hasEventAccess } from '../services/plan'
 import { isEventSession } from '../utils/sessionType'
+import { legacyPhotosHiddenFromGuests } from '../services/sharedGalleryGate'
 import {
   createWeddingPhotoUploadUrl,
   createWeddingPhotoSignedUrl,
@@ -141,6 +142,7 @@ livePhotosRouter.get('/public/:slug/photos', async (req, res, next) => {
       .eq('public_slug', req.params.slug).maybeSingle()
     if (!session) throw new AppError('Sessione non trovata', 404)
     if (!isEventSession(session.session_type)) return res.json({ data: [] })
+    if (await legacyPhotosHiddenFromGuests(req.params.slug)) return res.json({ data: [] })      // MIOLOVE album with "Galleria condivisa" off
 
     const { data: rows } = await supabaseAdmin
       .from('live_photos')

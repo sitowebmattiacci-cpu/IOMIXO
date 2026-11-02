@@ -43,6 +43,7 @@
     }
   },
   "guestAlbum": {
+    "gallery": { "title": "Galería del álbum", "empty": "Aún no hay fotos ni videos: ¡sé el primero!", "error": "No pudimos cargar la galería.", "add": "Agregar fotos y videos" },
     "trialEnded": "La prueba gratuita de este álbum ha terminado: ya no se pueden añadir fotos ni videos nuevos. Los ya subidos siguen visibles.",
     "limitReached": "Este álbum ha alcanzado el límite de la prueba gratuita (50 contenidos, fotos y videos juntos).",
     "photosOff": "El envío de fotos y videos no está activo en este momento. Inténtalo más tarde.",
@@ -150,6 +151,8 @@
     "limitsNote": "Sin límite en el número de invitados ni en el total del álbum. Para evitar abusos: hasta {guestCap} archivos por invitado, videos de hasta {videoMax} MB, fotos de hasta {photoMax} MB."
   },
   "albumPrivacy": {
+    "sharedGallery": "Galería compartida",
+    "sharedGalleryDesc": "Los invitados pueden ver las fotos y los videos subidos por los demás. Si está desactivada, solo pueden subir los suyos; tú siempre lo ves todo. Con la galería desactivada, la presentación en la pantalla también queda vacía.",
     "guestUpload": "Envío de fotos de los invitados",
     "guestUploadDesc": "Los invitados pueden tomar y subir fotos al álbum.",
     "screenPhotos": "Fotos en la pantalla",

@@ -83,7 +83,7 @@ test('PRVB1. guest side: uploads ON → /live offers the album and /booth takes 
   } finally { await ctx.close() }
 })
 
-test('PRVB2. TV: show_photos ON shows the album photos, OFF shows none, ON again brings them back', async () => {
+test('PRVB2. TV: with "Galleria condivisa" off the TV shows none (the server refuses it); then show_photos ON shows the album photos, OFF shows none, ON again brings them back', async () => {
   const a = await album(); const guestCtx = await newCtx(); const g = await guestCtx.newPage()
   try {
     await g.goto(`${M()}/booth/${a.slug}`, { waitUntil: 'domcontentloaded', timeout: 120_000 })
@@ -95,7 +95,10 @@ test('PRVB2. TV: show_photos ON shows the album photos, OFF shows none, ON again
   const photoCount = (p: Page) => p.locator('img[src*="127.0.0.1:9199"]').count()
   const open = async () => { await tv.goto(`${M()}/screen/${a.slug}`, { waitUntil: 'domcontentloaded', timeout: 120_000 }); await tv.getByText('Album Privacy').first().waitFor({ timeout: 90_000 }) }
   try {
-    await open(); await until(async () => (await photoCount(tv)) >= 1, 60_000, 'photo on the TV (default ON)')
+    await open(); await tv.waitForTimeout(6000)
+    assert.equal(await photoCount(tv), 0, 'gallery OFF (initial value): no album photo on the TV')
+    await setCfg(a, { guestConfig: { requests: false, live_booth: true, shared_gallery: true } })
+    await open(); await until(async () => (await photoCount(tv)) >= 1, 60_000, 'photo on the TV (gallery ON, show_photos default ON)')
     await setCfg(a, { screenConfig: { show_photos: false } })
     await open(); await tv.waitForTimeout(6000)                          // the page is up and has had time to load photos: none may appear
     assert.equal(await photoCount(tv), 0, 'OFF: no album photo on the TV')

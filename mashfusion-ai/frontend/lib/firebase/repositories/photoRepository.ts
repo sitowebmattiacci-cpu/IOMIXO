@@ -1,6 +1,6 @@
 import {
-  collection, doc, getDocs, onSnapshot, query, where, orderBy, limit, Timestamp,
-  type Firestore, type DocumentData, type Unsubscribe,
+  collection, doc, getDocs, onSnapshot, query, where, orderBy, limit, startAfter, Timestamp,
+  type Firestore, type DocumentData, type Unsubscribe, type QueryDocumentSnapshot,
 } from 'firebase/firestore'
 import { getDownloadURL, ref, type FirebaseStorage } from 'firebase/storage'
 import type { PhotoDoc, PhotoStatus, PhotoSource } from '../models'
@@ -54,6 +54,13 @@ export async function listApprovedPhotos(db: Firestore, eventId: string, max: nu
   return snap.docs.map((d) => fromPhotoDoc(d.id, d.data()))
 }
 
+/** One page of the approved media, newest first, for the shared guest gallery (progressive loading). `cursor` = the last document of the previous page. */
+export async function listApprovedPage(db: Firestore, eventId: string, size: number, cursor?: QueryDocumentSnapshot | null): Promise<{ docs: PhotoDoc[]; cursor: QueryDocumentSnapshot | null; done: boolean }> {
+  const base = [where('status', '==', 'approved'), orderBy('createdAt', 'desc')] as const
+  const snap = await getDocs(cursor ? query(col(db, eventId), ...base, startAfter(cursor), limit(size)) : query(col(db, eventId), ...base, limit(size)))
+  return { docs: snap.docs.map((d) => fromPhotoDoc(d.id, d.data())), cursor: snap.docs[snap.docs.length - 1] ?? null, done: snap.docs.length < size }
+}
+
 /** Owner: every photo of the event (pending / approved / rejected), newest first; unfinished uploads are not shown. */
 export async function listOwnerPhotos(db: Firestore, eventId: string, max = 300): Promise<PhotoDoc[]> {
   const snap = await getDocs(query(col(db, eventId), orderBy('createdAt', 'desc'), limit(max)))
@@ -92,14 +99,16 @@ export function photoUrl(storage: FirebaseStorage, path: string): Promise<string
  * PhotoDoc → the `LivePhoto` the pages render. `url` is what is SHOWN: the optimized image of a photo, the video file itself of a video, the single
  * file of a legacy photo. The ORIGINAL is never resolved here (guests cannot read it): the owner's download asks Storage for it separately.
  */
-export async function docToLivePhoto(storage: FirebaseStorage, p: PhotoDoc, opts: { owner?: boolean } = {}): Promise<LivePhoto> {
+export async function docToLivePhoto(storage: FirebaseStorage, p: PhotoDoc, opts: { owner?: boolean; gallery?: boolean } = {}): Promise<LivePhoto> {
   const isVideo = p.mediaType === 'video'
   const shownPath = isVideo ? p.storagePath : (p.optimizedPath ?? p.storagePath)
   // Owner gallery: the grid needs only the thumbnail; the big file (optimized image / the video itself) is resolved when the media is OPENED (`url_path`).
   // A media without a thumbnail (legacy photo) has nothing smaller to show, so its single file is resolved at once. Guests / TV need the shown file now
   // (and the poster of a video); a photo's thumbnail is of no use to them.
-  const lazy = opts.owner === true && !!p.thumbPath
-  const wantThumb = !!p.thumbPath && (opts.owner === true || isVideo)
+  // The shared guest gallery behaves the same way (`gallery`): a grid of thumbnails, the big file only when a media is opened.
+  const grid = opts.owner === true || opts.gallery === true
+  const lazy = grid && !!p.thumbPath
+  const wantThumb = !!p.thumbPath && (grid || isVideo)
   const [url, thumb] = await Promise.all([lazy ? Promise.resolve(null) : photoUrl(storage, shownPath), wantThumb ? photoUrl(storage, p.thumbPath!) : Promise.resolve(null)])
   return {
     id: p.id, guest_name: p.guestName, caption: p.caption, status: p.status === 'uploading' ? 'pending' : p.status, url,

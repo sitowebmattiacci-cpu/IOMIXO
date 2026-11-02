@@ -8,7 +8,7 @@ import {
   ArrowLeft, Trash2, Power, Heart, MessageSquare,
   Sparkles, Image as ImageIcon, ListChecks, Play, RotateCw, Tv,
   Check, X, Plus, Copy, Download, MapPin, CalendarDays, Footprints, SkipForward, Users, Camera, Star, Music2, Youtube,
-  Pause, Volume2, VolumeX, Square,
+  Pause, Volume2, VolumeX, Square, Images,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -1072,6 +1072,8 @@ function GuestVisibilityPanel({
   const coupleItems = [
     { key: 'live_booth',  icon: <Camera className="h-4 w-4" />,     label: t('albumPrivacy.guestUpload') },
     { key: 'show_photos', icon: <Tv className="h-4 w-4" />,         label: t('albumPrivacy.screenPhotos') },
+    // "Galleria condivisa": whether guests SEE each other's media (off until the owner turns it on; the server enforces it, the owner always sees everything).
+    { key: 'shared_gallery', icon: <Images className="h-4 w-4" />,  label: t('albumPrivacy.sharedGallery') },
   ]
   const partyItems = [
     { key: 'requests',     icon: <Music2 className="h-4 w-4" />,     label: t('guestVisibility.requests') },
@@ -1128,6 +1130,7 @@ function GuestVisibilityPanel({
     polls: 'wdAdmin.privacy.pollsDesc',
     live_booth: couple ? 'albumPrivacy.guestUploadDesc' : 'wdAdmin.privacy.liveBoothDesc',
     show_photos: 'albumPrivacy.screenPhotosDesc',
+    shared_gallery: 'albumPrivacy.sharedGalleryDesc',
   }
   return (
     <WdPage width="narrow" title={t('wdAdmin.privacy.pageTitle')}>

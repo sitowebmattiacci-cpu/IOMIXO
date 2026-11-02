@@ -10,8 +10,10 @@ import { isVideoMedia } from '@/lib/media/mediaTypes'
  * Full-size viewer of an album media: the optimized image of a photo, a real video player (controls, inline on mobile) for a video.
  * Keyboard: Esc closes, arrows move. The download button gives the ORIGINAL (the caller decides how).
  */
-export function MediaLightbox({ items, index, onIndex, onClose, onDownload }: {
+export function MediaLightbox({ items, index, onIndex, onClose, onDownload, resolveUrl }: {
   items: LivePhoto[]; index: number; onIndex: (i: number) => void; onClose: () => void; onDownload?: (p: LivePhoto) => void
+  /** How the big file is resolved when only its path is known (default: the owner's). The guest gallery passes its own. */
+  resolveUrl?: (path: string) => Promise<string>
 }) {
   const { t } = useI18n()
   const item = items[index]
@@ -23,7 +25,8 @@ export function MediaLightbox({ items, index, onIndex, onClose, onDownload }: {
     setFailed(false); setShown(item?.url ?? null)
     if (!item || item.url || !item.url_path) return
     let alive = true
-    livePhotos.originalUrl(item.url_path).then((u) => alive && setShown(u)).catch(() => alive && setFailed(true))
+    const load = resolveUrl ?? livePhotos.originalUrl
+    load(item.url_path).then((u) => alive && setShown(u)).catch(() => alive && setFailed(true))
     return () => { alive = false }
   }, [item?.id])    // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { closeRef.current?.focus() }, [])
@@ -37,6 +40,17 @@ export function MediaLightbox({ items, index, onIndex, onClose, onDownload }: {
     const prev = document.body.style.overflow; document.body.style.overflow = 'hidden'
     return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
   }, [index, items.length, onIndex, onClose])
+  // Phones: a horizontal swipe moves to the next / previous media (a mostly vertical or short gesture is ignored, so scrolling a video's controls still works).
+  const touch = useRef<{ x: number; y: number } | null>(null)
+  const onTouchStart = (e: React.TouchEvent) => { const t0 = e.touches[0]; touch.current = e.touches.length === 1 && t0 ? { x: t0.clientX, y: t0.clientY } : null }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const s0 = touch.current, t1 = e.changedTouches[0]; touch.current = null
+    if (!s0 || !t1) return
+    const dx = t1.clientX - s0.x, dy = t1.clientY - s0.y
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+    if (dx < 0 && index < items.length - 1) onIndex(index + 1)
+    else if (dx > 0 && index > 0) onIndex(index - 1)
+  }
   if (!item) return null
   const video = isVideoMedia(item)
   const btn = 'flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition hover:bg-white/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white'
@@ -54,7 +68,7 @@ export function MediaLightbox({ items, index, onIndex, onClose, onDownload }: {
           <button ref={closeRef} type="button" onClick={onClose} aria-label={t('media.gallery.close')} data-testid="media-lightbox-close" className={btn}><X className="h-5 w-5" /></button>
         </div>
       </div>
-      <div className="relative flex min-h-0 flex-1 items-center justify-center px-2 pb-4 sm:px-14" onClick={(e) => e.stopPropagation()}>
+      <div className="relative flex min-h-0 flex-1 items-center justify-center px-2 pb-4 sm:px-14" onClick={(e) => e.stopPropagation()} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         {index > 0 && <button type="button" onClick={() => onIndex(index - 1)} aria-label={t('media.gallery.prev')} className={`${btn} absolute left-2 top-1/2 z-10 -translate-y-1/2`}><ChevronLeft className="h-5 w-5" /></button>}
         {video ? (
           failed ? (

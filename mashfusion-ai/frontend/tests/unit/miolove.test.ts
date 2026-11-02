@@ -114,14 +114,17 @@ test('SEO. title, description, canonical, hreflang for IT/EN/FR/ES, OpenGraph, T
   assert.ok(miolovePublicUrls().every((u) => !/\/(live|booth|screen|sessions)\//.test(u)), 'no album in the sitemap')
 })
 
-test('SCREEN. a MIOLOVE album plays its photos by default; an explicit "off" is final; other events keep opt-in', () => {
+test('SCREEN. a MIOLOVE album plays its photos only while "Galleria condivisa" is on (the server refuses the TV otherwise); an explicit "off" is final; other events keep opt-in', () => {
   const album = { type: 'wedding' as const, accessMode: 'trial' as const }
-  assert.equal(screenShowsPhotos(album, {}), true); assert.equal(screenShowsPhotos(album, { show_photos: false }), false)
-  assert.equal(screenShowsPhotos(album, { show_photos: true }), true, 'switched back ON')
+  const shared = { ...album, guestConfig: { shared_gallery: true } }
+  assert.equal(screenShowsPhotos(album, {}), false, 'gallery off (the initial value): the TV shows none'); assert.equal(screenShowsPhotos({ ...album, guestConfig: null }, { show_photos: true }), false)
+  assert.equal(screenShowsPhotos(shared, {}), true); assert.equal(screenShowsPhotos(shared, { show_photos: false }), false)
+  assert.equal(screenShowsPhotos(shared, { show_photos: true }), true, 'switched back ON')
   assert.equal(screenShowsPhotos({ type: 'wedding', accessMode: null }, {}), false); assert.equal(screenShowsPhotos({ type: 'party', accessMode: null }, { show_photos: true }), true)
   const ev: any = { ...album, title: 'T', djName: null, coupleNames: null, weddingDate: null, venueName: null, status: 'live' }
-  const p = composeScreenPayload(ev, {}, null, undefined, null, { photos: [{ id: 'a' } as any] })
+  const p = composeScreenPayload({ ...ev, guestConfig: { shared_gallery: true } }, {}, null, undefined, null, { photos: [{ id: 'a' } as any] })
   assert.equal(p.photos.length, 1)
+  assert.equal(composeScreenPayload(ev, {}, null, undefined, null, { photos: [{ id: 'a' } as any] }).photos.length, 0, 'gallery off: none')
 })
 
 test('DEMO. every demo picture of the home exists on disk and the sample event has the same photos everywhere', async () => {

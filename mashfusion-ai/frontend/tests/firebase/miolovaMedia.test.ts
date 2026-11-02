@@ -106,7 +106,7 @@ test('ORIG-2. videos (MP4, MOV, WebM) are kept as sent: original preserved, neve
 })
 
 test('ORIG-3. ownership: guests / the TV read the optimized image and thumbnail, NEVER the original of a new photo; the owner reads everything', async () => {
-  const { owner, id } = await setup(activated())
+  const { owner, id } = await setup(activated({ guestConfig: { shared_gallery: true } }))
   const s = await addMedia(id, photoMedia(31))
   const other = await guest(), uploader = await guest()
   for (const g of [other]) {
@@ -121,7 +121,7 @@ test('ORIG-3. ownership: guests / the TV read the optimized image and thumbnail,
 })
 
 test('ORIG-4. a video must be playable by guests / the TV (there is no transcoded copy): its file is readable once approved, but not before', async () => {
-  const { id } = await setup(activated({ type: 'wedding' }))
+  const { id } = await setup(activated({ type: 'wedding', guestConfig: { shared_gallery: true } }))
   const g = await guest(); const u = await send(g, id, videoMedia(41)); const viewer = await guest()
   assert.equal(await storageFails(getDownloadURL(ref(stor(viewer), u.s.storagePath))), 'storage/unauthorized', 'still uploading: not readable')
   await u.done()
@@ -259,7 +259,7 @@ test('TRIAL-7. an activated album has no numeric limit, whatever a stale counter
 // ─────────────────────────────────────────── LEGACY ───────────────────────────────────────────
 
 test('LEGACY-1. photos uploaded before the media model (one compressed file, no new fields) keep working: shown to guests, finalized by an old client, downloaded by the owner', async () => {
-  const { owner, id } = await setup(activated())
+  const { owner, id } = await setup(activated({ guestConfig: { shared_gallery: true } }))
   // an old document + object, exactly as the previous version wrote them
   const legacyPath = `events/${id}/photos/old1/original.jpg`, legacyBytes = bytes(9000, 5)
   const admin = await mk(); void admin

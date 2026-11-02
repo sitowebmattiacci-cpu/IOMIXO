@@ -6,6 +6,7 @@ import { type VideoLiveCommand, type StandUpGuessConfig, type StandUpGuessRound 
 import { useLiveEvent } from '@/lib/events/useLiveEvent'
 import { useFirestoreScreen } from '@/lib/events/useScreen'
 import { useApprovedPhotos, useWinnerUrls } from '@/lib/events/usePhotos'
+import { sharedGalleryOn } from '@/lib/miolove/sharedGallery'
 import { useApprovedDedications } from '@/lib/events/useDedications'
 import { useActivePoll, toLegacyPoll } from '@/lib/events/usePolls'
 import { useLatestGames } from '@/lib/events/useGames'
@@ -229,8 +230,9 @@ export default function ScreenModePage() {
   const enabledShoeGame   = cfg.show_shoe_game  === true
   const enabledPolls      = cfg.show_polls      === true
   const enabledDedications = cfg.show_dedications === true
-  // photosAllowed = MIOLOVE album: its guests' photos play by default, unless the owner switched them off.
-  const enabledPhotos     = photosAllowed && cfg.show_photos !== false
+  // photosAllowed = MIOLOVE album: its guests' photos play by default, unless the owner switched them off, or "Galleria condivisa" is off
+  // (the server then refuses the TV, an anonymous reader, the photos: firestore.rules).
+  const enabledPhotos     = photosAllowed && cfg.show_photos !== false && (brand !== 'miolove' || sharedGalleryOn(liveEvent?.guestConfig))
   const standUpGuess = normalizeStandUpGuess(cfg.stand_up_guess)
   const enabledStandUpGuess = standUpGuess.enabled === true
   const standUpRound = standUpGuess.rounds.find((round) => round.id === standUpGuess.current_round_id)

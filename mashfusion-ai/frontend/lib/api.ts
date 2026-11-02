@@ -569,6 +569,13 @@ export const livePhotos = {
   async publicListApproved(slug: string): Promise<LivePhoto[]> {
     return need(await (await photoGuest()).listApprovedForGuest(slug), NOT_FOUND)
   },
+  /** MIOLOVE shared gallery (guest): one page of the approved media. The server refuses it (permission-denied) while the owner's switch is off. */
+  async galleryPage(slug: string, size: number, cursor?: unknown) {
+    return need(await (await photoGuest()).listGalleryPage(slug, size, cursor), NOT_FOUND)
+  },
+  async galleryMediaUrl(path: string): Promise<string> {
+    return (await photoGuest()).galleryMediaUrl(path)
+  },
   // Wedding · Proclamazione Vincitore: Storage direct under events/{id}/winner/, rules = owner only. NOT in the album nor Live Booth.
   // The path is then saved by the DJ in `screen_config.winner_announcement`.
   async winnerUploadPhoto(slug: string, file: File, role: 'groom' | 'bride' = 'groom'): Promise<{ storage_path: string }> {

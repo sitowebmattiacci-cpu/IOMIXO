@@ -4,6 +4,7 @@ import { toLegacyPoll } from './usePolls'
 import type { LiveGames } from './useGames'
 import type { ScreenPayload, LiveDedication, LivePhoto } from '../api'
 import type { WinnerUrls } from './usePhotos'
+import { sharedGalleryOn } from '../miolove/sharedGallery'
 
 /**
  * Pure model of the TV screen read path from Firestore (no React, no I/O) so every rule is unit-tested.
@@ -20,11 +21,12 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
 
 /**
  * Photos on the TV. A MIOLOVE album (trial or activated) shows its guests' photos by default (the slideshow is the album's monitor); the owner can
- * switch it off (show_photos === false). Any other event shows photos only when the DJ explicitly enabled them. A `show_photos: false` is final.
+ * switch it off (show_photos === false). Since the album's "Galleria condivisa" switch the server (firestore.rules) lets the TV, an anonymous reader like any guest,
+ * read the photos only while that switch is on, so the slideshow follows it too. Any other event shows photos only when the DJ explicitly enabled them. A `show_photos: false` is final.
  */
 export const isMioloveAlbumDoc = (event: Pick<EventDoc, 'type' | 'accessMode'>): boolean => event.type === 'wedding' && (event.accessMode === 'trial' || event.accessMode === 'pending' || event.accessMode === 'activated')
-export const screenShowsPhotos = (event: Pick<EventDoc, 'type' | 'accessMode'>, cfg: Record<string, unknown>): boolean =>
-  cfg.show_photos === true || (cfg.show_photos === undefined && isMioloveAlbumDoc(event))
+export const screenShowsPhotos = (event: Pick<EventDoc, 'type' | 'accessMode'> & { guestConfig?: unknown }, cfg: Record<string, unknown>): boolean =>
+  isMioloveAlbumDoc(event) ? cfg.show_photos !== false && sharedGalleryOn(event.guestConfig) : cfg.show_photos === true
 
 /** What the photo-bearing sections need besides the event: realtime approved photos and the resolved winner URLs (undefined = still loading). */
 export interface ScreenExtras { photos?: LivePhoto[]; winnerUrls?: WinnerUrls | null }

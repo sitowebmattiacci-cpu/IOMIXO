@@ -27,7 +27,7 @@ const FORBIDDEN = /Advance|Event Pass|IOMIXO|permission|denied|Piano (Advance|Pr
 async function trialAlbum() {
   const owner = await newClient('account'), id = `tpb${Date.now()}`, slug = `tpbs${Date.now()}`
   await seedSet(`users/${owner.uid}`, { uid: owner.uid, email: owner.email, displayName: 'Enrico Rossi', accountType: 'couple', plan: { tier: 'free', source: 'default' }, createdAt: new Date(), updatedAt: new Date() })
-  await seedSet(`events/${id}`, eventFields(owner.uid, slug, { type: 'wedding', title: 'Album Prova', legacySupabaseId: undefined, occasionType: 'wedding', accessMode: 'trial', trialPhotoCount: 0, trialPhotoLimit: LIMIT, guestConfig: { requests: false, live_booth: true } }))
+  await seedSet(`events/${id}`, eventFields(owner.uid, slug, { type: 'wedding', title: 'Album Prova', legacySupabaseId: undefined, occasionType: 'wedding', accessMode: 'trial', trialPhotoCount: 0, trialPhotoLimit: LIMIT, guestConfig: { requests: false, live_booth: true, shared_gallery: true } }))
   await seedSet(`eventSlugs/${slug}`, { eventId: id })
   return { owner, id, slug }
 }

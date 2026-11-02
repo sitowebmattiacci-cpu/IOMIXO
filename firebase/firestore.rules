@@ -217,10 +217,19 @@ service cloud.firestore {
       // Event photos (guest album + Live Booth). Created ONLY by createPhotoUpload / finalizePhoto, moderated ONLY by moderatePhoto (Functions).
       // Owner: reads every photo (pending / rejected / uploading too). Guests and the TV: ONLY approved ones of a live-or-ended, not deleted event
       // (queries must filter status == 'approved'). The bytes are protected by storage.rules with the same logic. photoGuests/{uid} is server-only.
+      // MIOLOVE "Galleria condivisa": on a MIOLOVE album a non-owner reads NOTHING (neither get nor list) unless the owner switched guestConfig.shared_gallery on
+      // (absent / false / not a boolean = off, so every album starts closed). Guests then only UPLOAD (createPhotoUpload / finalizePhoto are callables). The TV slideshow
+      // is an anonymous reader too, so it follows the same switch (lib/events/screenModel.ts). Other events (IOMIXO) are not affected.
+      function sharedGalleryOn(e) {
+        return 'guestConfig' in e && e.guestConfig is map && e.guestConfig.get('shared_gallery', false) == true;
+      }
+      function guestMayReadPhotos(eventId) {
+        let e = get(/databases/$(database)/documents/events/$(eventId)).data;
+        return !('deletedAt' in e) && (!isMioloveEvent(eventId) || sharedGalleryOn(e));
+      }
       match /photos/{photoId} {
         allow get, list: if isEventOwner(eventId)
-                         || (request.auth != null && resource.data.status == 'approved'
-                             && !('deletedAt' in get(/databases/$(database)/documents/events/$(eventId)).data));
+                         || (request.auth != null && resource.data.status == 'approved' && guestMayReadPhotos(eventId));
         allow write: if false;
       }
 

@@ -43,6 +43,7 @@
     }
   },
   "guestAlbum": {
+    "gallery": { "title": "Galerie de l'album", "empty": "Aucune photo ni vidéo pour l'instant : soyez le premier !", "error": "Impossible de charger la galerie.", "add": "Ajouter photos et vidéos" },
     "trialEnded": "L'essai gratuit de cet album est terminé : il n'est plus possible d'ajouter de nouvelles photos ou vidéos. Celles déjà envoyées restent visibles.",
     "limitReached": "Cet album a atteint la limite de l'essai gratuit (50 contenus, photos et vidéos confondues).",
     "photosOff": "L'envoi de photos et de vidéos n'est pas actif pour le moment. Réessayez plus tard.",
@@ -150,6 +151,8 @@
     "limitsNote": "Pas de limite au nombre d’invités ni au total de l’album. Pour éviter les abus : jusqu’à {guestCap} fichiers par invité, vidéos jusqu’à {videoMax} Mo, photos jusqu’à {photoMax} Mo."
   },
   "albumPrivacy": {
+    "sharedGallery": "Galerie partagée",
+    "sharedGalleryDesc": "Les invités peuvent voir les photos et vidéos envoyées par les autres. Désactivée, ils ne peuvent qu'envoyer les leurs ; vous voyez toujours tout. Galerie désactivée, le diaporama à l'écran reste aussi vide.",
     "guestUpload": "Envoi de photos par les invités",
     "guestUploadDesc": "Les invités peuvent prendre et envoyer des photos dans l'album.",
     "screenPhotos": "Photos à l'écran",

@@ -20,6 +20,21 @@ service firebase.storage {
     function isAccount() { return signedIn() && request.auth.token.firebase.sign_in_provider != 'anonymous'; }
     function event(eventId) { return firestore.get(/databases/(default)/documents/events/$(eventId)).data; }
     function isEventOwner(eventId) { return isAccount() && event(eventId).ownerUid == request.auth.uid; }
+    // MIOLOVE album (same classification as firestore.rules isMioloveEvent): its media are readable by non-owners only while the owner keeps
+    // guestConfig.shared_gallery on. Absent / false = closed (every album starts closed). Events that are not a MIOLOVE album are not affected.
+    function isCoupleOwner(ev) {
+      return firestore.exists(/databases/(default)/documents/users/$(ev.ownerUid))
+        && firestore.get(/databases/(default)/documents/users/$(ev.ownerUid)).data.get('accountType', 'dj') == 'couple';
+    }
+    function isMioloveAlbum(ev) {
+      return ev.get('brand', '') == 'miolove'
+        || (ev.get('brand', '') == '' && ev.get('type', '') == 'wedding'
+            && (ev.get('accessMode', '') in ['trial', 'pending', 'activated', 'purged'] || isCoupleOwner(ev)));
+    }
+    function galleryOpen(ev) {
+      return !isMioloveAlbum(ev)
+        || ('guestConfig' in ev && ev.guestConfig is map && ev.guestConfig.get('shared_gallery', false) == true);
+    }
     function validImage() {
       return request.resource.size > 0 && request.resource.size <= 8 * 1024 * 1024
         && request.resource.contentType.matches('image/(jpeg|png|webp)');
@@ -51,7 +66,7 @@ service firebase.storage {
       }
       // Guests / TV: approved media of a not-deleted event, and never the ORIGINAL of a photo that has an optimized copy.
       function guestCanRead(ph, ev) {
-        return ph.status == 'approved' && !('deletedAt' in ev)
+        return ph.status == 'approved' && !('deletedAt' in ev) && galleryOpen(ev)
           && (file == 'optimized.jpg' || file == 'thumb.jpg'
               || (file.matches('original\\..*')
                   && (('mediaType' in ph && ph.mediaType == 'video') || !('optimizedPath' in ph) || ph.optimizedPath == null)));

@@ -50,7 +50,7 @@ let n = 0
 async function album(kind: 'activated' | 'trial' = 'activated', trialCount = 0, over: Record<string, unknown> = {}) {
   const owner = await newClient('account'), id = `mm${Date.now()}${n++}`, slug = `mms${Date.now()}${n}`
   await seedSet(`users/${owner.uid}`, { uid: owner.uid, email: owner.email, displayName: 'Enrico Rossi', accountType: 'couple', plan: { tier: kind === 'activated' ? 'wedding' : 'free', source: kind === 'activated' ? 'legacy' : 'default' }, createdAt: new Date(), updatedAt: new Date() })
-  await seedSet(`events/${id}`, eventFields(owner.uid, slug, { type: 'wedding', title: 'Album Media', legacySupabaseId: undefined, occasionType: 'wedding', accessMode: kind, ...(kind === 'trial' ? { trialPhotoCount: trialCount, trialPhotoLimit: 50 } : {}), guestConfig: { requests: false }, screenConfig: { show_photos: true, live_booth_layout: 'single' }, ...over }))
+  await seedSet(`events/${id}`, eventFields(owner.uid, slug, { type: 'wedding', title: 'Album Media', legacySupabaseId: undefined, occasionType: 'wedding', accessMode: kind, ...(kind === 'trial' ? { trialPhotoCount: trialCount, trialPhotoLimit: 50 } : {}), guestConfig: { requests: false, shared_gallery: true }, screenConfig: { show_photos: true, live_booth_layout: 'single' }, ...over }))
   await seedSet(`eventSlugs/${slug}`, { eventId: id })
   return { owner, id, slug }
 }
