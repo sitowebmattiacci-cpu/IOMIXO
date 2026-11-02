@@ -20,6 +20,8 @@ export const ALBUM_PRICING: Record<'current' | 'list', Record<Currency, number>>
   current: { eur: ALBUM_PRICE_EUR, usd: 19.99 },
   list:    { eur: ALBUM_LIST_PRICE_EUR, usd: 39.99 },
 }
+/** Technical anti-abuse cap per guest on a MIOLOVE album (not a commercial limit). MUST equal MIOLOVE_PHOTO_POLICY.maxPerGuest in firebase/functions/src/photos/photos.ts (pinned by a test). */
+export const GUEST_UPLOAD_CAP = 500
 export const TRIAL_DAYS = 7
 export const TRIAL_MEDIA_LIMIT = 50
 

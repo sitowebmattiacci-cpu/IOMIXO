@@ -56,7 +56,9 @@ test('I18N-URL-1. the eight URLs already online, the sitemap and the helpers are
   assert.deepEqual(miolovePublicUrls(), [
     `${ORIGIN}/`, `${ORIGIN}/en`, `${ORIGIN}/fr`, `${ORIGIN}/es`,
     `${ORIGIN}/idee`, `${ORIGIN}/en/ideas`, `${ORIGIN}/fr/idees`, `${ORIGIN}/es/ideas`,
-    `${ORIGIN}/matrimonio`, `${ORIGIN}/en/wedding`, `${ORIGIN}/fr/mariage`, `${ORIGIN}/es/boda`,  // occasion pages join as their text is published (see miolovaOccasions.test.ts)
+    `${ORIGIN}/matrimonio`, `${ORIGIN}/en/wedding`, `${ORIGIN}/fr/mariage`, `${ORIGIN}/es/boda`,
+    `${ORIGIN}/compleanno`, `${ORIGIN}/en/birthday`, `${ORIGIN}/fr/anniversaire`, `${ORIGIN}/es/cumpleanos`,
+    `${ORIGIN}/battesimo`, `${ORIGIN}/en/christening`, `${ORIGIN}/fr/bapteme`, `${ORIGIN}/es/bautizo`,  // occasion pages join as their text is published (see miolovaOccasions.test.ts)
     `${ORIGIN}/privacy`, `${ORIGIN}/terms`,
   ])
   assert.equal(homePath('xx'), '/'); assert.equal(ideasPath('xx'), '/idee')

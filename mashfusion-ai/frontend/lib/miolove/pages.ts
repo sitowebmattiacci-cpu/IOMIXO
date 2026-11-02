@@ -44,12 +44,12 @@ export const PAGES: Record<PageId, PageDef> = {
   birthday: {
     id: 'birthday', route: '/compleanno',
     slugs: { it: 'compleanno', en: 'birthday', fr: 'anniversaire', es: 'cumpleanos', de: 'geburtstag', 'pt-BR': 'aniversario', 'pt-PT': 'aniversario', nl: 'verjaardag', pl: 'urodziny', el: 'genethlia', ja: 'birthday', ko: 'birthday' },
-    langs: [],
+    langs: ['it', 'en', 'fr', 'es'],
   },
   baptism: {
     id: 'baptism', route: '/battesimo',
-    slugs: { it: 'battesimo', en: 'baptism', fr: 'bapteme', es: 'bautizo', de: 'taufe', 'pt-BR': 'batizado', 'pt-PT': 'batizado', nl: 'doop', pl: 'chrzest', el: 'vaptisi', ja: 'baptism', ko: 'baptism' },
-    langs: [],
+    slugs: { it: 'battesimo', en: 'christening', fr: 'bapteme', es: 'bautizo', de: 'taufe', 'pt-BR': 'batizado', 'pt-PT': 'batizado', nl: 'doop', pl: 'chrzest', el: 'vaptisi', ja: 'baptism', ko: 'baptism' },
+    langs: ['it', 'en', 'fr', 'es'],
   },
 }
 export const PAGE_IDS = Object.keys(PAGES) as PageId[]

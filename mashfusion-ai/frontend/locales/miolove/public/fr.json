@@ -570,7 +570,7 @@
         }
       },
       "price": {
-        "text": "L’essai est gratuit pendant 7 jours, sans carte bancaire (un par compte) et accepte jusqu’à {trialLimit} photos et vidéos au total : de quoi tester le principe avec quelques amis, pas de couvrir toute une soirée. Pour le mariage, activez l’Album complet : {price} en un seul paiement par album, valable 365 jours, avec photos et vidéos illimitées. Pas de frais mensuels et rien à payer par invité."
+        "text": "L’essai est gratuit pendant 7 jours, sans carte bancaire (un par compte) et accepte jusqu’à {trialLimit} photos et vidéos au total : de quoi tester le principe avec quelques amis, pas de couvrir toute une soirée. Pour le mariage, activez l’Album complet : {price} en un seul paiement par album, valable 365 jours, sans plafond d’invités ni de contenus pour l’album (pour éviter les abus, chaque invité peut envoyer jusqu’à {guestCap} fichiers et chaque vidéo peut peser jusqu’à {videoMax} Mo). Pas de frais mensuels et rien à payer par invité."
       },
       "faq": {
         "q1": {
@@ -587,7 +587,7 @@
         },
         "q4": {
           "q": "Combien de photos et de vidéos mes invités peuvent-ils envoyer ?",
-          "a": "Avec l’Album complet, invités et envois sont illimités. L’essai gratuit accepte jusqu’à {trialLimit} photos et vidéos au total : activez l’Album complet avant la date du mariage."
+          "a": "Avec l’Album complet, il n’y a pas de plafond d’invités ni de contenus pour l’album ; pour éviter les abus, chaque invité peut envoyer jusqu’à {guestCap} fichiers et chaque vidéo peut peser jusqu’à {videoMax} Mo. L’essai gratuit accepte jusqu’à {trialLimit} photos et vidéos au total : activez l’Album complet avant la date du mariage."
         },
         "q5": {
           "q": "Combien de temps nos photos de mariage sont-elles conservées ?",
@@ -597,6 +597,238 @@
       "cta": {
         "title": "Préparez l’album de votre mariage",
         "text": "Créez-le en quelques minutes, essayez-le gratuitement 7 jours et activez-le avant la date pour recueillir toutes les photos de vos invités."
+      }
+    },
+    "birthday": {
+      "meta": {
+        "title": "Album photo d’anniversaire avec QR code | MIOLOVE ALBUM",
+        "description": "Vos invités scannent un QR code et ajoutent photos et vidéos de la fête dans un album partagé, avec diaporama sur la télé. Sans appli. Essai gratuit 7 jours.",
+        "ogTitle": "Un album photo d’anniversaire avec QR code — MIOLOVE ALBUM"
+      },
+      "name": "Anniversaire",
+      "hero": {
+        "eyebrow": "Anniversaire",
+        "titleA": "Un album photo d’anniversaire",
+        "titleB": "avec QR code pour vos invités",
+        "sub": "Posez le QR code à côté du gâteau. Vos invités le scannent avec leur téléphone, ajoutent leurs photos et leurs vidéos, et toute la fête se retrouve dans un seul album au lieu de vingt téléphones.",
+        "ctaSecondary": "Comment ça marche à la fête",
+        "note": "Vos invités n’installent aucune appli et ne créent aucun compte. L’essai dure 7 jours, il est gratuit et sans carte bancaire."
+      },
+      "why": {
+        "title": "À un anniversaire, personne n’a les photos de toute la fête",
+        "p1": "Celui ou celle qu’on fête est trop occupé pour photographier, et celui qui photographie reste derrière l’appareil et n’apparaît jamais. Résultat : vingt téléphones avec un morceau de fête chacun, le « tu peux m’envoyer tes photos ? » gêné du lendemain et des images qui arrivent écrasées dans une conversation de groupe.",
+        "p2": "Avec MIOLOVE ALBUM, les invités envoient depuis leur téléphone et tout arrive dans le même album, y compris les vidéos du « joyeux anniversaire » et des bougies, chacune dans la qualité où elle a été envoyée."
+      },
+      "steps": {
+        "title": "Comment ça marche à votre fête",
+        "sub": "Quelques minutes de préparation, même la veille.",
+        "s1": {
+          "t": "Vous créez l’album",
+          "d": "Choisissez « Anniversaire », donnez-lui un titre (par exemple « Les 40 ans de Camille ») et indiquez la date : la page de vos invités porte le nom de la fête."
+        },
+        "s2": {
+          "t": "Vous posez le QR code près du gâteau",
+          "d": "Imprimez-le sur une carte à poser à côté du gâteau ou du buffet, ou envoyez le lien avec l’invitation ou dans le groupe de la fête. Avec l’Album complet, l’éditeur de MIOLOVE prépare la carte pour vous."
+        },
+        "s3": {
+          "t": "Vos invités envoient leurs clichés",
+          "d": "Ils prennent des photos et des vidéos ou les choisissent dans leur galerie, plusieurs à la fois, puis les envoient. Le prénom est facultatif et il n’y a rien à installer."
+        },
+        "s4": {
+          "t": "Vous regardez et vous gardez",
+          "d": "Les envois apparaissent dans l’album au fur et à mesure et, si vous le voulez, défilent sur la télé en diaporama. Après la fête, avec l’Album complet, vous téléchargez les originaux en un seul ZIP."
+        }
+      },
+      "moments": {
+        "title": "Quatre fêtes, quatre façons d’utiliser le QR code",
+        "sub": "Un anniversaire n’est jamais tout à fait le même : ce qui change, c’est qui photographie et ce qui mérite d’être gardé.",
+        "m1": {
+          "t": "Le goûter d’anniversaire des enfants",
+          "d": "Ici, les téléphones sont ceux des parents. Mettez le QR code dans l’invitation destinée aux parents et sur une pancarte à l’entrée : chacun envoie les photos de son enfant et de ses copains, et vous recevez tous les visages du goûter."
+        },
+        "m2": {
+          "t": "Les 18 ans",
+          "d": "Les ados filment déjà tout : le QR code leur donne un seul endroit où tout envoyer. Projetez le diaporama sur un grand écran ou sur la télé de la salle et regardez les visages de la soirée apparaître au fil des envois."
+        },
+        "m3": {
+          "t": "La fête surprise",
+          "d": "L’arrivée de la personne fêtée est filmée par dix personnes, depuis dix endroits différents : avec un album commun, vous avez tous les angles, pas seulement le vôtre."
+        },
+        "m4": {
+          "t": "Les grands anniversaires",
+          "d": "À 50, 60 ou 70 ans, les invités sont de plusieurs générations : les petits-enfants envoient des vidéos, les amis de toujours choisissent dans leur galerie une vieille photo de groupe. Un seul album pour toutes les générations."
+        }
+      },
+      "include": {
+        "i1": {
+          "t": "Photos et vidéos de tous les participants",
+          "d": "L’album accepte aussi les vidéos (jusqu’à {videoMax} Mo chacune) et les lit dans la galerie et dans le diaporama."
+        },
+        "i2": {
+          "t": "Prendre une photo ou la choisir dans la galerie",
+          "d": "Vos invités peuvent photographier sur le moment ou choisir plusieurs fichiers à la fois dans leur téléphone. Photos JPG, PNG ou WebP ; vidéos MP4, MOV ou WebM."
+        },
+        "i3": {
+          "t": "Les fichiers originaux",
+          "d": "Nous conservons chaque photo et chaque vidéo telle qu’elle a été envoyée : l’album affiche des copies allégées, le téléchargement redonne l’original."
+        },
+        "i4": {
+          "t": "Tout dans un seul ZIP",
+          "d": "Avec l’Album complet, vous téléchargez tous les originaux en un clic."
+        },
+        "i5": {
+          "t": "Un diaporama pour n’importe quel écran",
+          "d": "Ouvrez la page écran sur une télé ou un ordinateur branché : les photos défilent pendant que vos invités en envoient d’autres."
+        },
+        "i6": {
+          "t": "Vous décidez, pendant 365 jours",
+          "d": "Dans les réglages de confidentialité, vous choisissez si les invités peuvent envoyer des photos et si elles s’affichent sur l’écran. L’album reste à vous 365 jours à partir de son activation ; ensuite, le contenu est supprimé."
+        }
+      },
+      "price": {
+        "text": "L’essai est gratuit pendant 7 jours, sans carte bancaire (un par compte) et accepte jusqu’à {trialLimit} photos et vidéos au total : pour une fête avec peu d’invités, cela peut suffire. Passé les 7 jours, les nouveaux envois s’arrêtent. Pour continuer, et pour avoir le ZIP, les cartes à imprimer et aucune marque MIOLOVE, activez l’Album complet : {price} en un seul paiement par album, valable 365 jours, sans plafond d’invités ni de contenus pour l’album. Pas de frais mensuels et rien à payer par invité."
+      },
+      "faq": {
+        "q1": {
+          "q": "Est-ce adapté à un goûter d’enfants, où ce sont les parents qui prennent les photos ?",
+          "a": "Oui. Les invités envoient depuis leur propre téléphone : ce sont donc les parents qui envoient les photos des enfants. Mettez le QR code dans l’invitation ou sur une pancarte à l’entrée, avec une ligne pour expliquer quoi faire."
+        },
+        "q2": {
+          "q": "Puis-je l’utiliser pour une fête surprise ?",
+          "a": "Oui. Créez l’album à l’avance et ne partagez le QR code et le lien qu’avec ceux qui vous aident à organiser ; le jour J, tout le monde envoie les vidéos de l’entrée et des toasts dans le même album. La personne fêtée n’a rien à faire."
+        },
+        "q3": {
+          "q": "Peut-on projeter l’album sur la télé pendant la fête ?",
+          "a": "Oui, avec le diaporama : ouvrez la page écran sur une télé ou un ordinateur branché et les photos défilent à mesure qu’elles arrivent. Dans les réglages de confidentialité, vous décidez si elles s’affichent."
+        },
+        "q4": {
+          "q": "L’essai gratuit suffit-il pour une petite fête ?",
+          "a": "Souvent, oui : l’essai accepte jusqu’à {trialLimit} photos et vidéos et dure 7 jours, sans carte. Si vous pensez dépasser ce nombre ou si vous voulez tout télécharger en ZIP, activez l’Album complet ; pour éviter les abus, chaque invité peut envoyer jusqu’à {guestCap} fichiers."
+        },
+        "q5": {
+          "q": "Quelles photos et quelles vidéos les invités peuvent-ils envoyer ?",
+          "a": "Des photos JPG, PNG ou WebP jusqu’à {photoMax} Mo chacune ; des vidéos MP4, MOV ou WebM jusqu’à {videoMax} Mo. Ils peuvent en choisir plusieurs à la fois, mais doivent garder la page ouverte jusqu’à la fin de l’envoi."
+        }
+      },
+      "cta": {
+        "title": "Préparez l’album de votre fête",
+        "text": "Créez-le en quelques minutes, essayez-le gratuitement 7 jours et posez le QR code à côté du gâteau."
+      }
+    },
+    "baptism": {
+      "meta": {
+        "title": "Album photo de baptême avec QR code | MIOLOVE ALBUM",
+        "description": "Famille et amis scannent le QR code et ajoutent photos et vidéos du baptême à un album commun. Sans appli, même pour les grands-parents. Essai gratuit 7 jours.",
+        "ogTitle": "Un album photo de baptême avec QR code pour la famille — MIOLOVE ALBUM"
+      },
+      "name": "Baptême",
+      "hero": {
+        "eyebrow": "Baptême",
+        "titleA": "Un album photo de baptême",
+        "titleB": "avec QR code pour la famille",
+        "sub": "Famille et amis scannent le QR code pendant le repas, ajoutent leurs photos et leurs vidéos, et le jour du baptême reste dans un seul album de famille, à garder et à revoir au fil des années.",
+        "ctaSecondary": "Comment ça marche pour un baptême",
+        "note": "Vos invités n’installent aucune appli et ne créent aucun compte. L’essai dure 7 jours, il est gratuit et sans carte bancaire."
+      },
+      "why": {
+        "title": "Chacun garde un souvenir du baptême depuis sa place",
+        "p1": "Grands-parents, oncles et tantes, parrain et marraine, amis : chacun voit un moment différent. Bébé dans les bras de la marraine, le sourire après l’eau, les cousins qui courent entre les tables. Ces photos restent dans les téléphones de ceux qui étaient là et n’arrivent souvent jamais aux parents, occupés à vivre la journée.",
+        "p2": "Avec MIOLOVE ALBUM, les parents mettent tout dans un seul album, sans avoir à expliquer aux grands-parents comment télécharger une appli, et le gardent comme le premier chapitre de l’histoire de l’enfant."
+      },
+      "steps": {
+        "title": "Comment ça marche pour un baptême",
+        "sub": "Quatre étapes à régler avant la cérémonie.",
+        "s1": {
+          "t": "Vous créez l’album",
+          "d": "Choisissez « Baptême », donnez-lui un titre (par exemple « Le baptême de Léo »), indiquez la date et le lieu : la page de vos invités porte le nom de la fête."
+        },
+        "s2": {
+          "t": "Vous placez le QR code là où tout le monde le voit",
+          "d": "Imprimez-le sur le livret de cérémonie, sur une carte de table ou à côté des dragées ; le lien fonctionne aussi dans le groupe de la famille. Avec l’Album complet, l’éditeur de MIOLOVE prépare les cartes pour vous."
+        },
+        "s3": {
+          "t": "Famille et amis envoient leurs photos",
+          "d": "Ils scannent le QR code ou ouvrent le lien, prennent ou choisissent photos et vidéos dans leur galerie, puis les envoient. Une page s’ouvre dans le navigateur : pas d’appli, pas de compte, même pour les grands-parents."
+        },
+        "s4": {
+          "t": "Vous revoyez et vous gardez",
+          "d": "Les photos arrivent dans l’album au fur et à mesure des envois. Après le baptême, avec l’Album complet, vous téléchargez les originaux en un seul ZIP à ranger avec les photos de famille."
+        }
+      },
+      "moments": {
+        "title": "De l’église au repas : où mettre le QR code",
+        "sub": "Un baptême a son propre rythme : le QR code sert surtout une fois la cérémonie terminée.",
+        "m1": {
+          "t": "À l’église",
+          "d": "À l’église, mieux vaut demander au prêtre ce qui est permis pendant la célébration. Le QR code sur le livret de cérémonie rappelle aux invités d’envoyer leurs photos juste après, tranquillement."
+        },
+        "m2": {
+          "t": "Au repas de famille",
+          "d": "Une carte par table ou à côté des dragées : entre deux plats naissent les photos les plus spontanées, celles des cousins, des grands-parents avec bébé dans les bras, du gâteau."
+        },
+        "m3": {
+          "t": "Pour les proches venus de loin",
+          "d": "Ceux qui ont fait la route ont souvent les plus belles photos et le moins de temps pour les envoyer : un QR code sur la table et un lien dans le groupe de la famille ramènent l’envoi à quelques secondes."
+        },
+        "m4": {
+          "t": "Dans les semaines qui suivent",
+          "d": "On parle d’un baptême pendant des semaines : si un oncle ou un grand-parent n’a encore rien envoyé, un message avec le même lien suffit à le lui rappeler tant que l’album reste ouvert. Il y a toujours une photo « oubliée » dans un téléphone."
+        }
+      },
+      "include": {
+        "i1": {
+          "t": "Photos et vidéos de toute la famille",
+          "d": "L’album accepte aussi les vidéos (jusqu’à {videoMax} Mo chacune) et les lit dans la galerie."
+        },
+        "i2": {
+          "t": "Pas d’appli, pas de compte",
+          "d": "Une page s’ouvre dans le navigateur du téléphone, simple même pour les grands-parents. Le prénom est facultatif."
+        },
+        "i3": {
+          "t": "Les fichiers originaux",
+          "d": "Nous conservons chaque photo et chaque vidéo telle qu’elle a été envoyée : l’album affiche des copies allégées, le téléchargement redonne l’original."
+        },
+        "i4": {
+          "t": "Tout dans un seul ZIP",
+          "d": "Avec l’Album complet, vous téléchargez tous les originaux en un clic."
+        },
+        "i5": {
+          "t": "Privé, selon vos règles",
+          "d": "Seules les personnes qui ont le QR code ou le lien peuvent participer. Dans les réglages de confidentialité, vous choisissez si les invités peuvent envoyer des photos et si elles s’affichent sur l’écran."
+        },
+        "i6": {
+          "t": "365 jours d’album",
+          "d": "L’album reste à vous 365 jours à partir de son activation. Téléchargez les originaux avant la fin : ensuite, le contenu est supprimé."
+        }
+      },
+      "price": {
+        "text": "L’essai est gratuit pendant 7 jours, sans carte bancaire (un par compte) et accepte jusqu’à {trialLimit} photos et vidéos au total : pour un baptême avec peu d’invités, cela peut suffire. Passé les 7 jours, les nouveaux envois s’arrêtent. Pour continuer, et pour avoir le ZIP, les cartes à imprimer et aucune marque MIOLOVE, activez l’Album complet : {price} en un seul paiement par album, valable 365 jours, sans plafond d’invités ni de contenus pour l’album. Pas de frais mensuels et rien à payer par invité."
+      },
+      "faq": {
+        "q1": {
+          "q": "Peut-on utiliser le QR code pendant la cérémonie à l’église ?",
+          "a": "Le QR code sert surtout après la cérémonie. Pendant la célébration, mieux vaut demander au prêtre ce qui est permis et inviter les proches à envoyer photos et vidéos ensuite, pendant le repas."
+        },
+        "q2": {
+          "q": "Les grands-parents sauront-ils quoi faire ?",
+          "a": "Donnez-leur la tâche la plus simple : pointer l’appareil photo vers le QR code imprimé sur la table et appuyer sur le bouton d’envoi dans la page qui s’ouvre. Il n’y a rien à télécharger ni à créer, et un petit-enfant les aide en quelques secondes."
+        },
+        "q3": {
+          "q": "Puis-je récupérer aussi les photos des jours autour du baptême ?",
+          "a": "Oui. L’album reste ouvert tant qu’il est actif : vous pouvez donc rassembler aussi les photos des préparatifs, de l’habillage de bébé ou du goûter chez les grands-parents, en plus de celles de la cérémonie."
+        },
+        "q4": {
+          "q": "L’essai gratuit suffit-il pour un baptême ?",
+          "a": "Pour un baptême avec peu d’invités, l’essai (jusqu’à {trialLimit} photos et vidéos, 7 jours) peut suffire. Pour tout garder plus longtemps, télécharger le ZIP et imprimer les cartes, il faut l’Album complet, où chaque invité peut envoyer jusqu’à {guestCap} fichiers (un plafond anti-spam)."
+        },
+        "q5": {
+          "q": "Combien de temps les photos du baptême sont-elles conservées ?",
+          "a": "Un album actif reste à vous 365 jours à partir de son activation. Avant la fin, téléchargez les originaux en un seul ZIP et rangez-les avec les photos de famille ; ensuite, le contenu est supprimé."
+        }
+      },
+      "cta": {
+        "title": "Préparez l’album du baptême",
+        "text": "Créez-le en quelques minutes, essayez-le gratuitement 7 jours et posez le QR code sur la table du repas."
       }
     }
   }

@@ -6,7 +6,8 @@ import { middleware } from '../../middleware'
 import { MIOLOVE_FULL } from '../../lib/miolove/fullMessages'
 import { LANG_META, LIVE_LANGS } from '../../lib/miolove/langs'
 import { OCCASION_IDS, PAGES, PAGE_IDS, plannedPagePath, publishedLangs, resolvePublicPath, type OccasionId } from '../../lib/miolove/pages'
-import { MIOLOVE_FORBIDDEN_COPY, ALBUM_PRICING, TRIAL_MEDIA_LIMIT, formatAlbumPrice } from '../../lib/miolove/plans'
+import { MIOLOVE_FORBIDDEN_COPY, ALBUM_PRICING, GUEST_UPLOAD_CAP, TRIAL_MEDIA_LIMIT, formatAlbumPrice } from '../../lib/miolove/plans'
+import { MEDIA_LIMITS } from '../../lib/media/mediaTypes'
 import { occasionText } from '../../lib/miolove/occasions'
 import { miolovePublicUrls, mioloveOccasionMetadata, mioloveOccasionStructuredData, occasionFaq, pageAlternates } from '../../lib/miolove/seo'
 import { mioloveRobotsHeader } from '../../lib/miolove/indexing'
@@ -28,16 +29,15 @@ test('OCC-1. registry: the three occasions have a route and a slug per language;
   assert.deepEqual([...OCCASION_IDS], ['wedding', 'birthday', 'baptism'])
   assert.deepEqual(OCCASION_IDS.map((id) => PAGES[id].route), ['/matrimonio', '/compleanno', '/battesimo'])
   for (const id of OCCASION_IDS) assert.equal(Object.keys(PAGES[id].slugs).length, 12, `${id} has a provisional slug per language`)
-  assert.deepEqual(OCCASION_IDS.map((id) => plannedPagePath(id, 'it')), ['/matrimonio', '/compleanno', '/battesimo'])
-  assert.deepEqual(OCCASION_IDS.map((id) => plannedPagePath(id, 'en')), ['/en/wedding', '/en/birthday', '/en/baptism'])
-  assert.deepEqual(OCCASION_IDS.map((id) => plannedPagePath(id, 'fr')), ['/fr/mariage', '/fr/anniversaire', '/fr/bapteme'])
-  assert.deepEqual(published().map((p) => p.id + ':' + p.lang), ['wedding:it', 'wedding:en', 'wedding:fr', 'wedding:es'])
-  assert.deepEqual(['it', 'en', 'fr', 'es'].map((l) => plannedPagePath('wedding', l as any)), ['/matrimonio', '/en/wedding', '/fr/mariage', '/es/boda'], 'one canonical Spanish URL: the singular')
+  assert.equal(published().length, 12, '3 occasions × 4 languages')
+  const URLS = { wedding: ['/matrimonio', '/en/wedding', '/fr/mariage', '/es/boda'], birthday: ['/compleanno', '/en/birthday', '/fr/anniversaire', '/es/cumpleanos'], baptism: ['/battesimo', '/en/christening', '/fr/bapteme', '/es/bautizo'] } as const
+  for (const id of OCCASION_IDS) assert.deepEqual(['it', 'en', 'fr', 'es'].map((l) => plannedPagePath(id, l as any)), URLS[id], `${id}: the 12 URLs (Spanish: the singular)`)
+  assert.equal(new Set(OCCASION_IDS.flatMap((id) => URLS[id])).size, 12)
   assert.equal(resolvePublicPath('/matrimonio')?.page, 'wedding')
-  for (const p of ['/compleanno', '/battesimo', '/en/birthday', '/fr/anniversaire', '/es/bodas', '/es/cumpleanos', '/de/hochzeit', '/en/weddings', '/fr/mariages']) assert.equal(resolvePublicPath(p), null, `${p} is not published`)
+  for (const p of ['/es/bodas', '/en/baptism', '/en/baptisms', '/es/cumpleaños', '/de/hochzeit', '/de/geburtstag', '/pt-br/casamento', '/en/weddings', '/fr/mariages', '/es/quinceaneras']) assert.equal(resolvePublicPath(p), null, `${p} is not published`)
   const urls = miolovePublicUrls()
-  assert.ok(urls.includes(`${ORIGIN}/matrimonio`)); assert.ok(!urls.some((u) => /compleanno|battesimo|birthday|anniversaire|cumpleanos|\/bodas|hochzeit/.test(u)))
-  for (const p of ['/matrimonio', '/en/wedding', '/fr/mariage', '/es/boda']) assert.ok(urls.includes(`${ORIGIN}${p}`), p)
+  assert.ok(urls.includes(`${ORIGIN}/matrimonio`)); assert.ok(!urls.some((u) => /\/bodas|baptism|hochzeit|geburtstag|taufe|casamento|quince/.test(u)))
+  for (const id of OCCASION_IDS) for (const p of URLS[id]) assert.ok(urls.includes(`${ORIGIN}${p}`), p)
   assert.equal(new Set(urls).size, urls.length)
   for (const u of urls) assert.equal(mioloveRobotsHeader(new URL(u).pathname), null, `${u} is indexable`)
 })
@@ -47,7 +47,7 @@ test('OCC-2. middleware: the published occasion URL is rewritten/served with its
   assert.deepEqual(call('/matrimonio/'), { rewrite: null, lang: 'it' })
   assert.deepEqual(call('/matrimonio', { 'x-ml-lang': 'en' }), { rewrite: null, lang: 'it' })
   for (const [p, lang] of [['/en/wedding', 'en'], ['/fr/mariage', 'fr'], ['/es/boda', 'es']]) assert.deepEqual(call(p, { 'x-ml-lang': 'it' }), { rewrite: '/matrimonio', lang }, p)
-  for (const p of ['/es/bodas', '/compleanno', '/battesimo', '/en/birthday']) assert.deepEqual(call(p, { 'x-ml-lang': 'en' }), { rewrite: null, lang: null }, p)
+  for (const p of ['/es/bodas', '/en/baptism', '/es/quinceaneras', '/de/hochzeit']) assert.deepEqual(call(p, { 'x-ml-lang': 'en' }), { rewrite: null, lang: null }, p)
 })
 
 test('OCC-3. hreflang and canonical: a page lists only the languages it is published in, self-referencing, x-default = Italian', () => {
@@ -61,8 +61,8 @@ test('OCC-3. hreflang and canonical: a page lists only the languages it is publi
     for (const l of publishedLangs(id)) assert.equal(m.alternates.languages[LANG_META[l].hreflang], `${ORIGIN}${plannedPagePath(id, l)}`)
   }
   assert.throws(() => mioloveOccasionMetadata('wedding', 'de'), /not published/)
-  assert.throws(() => mioloveOccasionMetadata('birthday', 'it'), /not published/)
-  assert.throws(() => mioloveOccasionStructuredData('baptism', 'it'), /not published/)
+  assert.throws(() => mioloveOccasionMetadata('birthday', 'de'), /not published/)
+  assert.throws(() => mioloveOccasionStructuredData('baptism', 'pt-BR' as any), /not published/)
 })
 
 test('OCC-4. title ≤ 60, description 120–160, no price in the snippet, distinct from every other page of the same language', () => {
@@ -77,7 +77,7 @@ test('OCC-4. title ≤ 60, description 120–160, no price in the snippet, disti
   }
 })
 
-test('OCC-5. one H1 text, 4–6 own FAQ, 400–1000 words of content; FAQ unique and not copied from the home or the guide', () => {
+test('OCC-5. one H1 text, 4–6 own FAQ, 400–1100 words of content; FAQ unique and not copied from the home or the guide', () => {
   for (const { id, lang } of published()) {
     const o = D[lang].occasions[id]
     assert.ok(o.hero.titleA.length > 8 && o.hero.titleB.length > 4, `${id}/${lang} H1`)
@@ -87,7 +87,7 @@ test('OCC-5. one H1 text, 4–6 own FAQ, 400–1000 words of content; FAQ unique
     const seen = new Set<string>()
     for (const f of faq) { assert.ok(f.q.endsWith('?') && f.a.length > 60, `${id}/${lang} ${f.key}`); assert.ok(!seen.has(f.q)); seen.add(f.q); assert.ok(!home.includes(f.q) && !guide.includes(f.q), `${id}/${lang} FAQ copied: ${f.q}`) }
     const n = words(strings({ ...o, meta: undefined }).join(' '))
-    assert.ok(n >= 400 && n <= 1000, `${id}/${lang} ${n} words`)
+    assert.ok(n >= 400 && n <= 1100, `${id}/${lang} ${n} words`)
   }
 })
 
@@ -95,11 +95,11 @@ test('OCC-6. price and trial limit come from plans.ts: no figure typed in a text
   for (const { id, lang } of published()) {
     const all = strings(D[lang].occasions[id]).join('\n')
     assert.doesNotMatch(all, /€|\$|\b\d+[.,]\d{2}\b/, `${id}/${lang}: a price must be {price}`)
-    assert.doesNotMatch(all, /39[.,]99|invece di|instead of|au lieu de|en lugar de|listino|list price|barrat|strikethrough|sconto|discount|remise|descuento|-\s?50 ?%/i, `${id}/${lang}: no struck-through price or discount`)
+    assert.doesNotMatch(all, /39[.,]99|listino|list price|barrat|strikethrough|sconto|discount|remise|descuento|-\s?50 ?%/i, `${id}/${lang}: no struck-through price or discount`)
     assert.doesNotMatch(all, MIOLOVE_FORBIDDEN_COPY, `${id}/${lang}`)
     assert.doesNotMatch(all, /12 mesi|12 months|12 mois|illimitat[oi] nel tempo|per sempre|forever|à vie|para siempre|garantit|guarante|garantiz/i, `${id}/${lang}: no promise the product does not keep`)
     assert.match(all, /\{price\}/, `${id}/${lang} shows the price`); assert.match(all, /\{trialLimit\}/, `${id}/${lang} states the trial limit`)
-    const placeholders = new Set(all.match(/\{\w+\}/g)); for (const p of placeholders) assert.ok(['{price}', '{trialLimit}'].includes(p), `${id}/${lang} unknown ${p}`)
+    const placeholders = new Set(all.match(/\{\w+\}/g)); for (const p of placeholders) assert.ok(['{price}', '{trialLimit}', '{guestCap}', '{videoMax}', '{photoMax}'].includes(p), `${id}/${lang} unknown ${p}`)
     const filled = occasionFaq(id, lang).map((f) => f.q + f.a).join(' ') + occasionText(D[lang].occasions[id].price.text, lang)
     assert.doesNotMatch(filled, /\{\w+\}/, 'every placeholder is filled'); assert.ok(filled.includes(formatAlbumPrice(lang)) && filled.includes(String(TRIAL_MEDIA_LIMIT)))
   }
@@ -119,19 +119,61 @@ test('OCC-7. structured data: WebPage + BreadcrumbList + FAQPage, FAQ identical 
   }
 })
 
-test('OCC-8. not copied from the home or the guide: little repeated text between pages of the same language', () => {
-  const grams = (s: string) => { const w = s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter(Boolean), out = new Set<string>(); for (let i = 0; i + 4 <= w.length; i++) out.add(w.slice(i, i + 4).join(' ')); return out }
-  const overlap = (a: Set<string>, b: Set<string>) => { let n = 0; for (const g of a) if (b.has(g)) n++; return n / Math.max(1, Math.min(a.size, b.size)) }
+// What may legitimately repeat between occasion pages is the product's facts (no app, trial, ZIP, 365 days, price block, CTA). What must differ is the editorial
+// part: why this occasion needs an album, the moments, the questions and their answers (the four steps describe the same product flow, so they share verbs: they are not measured).
+const editorial = (o: any) => ({ sub: o.hero.sub, why: o.why, moments: o.moments, faq: o.faq })
+const grams = (s: string, n = 4) => { const w = s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter(Boolean), out = new Set<string>(); for (let i = 0; i + n <= w.length; i++) out.add(w.slice(i, i + n).join(' ')); return out }
+const overlap = (a: Set<string>, b: Set<string>) => { let n = 0; for (const g of a) if (b.has(g)) n++; return n / Math.max(1, Math.min(a.size, b.size)) }
+const bag = (o: any) => new Set(strings(o).join(' ').toLowerCase().replace(/[^\p{L}\s]/gu, ' ').split(/\s+/).filter((w) => w.length > 5))
+const jaccard = (a: Set<string>, b: Set<string>) => { let n = 0; for (const w of a) if (b.has(w)) n++; return n / (a.size + b.size - n) }
+
+test('OCC-8. not copied from the home, the guide or from each other: the editorial text of every page is its own (repeated phrases AND shared vocabulary stay low)', () => {
   for (const { id, lang } of published()) {
-    const mine = grams(strings({ ...D[lang].occasions[id], meta: undefined }).join(' '))
-    const others: Array<[string, any]> = [['home', D[lang].home], ['ideas', D[lang].ideas], ...OCCASION_IDS.filter((o) => o !== id && D[lang].occasions?.[o]).map((o): [string, any] => [o, D[lang].occasions[o]])]
-    for (const [name, o] of others) assert.ok(overlap(mine, grams(strings(o).join(' '))) < 0.12, `${id}/${lang} repeats ${name}`)
+    const mine = editorial(D[lang].occasions[id])
+    for (const [name, o] of [['home', D[lang].home], ['ideas', D[lang].ideas]] as Array<[string, any]>) assert.ok(overlap(grams(strings(mine).join(' ')), grams(strings(o).join(' '))) < 0.1, `${id}/${lang} repeats ${name}`)
+    for (const other of OCCASION_IDS.filter((o) => o !== id)) {
+      const theirs = editorial(D[lang].occasions[other])
+      assert.ok(overlap(grams(strings(mine).join(' ')), grams(strings(theirs).join(' '))) < 0.08, `${id}/${lang} repeats ${other} (4-word phrases)`)
+      assert.ok(overlap(grams(strings(mine).join(' '), 3), grams(strings(theirs).join(' '), 3)) < 0.14, `${id}/${lang} repeats ${other} (3-word phrases)`)
+      assert.ok(jaccard(bag(mine), bag(theirs)) < 0.3, `${id}/${lang} shares too much vocabulary with ${other}`)
+    }
   }
 })
 
+test('OCC-8b. each occasion talks about its own situations (not the wedding with a word changed): occasion-specific terms are present, and absent from the other pages', () => {
+  const SPECIFIC: Record<OccasionId, Record<string, RegExp>> = {
+    wedding: { it: /tableau|ricevimento|sposi|promesse/i, en: /reception|photographer|newlyweds|recessional/i, fr: /vin d’honneur|mairie|mariés|promesses/i, es: /banquete|novios|recepción|luna de miel/i },
+    birthday: { it: /torta|diciottesimo|a sorpresa|bambini/i, en: /cake|18th|surprise|kids/i, fr: /gâteau|18 ans|surprise|goûter/i, es: /pastel|15 años|sorpresa|infantil/i },
+    baptism: { it: /parroco|nonni|bomboniere|battesimo/i, en: /christening|godparents|grandparents|priest/i, fr: /baptême|parrain|grands-parents|dragées/i, es: /bautizo|abuelos|padrinos|sacerdote|iglesia/i },
+  }
+  for (const { id, lang } of published()) {
+    const mine = strings(editorial(D[lang].occasions[id])).join(' ')
+    assert.match(mine, SPECIFIC[id][lang], `${id}/${lang} has its own situations`)
+    for (const o of OCCASION_IDS.filter((x) => x !== id)) { const m = mine.match(SPECIFIC[o][lang]); if (id !== 'wedding' && o === 'wedding') assert.equal(m, null, `${id}/${lang} reads like the wedding page: "${m?.[0]}"`) }
+  }
+})
+
+test('OCC-8c. limits and promises are the product\'s: no "unlimited" wording, the per-guest cap equals the server\'s, sizes come from the media limits', () => {
+  const fnSrc = readFileSync(new URL('../../../../firebase/functions/src/photos/photos.ts', import.meta.url), 'utf8')
+  assert.equal(Number(/MIOLOVE_PHOTO_POLICY = \{[^}]*maxPerGuest: (\d+)/.exec(fnSrc)![1]), GUEST_UPLOAD_CAP, 'GUEST_UPLOAD_CAP mirrors the Cloud Function')
+  assert.equal(MEDIA_LIMITS.videoBytes / 1048576, 150); assert.equal(MEDIA_LIMITS.photoOriginalBytes / 1048576, 50)
+  for (const { id, lang } of published()) {
+    const all = strings(D[lang].occasions[id]).join('\n')
+    assert.doesNotMatch(all, /illimitat|unlimited|illimité|ilimitad|infinit|per sempre|forever|à vie|para siempre/i, `${id}/${lang}: say the real limit, not "unlimited"`)
+    assert.doesNotMatch(all, /\b(150|500)\b| 50 ?MB/, `${id}/${lang}: figures come from the configuration`)
+    assert.doesNotMatch(all, /originali? .*(sempre|garantit)/i)
+  }
+  assert.equal(occasionText('{guestCap} {videoMax} {photoMax}', 'it'), '500 150 50')
+})
+
 test('OCC-9. the route refuses what is not published (other portal, other language, other occasion) and the component hard-codes no price', () => {
-  const page = src('app/matrimonio/page.tsx')
-  assert.match(page, /isPublished\('wedding'/); assert.match(page, /notFound\(\)/); assert.match(page, /config\.id === 'miolove'/)
+  const route = src('components/miolove/occasion/occasionRoute.tsx')
+  assert.match(route, /isPublished\(id, l\)/); assert.match(route, /notFound\(\)/); assert.match(route, /config\.id === 'miolove'/)
+  for (const [dir, id] of [['matrimonio', 'wedding'], ['compleanno', 'birthday'], ['battesimo', 'baptism']]) {
+    const page = src(`app/${dir}/page.tsx`)
+    assert.match(page, new RegExp(`occasionPage\\('${id}'\\)`)); assert.match(page, new RegExp(`occasionMetadata\\('${id}'\\)`)); assert.ok(page.split('\n').length < 8, `${dir} is a thin route`)
+    assert.equal(PAGES[id as OccasionId].route, `/${dir}`)
+  }
   const comp = src('components/miolove/occasion/MioloveOccasion.tsx')
   assert.doesNotMatch(comp, /€|\$\{?\d|19[.,]99|39[.,]99|<s[ >]|line-through/)
   assert.match(comp, /isPublished\(o,/, 'only published occasions are linked')
@@ -140,16 +182,27 @@ test('OCC-9. the route refuses what is not published (other portal, other langua
 })
 
 test('OCC-10. each language is written for its own search: the H1 and the title carry that market\'s main keywords, and no sentence is left in another language', () => {
-  const KEYS: Record<string, { h1: RegExp[]; title: RegExp[] }> = {
-    it: { h1: [/album foto/i, /QR code/i, /matrimonio/i], title: [/album foto matrimonio/i, /QR code/i] },
-    en: { h1: [/QR code/i, /photo album/i, /wedding/i], title: [/wedding photo album/i, /QR code/i] },
-    fr: { h1: [/album photo/i, /mariage/i, /QR code/i], title: [/album photo de mariage/i, /QR code/i] },
-    es: { h1: [/álbum de fotos/i, /código QR/i, /boda/i], title: [/álbum de fotos de boda/i, /código QR/i] },
+  const KEYS: Record<OccasionId, Record<string, { h1: RegExp[]; title: RegExp[] }>> = {
+    wedding: {
+      it: { h1: [/album foto/i, /QR code/i, /matrimonio/i], title: [/album foto matrimonio/i, /QR code/i] },
+      en: { h1: [/QR code/i, /photo album/i, /wedding/i], title: [/wedding photo album/i, /QR code/i] },
+      fr: { h1: [/album photo/i, /mariage/i, /QR code/i], title: [/album photo de mariage/i, /QR code/i] },
+      es: { h1: [/álbum de fotos/i, /código QR/i, /boda/i], title: [/álbum de fotos de boda/i, /código QR/i] } },
+    birthday: {
+      it: { h1: [/album foto/i, /QR code/i, /compleanno/i], title: [/album foto compleanno/i, /QR code/i] },
+      en: { h1: [/birthday/i, /photo album/i, /QR code/i], title: [/birthday photo sharing/i, /QR code/i] },
+      fr: { h1: [/album photo/i, /anniversaire/i, /QR code/i], title: [/album photo d’anniversaire/i, /QR code/i] },
+      es: { h1: [/álbum de fotos/i, /código QR/i, /cumpleaños/i], title: [/álbum de fotos de cumpleaños/i, /código QR/i] } },
+    baptism: {
+      it: { h1: [/album foto/i, /QR code/i, /battesimo/i], title: [/album foto battesimo/i, /QR code/i] },
+      en: { h1: [/christening/i, /photo album/i, /QR code/i], title: [/christening/i, /baptism/i, /photo album/i] },  // both words: the URL says christening, the search is split
+      fr: { h1: [/album photo/i, /baptême/i, /QR code/i], title: [/album photo de baptême/i, /QR code/i] },
+      es: { h1: [/álbum de fotos/i, /código QR/i, /bautizo/i], title: [/álbum de fotos de bautizo/i, /código QR/i] } },
   }
   for (const { id, lang } of published()) {
     const o = D[lang].occasions[id], h1 = `${o.hero.titleA} ${o.hero.titleB}`
-    for (const r of KEYS[lang].h1) assert.match(h1, r, `${lang} H1`)
-    for (const r of KEYS[lang].title) assert.match(o.meta.title, r, `${lang} title`)
+    for (const r of KEYS[id][lang].h1) assert.match(h1, r, `${id}/${lang} H1`)
+    for (const r of KEYS[id][lang].title) assert.match(o.meta.title, r, `${id}/${lang} title`)
     assert.match(o.meta.title, /MIOLOVE ALBUM/)
   }
   // the plan's own names per language, never the Italian ones

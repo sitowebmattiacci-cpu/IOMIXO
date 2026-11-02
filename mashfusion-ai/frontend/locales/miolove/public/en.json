@@ -570,7 +570,7 @@
         }
       },
       "price": {
-        "text": "The trial is free for 7 days, needs no credit card (one per account) and holds up to {trialLimit} photos and videos in total: enough to test the flow with a few friends, not to cover a full reception. For the wedding itself, activate the Full album: {price} as a single payment per album, valid for 365 days, with unlimited photos and videos. No monthly fee and no charge per guest."
+        "text": "The trial is free for 7 days, needs no credit card (one per account) and holds up to {trialLimit} photos and videos in total: enough to test the flow with a few friends, not to cover a full reception. For the wedding itself, activate the Full album: {price} as a single payment per album, valid for 365 days, with no cap on guests or on the album’s total (to prevent abuse, each guest can send up to {guestCap} files and each video can be up to {videoMax} MB). No monthly fee and no charge per guest."
       },
       "faq": {
         "q1": {
@@ -587,7 +587,7 @@
         },
         "q4": {
           "q": "How many photos and videos can guests upload?",
-          "a": "With the Full album, guests and uploads are unlimited. The free trial holds up to {trialLimit} photos and videos in total, so activate the Full album before the wedding date."
+          "a": "With the Full album there is no cap on guests or on the album’s total; to prevent abuse, each guest can send up to {guestCap} files and each video can be up to {videoMax} MB. The free trial holds up to {trialLimit} photos and videos in total, so activate the Full album before the wedding date."
         },
         "q5": {
           "q": "How long are our wedding photos kept?",
@@ -597,6 +597,238 @@
       "cta": {
         "title": "Set up your wedding album",
         "text": "Create it in a few minutes, try it free for 7 days and activate it before the date to collect every photo your guests take."
+      }
+    },
+    "birthday": {
+      "meta": {
+        "title": "Birthday Photo Sharing with QR Code | MIOLOVE ALBUM",
+        "description": "Guests scan a QR code and add photos and videos from the party to one shared album, with a live slideshow for the TV. No app to install. Free for 7 days.",
+        "ogTitle": "A birthday photo album your guests add to with a QR code — MIOLOVE ALBUM"
+      },
+      "name": "Birthday",
+      "hero": {
+        "eyebrow": "Birthday",
+        "titleA": "A birthday photo album",
+        "titleB": "your guests add to with a QR code",
+        "sub": "Put the QR code next to the cake. Guests scan it with their phone camera, add their photos and videos, and the whole party ends up in one album instead of twenty camera rolls.",
+        "ctaSecondary": "How it works at a party",
+        "note": "Guests don’t install an app or create an account. The trial lasts 7 days, it’s free and asks for no credit card."
+      },
+      "why": {
+        "title": "Nobody has photos of the whole birthday party",
+        "p1": "The birthday person is too busy to take pictures, and whoever does take them is behind the camera and never in the shot. You end up with twenty phones holding one slice of the party each, an awkward “can you send me those?” the next day, and photos that arrive squashed in a group chat.",
+        "p2": "With MIOLOVE ALBUM guests send straight from their phones and everything lands in the same album, including the videos of the singing and the candles, each in the quality it was sent."
+      },
+      "steps": {
+        "title": "How it works at your party",
+        "sub": "A few minutes of setup, even the day before.",
+        "s1": {
+          "t": "Create your album",
+          "d": "Choose “Birthday”, give it a title (say, “Martina’s birthday”) and add the date. The guest page takes the name of your party."
+        },
+        "s2": {
+          "t": "Put the QR code by the cake",
+          "d": "Print it on a card to stand next to the cake or the food table, or send the link with the invitation or in the party group chat. With the Full album, MIOLOVE’s card editor lays the card out for you."
+        },
+        "s3": {
+          "t": "Guests send their shots",
+          "d": "They take photos and videos or pick them from their camera roll, several at a time, and send them. A name is optional and there is nothing to install."
+        },
+        "s4": {
+          "t": "Watch and keep",
+          "d": "Uploads show up in the album as they arrive and, if you like, play as a slideshow on the TV. After the party, with the Full album, you download the originals as one ZIP."
+        }
+      },
+      "moments": {
+        "title": "Four kinds of party, four ways to use the QR code",
+        "sub": "Birthdays aren’t all alike: who takes the pictures, and what is worth keeping, changes.",
+        "m1": {
+          "t": "Kids’ parties",
+          "d": "The phones here belong to the parents. Put the QR code in the invitation for parents and on a sign at the door: each parent sends their own child’s photos and their friends’ too, and you get the faces from the whole party."
+        },
+        "m2": {
+          "t": "18th, 21st and sweet sixteen",
+          "d": "Teens and twenty-somethings already shoot videos and stories; the QR code points them all to one place. Run the slideshow on a big screen or the venue’s TV and watch the night’s faces appear as they arrive."
+        },
+        "m3": {
+          "t": "Surprise parties",
+          "d": "Ten people film the moment the guest of honor walks in, from ten different spots. With a shared album you get every angle, not just yours."
+        },
+        "m4": {
+          "t": "Milestone birthdays",
+          "d": "At 50, 60 or 70 the guests span generations: grandchildren send videos, lifelong friends pick an old group photo from their camera roll. One album for every generation."
+        }
+      },
+      "include": {
+        "i1": {
+          "t": "Photos and videos from every guest",
+          "d": "The album takes videos too (up to {videoMax} MB each) and plays them in the gallery and in the slideshow."
+        },
+        "i2": {
+          "t": "Snap it or pick it from the camera roll",
+          "d": "Guests can take a picture on the spot or choose several files at once from their phone. Photos as JPG, PNG or WebP; videos as MP4, MOV or WebM."
+        },
+        "i3": {
+          "t": "Original files",
+          "d": "We keep every photo and video exactly as it was sent: the album shows lighter copies, downloading gives you the original."
+        },
+        "i4": {
+          "t": "One ZIP with everything",
+          "d": "With the Full album you download every original in a single click."
+        },
+        "i5": {
+          "t": "A slideshow for any screen",
+          "d": "Open the screen page on a TV or a connected computer: photos play while guests keep sending more."
+        },
+        "i6": {
+          "t": "You decide, for 365 days",
+          "d": "In the privacy settings you choose whether guests can upload and whether photos appear on the screen. The album stays yours for 365 days from activation, then the content is deleted."
+        }
+      },
+      "price": {
+        "text": "The trial is free for 7 days, needs no credit card (one per account) and holds up to {trialLimit} photos and videos in total: for a party with a few guests that can be enough. After the 7 days new uploads stop. To keep going, and to get the ZIP, printable cards and no MIOLOVE mark, activate the Full album: {price} as a single payment per album, valid for 365 days, with no cap on guests or on the album’s total. No monthly fee and no charge per guest."
+      },
+      "faq": {
+        "q1": {
+          "q": "Does it work for a kids’ party, where the parents take the pictures?",
+          "a": "Yes. Guests send from their own phones, so it is the parents who send the kids’ photos. Put the QR code in the invitation or on a sign at the door and add one line explaining what to do."
+        },
+        "q2": {
+          "q": "Can I use it for a surprise party?",
+          "a": "Yes. Create the album ahead of time and share the QR code and link only with the people helping you organize; on the day, everyone sends the videos of the entrance and the toasts to the same album. The guest of honor doesn’t have to do anything."
+        },
+        "q3": {
+          "q": "Can I show the album on the TV during the party?",
+          "a": "Yes, with the slideshow: open the screen page on a TV or a connected computer and photos play as they arrive. In the privacy settings you decide whether to show them."
+        },
+        "q4": {
+          "q": "Is the free trial enough for a small party?",
+          "a": "Often, yes: the trial holds up to {trialLimit} photos and videos and lasts 7 days, with no card. If you expect more than that, or want to download everything as a ZIP, activate the Full album; to prevent abuse, each guest can send up to {guestCap} files."
+        },
+        "q5": {
+          "q": "What kinds of photos and videos can guests send?",
+          "a": "Photos as JPG, PNG or WebP up to {photoMax} MB each; videos as MP4, MOV or WebM up to {videoMax} MB. They can pick several at a time, but they need to keep the page open until the files have finished sending."
+        }
+      },
+      "cta": {
+        "title": "Set up your party album",
+        "text": "Create it in a few minutes, try it free for 7 days and put the QR code next to the cake."
+      }
+    },
+    "baptism": {
+      "meta": {
+        "title": "Christening & Baptism Photo Album | MIOLOVE ALBUM",
+        "description": "Family and friends scan a QR code and add photos and videos from the christening or baptism to one shared album. No app, easy for grandparents. Free for 7 days.",
+        "ogTitle": "A christening photo album with a QR code for family and friends — MIOLOVE ALBUM"
+      },
+      "name": "Christening",
+      "hero": {
+        "eyebrow": "Christening and baptism",
+        "titleA": "A christening photo album",
+        "titleB": "with a QR code for family and friends",
+        "sub": "Family and friends scan the QR code at the lunch, add their photos and videos, and the day of the christening (or baptism) stays in one family album to keep and to look back on over the years.",
+        "ctaSecondary": "How it works at a christening",
+        "note": "Guests don’t install an app or create an account. The trial lasts 7 days, it’s free and asks for no credit card."
+      },
+      "why": {
+        "title": "Everyone remembers the christening from a different spot",
+        "p1": "Grandparents, aunts and uncles, godparents and friends see different moments: the baby in the godmother’s arms, the smile after the water, the cousins racing between the tables. Those photos stay on the phones of the people who were there, and often never reach the parents, who were busy living the day.",
+        "p2": "With MIOLOVE ALBUM parents put it all in one album, without having to explain to grandparents how to download an app, and keep it as the first chapter of the baby’s story."
+      },
+      "steps": {
+        "title": "How it works at a christening",
+        "sub": "Four steps to sort out before the service.",
+        "s1": {
+          "t": "Create your album",
+          "d": "Choose “Christening” as the occasion, give it a title (for example, “Leo’s christening”), add the date and the place: the guest page takes the name of your celebration."
+        },
+        "s2": {
+          "t": "Put the QR code where everyone sees it",
+          "d": "Print it on the order of service, on a card for each table or next to the party favors; the link also works in the family group chat. With the Full album, MIOLOVE’s card editor prepares the cards for you."
+        },
+        "s3": {
+          "t": "Family and friends send their shots",
+          "d": "They scan the code or open the link, take or pick photos and videos from their camera roll, and send them. A page opens in the browser: no app and no account, grandparents included."
+        },
+        "s4": {
+          "t": "Look back and keep",
+          "d": "Photos reach the album as they are sent. After the christening, with the Full album, you download the originals as one ZIP to save with the family photos."
+        }
+      },
+      "moments": {
+        "title": "From the church door to the lunch table: where to put the QR code",
+        "sub": "A christening has its own rhythm: the QR code matters most once the service is over.",
+        "m1": {
+          "t": "At church",
+          "d": "At church it’s worth asking the priest or minister what is allowed during the service. A QR code on the order of service reminds guests to send their photos right afterwards, at their own pace."
+        },
+        "m2": {
+          "t": "At the family lunch",
+          "d": "A card on each table or beside the party favors: between courses come the most natural shots, of the cousins, of grandparents holding the baby, of the cake."
+        },
+        "m3": {
+          "t": "For relatives who traveled far",
+          "d": "People who came a long way often have the best photos and the least time to send them. A QR code on the table and a link in the family group chat turn it into a few seconds’ job."
+        },
+        "m4": {
+          "t": "In the weeks after",
+          "d": "A christening gets talked about for weeks: if an uncle or a grandparent hasn’t sent anything yet, a message with the same link is all it takes to remind them while the album is open. There is always a “forgotten” photo on someone’s phone."
+        }
+      },
+      "include": {
+        "i1": {
+          "t": "Photos and videos from the whole family",
+          "d": "The album takes videos too (up to {videoMax} MB each) and plays them in the gallery."
+        },
+        "i2": {
+          "t": "No app, no account",
+          "d": "A page opens in the phone’s browser, easy enough for grandparents. A name is optional."
+        },
+        "i3": {
+          "t": "Original files",
+          "d": "We keep every photo and video exactly as it was sent: the album shows lighter copies, downloading gives you the original."
+        },
+        "i4": {
+          "t": "One ZIP with everything",
+          "d": "With the Full album you download every original in a single click."
+        },
+        "i5": {
+          "t": "Private, on your terms",
+          "d": "Only people with the QR code or the link can take part. In the privacy settings you choose whether guests can upload and whether photos appear on the screen."
+        },
+        "i6": {
+          "t": "365 days of album",
+          "d": "Your album stays yours for 365 days from activation. Download the originals before it ends: after that, the content is deleted."
+        }
+      },
+      "price": {
+        "text": "The trial is free for 7 days, needs no credit card (one per account) and holds up to {trialLimit} photos and videos in total: for a christening with a small guest list that can be enough. After the 7 days new uploads stop. To keep going, and to get the ZIP, printable cards and no MIOLOVE mark, activate the Full album: {price} as a single payment per album, valid for 365 days, with no cap on guests or on the album’s total. No monthly fee and no charge per guest."
+      },
+      "faq": {
+        "q1": {
+          "q": "Can guests use the QR code during the service in church?",
+          "a": "The QR code matters most after the service. During the ceremony it’s best to ask the priest or minister what is allowed, and to invite guests to send photos and videos afterwards, at the lunch."
+        },
+        "q2": {
+          "q": "Will the grandparents know what to do?",
+          "a": "Give them the simplest job: point the camera at the QR code printed on the table and tap the send button on the page that opens. There is nothing to download or sign up for, and a grandchild can help in seconds."
+        },
+        "q3": {
+          "q": "Can I collect the photos from the days around the christening too?",
+          "a": "Yes. The album stays open for as long as it is active, so you can gather the photos of the preparations, the dressing of the baby or the party at the grandparents’ house as well as the ceremony."
+        },
+        "q4": {
+          "q": "Is the free trial enough for a christening?",
+          "a": "For a christening with a small guest list the trial (up to {trialLimit} photos and videos, 7 days) can be enough. Keeping everything longer, downloading the ZIP and printing the cards need the Full album, where each guest can send up to {guestCap} files (an anti-spam ceiling)."
+        },
+        "q5": {
+          "q": "How long are the christening photos kept?",
+          "a": "An active album stays yours for 365 days from activation. Before it ends, download the originals as one ZIP and save them with the family photos; after that, the content is deleted."
+        }
+      },
+      "cta": {
+        "title": "Set up the christening album",
+        "text": "Create it in a few minutes, try it free for 7 days and put the QR code on the lunch table."
       }
     }
   }

@@ -24,9 +24,9 @@ test('SEO-IDX-4. robots.txt never contradicts noindex: nothing that carries noin
   for (const prefix of MIOLOVE_PRIVATE_PREFIXES) assert.ok(mioloveRobotsHeader(prefix.endsWith('/') ? `${prefix}x` : prefix), `${prefix} answers noindex`)
   for (const pub of ['/', '/en', '/idee', '/privacy', '/terms']) assert.ok(!MIOLOVE_DISALLOW.some((d) => pub.startsWith(d)), `${pub} must not be blocked`)
 })
-test('SEO-IDX-5. sitemap: 4 homes, 4 guides, the wedding page in 4 languages, privacy, terms; no login / sign-up, no private path; every listed URL is indexable', () => {
+test('SEO-IDX-5. sitemap: 4 homes, 4 guides, the 12 occasion pages, privacy, terms; no login / sign-up, no private path; every listed URL is indexable', () => {
   const urls = miolovePublicUrls()
-  assert.equal(urls.length, 14); assert.equal(new Set(urls).size, urls.length)
+  assert.equal(urls.length, 22); assert.equal(new Set(urls).size, urls.length)
   assert.ok(urls.includes('https://miolovealbum.com/privacy') && urls.includes('https://miolovealbum.com/terms') && urls.includes('https://miolovealbum.com/en'))
   for (const u of urls) { assert.ok(u.startsWith('https://miolovealbum.com'), u); assert.equal(mioloveRobotsHeader(path(u)), null, `${u} must be indexable`) }
   assert.ok(!urls.some((u) => /\/(login|register|forgot-password|reset-password|verify-email|dashboard)/.test(u)))
