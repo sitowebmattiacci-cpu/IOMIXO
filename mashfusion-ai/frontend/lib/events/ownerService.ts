@@ -63,6 +63,9 @@ const MESSAGES: Record<string, string> = {
   export_selection_too_large: 'Hai selezionato troppi contenuti: scegline meno o scarica tutto.',
 }
 
+/** One pass closes ~35 s of links; 8 passes cover tens of thousands of photos. */
+const MAX_REVOCATION_PASSES = 8
+
 async function callOwner<Out>(name: string, payload: object): Promise<Out> {
   try {
     return (await httpsCallable<object, Out>(getFirebaseFunctions(), name)(payload)).data
@@ -296,7 +299,7 @@ export const ownerOps = {
       const eventFields: Record<string, unknown> = {}
       for (const [legacy, fs] of Object.entries(ownerOps.config.MIRRORED_KEYS)) if (input.mirror && legacy in input.mirror) eventFields[fs] = input.mirror[legacy]
       if (input.mirror && typeof input.mirror.is_active === 'boolean') eventFields.status = input.mirror.is_active ? 'live' : 'ended'
-      await callOwner('updateEventConfig', {
+      const payload = {
         eventId: ev.id,
         ...('screen_config' in input ? { screenConfig: input.screen_config } : {}),
         ...('guest_config' in input ? { guestConfig: input.guest_config } : {}),
@@ -304,7 +307,14 @@ export const ownerOps = {
         ...('screen_mode_enabled' in input ? { screenModeEnabled: input.screen_mode_enabled } : {}),
         ...('winner_announcement' in input ? { winnerAnnouncement: input.winner_announcement } : {}),
         ...(Object.keys(eventFields).length ? { eventFields } : {}),
-      })
+      }
+      let res = await callOwner<{ galleryRevocation?: { state: string } }>('updateEventConfig', payload)
+      // "Galleria condivisa" switched off on a big album: the server closes the old download links within a time budget and answers `incomplete` while photos
+      // are left. The switch itself is already off (the rules); we keep asking, only for the guest config, until it says complete. If it never does, the state
+      // stays stored on the event and the next save with the gallery off resumes it (never reported as done here).
+      for (let i = 0; i < MAX_REVOCATION_PASSES && res?.galleryRevocation?.state === 'incomplete' && 'guest_config' in input; i++) {
+        res = await callOwner('updateEventConfig', { eventId: ev.id, guestConfig: input.guest_config })
+      }
       events.delete(sessionId); return true
     },
     /** Overlay the Firestore-authoritative config onto a session read from the legacy API (so the dashboard shows what was saved). */

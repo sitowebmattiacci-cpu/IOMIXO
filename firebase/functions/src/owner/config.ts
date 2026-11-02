@@ -2,7 +2,7 @@ import { FieldValue, type Firestore } from 'firebase-admin/firestore'
 import { HttpsError } from 'firebase-functions/v2/https'
 import { idField, requireEventOwner, requireIomixoEvent, type CallerAuth } from './guard'
 import { eventBrandOf } from './brand'
-import { deleteObjects, rotateDownloadToken } from '../photos/storage'
+import { deleteObjects, revokeDownloadToken, type TokenRevocation } from '../photos/storage'
 import { ownedPaths } from '../photos/media'
 
 export const CONFIG_MAX_BYTES = 16_000
@@ -129,7 +129,7 @@ function checkWinnerPaths(eventId: string, legacyId: string | null, next: Record
   }
 }
 
-export async function updateEventConfig(db: Firestore, request: CallerAuth, input: UpdateEventConfigInput): Promise<{ updated: string[] }> {
+export async function updateEventConfig(db: Firestore, request: CallerAuth, input: UpdateEventConfigInput): Promise<{ updated: string[]; galleryRevocation?: GalleryRevocation }> {
   const { ref, data: ownedEvent } = await requireEventOwner(db, request, input.eventId)
   // Screen Mode / winner announcement are live-control settings: not for a MIOLOVE album. The ONE exception is the album's own privacy switch
   // "photos on the screen" (screenConfig.show_photos) and the screen background (screenConfig.backgroundTheme, whitelisted id): a MIOLOVE owner may set
@@ -151,10 +151,11 @@ export async function updateEventConfig(db: Firestore, request: CallerAuth, inpu
     }
   }
   const stale: string[] = []
-  let galleryClosed = false
+  const miolove = input.guestConfig !== undefined && (await eventBrandOf(db, ownedEvent)) === 'miolove'
+  let revokeEpoch: number | null = null                  // set when the links of a MIOLOVE album must be (re)closed after the commit
   const result = await db.runTransaction(async (tx) => {
     stale.length = 0
-    galleryClosed = false
+    revokeEpoch = null
     const cur = (await tx.get(ref)).data()!
     const patch: Record<string, unknown> = {}
     const curCfg = cur.screenConfig as Record<string, unknown> | null | undefined
@@ -178,31 +179,59 @@ export async function updateEventConfig(db: Firestore, request: CallerAuth, inpu
     }
     if (input.guestConfig !== undefined) {
       patch.guestConfig = input.guestConfig
-      const was = (cur.guestConfig as Record<string, unknown> | null | undefined)?.shared_gallery === true
-      galleryClosed = was && input.guestConfig?.shared_gallery !== true
+      if (miolove) {
+        const was = (cur.guestConfig as Record<string, unknown> | null | undefined)?.shared_gallery === true
+        const on = input.guestConfig?.shared_gallery === true
+        const epoch = typeof cur.galleryEpoch === 'number' ? cur.galleryEpoch : 0
+        if (was && !on) { patch.galleryEpoch = epoch + 1; revokeEpoch = epoch + 1 }                                   // ON → OFF: a new revocation round
+        else if (!on && (cur.galleryRevocation as { state?: string } | undefined)?.state === 'incomplete') revokeEpoch = epoch    // OFF → OFF: resume what is left
+        if (on && !was) patch.galleryRevocation = FieldValue.delete()                                                  // open again: nothing pending
+      }
     }
     if (input.screenModeEnabled !== undefined) patch.screenModeEnabled = input.screenModeEnabled
     if (input.posterConfig !== undefined) patch.posterConfig = input.posterConfig
     if (input.eventFields) Object.assign(patch, input.eventFields)
     tx.update(ref, { ...patch, updatedAt: FieldValue.serverTimestamp() })
-    return { updated: Object.keys(patch) }
+    return { updated: Object.keys(patch).filter((k) => k !== 'galleryEpoch' && k !== 'galleryRevocation') }
   })
   if (stale.length) await deleteObjects(stale)            // after the commit, best effort (never blocks the owner)
-  if (galleryClosed && (await eventBrandOf(db, ownedEvent)) === 'miolove') await revokeGalleryLinks(db, input.eventId)
+  if (revokeEpoch !== null) return { ...result, galleryRevocation: await revokeGalleryLinks(db, input.eventId, revokeEpoch) }
   return result
 }
 
+/** Outcome of closing the links already handed out. `incomplete` = some approved photos still have a link that may work: the owner's switch is OFF anyway (the rules), but the revocation is NOT done. */
+export interface GalleryRevocation { state: 'complete' | 'incomplete'; epoch: number; pending: number; failed: number }
+/** Stays under the callable's 60 s default with room for the last in-flight photos and the final writes. */
+export const REVOKE_BUDGET_MS = 35_000
+const REVOKE_WORKERS = 12
+
 /**
  * "Galleria condivisa" went ON → OFF: the rules already refuse new reads, but a Firebase download URL carries a token that works without the rules, so every
- * link handed out while the gallery was open is killed by rotating the token of each approved photo's files (original, optimized copy, thumbnail / poster).
- * Awaited (the owner's switch returns once the links are dead) with bounded concurrency; a single failure is logged by rotateDownloadToken and never blocks.
+ * link handed out while the gallery was open is killed by replacing the token of each approved photo's files (original, optimized copy, thumbnail / poster).
+ *
+ * Reliable for any album size: it is RESUMABLE and HONEST. A photo whose files were all revoked is marked `linksRevokedEpoch = epoch` (the epoch grows on every
+ * ON → OFF), so a later call only does what is left; it stops starting photos after `budgetMs`; it counts failures; and it returns `incomplete` (and stores that
+ * on the event) until every approved photo is done. A missing file counts as done (nothing can serve it). Never claims more than it did.
  */
-export async function revokeGalleryLinks(db: Firestore, eventId: string): Promise<number> {
+export async function revokeGalleryLinks(
+  db: Firestore, eventId: string, epoch: number,
+  opts: { budgetMs?: number; revoke?: (path: string) => Promise<TokenRevocation>; now?: () => number } = {},
+): Promise<GalleryRevocation> {
+  const revoke = opts.revoke ?? revokeDownloadToken, now = opts.now ?? Date.now
+  const deadline = now() + (opts.budgetMs ?? REVOKE_BUDGET_MS)
   const snap = await db.collection(`events/${eventId}/photos`).where('status', '==', 'approved').get()
-  const paths = snap.docs.flatMap((d) => ownedPaths(d.data()))
-  let next = 0, done = 0
-  await Promise.all(Array.from({ length: Math.min(20, paths.length) }, async () => {
-    while (next < paths.length) { const p = paths[next++]; if (await rotateDownloadToken(p)) done++ }
+  const todo = snap.docs.filter((d) => d.data().linksRevokedEpoch !== epoch)
+  let next = 0, done = 0, failed = 0
+  await Promise.all(Array.from({ length: Math.min(REVOKE_WORKERS, todo.length) }, async () => {
+    while (next < todo.length && now() < deadline) {
+      const doc = todo[next++]
+      const results = await Promise.all(ownedPaths(doc.data()).map(revoke))
+      if (results.includes('failed')) { failed++; continue }
+      try { await doc.ref.update({ linksRevokedEpoch: epoch }); done++ } catch (e) { failed++; console.error('[revokeGalleryLinks] mark failed', (e as Error).message) }
+    }
   }))
-  return done
+  const pending = todo.length - done
+  const out: GalleryRevocation = { state: pending === 0 ? 'complete' : 'incomplete', epoch, pending, failed }
+  await db.doc(`events/${eventId}`).update({ galleryRevocation: { ...out, updatedAt: FieldValue.serverTimestamp() } }).catch((e) => console.error('[revokeGalleryLinks] state write failed', (e as Error).message))
+  return out
 }

@@ -37,6 +37,21 @@ export async function rotateDownloadToken(path: string): Promise<boolean> {
   catch (e) { console.error('[storage] token rotation failed', (e as Error).message); return false }
 }
 
+export type TokenRevocation = 'revoked' | 'gone' | 'failed'
+
+/**
+ * Like rotateDownloadToken but says WHAT happened, for a revocation that must not claim success it did not achieve: 'revoked' (a fresh token replaced the old
+ * ones), 'gone' (the object no longer exists, so no link can serve it: nothing left to revoke) or 'failed' (anything else: the old link may still work).
+ */
+export async function revokeDownloadToken(path: string): Promise<TokenRevocation> {
+  try { await bucket().file(path).setMetadata({ metadata: { firebaseStorageDownloadTokens: randomUUID() } }); return 'revoked' }
+  catch (e) {
+    if ((e as { code?: number }).code === 404) return 'gone'
+    console.error('[storage] token revocation failed', (e as Error).message)
+    return 'failed'
+  }
+}
+
 // ── Export support (album ZIP) ──────────────────────────────────────────────────────────────────────────────────────────────────
 
 /** Streams, never buffers: an album may weigh many GB. */
