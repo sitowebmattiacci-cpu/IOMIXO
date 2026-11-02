@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { MIOLOVE_FULL } from '../../lib/miolove/fullMessages'
 const { it, en, fr, es } = MIOLOVE_FULL
 import {
-  ALBUM_INCLUDED, ALBUM_PRICE_EUR, ALBUM_PRICING, formatAlbumListPrice, FEATURE_STATUS, TRIAL_EXCLUDED, TRIAL_INCLUDED, formatAlbumPrice, visibleItems, MIOLOVE_FORBIDDEN_COPY,
+  ALBUM_INCLUDED, ALBUM_PRICE_EUR, ALBUM_PRICING, FEATURE_STATUS, TRIAL_EXCLUDED, TRIAL_INCLUDED, formatAlbumPrice, visibleItems, MIOLOVE_FORBIDDEN_COPY,
   type FeatureId,
 } from '../../lib/miolove/plans'
 import { albumStatus } from '../../lib/miolove/albumStatus'
@@ -21,8 +21,6 @@ const get = (o: any, path: string) => path.split('.').reduce((a, k) => a?.[k], o
 test('PRICING. one price: €19.99 once; formats per language; never monthly', () => {
   assert.equal(ALBUM_PRICE_EUR, 19.99)
   assert.deepEqual(['it', 'en', 'fr', 'es'].map((l) => formatAlbumPrice(l)), ['€19,99', '$19.99', '19,99 €', '19,99 €'])
-  assert.deepEqual(['it', 'en', 'fr', 'es'].map((l) => formatAlbumListPrice(l)), ['€39,99', '$39.99', '39,99 €', '39,99 €'])
-  assert.ok(ALBUM_PRICING.list.eur > ALBUM_PRICING.current.eur && ALBUM_PRICING.list.usd > ALBUM_PRICING.current.usd, 'the struck-through price is the higher one')
   assert.equal(formatAlbumPrice('en-GB'), '$19.99', 'any English locale string → dollars')
 })
 

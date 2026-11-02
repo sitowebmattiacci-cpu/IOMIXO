@@ -1,6 +1,6 @@
 // MIOLOVE ALBUM commercial offer. Pure module (no React): shared by the public home, the billing page and the unit tests.
 //
-// Two offers only: the 7-day free trial (ONE per account) and the FULL ALBUM, a single payment of €19.99 PER ALBUM (list price €39.99, shown struck through) that keeps THAT album
+// Two offers only: the 7-day free trial (ONE per account) and the FULL ALBUM, a single payment of €19.99 PER ALBUM (the only price shown: no list price, no crossed-out amount) that keeps THAT album
 // for 365 days. There is no account-level plan: an account owns any number of albums, each with its own state and its own dates. No subscription, no monthly plan, no Event Pass,
 // no IOMIXO plan. A feature is shown to people ONLY if it really exists: every item below points at a `FeatureId`, and the lists skip the ones
 // whose status is still 'planned' (audit 2026-10-19, see MIOLOVE_GO_LIVE.md). Flip a status the day the feature ships and the pages follow.
@@ -9,16 +9,13 @@
 import { currencyForLocale, type Currency } from '../pricing'
 
 export const ALBUM_PRICE_EUR = 19.99
-/** Crossed-out list price shown next to the current one. */
-export const ALBUM_LIST_PRICE_EUR = 39.99
 /**
  * Album price per currency, the single source for every page. EN visitors see dollars (lib/pricing.ts: English → USD, it/fr/es → EUR).
  * DECISION PENDING (owner): the USD figures mirror the euro ones (same convention as the IOMIXO plans in lib/pricing.ts), no FX conversion is
  * computed. Change `usd` here, and the Stripe USD price, if a different dollar amount is wanted.
  */
-export const ALBUM_PRICING: Record<'current' | 'list', Record<Currency, number>> = {
+export const ALBUM_PRICING: { current: Record<Currency, number> } = {
   current: { eur: ALBUM_PRICE_EUR, usd: 19.99 },
-  list:    { eur: ALBUM_LIST_PRICE_EUR, usd: 39.99 },
 }
 /** Technical anti-abuse cap per guest on a MIOLOVE album (not a commercial limit). MUST equal MIOLOVE_PHOTO_POLICY.maxPerGuest in firebase/functions/src/photos/photos.ts (pinned by a test). */
 export const GUEST_UPLOAD_CAP = 500
@@ -106,12 +103,6 @@ export function formatAlbumAmount(locale: string, amount: number, currency: Curr
 export function formatAlbumPrice(locale: string): string {
   const c = currencyForLocale(locale)
   return formatAlbumAmount(locale, ALBUM_PRICING.current[c], c)
-}
-
-/** The crossed-out list price (€39,99 / $39.99 / 39,99 €). */
-export function formatAlbumListPrice(locale: string): string {
-  const c = currencyForLocale(locale)
-  return formatAlbumAmount(locale, ALBUM_PRICING.list[c], c)
 }
 
 /** Words that must never appear in any MIOLOVE surface (they belong to the IOMIXO product). Used by the tests. */

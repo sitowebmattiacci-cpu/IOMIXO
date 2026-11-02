@@ -201,7 +201,7 @@
       },
       "q4": {
         "q": "Combien ça coûte ?",
-        "a": "L'essai est gratuit (un par compte). L'Album complet coûte {price} (au lieu de {list}) pour chaque album, en un seul paiement : il dure 365 jours à partir de l'activation. Ce n'est pas un abonnement, il ne se paie pas au mois ni par invité."
+        "a": "L'essai est gratuit (un par compte). L'Album complet coûte {price} pour chaque album, en un seul paiement : il dure 365 jours à partir de l'activation. Ce n'est pas un abonnement, il ne se paie pas au mois ni par invité."
       },
       "q5": {
         "q": "Faut-il une carte bancaire pour essayer ?",

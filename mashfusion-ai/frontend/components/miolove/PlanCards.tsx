@@ -4,7 +4,8 @@ import type { ReactNode } from 'react'
 import { Check, Minus } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
-import { ALBUM_INCLUDED, TRIAL_EXCLUDED, TRIAL_INCLUDED, formatAlbumListPrice, formatAlbumPrice, visibleItems } from '@/lib/miolove/plans'
+import { ALBUM_INCLUDED, TRIAL_EXCLUDED, TRIAL_INCLUDED, formatAlbumPrice, visibleItems } from '@/lib/miolove/plans'
+import { occasionText } from '@/lib/miolove/occasions'
 
 /** The two MIOLOVE offers, side by side: the free trial (one per account) and the full album (one payment PER album, 365 days). Used by the public home. */
 export function PlanCards({ trialCta, albumCta, className }: {
@@ -49,7 +50,6 @@ export function PlanCards({ trialCta, albumCta, className }: {
             <h3 className="text-xl font-bold text-wd-ink">{t('albumPlan.albumName')}</h3>
           </div>
           <p className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <s className="text-2xl font-semibold text-wd-muted/80 decoration-wd-pink/70 decoration-2" data-testid="album-list-price" aria-label={t('albumPlan.listPrice')}>{formatAlbumListPrice(locale)}</s>
             <span className="text-5xl font-bold tracking-tight text-wd-ink" data-testid="album-price">{formatAlbumPrice(locale)}</span>
           </p>
           <p className="mt-1.5 text-[15px] font-semibold text-wd-pink-ink" data-testid="album-price-line">{t('albumPlan.albumOnce')} · {t('albumPlan.noSubscription')}</p>
@@ -63,6 +63,8 @@ export function PlanCards({ trialCta, albumCta, className }: {
         <div className="mt-6 flex-1">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-wd-muted">{t('albumPlan.included')}</p>
           <ul className="space-y-3">{visibleItems(ALBUM_INCLUDED).map((i) => row(i.key, true))}</ul>
+          {/* The technical limits that go with "no overall limit per album": per-guest anti-abuse cap and file sizes, read from the configuration. */}
+          <p className="mt-4 text-[13px] leading-relaxed text-wd-muted" data-testid="album-limits-note">{occasionText(t('albumPlan.limitsNote'), locale)}</p>
         </div>
         <div className="mt-8">{albumCta}</div>
       </article>

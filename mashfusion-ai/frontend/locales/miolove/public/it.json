@@ -201,7 +201,7 @@
       },
       "q4": {
         "q": "Quanto costa?",
-        "a": "La prova è gratis (una per account). L'Album completo costa {price} (invece di {list}) per ogni album, in un unico pagamento: dura 365 giorni dall'attivazione. Non è un abbonamento, non si paga al mese e non si paga per invitato."
+        "a": "La prova è gratis (una per account). L'Album completo costa {price} per ogni album, in un unico pagamento: dura 365 giorni dall'attivazione. Non è un abbonamento, non si paga al mese e non si paga per invitato."
       },
       "q5": {
         "q": "Serve la carta di credito per provare?",

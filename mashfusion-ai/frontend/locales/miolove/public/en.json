@@ -201,7 +201,7 @@
       },
       "q4": {
         "q": "How much does it cost?",
-        "a": "The trial is free (one per account). The Full album costs {price} (instead of {list}) for each album, in a single payment: it lasts 365 days from activation. It is not a subscription, it is not billed monthly and it is not charged per guest."
+        "a": "The trial is free (one per account). The Full album costs {price} for each album, in a single payment: it lasts 365 days from activation. It is not a subscription, it is not billed monthly and it is not charged per guest."
       },
       "q5": {
         "q": "Do I need a credit card to try it?",

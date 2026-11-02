@@ -12,7 +12,7 @@ import { formatWeddingGuestDate } from '@/components/wedding/guest/WeddingGuestU
 import { PublicPlanCards } from '@/components/miolove/PlanCards'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { useI18n, type Locale } from '@/lib/i18n'
-import { formatAlbumListPrice, formatAlbumPrice, isFeatureAvailable, type FeatureId } from '@/lib/miolove/plans'
+import { formatAlbumPrice, isFeatureAvailable, type FeatureId } from '@/lib/miolove/plans'
 import { reviewsEnv, reviewsToShow } from '@/lib/miolove/reviews'
 import { DEMO_EVENT, DEMO_PHOTOS, OCCASION_COVERS } from '@/lib/miolove/demoMedia'
 import { MIOLOVE_EMAIL } from '@/lib/legal/types'
@@ -325,7 +325,7 @@ function Pricing() {
 // ── FAQ ──────────────────────────────────────────────────────────────────────
 function Faq() {
   const { t, locale } = useI18n()
-  const answer = (k: string) => t(`home.faq.${k}.a`).replace('{price}', formatAlbumPrice(locale)).replace('{list}', formatAlbumListPrice(locale))
+  const answer = (k: string) => t(`home.faq.${k}.a`).replace('{price}', formatAlbumPrice(locale))
   return (
     <Section id="faq">
       <SectionHead eyebrow={t('home.faq.eyebrow')} title={t('home.faq.title')} />

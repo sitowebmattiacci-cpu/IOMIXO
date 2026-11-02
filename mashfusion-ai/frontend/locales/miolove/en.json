@@ -111,8 +111,8 @@
       "noPoster": "Printable QR cards and posters",
       "noDownloadAll": "Download everything in one click",
       "noWhiteLabel": "MIOLOVE mark removal",
-      "albumMediaPhotos": "Unlimited photos",
-      "albumMedia": "Unlimited photos and videos",
+      "albumMediaPhotos": "No overall limit on photos per album",
+      "albumMedia": "No overall limit on photos and videos per album",
       "months12Upload": "365 days to upload and download",
       "months12Storage": "365 days of storage",
       "originalQuality": "Original quality",
@@ -121,7 +121,6 @@
       "poster": "Printable QR cards and posters",
       "allIncluded": "All MIOLOVE features included"
     },
-    "listPrice": "List price",
     "downloadManyLocked": "Activate the album to download several items together",
     "paymentCancelled": "Payment cancelled: your album is untouched and you can activate it whenever you like.",
     "activating": "Opening the payment…",
@@ -147,7 +146,8 @@
     "how4": "When it ends, the album's content is permanently deleted: download everything first.",
     "newAlbumNote": "This album does not include another free trial: you can activate it for {price} whenever you like.",
     "pendingBanner": "Album to activate",
-    "openAlbum": "Open album"
+    "openAlbum": "Open album",
+    "limitsNote": "No limit on the number of guests or on the album’s total. To prevent abuse: up to {guestCap} files per guest, videos up to {videoMax} MB, photos up to {photoMax} MB."
   },
   "albumPrivacy": {
     "guestUpload": "Guest photo uploads",

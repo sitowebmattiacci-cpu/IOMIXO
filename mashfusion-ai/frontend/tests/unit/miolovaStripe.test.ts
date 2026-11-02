@@ -11,7 +11,7 @@ const ENV = { STRIPE_PRICE_PRO_EUR: 'price_PROEUR000001', STRIPE_PRICE_EVENT_PAS
 
 test('STRIPE-U1. server currency = the currency the page shows (English → USD, it / fr / es → EUR); both 19.99', () => {
   for (const l of ['it', 'en', 'fr', 'es'] as const) assert.equal(albumCurrencyFor(l), currencyForLocale(l), l)
-  assert.equal(ALBUM_PRICING.current.eur, 19.99); assert.equal(ALBUM_PRICING.current.usd, 19.99); assert.equal(ALBUM_PRICING.list.eur, 39.99)
+  assert.equal(ALBUM_PRICING.current.eur, 19.99); assert.equal(ALBUM_PRICING.current.usd, 19.99); assert.ok(!('list' in ALBUM_PRICING), 'no list price exists any more')
 })
 test('STRIPE-U2. portal scope: album prices are MIOLOVE one-time; every other price stays IOMIXO; the generic checkout never offers the album price', () => {
   const t = buildPriceTable(ENV), m = buildMiolovePriceTable(ENV)

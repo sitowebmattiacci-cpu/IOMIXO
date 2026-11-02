@@ -111,8 +111,8 @@
       "noPoster": "Tarjetas y pósters QR para imprimir",
       "noDownloadAll": "Descargarlo todo con un clic",
       "noWhiteLabel": "Eliminación de la marca MIOLOVE",
-      "albumMediaPhotos": "Fotos ilimitadas",
-      "albumMedia": "Fotos y videos ilimitados",
+      "albumMediaPhotos": "Sin límite total de fotos por álbum",
+      "albumMedia": "Sin límite total de fotos y videos por álbum",
       "months12Upload": "365 días para subir y descargar",
       "months12Storage": "365 días de almacenamiento",
       "originalQuality": "Calidad original",
@@ -121,7 +121,6 @@
       "poster": "Tarjetas y pósters QR para imprimir",
       "allIncluded": "Todas las funciones MIOLOVE incluidas"
     },
-    "listPrice": "Precio de lista",
     "downloadManyLocked": "Activa el álbum para descargar varios contenidos a la vez",
     "paymentCancelled": "Pago cancelado: tu álbum está intacto y puedes activarlo cuando quieras.",
     "activating": "Abriendo el pago…",
@@ -147,7 +146,8 @@
     "how4": "Al vencer, el contenido del álbum se elimina definitivamente: descárgalo todo antes.",
     "newAlbumNote": "Este álbum no incluye otra prueba gratuita: podrás activarlo por {price} cuando quieras.",
     "pendingBanner": "Álbum por activar",
-    "openAlbum": "Abrir álbum"
+    "openAlbum": "Abrir álbum",
+    "limitsNote": "Sin límite en el número de invitados ni en el total del álbum. Para evitar abusos: hasta {guestCap} archivos por invitado, videos de hasta {videoMax} MB, fotos de hasta {photoMax} MB."
   },
   "albumPrivacy": {
     "guestUpload": "Envío de fotos de los invitados",

@@ -241,9 +241,10 @@ test('OCC-11. no orphan pages: the home, the guide and the footer link to the oc
   for (const lang of ['it', 'en', 'fr', 'es']) assert.ok(D[lang].occasions.common.seeOccasion.length > 10)
 })
 
-// The texts of the home, the guide and the service pages are what production (479804e) serves: the occasion work adds a namespace, it never edits these. Pinned by
+// The texts of the home, the guide and the service pages are what production (479804e) serves, EXCEPT the one deliberate commercial edit authorised on 2026-11-02:
+// `home.faq.q4` lost its parenthesis with the crossed-out list price (the hash of `home` was re-pinned for that edit alone; ideas / servicePages are still the production ones). Pinned by
 // hash (key-sorted JSON), so a bulk find-and-replace on a locale file cannot silently rewrite them.
-const BASE_HASHES: Record<string, Record<string, string>> = {"it": {"home": "d7f40388d25221ee", "ideas": "1e56cd0e7fc139cf", "servicePages": "991c6198dcd6327a"}, "en": {"home": "4ae81f783eb7ca3e", "ideas": "23545dd962cfdd0f", "servicePages": "d9d6b17e940b039d"}, "fr": {"home": "57022fa51abc7ce6", "ideas": "062a38ec8dc147b8", "servicePages": "87ad2c33959729d1"}, "es": {"home": "17a6cfee89c3fa3c", "ideas": "e47411ba939ab3f3", "servicePages": "205799dab8940767"}}
+const BASE_HASHES: Record<string, Record<string, string>> = {"it": {"home": "1210b0f80f32eb46", "ideas": "1e56cd0e7fc139cf", "servicePages": "991c6198dcd6327a"}, "en": {"home": "da818ee9f66c3c66", "ideas": "23545dd962cfdd0f", "servicePages": "d9d6b17e940b039d"}, "fr": {"home": "e512fef3645e0a57", "ideas": "062a38ec8dc147b8", "servicePages": "87ad2c33959729d1"}, "es": {"home": "e58598450b49af9d", "ideas": "e47411ba939ab3f3", "servicePages": "205799dab8940767"}}
 test('OCC-12. home, guide and service-page texts are byte-for-byte the production ones in the four languages (no regression of the existing pages)', () => {
   const sorted = (o: any): any => (Array.isArray(o) ? o.map(sorted) : o && typeof o === 'object' ? Object.fromEntries(Object.keys(o).sort().map((k) => [k, sorted(o[k])])) : o)
   for (const lang of ['it', 'en', 'fr', 'es']) for (const ns of ['home', 'ideas', 'servicePages']) {

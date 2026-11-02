@@ -201,7 +201,7 @@
       },
       "q4": {
         "q": "¿Cuánto cuesta?",
-        "a": "La prueba es gratis (una por cuenta). El Álbum completo cuesta {price} (en lugar de {list}) por cada álbum, en un único pago: dura 365 días desde la activación. No es una suscripción, no se paga al mes ni por invitado."
+        "a": "La prueba es gratis (una por cuenta). El Álbum completo cuesta {price} por cada álbum, en un único pago: dura 365 días desde la activación. No es una suscripción, no se paga al mes ni por invitado."
       },
       "q5": {
         "q": "¿Necesito tarjeta de crédito para probarlo?",
