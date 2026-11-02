@@ -239,7 +239,7 @@
       "martinaCandles": "Martina souffle les bougies de son gâteau d'anniversaire entourée de ses amies",
       "martinaSelfie": "Selfie de groupe de Martina et de ses amies à la fête d'anniversaire",
       "martinaGarden": "Une petite fille rit devant le gâteau aux bougies à la fête dans le jardin",
-      "martinaQrTable": "Table dressée avec la carte MIOLOVE « Compleanno di Martina » et le QR code à scanner",
+      "martinaQrTable": "Table dressée avec la carte MIOLOVE « Compleanno di Martina » et le QR code à scanner",
       "weddingParty": "Les mariés dansent avec leurs invités pendant la soirée",
       "weddingGuestsPhones": "Des invités souriants photographient les mariés avec leur téléphone",
       "baptism": "Une famille admire le bébé en robe blanche près des fonts baptismaux",
@@ -281,7 +281,7 @@
       },
       "s2": {
         "t": "Partagez le QR code",
-        "d": "Imprimez le carton MIOLOVE et ajoutez une ligne avec le défi : « Une couleur, une photo » ou « Chasse aux moments »."
+        "d": "Imprimez le carton MIOLOVE et ajoutez une ligne avec le défi : « Une couleur, une photo » ou « Chasse aux moments »."
       },
       "s3": {
         "t": "Regardez les photos arriver",
@@ -307,7 +307,7 @@
       },
       "tables": {
         "title": "Table contre table",
-        "text": "Chaque table essaie de raconter la soirée à sa façon. Demandez d'écrire « Prénom · Table 4 » dans le champ du nom et, après le dîner, regardez quelle table a réuni les clichés les plus drôles.",
+        "text": "Chaque table essaie de raconter la soirée à sa façon. Demandez d'écrire « Prénom · Table 4 » dans le champ du nom et, après le dîner, regardez quelle table a réuni les clichés les plus drôles.",
         "when": "Pendant le dîner, quand les tables sont pleines et l'ambiance détendue.",
         "why": "Une saine compétition entre tables fait participer même les plus timides et permet de retrouver facilement qui a pris quoi."
       },
@@ -416,7 +416,7 @@
       },
       "q3": {
         "q": "Comment distinguer les photos d'une table ou d'un défi ?",
-        "a": "Demandez aux invités d'écrire un nom du type « Julie · Table 4 » dans le champ facultatif : vous le verrez à côté de chaque photo dans l'album."
+        "a": "Demandez aux invités d'écrire un nom du type « Julie · Table 4 » dans le champ facultatif : vous le verrez à côté de chaque photo dans l'album."
       },
       "q4": {
         "q": "Puis-je utiliser plusieurs idées pendant la même fête ?",
@@ -617,7 +617,7 @@
       },
       "why": {
         "title": "À un anniversaire, personne n’a les photos de toute la fête",
-        "p1": "Celui ou celle qu’on fête est trop occupé pour photographier, et celui qui photographie reste derrière l’appareil et n’apparaît jamais. Résultat : vingt téléphones avec un morceau de fête chacun, le « tu peux m’envoyer tes photos ? » gêné du lendemain et des images qui arrivent écrasées dans une conversation de groupe.",
+        "p1": "Celui ou celle qu’on fête est trop occupé(e) pour photographier, et celui qui photographie reste derrière l’appareil et n’apparaît jamais. Résultat : vingt téléphones avec un morceau de fête chacun, le « tu peux m’envoyer tes photos ? » gêné du lendemain et des images qui arrivent écrasées dans une conversation de groupe.",
         "p2": "Avec MIOLOVE ALBUM, les invités envoient depuis leur téléphone et tout arrive dans le même album, y compris les vidéos du « joyeux anniversaire » et des bougies, chacune dans la qualité où elle a été envoyée."
       },
       "steps": {
