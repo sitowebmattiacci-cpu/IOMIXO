@@ -16,7 +16,7 @@ import { votePoll as votePollImpl } from './polls/votePoll'
 import { createDedication as createDedicationImpl } from './dedications/createDedication'
 import { parseModerationInput, moderateRequest as moderateRequestImpl, moderateDedication as moderateDedicationImpl } from './owner/moderation'
 import { parseCreatePollInput, parseSetPollStatusInput, createPoll as createPollImpl, setPollStatus as setPollStatusImpl } from './owner/polls'
-import { parseConfigInput, updateEventConfig as updateEventConfigImpl } from './owner/config'
+import { parseConfigInput, updateEventConfig as updateEventConfigImpl, resumeIncompleteRevocations } from './owner/config'
 import { parseCreateEventInput, parseEventRefInput, createEvent as createEventImpl, deleteEvent as deleteEventImpl, restoreEvent as restoreEventImpl } from './owner/sessions'
 import { parseGameActionInput, parseGameConfigInput, gameAction as gameActionImpl, setGameConfig as setGameConfigImpl } from './owner/games'
 import { parseCreatePhotoUploadInput, parsePhotoRefInput, parseModeratePhotoInput, createPhotoUpload as createPhotoUploadImpl, finalizePhoto as finalizePhotoImpl, moderatePhoto as moderatePhotoImpl } from './photos/photos'
@@ -160,9 +160,14 @@ export const onAlbumExportCreated = onDocumentCreated(
   async (event) => { await runAlbumExport(getFirestore(), event.params.eventId, event.params.exportId) },
 )
 // An export archive is a private download link: this deletes the expired ones (24 h) even when the owner never asks again. Needs Cloud Scheduler at deploy time.
+// The same hourly run then resumes the MIOLOVE "Galleria condivisa" revocations that are still incomplete (owner/config.ts); a failure there never affects the clean-up above.
 export const purgeAlbumExports = onSchedule(
   { schedule: 'every 60 minutes', timeZone: 'Europe/Rome', memory: '256MiB', timeoutSeconds: 300, maxInstances: 1, serviceAccount: SERVICE_ACCOUNT },
-  async () => { const r = await purgeExpiredExports(getFirestore()); logger.info('purgeAlbumExports', r) },
+  async () => {
+    const r = await purgeExpiredExports(getFirestore()); logger.info('purgeAlbumExports', r)
+    try { logger.info('resumeGalleryRevocations', await resumeIncompleteRevocations(getFirestore())) }
+    catch (e) { logger.error('resumeGalleryRevocations failed', { message: (e as Error).message }) }
+  },
 )
 
 // Retention: a paid album lives 365 days from its activation, an unpaid trial 7 days + a 30-day recovery window; then ALL its content is deleted for real (Storage + Firestore),

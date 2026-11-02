@@ -54,3 +54,17 @@ test('SGU6. texts exist in every MIOLOVE language', () => {
   }
   assert.equal(loc('it').albumPrivacy.sharedGallery, 'Galleria condivisa')
 })
+
+test('SGU7. the revocation sweep rides on the EXISTING hourly purgeAlbumExports: no new Function or schedule, the export clean-up runs first and a failing sweep cannot break it', () => {
+  const idx = read('firebase/functions/src/index.ts')
+  const handler = idx.slice(idx.indexOf('export const purgeAlbumExports'), idx.indexOf('// Retention: a paid album'))
+  assert.ok(handler.includes("schedule: 'every 60 minutes'"), 'same schedule as before')
+  assert.ok(handler.indexOf('purgeExpiredExports(') > 0 && handler.indexOf('purgeExpiredExports(') < handler.indexOf('resumeIncompleteRevocations('), 'clean-up first')
+  assert.match(handler, /try \{[^}]*resumeIncompleteRevocations\([^}]*\}\s*catch/s, 'the sweep is inside try / catch')
+  assert.doesNotMatch(idx, /export const \w*[Rr]evo\w*\s*=/, 'no new exported Function for the sweep')
+  assert.equal((idx.match(/resumeIncompleteRevocations/g) ?? []).length, 2, 'the import and the one call only')
+  const cfg = read('firebase/functions/src/owner/config.ts')
+  assert.match(cfg, /where\('galleryRevocation\.state', '==', 'incomplete'\)\.limit\(/, 'one equality filter: no composite index needed')
+  assert.doesNotMatch(cfg.slice(cfg.indexOf('export async function resumeIncompleteRevocations')), /orderBy\(/, 'no orderBy (would need an index)')
+  const idxJson = JSON.parse(read('firebase/firestore.indexes.json')); assert.deepEqual(idxJson.fieldOverrides ?? [], [], 'no field is exempted from automatic indexing')
+})
