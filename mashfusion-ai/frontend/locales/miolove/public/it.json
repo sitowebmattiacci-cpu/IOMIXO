@@ -470,5 +470,134 @@
       "title": "Conferma la tua e-mail",
       "description": "Conferma l’indirizzo e-mail del tuo account MIOLOVE ALBUM."
     }
+  },
+  "occasions": {
+    "common": {
+      "breadcrumbHome": "MIOLOVE ALBUM",
+      "ctaPrimary": "Prova gratis 7 giorni",
+      "otherTitle": "Altre occasioni",
+      "guideTitle": "Idee e giochi fotografici",
+      "guideLink": "Vedi le idee per far scattare più foto",
+      "homeLink": "Scopri come funziona MIOLOVE ALBUM",
+      "faqTitle": "Domande frequenti",
+      "includeTitle": "Cosa ricevi con il tuo album",
+      "priceTitle": "Quanto costa"
+    },
+    "wedding": {
+      "meta": {
+        "title": "Album foto matrimonio con QR code | MIOLOVE ALBUM",
+        "description": "Gli invitati inquadrano il QR code e caricano foto e video del tuo matrimonio in un album condiviso, con slideshow live. Senza app. Prova 7 giorni gratis.",
+        "ogTitle": "Album foto con QR code per il tuo matrimonio — MIOLOVE ALBUM"
+      },
+      "name": "Matrimonio",
+      "hero": {
+        "eyebrow": "Matrimonio",
+        "titleA": "Album foto con QR code",
+        "titleB": "per il tuo matrimonio",
+        "sub": "Gli invitati inquadrano il QR code al tavolo, scattano e inviano: le foto e i video della giornata finiscono in un unico album e, se vuoi, scorrono sullo schermo durante la festa.",
+        "ctaSecondary": "Come funziona al matrimonio",
+        "note": "Nessuna app da installare per gli invitati. La prova dura 7 giorni, è gratis e non chiede la carta di credito."
+      },
+      "why": {
+        "title": "Le foto più belle del matrimonio non sono solo quelle del fotografo",
+        "p1": "Il fotografo racconta la giornata che hai pianificato. Gli invitati ne vedono un’altra: il brindisi dei testimoni, la nonna che balla, i bambini sotto il tavolo, il taglio della torta da un’altra angolazione. Quelle immagini restano sparse nei telefoni di cento persone e quasi nessuno te le manda.",
+        "p2": "Con MIOLOVE ALBUM le raccogli in un posto solo, senza chiedere a nessuno di installare un’app e senza rincorrere per settimane i contatti di un gruppo WhatsApp."
+      },
+      "steps": {
+        "title": "Come funziona al matrimonio",
+        "sub": "Quattro passaggi, tutti da preparare prima del grande giorno.",
+        "s1": {
+          "t": "Crei l’album",
+          "d": "Scegli «Matrimonio» come occasione, scrivi i nomi degli sposi, la data e il luogo: la pagina che vedranno gli invitati si adatta alla festa."
+        },
+        "s2": {
+          "t": "Metti il QR code dove lo vedono tutti",
+          "d": "Stampalo su un cartoncino da tavolo, sul tableau o sul programma della cerimonia. Con l’Album completo l’editor di MIOLOVE prepara per te card e poster con il QR del tuo album."
+        },
+        "s3": {
+          "t": "Gli invitati inviano foto e video",
+          "d": "Inquadrano il QR code o aprono il link, scattano o scelgono un contenuto e lo inviano. Il nome è facoltativo e non devono registrarsi."
+        },
+        "s4": {
+          "t": "Guardi, proietti, scarichi",
+          "d": "I contenuti compaiono nell’album man mano che arrivano. Durante il ricevimento li proietti in slideshow su uno schermo; dopo la festa scarichi tutto in un unico ZIP."
+        }
+      },
+      "moments": {
+        "title": "Dove il QR code funziona meglio",
+        "sub": "Non serve un annuncio solenne: basta che il QR code sia nel posto giusto al momento giusto.",
+        "m1": {
+          "t": "Sui tavoli del ricevimento",
+          "d": "Un cartoncino per tavolo trasforma l’attesa tra una portata e l’altra in foto: ogni tavolo diventa un piccolo fotografo."
+        },
+        "m2": {
+          "t": "Alla cerimonia",
+          "d": "Sul programma o sul cartello all’ingresso: chi arriva in anticipo può già inviare gli scatti dell’attesa. Chiedi comunque agli ospiti di tenere il telefono in tasca durante lo scambio delle promesse."
+        },
+        "m3": {
+          "t": "Durante la festa",
+          "d": "Con lo slideshow su uno schermo gli invitati vedono comparire le proprie foto: è il modo più semplice per invogliare chi non ha ancora inviato nulla."
+        },
+        "m4": {
+          "t": "Il giorno dopo",
+          "d": "Chi non ha caricato durante la festa può farlo dallo stesso link nei giorni successivi, finché l’album è attivo."
+        }
+      },
+      "include": {
+        "i1": {
+          "t": "Foto e video degli invitati",
+          "d": "L’album accoglie anche i video e li riproduce nella galleria e nello slideshow."
+        },
+        "i2": {
+          "t": "I file originali",
+          "d": "Di ogni foto e video conserviamo il file così come è stato inviato: l’album mostra copie più leggere, il download restituisce l’originale."
+        },
+        "i3": {
+          "t": "Tutto in un unico ZIP",
+          "d": "Con l’Album completo scarichi tutti gli originali con un solo clic."
+        },
+        "i4": {
+          "t": "Slideshow per lo schermo",
+          "d": "Proietta le foto su una TV o un maxischermo mentre gli invitati ne aggiungono altre."
+        },
+        "i5": {
+          "t": "Sei tu a decidere",
+          "d": "Dalle impostazioni di privacy scegli se gli invitati possono inviare foto e se mostrarle sullo schermo. Partecipa solo chi ha il QR code o il link."
+        },
+        "i6": {
+          "t": "365 giorni di album",
+          "d": "L’album resta tuo per 365 giorni dall’attivazione. Scarica gli originali prima della scadenza: dopo, i contenuti vengono eliminati."
+        }
+      },
+      "price": {
+        "text": "La prova è gratis per 7 giorni, senza carta di credito (una per account) e accoglie fino a {trialLimit} tra foto e video: serve a provare il flusso con pochi amici, non a coprire l’intero ricevimento. Per il giorno del matrimonio attiva l’Album completo: {price} con un unico pagamento per album, valido 365 giorni, con foto e video illimitati. Nessun canone mensile e nessun costo per invitato."
+      },
+      "faq": {
+        "q1": {
+          "q": "Come faccio arrivare il QR code a tutti gli invitati?",
+          "a": "Stampalo su un cartoncino per i tavoli, sul tableau o sul programma della cerimonia, e condividi il link con chi non è in sala. Con l’Album completo l’editor di MIOLOVE prepara card da tavolo e poster con il QR del tuo album."
+        },
+        "q2": {
+          "q": "Gli invitati meno esperti di tecnologia riescono a partecipare?",
+          "a": "Basta la fotocamera del telefono: inquadrano il QR code, si apre una pagina nel browser e premono per inviare. Non c’è un’app da scaricare né un account da creare, e il link è lo stesso per tutti."
+        },
+        "q3": {
+          "q": "Posso scegliere cosa compare sullo schermo durante la festa?",
+          "a": "Sì. Dalle impostazioni di privacy decidi se gli invitati possono inviare foto e se mostrarle sullo schermo: puoi tenere l’album solo per te e proiettare solo quando vuoi."
+        },
+        "q4": {
+          "q": "Quante foto posso raccogliere al matrimonio?",
+          "a": "Con l’Album completo gli invitati e i contenuti sono illimitati. La prova gratis, invece, accoglie fino a {trialLimit} tra foto e video: attiva l’Album completo prima della data del matrimonio."
+        },
+        "q5": {
+          "q": "Per quanto tempo restano le foto dopo il matrimonio?",
+          "a": "L’album attivo resta tuo per 365 giorni dall’attivazione. Prima della scadenza scarichi gli originali in un unico ZIP; dopo, i contenuti vengono eliminati."
+        }
+      },
+      "cta": {
+        "title": "Prepara l’album del tuo matrimonio",
+        "text": "Crealo in pochi minuti, provalo gratis per 7 giorni e attivalo prima della data per raccogliere tutte le foto degli invitati."
+      }
+    }
   }
 }

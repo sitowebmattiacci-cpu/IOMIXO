@@ -6,7 +6,8 @@ import { currencyForLocale } from '../pricing'
 import { ALBUM_PRICING } from './plans'
 import { IDEAS, FAQ_KEYS } from './ideas'
 import { DEFAULT_LANG, LANG_META, LIVE_LANGS, type MioloveLang } from './langs'
-import { PAGE_IDS, isPublished, pagePath, publishedLangs, type PageId } from './pages'
+import { PAGE_IDS, isPublished, pagePath, publishedLangs, type OccasionId, type PageId } from './pages'
+import { OCCASION_FAQ_KEYS, occasionText } from './occasions'
 
 type L = MioloveLang
 // Dictionaries read at build / request time by the SERVER (metadata, structured data): this module is imported by server routes only, never by a client
@@ -94,6 +95,55 @@ export function mioloveIdeasStructuredData(lang: L = 'it') {
       ] },
       { '@type': 'ItemList', name: d.list.title, itemListElement: IDEAS.map((i, n) => ({ '@type': 'ListItem', position: n + 1, name: d.items[i.id].title, url: `${url}#${i.id}` })) },
       { '@type': 'FAQPage', mainEntity: FAQ_KEYS.map((k) => ({ '@type': 'Question', name: d.faq[k].q, acceptedAnswer: { '@type': 'Answer', text: d.faq[k].a } })) },
+    ],
+  }
+}
+
+// ── Occasion pages (wedding, birthday, baptism) ─────────────────────────────────────────────────────────────────────────────────────────────────────
+/** Absolute URL of an occasion page in a language (a language it is not published in resolves to the Italian URL: only ever used for published pages). */
+export const occasionUrl = (id: OccasionId, lang: L): string => pageUrl(id, lang)
+const occasionDict = (id: OccasionId, lang: L): any => {
+  const d = dict(lang).occasions?.[id]
+  if (!d) throw new Error(`MIOLOVE: no texts for occasion "${id}" in "${lang}"`)
+  return d
+}
+/** The questions of an occasion's FAQ that exist in the dictionary, with the figures filled in. These exact strings are rendered on the page. */
+export function occasionFaq(id: OccasionId, lang: L): { key: string; q: string; a: string }[] {
+  const d = occasionDict(id, lang)
+  return OCCASION_FAQ_KEYS.filter((k) => d.faq?.[k]).map((k) => ({ key: k, q: occasionText(d.faq[k].q, lang), a: occasionText(d.faq[k].a, lang) }))
+}
+
+export function mioloveOccasionMetadata(id: OccasionId, lang: L = 'it'): Metadata {
+  assertPublished(id, lang)
+  const m = occasionDict(id, lang).meta as { title: string; description: string; ogTitle: string }
+  const url = occasionUrl(id, lang)
+  return {
+    title: { absolute: m.title },
+    description: m.description,
+    alternates: { canonical: url, languages: pageAlternates(id) },
+    openGraph: {
+      type: 'website', url, siteName: 'MIOLOVE ALBUM', title: m.ogTitle, description: m.description,
+      locale: LANG_META[lang].og, alternateLocale: publishedLangs(id).filter((l) => l !== lang).map((l) => LANG_META[l].og),  // only the languages THIS page exists in
+      images: [{ url: `${base()}/brand/miolove/miolove-album-logo.png` }],
+    },
+    twitter: { card: 'summary', title: m.ogTitle, description: m.description, images: [`${base()}/brand/miolove/miolove-album-logo.png`] },
+    robots: { index: true, follow: true },
+  }
+}
+
+/** schema.org graph of an occasion page: WebPage, its breadcrumb and the FAQ (only questions and answers that are visible on the page). No offer, no rating, no review. */
+export function mioloveOccasionStructuredData(id: OccasionId, lang: L = 'it') {
+  assertPublished(id, lang)
+  const d = occasionDict(id, lang), url = occasionUrl(id, lang), orgId = `${base()}/#organization`
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      { '@type': 'WebPage', '@id': `${url}#webpage`, url, name: d.meta.title, description: d.meta.description, inLanguage: LANG_META[lang].hreflang, isPartOf: { '@id': `${base()}/#website` }, publisher: { '@id': orgId } },
+      { '@type': 'BreadcrumbList', itemListElement: [
+        { '@type': 'ListItem', position: 1, name: dict(lang).occasions.common.breadcrumbHome, item: homeUrl(lang) },
+        { '@type': 'ListItem', position: 2, name: d.name, item: url },
+      ] },
+      { '@type': 'FAQPage', mainEntity: occasionFaq(id, lang).map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) },
     ],
   }
 }

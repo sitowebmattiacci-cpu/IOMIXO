@@ -35,7 +35,8 @@ test('I18N-REG-1. twelve languages, Italian on the bare root, pt-BR and pt-PT ke
 test('I18N-REG-2. only it / en / fr / es are published; the eight new languages are drafts (flipping one is a deliberate edit of this pin)', () => {
   assert.deepEqual([...LIVE_LANGS], ['it', 'en', 'fr', 'es'])
   for (const l of NEW_LANGS) assert.equal(LANG_META[l].status, 'draft', l)
-  for (const id of PAGE_IDS) assert.deepEqual(publishedLangs(id), ['it', 'en', 'fr', 'es'], `${id} is published only in the four online languages`)
+  for (const id of PAGE_IDS) for (const l of publishedLangs(id)) assert.ok((LIVE_LANGS as readonly string[]).includes(l), `${id} is published only in the four online languages`)
+  for (const id of ['home', 'ideas'] as const) assert.deepEqual(publishedLangs(id), ['it', 'en', 'fr', 'es'])
 })
 
 test('I18N-REG-3. the shared UI Locale (read by IOMIXO) is untouched: four languages, same order', () => {
@@ -55,6 +56,7 @@ test('I18N-URL-1. the eight URLs already online, the sitemap and the helpers are
   assert.deepEqual(miolovePublicUrls(), [
     `${ORIGIN}/`, `${ORIGIN}/en`, `${ORIGIN}/fr`, `${ORIGIN}/es`,
     `${ORIGIN}/idee`, `${ORIGIN}/en/ideas`, `${ORIGIN}/fr/idees`, `${ORIGIN}/es/ideas`,
+    `${ORIGIN}/matrimonio`,  // occasion pages join as their text is published (see miolovaOccasions.test.ts)
     `${ORIGIN}/privacy`, `${ORIGIN}/terms`,
   ])
   assert.equal(homePath('xx'), '/'); assert.equal(ideasPath('xx'), '/idee')
@@ -197,23 +199,31 @@ export function dictionaryProblems(reference: unknown, candidate: unknown, isRef
   return out
 }
 
+/** The Italian reference for a language: occasion pages only count where the page is published in that language (a page grows one language at a time). */
+function referenceFor(lang: MioloveLang): any {
+  const ref = JSON.parse(JSON.stringify(it))
+  for (const id of Object.keys(ref.occasions ?? {})) if (id in PAGES && !PAGES[id as PageId].langs.includes(lang)) delete ref.occasions[id]
+  if (ref.occasions && Object.keys(ref.occasions).length === 1) delete ref.occasions.common  // only the shared labels left: no occasion page in this language
+  return ref
+}
+
 test('I18N-DICT-1. every published language has a registered, complete dictionary: no missing key, nothing left in Italian, same placeholders', async () => {
   for (const l of LIVE_LANGS) {
     assert.ok(hasMessages(l), `${l} has a loader`)
     const all = await loadMessages(l, Object.keys(it))
-    assert.deepEqual(dictionaryProblems(it, all, l === DEFAULT_LANG), [], l)
+    assert.deepEqual(dictionaryProblems(referenceFor(l), all, l === DEFAULT_LANG), [], l)
   }
 })
 
 test('I18N-DICT-2. the completeness check really catches an unfinished language (a copy of the Italian file, a missing key, a lost placeholder)', () => {
   assert.ok(dictionaryProblems(it, it).length > 100, 'an untranslated copy is refused')
   const en = JSON.parse(JSON.stringify(MIOLOVE_FULL.en))
-  assert.deepEqual(dictionaryProblems(it, en), [])
+  assert.deepEqual(dictionaryProblems(referenceFor('en'), en), [])
   const broken = JSON.parse(JSON.stringify(en)); delete broken.home.meta.title
-  assert.deepEqual(dictionaryProblems(it, broken), ['missing home.meta.title'])
+  assert.deepEqual(dictionaryProblems(referenceFor('en'), broken), ['missing home.meta.title'])
   const [k, v] = flat(en).find(([, s]) => typeof s === 'string' && /\{\w+\}/.test(s as string))!
   const lost = JSON.parse(JSON.stringify(en)); k.split('.').reduce((a: any, key, i, arr) => (i === arr.length - 1 ? (a[key] = String(v).replace(/\{\w+\}/g, 'X')) : a[key]), lost)
-  assert.deepEqual(dictionaryProblems(it, lost), [`placeholders ${k}`])
+  assert.deepEqual(dictionaryProblems(referenceFor('en'), lost), [`placeholders ${k}`])
 })
 
 test('I18N-DICT-3. loading is per language and per namespace; a language without texts is an error, and a missing key is never answered in Italian', async () => {
@@ -261,13 +271,19 @@ test('SWITCH-1. every published page × every published language: the menu opens
     const opts = switchOptions(id)
     assert.deepEqual(opts.map((o) => o.lang), [...LIVE_LANGS], `${id}: only published languages, registry order`)
     for (const o of opts) {
-      assert.equal(o.exact, true); assert.equal(o.path, plannedPagePath(id, o.lang)); assert.equal(resolvePublicPath(o.path)?.lang, o.lang, `${o.path} routes to ${o.lang}`)
-      assert.equal(resolvePublicPath(o.path)?.page, id)
+      if (PAGES[id].langs.includes(o.lang)) {
+        assert.equal(o.exact, true); assert.equal(o.path, plannedPagePath(id, o.lang)); assert.equal(resolvePublicPath(o.path)?.lang, o.lang, `${o.path} routes to ${o.lang}`)
+        assert.equal(resolvePublicPath(o.path)?.page, id)
+      } else {
+        // an occasion page not yet published in this language: the menu opens that language's home, never a 404
+        assert.equal(o.exact, false); assert.equal(o.path, plannedPagePath('home', o.lang)); assert.equal(resolvePublicPath(o.path)?.page, 'home')
+      }
     }
     for (const l of NEW_LANGS) { assert.equal(switchTarget(id, l), null, `${l} draft: not offered`); assert.ok(!opts.some((o) => o.lang === l)) }
   }
   assert.deepEqual(switchOptions('ideas').map((o) => o.path), ['/idee', '/en/ideas', '/fr/idees', '/es/ideas'])
   assert.deepEqual(switchOptions('home').map((o) => o.path), ['/', '/en', '/fr', '/es'])
+  assert.deepEqual(switchOptions('wedding').map((o) => [o.path, o.exact]), [['/matrimonio', true], ['/en', false], ['/fr', false], ['/es', false]])
 })
 
 test('SWITCH-2. a page missing in the chosen language opens that language\'s home; a language without a published home is not offered; drafts never appear', () => {
@@ -298,18 +314,20 @@ test('SWITCH-3. the shared auth / legal pages go home through HomeLink (IOMIXO k
 test('I18N-B1. the texts of a language can be loaded whole, by namespace, or as "core" (everything but what only the public pages read)', async () => {
   for (const l of LIVE_LANGS) {
     const all = await loadMessages(l), core = await loadCoreMessages(l)
-    for (const ns of PUBLIC_ONLY_NAMESPACES) { assert.ok(ns in all); assert.ok(!(ns in core), `${l}: core has no "${ns}"`) }
-    assert.equal(Object.keys(core).length + PUBLIC_ONLY_NAMESPACES.length + SERVER_ONLY_NAMESPACES.length, Object.keys(all).length)
+    // `occasions` exists in a language once one of its occasion pages is published there
+    const present = PUBLIC_ONLY_NAMESPACES.filter((ns) => ns in all)
+    for (const ns of PUBLIC_ONLY_NAMESPACES) { assert.ok(ns in all || ns === 'occasions'); assert.ok(!(ns in core), `${l}: core has no "${ns}"`) }
+    assert.equal(Object.keys(core).length + present.length + SERVER_ONLY_NAMESPACES.length, Object.keys(all).length)
     assert.deepEqual(Object.keys(await loadMessages(l, ['home'])), ['home'])
     assert.deepEqual(Object.keys(core).sort(), Object.keys(CORE_FILES[l as 'it']).sort(), `${l}: core = the file the browser bundles`)
   }
 })
 
-test('I18N-B2. home / guide texts are read only by the home and guide components: every other page can be served without them', () => {
+test('I18N-B2. home / guide / occasion-page texts are read only by their own components: every other page can be served without them', () => {
   const files = ['app', 'components', 'lib'].flatMap((d) => walk(join(fe, d)))
   for (const f of files) {
     const rel = f.slice(fe.length + 1)
-    if (/^components\/miolove\/(home|ideas)\//.test(rel) || ['lib/miolove/demoMedia.ts', 'lib/miolove/ideas.ts', 'lib/miolove/seo.ts'].includes(rel)) continue
+    if (/^components\/miolove\/(home|ideas|occasion)\//.test(rel) || ['lib/miolove/demoMedia.ts', 'lib/miolove/ideas.ts', 'lib/miolove/seo.ts', 'lib/miolove/occasions.ts'].includes(rel)) continue
     assert.ok(!/['"`](home|ideas)\.[a-zA-Z]/.test(readFileSync(f, 'utf8').replace(/\/\/.*$/gm, '')), `${rel} reads a home / guide text`)
   }
 })

@@ -32,10 +32,10 @@ export async function loadMessages(lang: MioloveLang, namespaces?: readonly stri
 }
 
 /**
- * Namespaces that only the public pages (home, guide) read; the server hands them to those two pages. Every other page of the product — sign-in, dashboard,
+ * Namespaces that only the public pages (home, guide, occasion pages) read; the server hands them to those two pages. Every other page of the product — sign-in, dashboard,
  * onboarding, guest page, TV screen — needs the rest ("core"), which the browser bundle holds.
  */
-export const PUBLIC_ONLY_NAMESPACES = ['home', 'ideas'] as const
+export const PUBLIC_ONLY_NAMESPACES = ['home', 'ideas', 'occasions'] as const
 /** Namespaces of the public-page file that only the server reads (the titles of sign-in, sign-up… pages). */
 export const SERVER_ONLY_NAMESPACES = ['servicePages'] as const
 

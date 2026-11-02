@@ -11,6 +11,7 @@ import { DEMO_REVIEWS, reviewsToShow } from '../../lib/miolove/reviews'
 import { asOccasionType, occasionText } from '../../lib/occasion'
 import { mioloveHomeMetadata, mioloveStructuredData, MIOLOVE_DISALLOW, miolovePublicUrls } from '../../lib/miolove/seo'
 import { mioloveRobotsHeader } from '../../lib/miolove/indexing'
+import { PAGES, type PageId } from '../../lib/miolove/pages'
 import { screenShowsPhotos, composeScreenPayload } from '../../lib/events/screenModel'
 
 const D: Record<string, any> = { it, en, fr, es }
@@ -45,8 +46,9 @@ test('PRICING. only features that really exist are shown (planned ones are skipp
 })
 
 test('COPY. the four languages have the same MIOLOVE keys; every plan item has a text; no IOMIXO / Event Pass / monthly wording outside the reassurances', () => {
-  const ref = leaves(it).sort()
-  for (const l of ['en', 'fr', 'es']) assert.deepEqual(leaves(D[l]).sort(), ref, `${l} keys differ from it`)
+  // Occasion-page texts (occasions.<id>.*) exist in a language once that page is published there; the shared labels (occasions.common.*) once any of them is.
+  const forLang = (l: string) => leaves(it).filter((k) => { const m = /^occasions\.(\w+)\./.exec(k); return !m || (m[1] === 'common' ? (['wedding', 'birthday', 'baptism'] as PageId[]).some((id) => (PAGES[id].langs as readonly string[]).includes(l)) : (PAGES[m[1] as PageId]?.langs as readonly string[] | undefined)?.includes(l)) }).sort()
+  for (const l of ['en', 'fr', 'es']) assert.deepEqual(leaves(D[l]).sort(), forLang(l), `${l} keys differ from it`)
   for (const l of Object.keys(D)) {
     for (const i of [...TRIAL_INCLUDED, ...TRIAL_EXCLUDED, ...ALBUM_INCLUDED]) assert.ok(get(D[l], `albumPlan.f.${i.key}`), `${l} ${i.key}`)
     const copy = { ...D[l], albumPlan: { ...D[l].albumPlan, oneTime: '', notMonthly: '', notPerGuest: '', noSubscription: '', noUpgrade: '' }, albumAuth: undefined }

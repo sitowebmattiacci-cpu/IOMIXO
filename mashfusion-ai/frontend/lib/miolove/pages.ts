@@ -5,10 +5,13 @@
 // a draft: the URL answers 404 (the middleware never rewrites it), it is in no sitemap and no hreflang. The slugs of draft languages are provisional,
 // kept here so the URL plan is reviewable; they are fixed when the language is reviewed.
 //
-// Today only the home and the guide exist. Occasion pages (wedding, birthday, baptism…) are added here later, one entry each.
+// The home, the guide and the occasion pages (wedding, birthday, baptism) live here. An occasion page is listed in a language only when its reviewed text exists.
 import { DEFAULT_LANG, LANG_META, LIVE_LANGS, isLiveLang, type MioloveLang } from './langs'
 
-export type PageId = 'home' | 'ideas'
+export type PageId = 'home' | 'ideas' | OccasionId
+export type OccasionId = 'wedding' | 'birthday' | 'baptism'
+export const OCCASION_IDS: readonly OccasionId[] = ['wedding', 'birthday', 'baptism']
+export const isOccasionId = (v: unknown): v is OccasionId => typeof v === 'string' && (OCCASION_IDS as readonly string[]).includes(v)
 
 export interface PageDef {
   id: PageId
@@ -30,6 +33,23 @@ export const PAGES: Record<PageId, PageDef> = {
     id: 'ideas', route: '/idee',
     slugs: { it: 'idee', en: 'ideas', fr: 'idees', es: 'ideas', de: 'ideen', 'pt-BR': 'ideias', 'pt-PT': 'ideias', nl: 'ideeen', pl: 'pomysly', el: 'ideas', ja: 'ideas', ko: 'ideas' },
     langs: ['it', 'en', 'fr', 'es'],
+  },
+  // Occasion pages. Slugs of the four online languages are the planned URLs (the Spanish one is fixed with the keyword check of the Spanish text); `langs` grows
+  // one language at a time, as its text is written and reviewed. An empty list = not published anywhere: every URL answers 404, nothing in sitemap or hreflang.
+  wedding: {
+    id: 'wedding', route: '/matrimonio',
+    slugs: { it: 'matrimonio', en: 'wedding', fr: 'mariage', es: 'bodas', de: 'hochzeit', 'pt-BR': 'casamento', 'pt-PT': 'casamento', nl: 'bruiloft', pl: 'wesele', el: 'gamos', ja: 'wedding', ko: 'wedding' },
+    langs: ['it'],
+  },
+  birthday: {
+    id: 'birthday', route: '/compleanno',
+    slugs: { it: 'compleanno', en: 'birthday', fr: 'anniversaire', es: 'cumpleanos', de: 'geburtstag', 'pt-BR': 'aniversario', 'pt-PT': 'aniversario', nl: 'verjaardag', pl: 'urodziny', el: 'genethlia', ja: 'birthday', ko: 'birthday' },
+    langs: [],
+  },
+  baptism: {
+    id: 'baptism', route: '/battesimo',
+    slugs: { it: 'battesimo', en: 'baptism', fr: 'bapteme', es: 'bautizo', de: 'taufe', 'pt-BR': 'batizado', 'pt-PT': 'batizado', nl: 'doop', pl: 'chrzest', el: 'vaptisi', ja: 'baptism', ko: 'baptism' },
+    langs: [],
   },
 }
 export const PAGE_IDS = Object.keys(PAGES) as PageId[]
