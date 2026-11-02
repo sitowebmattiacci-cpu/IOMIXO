@@ -33,3 +33,39 @@ Data: 2026-11-02. **Limiti dichiarati**: non ho accesso a Search Console, Keywor
 - **FR**: *vin d'honneur*, *mairie*, *livret de cérémonie*, *brunch du lendemain*, *Album complet*; tipografia francese (spazi non separabili prima di ? ! : ; e dentro «»).
 - **ES**: neutro (tú, "video", "teléfono", "tomar fotos", niente *vosotros*, *móvil*, *vídeo*); *banquete*, *recepción*, *novios*, "boda — o casamiento, según el país".
 - Revisione madrelingua **necessaria** prima della pubblicazione (FR e ES soprattutto; ES anche per le varianti regionali).
+
+
+---
+# Addendum 2026-11-02 — compleanno e battesimo, concorrenti italiani, scelta `/en/christening`
+
+**Metodo e limiti (invariati).** Ricerche web in inglese dagli strumenti a disposizione: **non erano disponibili risultati Google geolocalizzati** (paese, dispositivo, personalizzazione), quindi *non* ho posizioni, SERP né volumi. Quello che segue è: query usata → pagine restituite → cosa dicono. Data di tutte le verifiche: 2026-11-02. Nessun risultato è presentato come "ranking".
+
+## Query eseguite e cosa hanno mostrato
+| Query (lingua, data 2026-11-02, desktop non noto) | Tipo di risultati | Elementi utili |
+|---|---|---|
+| album digitale compleanno condiviso QR code invitati foto festa (IT) | Pagine prodotto su matrimonio.com (**Picbook**, **Event Memories**, Easy Wedding Album), guide di generatori QR (QR Code Tiger, Scanova) | Event Memories nomina esplicitamente *compleanni, lauree, battesimi, feste aziendali*, "ospiti" (non "invitati"), pagamento unico, nessuna app né registrazione. Picbook: download di tutto l'album "con un click". |
+| album foto battesimo condiviso QR code parenti invitati (IT) | Nessuna pagina specifica per il battesimo; guide generiche e le stesse piattaforme | **Vuoto di contenuto specifico per il battesimo in italiano** (verificato solo come assenza nei risultati restituiti): opportunità per `/battesimo`. |
+| birthday party photo sharing QR code guests upload album (EN) | Wedibox /birthdays, Knipsmig /birthday-photo-sharing, Kululu, EventPics, Joysnap, GuestCam, Gather Shot, Piccy | Consigli ricorrenti: QR vicino alla torta/ingresso/buffet; slideshow su TV (Kululu); ZIP (Kululu); molti hanno tier gratuiti con limiti (EventPics ~500 foto gratis; Knipsmig scadenza 1 mese). |
+| christening baptism photo sharing QR code guests album (EN) | EventPics "baptism photo sharing", UploadMe "communions-christenings", Eventoly, GuestCam | Pochissime pagine dedicate; lessico misto *baptism / christening*. |
+| album photo anniversaire partagé QR code invités / baptême (FR) | Memento, Wedibox, QR Code Chimp, Wedshoots (Mariages.net), EventPics | Pagine francesi dedicate ad anniversaire/baptême quasi assenti; WedShoots cita "mariage ou baptême". |
+| álbum compartido cumpleaños QR fotos invitados quinceañera bautizo (ES) | Eventoly, Joysnap, Lense, **oureventalbum** (nota stampa su album bilingue per quinceañera con "vals" e "hora loca"), Wedibox | Esiste offerta specifica per la **quinceañera** (un concorrente la tratta come prodotto a sé): la pagina cumpleaños MIOLOVE non la satura. |
+| Guestpix Kululu Lazoo Salva Ricordi Medley event photo album QR code | Kululu (help center, pagine), Guestpix (venditore AU, 180+ template Canva, da $39/€49), Salva Ricordi (scheda matrimonio.com: segnatavolo interattivo che raccoglie audio, video, foto) | **Lazoo, Piktura e Medley: nessun risultato pertinente** per questi nomi → *non analizzati, non dichiarati*. |
+| Lazoo Piktura Medley app album condiviso evento foto invitati (IT) | App generiche (Picaggo, Memo, Celebrate, Memories, EventPix.photo); Aranzulla "app per condividere foto eventi" | Lessico italiano: *album condiviso*, *invitare con codice QR*, *ospiti*. |
+
+## Intenti per occasione (valutazione qualitativa, senza volumi)
+| Occasione | Intento dominante | Pubblico | Perché MIOLOVE può competere |
+|---|---|---|---|
+| Matrimonio | commerciale + transazionale (confronto fra servizi, "serve un'app?", "quanto costa") | sposi in pianificazione | concorrenza densa (Wedibox, Kululu, Knipsmig, Picbook…); vantaggio = pagamento unico per album, originali+ZIP, 365 giorni, nessun costo per invitato |
+| Compleanno | informativo → commerciale ("come condividere le foto della festa senza app") | genitori, organizzatori di 18/50 anni, amici | molte pagine generiche in EN, poche in IT/FR/ES; contenuti specifici (festa bambini, diciottesimo, sorpresa, compleanni importanti) |
+| Battesimo | informativo/di nicchia | genitori, nonni, padrini | **pochissima concorrenza specifica** in tutte e 4 le lingue; ricerche presumibilmente più piccole (non misurabile qui) ma più qualificate |
+
+## Scelta dello slug inglese: `/en/christening` (non `/en/baptism`)
+- La richiesta del titolare elenca esplicitamente *christening photo album* tra le query e l'URL `/en/christening`.
+- La ricerca **non** conferma la regola "christening = UK, baptism = US": le fonti dicono che i due termini si sovrappongono e che *christening* tende a indicare la cerimonia del neonato; l'unica differenza netta è l'ortografia (baptised/baptized).
+- Il prodotto stesso chiama l'occasione "Christening" in inglese (`home.events.baptism.title`).
+- Per non perdere chi cerca *baptism*, title e H1 contengono entrambe le parole ("Christening & Baptism Photo Album"), nessuna pagina duplicata e nessun URL `/en/baptism` (risponde 404, pinnato da test).
+
+## Spagnolo: quinceañera e regionalismi
+- La pagina compleanno ES nomina i XV años come uso possibile ma **dichiara** di non avere funzioni dedicate: nessuna promessa di soddisfare le ricerche "quinceañera".
+- Nessuna pagina `/es/quinceaneras` e nessuna pagina per paese: nei risultati consultati non emerge dato locale (Messico, Argentina, Colombia, Cile, Perù) che giustifichi pagine geografiche separate. Decisione da rivedere con Search Console (query per paese).
+- Termini regionali presenti: *boda* (URL e titolo), *casamiento* (una frase), *pastel / torta / tarta* (una frase), *recuerditos* (bautizo, LatAm), *XV años / quinceañera*.

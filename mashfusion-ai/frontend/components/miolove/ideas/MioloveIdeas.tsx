@@ -5,6 +5,7 @@ import { useI18n } from '@/lib/i18n'
 import { DEMO_PHOTOS } from '@/lib/miolove/demoMedia'
 import { FAQ_KEYS, IDEAS, IDEA_OCCASIONS, IDEAS_BY_OCCASION } from '@/lib/miolove/ideas'
 import { homePath } from '@/lib/miolove/paths'
+import { isOccasionId, isPublished, pagePath } from '@/lib/miolove/pages'
 import { reviewsEnv, reviewsToShow } from '@/lib/miolove/reviews'
 import { cn } from '@/lib/utils'
 import { Footer, Header, btnPrimary, btnSecondary } from '../home/MioloveHome'
@@ -109,6 +110,9 @@ export function MioloveIdeas() {
               <h3 className="font-album text-[24px] font-semibold leading-tight text-wd-ink">{t(`ideas.occasions.${o}.title`)}</h3>
               <p className="mt-3 text-[15px] leading-relaxed text-wd-muted">{t(`ideas.occasions.${o}.text`)}</p>
               <p className="mt-3 flex items-start gap-2 rounded-2xl bg-white px-4 py-3 text-[14px] font-medium text-wd-ink"><Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-wd-pink-ink" />{t(`ideas.occasions.${o}.tip`)}</p>
+              {isOccasionId(o) && isPublished(o, locale as any) && (
+                <Link href={pagePath(o, locale)} className="mt-4 inline-flex items-center gap-2 text-[15px] font-bold text-wd-pink-ink hover:underline" data-testid="idea-occasion-link">{t('occasions.common.seeOccasion')} <ArrowRight className="h-4 w-4" /></Link>
+              )}
               <p className="mt-4 text-[12px] font-bold uppercase tracking-[0.16em] text-wd-muted">{t('ideas.occasions.ideasLabel')}</p>
               <ul className="mt-2 flex flex-wrap gap-2">
                 {IDEAS_BY_OCCASION(o).slice(0, 5).map((id) => (

@@ -22,6 +22,7 @@ import { DemoPhotoImg, PhoneMock, ScreenMock, Section, SectionHead } from './par
 import { HeroVisual, Reveal } from './HeroMotion'
 import { IdeasTeaser } from '../ideas/IdeasTeaser'
 import { homePath, ideasPath } from '@/lib/miolove/paths'
+import { OCCASION_IDS, isOccasionId, isPublished, pagePath } from '@/lib/miolove/pages'
 import { UrlLocale } from '../UrlLocale'
 
 export const btnPrimary = 'inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-wd-pink px-7 text-[16px] font-semibold text-wd-ink shadow-[0_10px_30px_rgba(240,106,155,0.35)] transition hover:bg-wd-pink-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/50'
@@ -211,17 +212,22 @@ function WhyNotWhatsapp() {
 
 // ── Event types ──────────────────────────────────────────────────────────────
 function EventTypes() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const items = ['wedding', 'birthday', 'baptism', 'other'] as const
   return (
     <Section id="events">
       <SectionHead eyebrow={t('home.events.eyebrow')} title={t('home.events.title')} sub={t('home.events.sub')} />
       <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((k) => (
-          <li key={k} className="overflow-hidden rounded-3xl border border-wd-border bg-white" data-testid="event-type">
+          <li key={k} className="relative overflow-hidden rounded-3xl border border-wd-border bg-white" data-testid="event-type">
             <DemoPhotoImg photo={OCCASION_COVERS[k]} className="h-52 w-full" sizes="(min-width:1024px) 280px, (min-width:640px) 45vw, 90vw" />
             <div className="p-5">
-              <h3 className="text-[18px] font-bold text-wd-ink">{t(`home.events.${k}.title`)}</h3>
+              {/* The three occasions that have their own page link to it (the whole card is the click area: a normal <a> on the title); "other" has none. */}
+              <h3 className="text-[18px] font-bold text-wd-ink">
+                {isOccasionId(k) && isPublished(k, locale as any)
+                  ? <Link href={pagePath(k, locale)} className="after:absolute after:inset-0 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wd-pink/50" data-testid="event-type-link">{t(`home.events.${k}.title`)}</Link>
+                  : t(`home.events.${k}.title`)}
+              </h3>
               <p className="mt-1.5 text-[15px] leading-relaxed text-wd-muted">{t(`home.events.${k}.text`)}</p>
             </div>
           </li>
@@ -372,6 +378,7 @@ export function Footer({ base = '' }: { base?: string }) {
           <a className={cn(link, 'block')} href={`${base}#how`}>{t('home.nav.how')}</a>
           <a className={cn(link, 'block')} href={`${base}#features`}>{t('home.nav.features')}</a>
           <a className={cn(link, 'block')} href={ideasPath(locale)} data-testid="footer-ideas">{t('ideas.nav.label')}</a>
+          {OCCASION_IDS.filter((o) => isPublished(o, locale as any)).map((o) => <a key={o} className={cn(link, 'block')} href={pagePath(o, locale)} data-testid={`footer-${o}`}>{t(`home.events.${o}.title`)}</a>)}
           <a className={cn(link, 'block')} href={`${base}#pricing`}>{t('home.nav.pricing')}</a>
           <a className={cn(link, 'block')} href={`${base}#faq`}>{t('home.nav.faq')}</a>
         </nav>

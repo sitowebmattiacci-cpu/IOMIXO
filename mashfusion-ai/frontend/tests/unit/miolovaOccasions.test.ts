@@ -65,6 +65,19 @@ test('OCC-3. hreflang and canonical: a page lists only the languages it is publi
   assert.throws(() => mioloveOccasionStructuredData('baptism', 'pt-BR' as any), /not published/)
 })
 
+test('OCC-3b. social preview: a dedicated 1200×630 card per occasion, light enough for any crawler, used by Open Graph and Twitter', () => {
+  for (const id of OCCASION_IDS) {
+    const f = `public/demo/miolove/opt/og-${id}.jpg`, bytes = readFileSync(new URL(`../../${f}`, import.meta.url))
+    assert.ok(bytes.length < 200 * 1024, `${f} ${bytes.length} bytes`); assert.deepEqual([bytes[0], bytes[1]], [0xff, 0xd8], 'a JPEG')
+    let h = 0, w = 0; for (let i = 2; i + 9 < bytes.length; ) { if (bytes[i] !== 0xff) { i++; continue } const m = bytes[i + 1]; if (m >= 0xc0 && m <= 0xc3) { h = bytes.readUInt16BE(i + 5); w = bytes.readUInt16BE(i + 7); break } i += 2 + bytes.readUInt16BE(i + 2) }
+    assert.deepEqual([w, h], [1200, 630], f)
+    for (const { lang } of published().filter((p) => p.id === id)) {
+      const m = mioloveOccasionMetadata(id, lang) as any
+      assert.equal(m.openGraph.images[0].url, `${ORIGIN}/${f.replace('public/', '')}`); assert.equal(m.twitter.card, 'summary_large_image'); assert.deepEqual([m.openGraph.images[0].width, m.openGraph.images[0].height], [1200, 630])
+    }
+  }
+})
+
 test('OCC-4. title ≤ 60, description 120–160, no price in the snippet, distinct from every other page of the same language', () => {
   for (const { id, lang } of published()) {
     const m = D[lang].occasions[id].meta as { title: string; description: string; ogTitle: string }
@@ -214,4 +227,15 @@ test('OCC-10. each language is written for its own search: the H1 and the title 
   const fr = JSON.stringify(D.fr.occasions);   assert.doesNotMatch(fr, /« | »|[\wé’][?!:;]/, 'guillemets and punctuation use a non-breaking space')
   // Spanish: neutral, tú, video / teléfono (the peninsular words are pinned in ML-SEO-3 for the whole file)
   assert.doesNotMatch(JSON.stringify(D.es.occasions), /vídeo|móvil|vosotros|vuestr|ordenador|coger|hacen fotos|celular/i)
+})
+
+test('OCC-11. no orphan pages: the home, the guide and the footer link to the occasion pages through plain <a href> (published ones only), and every page links to its siblings and back to the guide', () => {
+  const home = src('components/miolove/home/MioloveHome.tsx'), ideas = src('components/miolove/ideas/MioloveIdeas.tsx'), occ = src('components/miolove/occasion/MioloveOccasion.tsx')
+  assert.match(home, /isOccasionId\(k\) && isPublished\(k, locale/); assert.match(home, /href=\{pagePath\(k, locale\)\}/, 'home: occasion cards')
+  assert.match(home, /OCCASION_IDS\.filter\(\(o\) => isPublished\(o, locale[^)]*\)\)\.map\(\(o\) => <a [^>]*href=\{pagePath\(o, locale\)\}/, 'footer: one link per published occasion')
+  assert.match(ideas, /isOccasionId\(o\) && isPublished\(o, locale/); assert.match(ideas, /href=\{pagePath\(o, locale\)\}/, 'guide: occasion blocks')
+  assert.match(occ, /href=\{`\$\{ideasPath\(locale\)\}#\$\{occasion\}`\}/, 'occasion → guide section'); assert.match(occ, /others\.map/, 'occasion → its siblings')
+  // the guide's anchors exist for the three occasions
+  for (const o of OCCASION_IDS) assert.ok(JSON.stringify(D.it.ideas.occasions[o]).length > 20)
+  for (const lang of ['it', 'en', 'fr', 'es']) assert.ok(D[lang].occasions.common.seeOccasion.length > 10)
 })
